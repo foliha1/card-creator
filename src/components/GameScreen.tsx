@@ -176,7 +176,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
       g.peekCard(index);
 
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
-      peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 2100);
+      peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 1100);
     },
     [g, peekLocked, doublePhase]
   );

@@ -145,7 +145,7 @@ export function useGameState(tier: Tier = "standard") {
   const peekCard = useCallback((index: number) => {
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     setPeekingCard(index);
-    peekTimerRef.current = setTimeout(() => setPeekingCard(null), 2000);
+    peekTimerRef.current = setTimeout(() => setPeekingCard(null), 1000);
   }, []);
 
   const enterClaimMode = useCallback(() => {
