@@ -272,7 +272,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
           }}
         >
           {g.dieValues.map((v, i) => (
-            <DieDisplay key={i} value={v} rolling={false} />
+            <DieDisplay key={i} value={v} rolling={g.rolling} landed={diceLanded} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ color: "#f8f2e9", fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
