@@ -15,7 +15,7 @@ function rollRandomAttributes(count: number): string[] {
 function getDieCount(tier: Tier, roundNum: number): number {
   if (tier === "easy") return 1;
   if (tier === "cutthroat") return 2;
-  return roundNum % 2 === 0 ? 1 : 2;
+  return roundNum % 2 === 1 ? 1 : 2;
 }
 
 function cardsMatchOnAttribute(a: Card, b: Card, attr: string): boolean {
