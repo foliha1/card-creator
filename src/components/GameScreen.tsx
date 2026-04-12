@@ -149,6 +149,14 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
     }
   }, [g.bonusPicks]);
 
+  // Auto-resolve match after 1000ms reveal window
+  useEffect(() => {
+    if (g.selectedCards.length === 2 && g.claimMode) {
+      const timer = setTimeout(() => g.resolveMatch(), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
+
   const handleCardClick = useCallback(
     (index: number) => {
       if (g.gameOver) return;
