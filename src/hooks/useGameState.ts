@@ -321,7 +321,7 @@ export function useGameState(tier: Tier = "standard") {
         checkGameOver(newDeck, newGrid, rule);
       }
     },
-    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDice, checkGameOver]
+    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]
   );
 
   const skipRound = useCallback(() => {
@@ -339,7 +339,7 @@ export function useGameState(tier: Tier = "standard") {
     setMessageType("warning");
 
     checkGameOver(deck, grid, rule);
-  }, [roundNum, doRollDice, deck, grid, checkGameOver]);
+  }, [roundNum, doRollDiceSync, deck, grid, checkGameOver]);
 
   return {
     deck,
