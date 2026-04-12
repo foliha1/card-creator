@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
+import { playFlip, playCorrect, playWrong, playDoubleJeopardy } from "@/lib/sounds";
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
@@ -97,6 +98,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
   // Wrong guess animation
   useEffect(() => {
     if (g.wrongCards.size === 2) {
+      playWrong();
       const indices = Array.from(g.wrongCards);
       setWrongFlashCards(new Set(indices));
       setShakingCards(new Set(indices));
@@ -112,6 +114,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
   const prevBonusRef = useRef(g.bonusPicking);
   useEffect(() => {
     if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
+      playDoubleJeopardy();
       // Step 1: Show title
       setDoublePhase("title");
       setShowDoubleTitle(true);
@@ -168,6 +171,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
 
       setPeekLocked(true);
       setPeekedCount((c) => c + 1);
+      playFlip();
       g.peekCard(index);
 
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
