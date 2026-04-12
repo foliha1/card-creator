@@ -146,7 +146,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setMessageType("info");
         return true;
       }
-      if (hasCards && currentDeck.length === 0 && !hasValidPair(currentGrid, rule)) {
+      if (hasCards && currentDeck.length === 0 && !hasAnyValidPair(currentGrid)) {
         setGameOver(true);
         setMessage("Game over! No valid pairs left.");
         setMessageType("info");
