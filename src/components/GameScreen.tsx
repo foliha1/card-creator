@@ -46,7 +46,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
   const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
   const [scoreBounce, setScoreBounce] = useState(false);
 
-  // Double Jeopardy UI state
+  // Double Match UI state
   const [showDoubleTitle, setShowDoubleTitle] = useState(false);
   const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "bonusShrink">("idle");
   const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
@@ -119,7 +119,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
     }
   }, [g.wrongCards]);
 
-  // Double Jeopardy flow: triggered when bonusPicking becomes true
+  // Double Match flow: triggered when bonusPicking becomes true
   const prevBonusRef = useRef(g.bonusPicking);
   useEffect(() => {
     if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
@@ -185,7 +185,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
     (index: number) => {
       if (g.gameOver || g.rolling) return;
 
-      // During double jeopardy pick phase
+      // During double match pick phase
       if (doublePhase === "pick" && g.bonusPicking) {
         g.pickBonus(index);
         return;
@@ -360,7 +360,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
           {" · Round: "}{g.roundNum}
         </div>
 
-        {/* Double Jeopardy title */}
+        {/* Double Match title */}
         {showDoubleTitle && (
           <div
             style={{
