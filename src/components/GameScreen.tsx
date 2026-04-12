@@ -283,10 +283,10 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
             <DieDisplay key={i} value={v} rolling={g.rolling} landed={diceLanded} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ color: "#f8f2e9", fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
-              {g.isDouble ? "Double Match" : "Match"}
+            <div style={{ color: "#f8f2e9", fontSize: "clamp(10px, 2.5vw, 13px)", opacity: 0.6, fontStyle: "italic" }}>
+              {g.isDouble && g.matchRule.length === 2 ? "Double match the" : "Match the"}
             </div>
-            <div style={{ color: "#f8f2e9", fontSize: 22, fontWeight: 700, fontStyle: "italic" }}>
+            <div style={{ color: "#f8f2e9", fontSize: "clamp(16px, 4vw, 24px)", fontWeight: 700, fontStyle: "italic" }}>
               {g.matchRule.join(" + ")}
             </div>
           </div>
