@@ -245,7 +245,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
             <DieDisplay key={i} value={v} rolling={false} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ color: "#f8f2e9", fontSize: 11, opacity: 0.5 }}>
+            <div style={{ color: "#f8f2e9", fontSize: 11, opacity: 0.5, fontStyle: "italic" }}>
               {g.isDouble ? "Double Match" : "Match"}
             </div>
             <div style={{ color: "#f8f2e9", fontSize: 16, fontWeight: 700, fontStyle: "italic" }}>
@@ -293,6 +293,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
                 color: "#f8f2e9",
                 fontSize: 14,
                 fontWeight: 700,
+                fontStyle: "italic",
                 borderRadius: 8,
                 padding: "6px 18px",
                 transition: "opacity 0.3s, transform 0.3s",
@@ -378,6 +379,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
                 color: "#f8f2e9",
                 fontSize: 14,
                 fontWeight: 700,
+                fontStyle: "italic",
                 borderRadius: 999,
                 padding: "6px 18px",
                 animation: "pill-pulse 1.5s infinite",
@@ -451,7 +453,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
         )}
 
         {g.gameOver && (
-          <div style={{ textAlign: "center", marginTop: 24, fontSize: 22, fontWeight: 800, color: "#231f20" }}>
+          <div style={{ textAlign: "center", marginTop: 24, fontSize: 22, fontWeight: 800, fontStyle: "italic", color: "#231f20" }}>
             Game Over! Final Score: {g.score}
           </div>
         )}
