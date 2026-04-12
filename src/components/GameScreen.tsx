@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleJeopardy } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDoubleJeopardy, playDiceRoll } from "@/lib/sounds";
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
@@ -157,9 +157,25 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
+  // Trigger animated dice roll on round change
+  const [diceLanded, setDiceLanded] = useState(false);
+  const prevRoundForDice = useRef(g.roundNum);
+  useEffect(() => {
+    if (g.roundNum !== prevRoundForDice.current) {
+      prevRoundForDice.current = g.roundNum;
+      playDiceRoll();
+      setDiceLanded(false);
+      // doRollDice is async — it sets rolling=true, cycles values, then resolves
+      g.doRollDice(g.roundNum).then(() => {
+        setDiceLanded(true);
+        setTimeout(() => setDiceLanded(false), 400);
+      });
+    }
+  }, [g.roundNum]);
+
   const handleCardClick = useCallback(
     (index: number) => {
-      if (g.gameOver) return;
+      if (g.gameOver || g.rolling) return;
 
       // During double jeopardy pick phase
       if (doublePhase === "pick" && g.bonusPicking) {
@@ -189,7 +205,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
     [g, peekLocked, doublePhase]
   );
 
-  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver;
+  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
   return (
     <div
@@ -256,7 +272,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
           }}
         >
           {g.dieValues.map((v, i) => (
-            <DieDisplay key={i} value={v} rolling={false} />
+            <DieDisplay key={i} value={v} rolling={g.rolling} landed={diceLanded} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ color: "#f8f2e9", fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>

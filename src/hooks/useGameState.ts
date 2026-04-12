@@ -59,16 +59,61 @@ export function useGameState(tier: Tier = "standard") {
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<MessageType>("info");
+  const [rolling, setRolling] = useState(false);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const doRollDice = useCallback(
-    (currentRound: number) => {
+    (currentRound: number): Promise<string[]> => {
+      const count = getDieCount(tier, currentRound);
+
+      // Compute final values upfront
+      const finalValues = rollRandomAttributes(count);
+      let rule: string[];
+      let double = false;
+      if (finalValues.length === 2 && finalValues[0] === finalValues[1]) {
+        rule = [finalValues[0]];
+        double = true;
+      } else {
+        rule = finalValues;
+        double = false;
+      }
+
+      // Start rolling animation
+      setRolling(true);
+      // Rapidly cycle random values every 100ms
+      if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+      rollIntervalRef.current = setInterval(() => {
+        setDieValues(rollRandomAttributes(count));
+      }, 100);
+
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // Stop cycling, land on final values
+          if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+          rollIntervalRef.current = null;
+          setDieValues(finalValues);
+          setMatchRule(rule);
+          setIsDouble(double);
+          // Keep rolling=true for bounce (300ms)
+          setTimeout(() => {
+            setRolling(false);
+            resolve(rule);
+          }, 300);
+        }, 800);
+      });
+    },
+    [tier]
+  );
+
+  // Synchronous version for places that need immediate result
+  const doRollDiceSync = useCallback(
+    (currentRound: number): string[] => {
       const count = getDieCount(tier, currentRound);
       const values = rollRandomAttributes(count);
       let rule: string[];
       let double = false;
-
       if (values.length === 2 && values[0] === values[1]) {
         rule = [values[0]];
         double = true;
@@ -76,7 +121,6 @@ export function useGameState(tier: Tier = "standard") {
         rule = values;
         double = false;
       }
-
       setDieValues(values);
       setMatchRule(rule);
       setIsDouble(double);
@@ -211,7 +255,7 @@ export function useGameState(tier: Tier = "standard") {
         setGrid(newGrid);
         setDeck(newDeck);
 
-        const rule = doRollDice(nextRound);
+        const rule = doRollDiceSync(nextRound);
         setClaimMode(false);
         setSelectedCards([]);
         setMatchedCards(new Set());
@@ -226,7 +270,7 @@ export function useGameState(tier: Tier = "standard") {
       setMessage("No match! Try again or skip.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDice, checkGameOver]);
+  }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
 
   // Remove matched cards from grid (for animated shrink step)
   const removeMatchedFromGrid = useCallback(() => {
@@ -265,7 +309,7 @@ export function useGameState(tier: Tier = "standard") {
         setGrid(newGrid);
         setDeck(newDeck);
 
-        const rule = doRollDice(nextRound);
+        const rule = doRollDiceSync(nextRound);
         setBonusPicking(false);
         setBonusPicks([]);
         setClaimMode(false);
@@ -277,7 +321,7 @@ export function useGameState(tier: Tier = "standard") {
         checkGameOver(newDeck, newGrid, rule);
       }
     },
-    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDice, checkGameOver]
+    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]
   );
 
   const skipRound = useCallback(() => {
@@ -290,12 +334,12 @@ export function useGameState(tier: Tier = "standard") {
     setBonusPicking(false);
     setBonusPicks([]);
 
-    const rule = doRollDice(nextRound);
+    const rule = doRollDiceSync(nextRound);
     setMessage("Round skipped.");
     setMessageType("warning");
 
     checkGameOver(deck, grid, rule);
-  }, [roundNum, doRollDice, deck, grid, checkGameOver]);
+  }, [roundNum, doRollDiceSync, deck, grid, checkGameOver]);
 
   return {
     deck,
@@ -315,6 +359,7 @@ export function useGameState(tier: Tier = "standard") {
     gameOver,
     message,
     messageType,
+    rolling,
     peekCard,
     enterClaimMode,
     selectCard,
@@ -322,5 +367,6 @@ export function useGameState(tier: Tier = "standard") {
     skipRound,
     removeMatchedFromGrid,
     resolveMatch,
+    doRollDice,
   };
 }
