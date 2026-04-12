@@ -270,24 +270,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setMessage("Correct! +2 points.");
         setMessageType("success");
 
-        if (!checkGameOver(newDeck, newGrid, rule)) {
-          if (!hasValidPair(newGrid, rule)) {
-            setTimeout(() => {
-              setMessage("No matches available — re-rolling!");
-              setMessageType("warning");
-              setTimeout(() => {
-                const nr = nextRound + 1;
-                setRoundNum(nr);
-                const r2 = doRollDiceSync(nr);
-                if (newDeck.length === 0 && !hasValidPair(newGrid, r2)) {
-                  setGameOver(true);
-                  setMessage("Game over! No valid pairs left.");
-                  setMessageType("info");
-                }
-              }, 1500);
-            }, 500);
-          }
-        }
+        checkGameOver(newDeck, newGrid, rule);
       }
     } else {
       setWrongCards(new Set(selectedCards));
