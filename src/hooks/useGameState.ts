@@ -325,6 +325,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const b = grid[selectedCards[1]];
 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
+      rerollAttemptsRef.current = 0;
       setMatchedCards(new Set(selectedCards));
       setScore((s) => s + 2);
       if (isDoubleMatch) {
