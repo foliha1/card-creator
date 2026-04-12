@@ -320,5 +320,10 @@ export function useGameState(tier: Tier = "standard") {
     selectCard,
     pickBonus,
     skipRound,
+    removeMatchedFromGrid,
+  };
+}
+    pickBonus,
+    skipRound,
   };
 }
