@@ -26,9 +26,8 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, onGameOver }: GameScreenProps) => {
-  const g = useGameState(tier);
+  const g = useGameState(tier, gridSize);
 
-  // Message banner
   const [visibleMsg, setVisibleMsg] = useState("");
   const [visibleMsgType, setVisibleMsgType] = useState("info");
   const [msgVisible, setMsgVisible] = useState(false);
@@ -320,7 +319,6 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
                     fontSize: 12,
                     fontWeight: 700,
                     fontStyle: "italic",
-                    fontFamily: "'Friend', sans-serif",
                     cursor: "pointer",
                     transition: "background 0.2s, color 0.2s",
                   }}
@@ -348,12 +346,11 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
                     fontSize: 12,
                     fontWeight: 700,
                     fontStyle: "italic",
-                    fontFamily: "'Friend', sans-serif",
                     cursor: "pointer",
                     transition: "background 0.2s, color 0.2s",
                   }}
                 >
-                  {s === "3x2" ? "3×2" : "3×3"}
+                  {s === "3x2" ? "3×2" : "⚡ 3×3"}
                 </button>
               );
             })}
