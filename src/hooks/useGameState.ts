@@ -186,14 +186,14 @@ export function useGameState(tier: Tier = "standard") {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier]);
 
-  const [noMatchesDetected, setNoMatchesDetected] = useState(false);
+  const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const autoReroll = useCallback(() => {
-    setNoMatchesDetected(true);
+    if (autoRerollRef.current) return; // already scheduled
     setMessage("No matches available — re-rolling!");
     setMessageType("warning");
-    setTimeout(() => {
-      setNoMatchesDetected(false);
+    autoRerollRef.current = setTimeout(() => {
+      autoRerollRef.current = null;
       const nextRound = roundNum + 1;
       setRoundNum(nextRound);
       setClaimMode(false);
@@ -202,7 +202,6 @@ export function useGameState(tier: Tier = "standard") {
       setMatchedCards(new Set());
       setBonusPicking(false);
       setBonusPicks([]);
-
       const rule = doRollDiceSync(nextRound);
       checkGameOver(deck, grid, rule);
     }, 1500);
@@ -291,7 +290,6 @@ export function useGameState(tier: Tier = "standard") {
         setMessageType("success");
 
         if (!checkGameOver(newDeck, newGrid, rule)) {
-          // Check if new grid has valid pairs
           if (!hasValidPair(newGrid, rule)) {
             setTimeout(() => {
               setMessage("No matches available — re-rolling!");
@@ -366,8 +364,6 @@ export function useGameState(tier: Tier = "standard") {
     [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]
   );
 
-  // skipRound removed — replaced by automatic stale-round detection
-
   return {
     deck,
     grid,
@@ -387,7 +383,6 @@ export function useGameState(tier: Tier = "standard") {
     message,
     messageType,
     rolling,
-    noMatchesDetected,
     peekCard,
     enterClaimMode,
     selectCard,
