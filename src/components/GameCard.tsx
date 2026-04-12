@@ -27,11 +27,12 @@ const GameCard = ({
   enterDelay = 0,
   shaking,
 }: GameCardProps) => {
+  const baseShadow = "0 2px 8px rgba(0,0,0,0.25)";
   const boxShadow = matched
-    ? "0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5)"
+    ? `0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5), ${baseShadow}`
     : highlighted
-    ? "0 0 0 3px #f8f2e9, 0 0 20px rgba(255,255,255,0.5)"
-    : "0 2px 8px rgba(0,0,0,0.25)";
+    ? `0 0 0 3px #231f20, 0 0 16px rgba(35,31,32,0.3), ${baseShadow}`
+    : baseShadow;
 
   let outerTransform = "";
   let outerTransition = "transform 0.4s ease, opacity 0.4s ease";
