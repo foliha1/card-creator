@@ -32,7 +32,6 @@ const Index = () => {
               setPhase("playing");
             }}
           />
-        </div>
       )}
       {phase === "playing" && (
         <GameScreen key={gameKey} tier={tier} onGameOver={handleGameOver} />
