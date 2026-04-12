@@ -5,6 +5,7 @@ import DieDisplay from "@/components/DieDisplay";
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
+  onGameOver?: (score: number) => void;
 }
 
 const MSG_COLORS: Record<string, string> = {
@@ -14,7 +15,7 @@ const MSG_COLORS: Record<string, string> = {
   warning: "#e79024",
 };
 
-const GameScreen = ({ tier }: GameScreenProps) => {
+const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier);
 
   // Message banner
@@ -452,7 +453,27 @@ const GameScreen = ({ tier }: GameScreenProps) => {
           </div>
         )}
 
-        {g.gameOver && (
+        {g.gameOver && onGameOver && (
+          <div style={{ textAlign: "center", marginTop: 24 }}>
+            <button
+              onClick={() => onGameOver(g.score)}
+              style={{
+                background: "#231f20",
+                color: "#f8f2e9",
+                fontStyle: "italic",
+                fontSize: 18,
+                fontWeight: 700,
+                border: "none",
+                borderRadius: 10,
+                padding: "14px 36px",
+                cursor: "pointer",
+              }}
+            >
+              See Results →
+            </button>
+          </div>
+        )}
+        {g.gameOver && !onGameOver && (
           <div style={{ textAlign: "center", marginTop: 24, fontSize: 22, fontWeight: 800, fontStyle: "italic", color: "#231f20" }}>
             Game Over! Final Score: {g.score}
           </div>
