@@ -59,8 +59,10 @@ export function useGameState(tier: Tier = "standard") {
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<MessageType>("info");
+  const [rolling, setRolling] = useState(false);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const doRollDice = useCallback(
     (currentRound: number) => {
