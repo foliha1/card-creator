@@ -138,13 +138,12 @@ export function useGameState(tier: Tier = "standard") {
         setMessageType("info");
         return true;
       }
-      if (hasCards && !hasValidPair(currentGrid, rule)) {
-        if (currentDeck.length === 0) {
-          setGameOver(true);
-          setMessage("Game over! No valid pairs left.");
-          setMessageType("info");
-          return true;
-        }
+      // Only game over from no valid pairs when deck is also empty
+      if (hasCards && currentDeck.length === 0 && !hasValidPair(currentGrid, rule)) {
+        setGameOver(true);
+        setMessage("Game over! No valid pairs left.");
+        setMessageType("info");
+        return true;
       }
       return false;
     },
@@ -202,10 +201,16 @@ export function useGameState(tier: Tier = "standard") {
       setMatchedCards(new Set());
       setBonusPicking(false);
       setBonusPicks([]);
+      // Only re-roll dice — do NOT touch the grid
       const rule = doRollDiceSync(nextRound);
-      checkGameOver(deck, grid, rule);
+      // Only game-over if deck is empty and no pairs
+      if (deck.length === 0 && !hasValidPair(grid, rule)) {
+        setGameOver(true);
+        setMessage("Game over! No valid pairs left.");
+        setMessageType("info");
+      }
     }, 1500);
-  }, [roundNum, doRollDiceSync, deck, grid, checkGameOver]);
+  }, [roundNum, doRollDiceSync, deck, grid]);
 
   const peekCard = useCallback((index: number) => {
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
@@ -291,6 +296,7 @@ export function useGameState(tier: Tier = "standard") {
 
         if (!checkGameOver(newDeck, newGrid, rule)) {
           if (!hasValidPair(newGrid, rule)) {
+            // Only re-roll dice, don't touch the grid again
             setTimeout(() => {
               setMessage("No matches available — re-rolling!");
               setMessageType("warning");
@@ -298,7 +304,12 @@ export function useGameState(tier: Tier = "standard") {
                 const nr = nextRound + 1;
                 setRoundNum(nr);
                 const r2 = doRollDiceSync(nr);
-                checkGameOver(newDeck, newGrid, r2);
+                // Only game-over if deck empty and still no pairs
+                if (newDeck.length === 0 && !hasValidPair(newGrid, r2)) {
+                  setGameOver(true);
+                  setMessage("Game over! No valid pairs left.");
+                  setMessageType("info");
+                }
               }, 1500);
             }, 500);
           }
