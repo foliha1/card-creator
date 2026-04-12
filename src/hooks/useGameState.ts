@@ -41,13 +41,25 @@ function hasValidPair(grid: (Card | null)[], rule: string[]): boolean {
   return false;
 }
 
+/** isDoubleMatch = true when 2 dice show DIFFERENT attributes (genuine double match) */
+function computeRule(values: string[]): { rule: string[]; isDoubleMatch: boolean } {
+  if (values.length === 2 && values[0] !== values[1]) {
+    return { rule: values, isDoubleMatch: true };
+  }
+  // Single die, or two dice showing same attribute (collapses to single match)
+  if (values.length === 2 && values[0] === values[1]) {
+    return { rule: [values[0]], isDoubleMatch: false };
+  }
+  return { rule: values, isDoubleMatch: false };
+}
+
 export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = "3x2") {
   const slotCount = gridSize === "3x3" ? 9 : 6;
   const [deck, setDeck] = useState<Card[]>([]);
   const [grid, setGrid] = useState<(Card | null)[]>(Array(slotCount).fill(null));
   const [matchRule, setMatchRule] = useState<string[]>([]);
   const [dieValues, setDieValues] = useState<string[]>([]);
-  const [isDouble, setIsDouble] = useState(false);
+  const [isDoubleMatch, setIsDoubleMatch] = useState(false);
   const [score, setScore] = useState(0);
   const [roundNum, setRoundNum] = useState(1);
   const [peekingCard, setPeekingCard] = useState<number | null>(null);
@@ -68,22 +80,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const doRollDice = useCallback(
     (currentRound: number): Promise<string[]> => {
       const count = getDieCount(tier, currentRound);
-
-      // Compute final values upfront
       const finalValues = rollRandomAttributes(count);
-      let rule: string[];
-      let double = false;
-      if (finalValues.length === 2 && finalValues[0] === finalValues[1]) {
-        rule = [finalValues[0]];
-        double = true;
-      } else {
-        rule = finalValues;
-        double = false;
-      }
+      const { rule, isDoubleMatch: dm } = computeRule(finalValues);
 
-      // Start rolling animation
       setRolling(true);
-      // Rapidly cycle random values every 100ms
       if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
       rollIntervalRef.current = setInterval(() => {
         setDieValues(rollRandomAttributes(count));
@@ -91,13 +91,11 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
 
       return new Promise((resolve) => {
         setTimeout(() => {
-          // Stop cycling, land on final values
           if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
           rollIntervalRef.current = null;
           setDieValues(finalValues);
           setMatchRule(rule);
-          setIsDouble(double);
-          // Keep rolling=true for bounce (300ms)
+          setIsDoubleMatch(dm);
           setTimeout(() => {
             setRolling(false);
             resolve(rule);
@@ -108,23 +106,14 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     [tier]
   );
 
-  // Synchronous version for places that need immediate result
   const doRollDiceSync = useCallback(
     (currentRound: number): string[] => {
       const count = getDieCount(tier, currentRound);
       const values = rollRandomAttributes(count);
-      let rule: string[];
-      let double = false;
-      if (values.length === 2 && values[0] === values[1]) {
-        rule = [values[0]];
-        double = true;
-      } else {
-        rule = values;
-        double = false;
-      }
+      const { rule, isDoubleMatch: dm } = computeRule(values);
       setDieValues(values);
       setMatchRule(rule);
-      setIsDouble(double);
+      setIsDoubleMatch(dm);
       return rule;
     },
     [tier]
@@ -139,7 +128,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setMessageType("info");
         return true;
       }
-      // Only game over from no valid pairs when deck is also empty
       if (hasCards && currentDeck.length === 0 && !hasValidPair(currentGrid, rule)) {
         setGameOver(true);
         setMessage("Game over! No valid pairs left.");
@@ -170,25 +158,17 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setMessage("");
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
-    let rule: string[];
-    let double = false;
-    if (values.length === 2 && values[0] === values[1]) {
-      rule = [values[0]];
-      double = true;
-    } else {
-      rule = values;
-      double = false;
-    }
+    const { rule, isDoubleMatch: dm } = computeRule(values);
     setDieValues(values);
     setMatchRule(rule);
-    setIsDouble(double);
+    setIsDoubleMatch(dm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier, slotCount]);
 
   const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const autoReroll = useCallback(() => {
-    if (autoRerollRef.current) return; // already scheduled
+    if (autoRerollRef.current) return;
     setMessage("No matches available — re-rolling!");
     setMessageType("warning");
     autoRerollRef.current = setTimeout(() => {
@@ -201,9 +181,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       setMatchedCards(new Set());
       setBonusPicking(false);
       setBonusPicks([]);
-      // Only re-roll dice — do NOT touch the grid
       const rule = doRollDiceSync(nextRound);
-      // Only game-over if deck is empty and no pairs
       if (deck.length === 0 && !hasValidPair(grid, rule)) {
         setGameOver(true);
         setMessage("Game over! No valid pairs left.");
@@ -217,7 +195,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setPeekingCard(index);
     peekTimerRef.current = setTimeout(() => {
       setPeekingCard(null);
-      // Check for valid pairs after peek completes
       if (!hasValidPair(grid, matchRule)) {
         autoReroll();
       }
@@ -274,10 +251,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
       setMatchedCards(new Set(selectedCards));
       setScore((s) => s + 2);
-      if (isDouble) {
+      if (isDoubleMatch) {
         setBonusPicking(true);
         setBonusPicks([]);
-        setMessage("DOUBLE JEOPARDY!");
+        setMessage("DOUBLE MATCH!");
         setMessageType("success");
       } else {
         const nextRound = roundNum + 1;
@@ -296,7 +273,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
 
         if (!checkGameOver(newDeck, newGrid, rule)) {
           if (!hasValidPair(newGrid, rule)) {
-            // Only re-roll dice, don't touch the grid again
             setTimeout(() => {
               setMessage("No matches available — re-rolling!");
               setMessageType("warning");
@@ -304,7 +280,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
                 const nr = nextRound + 1;
                 setRoundNum(nr);
                 const r2 = doRollDiceSync(nr);
-                // Only game-over if deck empty and still no pairs
                 if (newDeck.length === 0 && !hasValidPair(newGrid, r2)) {
                   setGameOver(true);
                   setMessage("Game over! No valid pairs left.");
@@ -321,9 +296,8 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       setMessage("No match! Try again.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
+  }, [selectedCards, grid, matchRule, isDoubleMatch, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
 
-  // Remove matched cards from grid (for animated shrink step)
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
       const next = [...prev];
@@ -342,16 +316,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       const next = [...bonusPicks, index];
       setBonusPicks(next);
 
-      // Check how many non-matched, non-null cards remain
-      const available = grid
-        .map((c, i) => (c && !matchedCards.has(i) && !next.includes(i)) ? i : -1)
-        .filter((i) => i !== -1);
-
       const maxPicks = Math.min(2, grid.filter((c, i) => c !== null && !matchedCards.has(i)).length);
 
       if (next.length >= maxPicks) {
-        // Finish bonus
-        setScore((s) => s + 2); // +2 bonus on top of 2 already added
+        setScore((s) => s + 2);
         const nextRound = roundNum + 1;
         setRoundNum(nextRound);
 
@@ -380,7 +348,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     grid,
     matchRule,
     dieValues,
-    isDouble,
+    isDoubleMatch,
     score,
     roundNum,
     peekingCard,
