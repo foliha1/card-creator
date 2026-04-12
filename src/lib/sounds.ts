@@ -51,7 +51,7 @@ export function playWrong() {
   playTone(200, 150, "sawtooth", 0.1);
 }
 
-export function playDoubleJeopardy() {
+export function playDoubleMatch() {
   if (muted) return;
   const freqs = [440, 554, 659];
   freqs.forEach((f, i) => {

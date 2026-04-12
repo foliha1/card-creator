@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleJeopardy, playDiceRoll } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
@@ -46,7 +46,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
   const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
   const [scoreBounce, setScoreBounce] = useState(false);
 
-  // Double Jeopardy UI state
+  // Double Match UI state
   const [showDoubleTitle, setShowDoubleTitle] = useState(false);
   const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "bonusShrink">("idle");
   const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
@@ -119,11 +119,11 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
     }
   }, [g.wrongCards]);
 
-  // Double Jeopardy flow: triggered when bonusPicking becomes true
+  // Double Match flow: triggered when bonusPicking becomes true
   const prevBonusRef = useRef(g.bonusPicking);
   useEffect(() => {
     if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
-      playDoubleJeopardy();
+      playDoubleMatch();
       // Step 1: Show title
       setDoublePhase("title");
       setShowDoubleTitle(true);
@@ -185,7 +185,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
     (index: number) => {
       if (g.gameOver || g.rolling) return;
 
-      // During double jeopardy pick phase
+      // During double match pick phase
       if (doublePhase === "pick" && g.bonusPicking) {
         g.pickBonus(index);
         return;
@@ -284,7 +284,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ color: "#f8f2e9", fontSize: "clamp(10px, 2.5vw, 13px)", opacity: 0.6, fontStyle: "italic" }}>
-              {g.isDouble && g.matchRule.length === 2 ? "Double match the" : "Match the"}
+              {g.isDoubleMatch ? "Double match the" : "Match the"}
             </div>
             <div style={{ color: "#f8f2e9", fontSize: "clamp(16px, 4vw, 24px)", fontWeight: 700, fontStyle: "italic" }}>
               {g.matchRule.join(" + ")}
@@ -360,7 +360,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
           {" · Round: "}{g.roundNum}
         </div>
 
-        {/* Double Jeopardy title */}
+        {/* Double Match title */}
         {showDoubleTitle && (
           <div
             style={{
@@ -372,7 +372,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
             }}
           >
             <span style={{ color: "#e79024", fontSize: 30, fontWeight: 700, fontStyle: "italic" }}>
-              DOUBLE JEOPARDY!
+              DOUBLE MATCH!
             </span>
           </div>
         )}
