@@ -19,6 +19,12 @@ const MSG_COLORS: Record<string, string> = {
   warning: "#e79024",
 };
 
+const TIER_COLORS: Record<string, string> = {
+  easy: "#0072b2",
+  standard: "#e79024",
+  cutthroat: "#d72229",
+};
+
 const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier, gridSize);
 
