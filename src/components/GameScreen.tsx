@@ -8,7 +8,7 @@ interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
   gridSize?: "3x2" | "3x3";
   onChangeTier?: (tier: string) => void;
-  onChangeGridSize?: (size: string) => void;
+  onNewGame?: () => void;
   onGameOver?: (score: number) => void;
 }
 
@@ -25,7 +25,7 @@ const TIER_COLORS: Record<string, string> = {
   cutthroat: "#d72229",
 };
 
-const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, onGameOver }: GameScreenProps) => {
+const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier, gridSize);
 
   const [visibleMsg, setVisibleMsg] = useState("");
@@ -72,9 +72,11 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
+      // New cards entering after refill
       const filledSlots = g.grid.map((c, i) => (c ? i : -1)).filter((i) => i !== -1);
       setEnteringCards(new Set(filledSlots));
       setTimeout(() => setEnteringCards(new Set()), 800);
+      // Reset double state
       setShowDoubleTitle(false);
       setDoublePhase("idle");
       setOrangePulseCards(new Set());
@@ -117,21 +119,27 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
     }
   }, [g.wrongCards]);
 
-  // Double Jeopardy flow
+  // Double Jeopardy flow: triggered when bonusPicking becomes true
   const prevBonusRef = useRef(g.bonusPicking);
   useEffect(() => {
     if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
       playDoubleJeopardy();
+      // Step 1: Show title
       setDoublePhase("title");
       setShowDoubleTitle(true);
+
+      // Step 2: After 800ms, shrink matched cards
       setTimeout(() => {
         setDoublePhase("shrink");
         setShrinkingCards(new Set(g.matchedCards));
       }, 800);
+
+      // Step 3: After shrink completes (900ms total from title), remove from grid and enter pick phase
       setTimeout(() => {
         setShrinkingCards(new Set());
         g.removeMatchedFromGrid();
         setDoublePhase("pick");
+        // Calculate which cards are available for bonus picking
         const available = new Set<number>();
         g.grid.forEach((c, i) => {
           if (c && !g.matchedCards.has(i)) available.add(i);
@@ -142,14 +150,14 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
     prevBonusRef.current = g.bonusPicking;
   }, [g.bonusPicking, g.matchedCards, g.grid, g.removeMatchedFromGrid]);
 
-  // Track bonus picks
+  // Track bonus picks for highlight
   useEffect(() => {
     if (g.bonusPicks.length > 0) {
       setBonusHighlighted(new Set(g.bonusPicks));
     }
   }, [g.bonusPicks]);
 
-  // Auto-resolve match
+  // Auto-resolve match after 1000ms reveal window
   useEffect(() => {
     if (g.selectedCards.length === 2 && g.claimMode) {
       const timer = setTimeout(() => g.resolveMatch(), 1000);
@@ -157,7 +165,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
-  // Animated dice roll
+  // Trigger animated dice roll on round change
   const [diceLanded, setDiceLanded] = useState(false);
   const prevRoundForDice = useRef(g.roundNum);
   useEffect(() => {
@@ -165,6 +173,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
       prevRoundForDice.current = g.roundNum;
       playDiceRoll();
       setDiceLanded(false);
+      // doRollDice is async — it sets rolling=true, cycles values, then resolves
       g.doRollDice(g.roundNum).then(() => {
         setDiceLanded(true);
         setTimeout(() => setDiceLanded(false), 400);
@@ -175,21 +184,29 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
   const handleCardClick = useCallback(
     (index: number) => {
       if (g.gameOver || g.rolling) return;
+
+      // During double jeopardy pick phase
       if (doublePhase === "pick" && g.bonusPicking) {
         g.pickBonus(index);
         return;
       }
-      if (g.bonusPicking) return;
+
+      if (g.bonusPicking) return; // block during other double phases
+
       if (g.claimMode) {
         g.selectCard(index);
         return;
       }
+
+      // Peek mode
       if (peekLocked) return;
       if (g.grid[index] === null) return;
+
       setPeekLocked(true);
       setPeekedCount((c) => c + 1);
       playFlip();
       g.peekCard(index);
+
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 1100);
     },
@@ -250,26 +267,26 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
         }
       `}</style>
 
-      <div style={{ width: "100%", maxWidth: 560, padding: "0 16px", boxSizing: "border-box" }}>
+      <div style={{ width: "100%", maxWidth: 560, padding: "0 16px" }}>
         {/* Dice bar */}
         <div
           style={{
             background: "#231f20",
             borderRadius: 14,
-            padding: "clamp(10px, 2.5vw, 14px) clamp(16px, 4vw, 24px)",
+            padding: "14px 24px",
             display: "flex",
             alignItems: "center",
-            gap: "clamp(8px, 2vw, 12px)",
+            gap: 12,
           }}
         >
           {g.dieValues.map((v, i) => (
             <DieDisplay key={i} value={v} rolling={g.rolling} landed={diceLanded} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ color: "#f8f2e9", fontSize: "clamp(11px, 2.8vw, 14px)", opacity: 0.5, fontStyle: "italic" }}>
+            <div style={{ color: "#f8f2e9", fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
               {g.isDouble ? "Double Match" : "Match"}
             </div>
-            <div style={{ color: "#f8f2e9", fontSize: "clamp(14px, 3.5vw, 22px)", fontWeight: 700, fontStyle: "italic" }}>
+            <div style={{ color: "#f8f2e9", fontSize: 22, fontWeight: 700, fontStyle: "italic" }}>
               {g.matchRule.join(" + ")}
             </div>
           </div>
@@ -277,28 +294,14 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
 
         {/* Settings bar */}
         <div
-          className="game-settings-bar"
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             gap: 16,
             margin: "10px 0 4px",
-            flexWrap: "wrap",
           }}
         >
-          <style>{`
-            @media (max-width: 480px) {
-              .game-settings-bar {
-                flex-direction: column !important;
-                gap: 6px !important;
-              }
-              .settings-pill {
-                min-height: 44px !important;
-                padding: 10px 14px !important;
-              }
-            }
-          `}</style>
           {/* Difficulty toggle */}
           <div style={{ display: "flex", gap: 0 }}>
             {(["easy", "standard", "cutthroat"] as const).map((t) => {
@@ -306,7 +309,6 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
               return (
                 <button
                   key={t}
-                  className="settings-pill"
                   onClick={() => onChangeTier?.(t)}
                   style={{
                     background: active ? TIER_COLORS[t] : "transparent",
@@ -327,37 +329,26 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
             })}
           </div>
 
-          {/* Grid size toggle */}
-          <div style={{ display: "flex", gap: 0 }}>
-            {(["3x2", "3x3"] as const).map((s) => {
-              const active = s === gridSize;
-              return (
-                <button
-                  key={s}
-                  className="settings-pill"
-                  onClick={() => onChangeGridSize?.(s)}
-                  style={{
-                    background: active ? "#231f20" : "transparent",
-                    color: active ? "#f8f2e9" : "rgba(35,31,32,0.4)",
-                    border: "none",
-                    borderRadius: 999,
-                    padding: "4px 10px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontStyle: "italic",
-                    cursor: "pointer",
-                    transition: "background 0.2s, color 0.2s",
-                  }}
-                >
-                  {s === "3x2" ? "3×2" : "⚡ 3×3"}
-                </button>
-              );
-            })}
-          </div>
+          {/* New Game button */}
+          <button
+            onClick={() => onNewGame?.()}
+            style={{
+              background: "transparent",
+              color: "#231f20",
+              border: "none",
+              fontSize: 13,
+              fontWeight: 700,
+              fontStyle: "italic",
+              cursor: "pointer",
+              padding: "4px 10px",
+            }}
+          >
+            New Game ↺
+          </button>
         </div>
 
         {/* Score row */}
-        <div style={{ textAlign: "center", fontSize: "clamp(14px, 3.5vw, 18px)", color: "#231f20", opacity: 0.5, margin: "4px 0 12px" }}>
+        <div style={{ textAlign: "center", fontSize: 18, color: "#231f20", opacity: 0.5, margin: "4px 0 12px" }}>
           <span
             style={{
               display: "inline-block",
@@ -380,7 +371,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
                 : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
             }}
           >
-            <span style={{ color: "#e79024", fontSize: "clamp(22px, 6vw, 30px)", fontWeight: 700, fontStyle: "italic" }}>
+            <span style={{ color: "#e79024", fontSize: 30, fontWeight: 700, fontStyle: "italic" }}>
               DOUBLE JEOPARDY!
             </span>
           </div>
@@ -393,15 +384,14 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
               style={{
                 background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
                 color: "#f8f2e9",
-                fontSize: "clamp(13px, 3.5vw, 18px)",
+                fontSize: 18,
                 fontWeight: 700,
                 fontStyle: "italic",
                 borderRadius: 8,
-                padding: "clamp(6px, 1.5vw, 8px) clamp(14px, 4vw, 22px)",
+                padding: "8px 22px",
                 transition: "opacity 0.3s, transform 0.3s",
                 opacity: msgVisible ? 1 : 0,
                 transform: msgVisible ? "translateY(0)" : "translateY(-8px)",
-                whiteSpace: "nowrap",
               }}
             >
               {visibleMsg}
@@ -413,8 +403,8 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, clamp(90px, 28vw, 160px))",
-            gap: "clamp(6px, 1.5vw, 16px)",
+            gridTemplateColumns: "repeat(3, 160px)",
+            gap: "clamp(8px, 2vw, 16px)",
             justifyContent: "center",
           }}
         >
@@ -461,8 +451,8 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
               <div
                 key={`empty-${i}`}
                 style={{
-                  width: "clamp(90px, 28vw, 160px)",
-                  aspectRatio: "5 / 7",
+                  width: 160,
+                  height: 224,
                   borderRadius: 8,
                   border: "2px dashed #231f2022",
                   animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
@@ -480,7 +470,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
                 display: "inline-block",
                 background: "#e79024",
                 color: "#f8f2e9",
-                fontSize: "clamp(12px, 3vw, 14px)",
+                fontSize: 14,
                 fontWeight: 700,
                 fontStyle: "italic",
                 borderRadius: 999,
@@ -491,7 +481,7 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
               Choose 2 bonus cards from the grid!
             </span>
           ) : (
-            <span style={{ fontSize: "clamp(13px, 3.5vw, 16px)", color: "#231f20", opacity: 0.5 }}>
+            <span style={{ fontSize: 16, color: "#231f20", opacity: 0.5 }}>
               {g.bonusPicking
                 ? "Pick 2 bonus cards!"
                 : g.claimMode
@@ -519,8 +509,8 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
                 color: "#f8f2e9",
                 border: "none",
                 borderRadius: 999,
-                padding: "clamp(14px, 3vw, 20px)",
-                fontSize: "clamp(20px, 5vw, 28px)",
+                padding: 20,
+                fontSize: 28,
                 fontWeight: 700,
                 fontStyle: "italic",
                 width: "100%",

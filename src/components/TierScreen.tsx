@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 interface TierScreenProps {
-  onSelect: (tierId: string) => void;
+  onSelect: (tierId: string, gridSize: string) => void;
 }
 
 const tiers = [
@@ -81,6 +81,12 @@ const TierButton = ({
 };
 
 const TierScreen = ({ onSelect }: TierScreenProps) => {
+  const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
+
+  const handleTierSelect = (tierId: string) => {
+    onSelect(tierId, gridSize);
+  };
+
   return (
     <div
       style={{
@@ -132,8 +138,38 @@ const TierScreen = ({ onSelect }: TierScreenProps) => {
           }}
         >
           {tiers.map((tier, i) => (
-            <TierButton key={tier.id} tier={tier} index={i} onSelect={onSelect} />
+            <TierButton key={tier.id} tier={tier} index={i} onSelect={handleTierSelect} />
           ))}
+        </div>
+
+        {/* Grid size toggle */}
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 14, color: "#231f20", opacity: 0.5 }}>Grid Size</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            {(["3x2", "3x3"] as const).map((s) => {
+              const active = s === gridSize;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setGridSize(s)}
+                  style={{
+                    background: active ? "#231f20" : "transparent",
+                    color: active ? "#f8f2e9" : "rgba(35,31,32,0.4)",
+                    border: "none",
+                    borderRadius: 999,
+                    padding: "8px 16px",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    fontStyle: "italic",
+                    cursor: "pointer",
+                    transition: "background 0.2s, color 0.2s",
+                  }}
+                >
+                  {s === "3x2" ? "3×2" : "⚡ 3×3 Challenge"}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

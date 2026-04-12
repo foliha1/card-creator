@@ -24,9 +24,8 @@ const Index = () => {
     setGameKey((k) => k + 1);
   }, []);
 
-  const handleChangeGridSize = useCallback((newSize: string) => {
-    setGridSize(newSize as "3x2" | "3x3");
-    setGameKey((k) => k + 1);
+  const handleNewGame = useCallback(() => {
+    setPhase("tier");
   }, []);
 
   return (
@@ -38,8 +37,9 @@ const Index = () => {
       )}
       {phase === "tier" && (
         <TierScreen
-            onSelect={(id) => {
+            onSelect={(id, size) => {
               setTier(id as "easy" | "standard" | "cutthroat");
+              setGridSize(size as "3x2" | "3x3");
               setPhase("playing");
             }}
           />
@@ -50,7 +50,7 @@ const Index = () => {
           tier={tier}
           gridSize={gridSize}
           onChangeTier={handleChangeTier}
-          onChangeGridSize={handleChangeGridSize}
+          onNewGame={handleNewGame}
           onGameOver={handleGameOver}
         />
       )}
