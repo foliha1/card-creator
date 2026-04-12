@@ -192,14 +192,14 @@ export function useGameState(tier: Tier = "standard") {
         if (a && b && cardsMatchRule(a, b, matchRule)) {
           // Correct match
           setMatchedCards(new Set(next));
+          setScore((s) => s + 2);
           if (isDouble) {
-            setScore((s) => s + 2);
+            // Don't refill yet — UI will drive the bonus flow
             setBonusPicking(true);
             setBonusPicks([]);
-            setMessage("Double! Pick 2 bonus cards.");
+            setMessage("DOUBLE JEOPARDY!");
             setMessageType("success");
           } else {
-            setScore((s) => s + 2);
             const nextRound = roundNum + 1;
             setRoundNum(nextRound);
 
