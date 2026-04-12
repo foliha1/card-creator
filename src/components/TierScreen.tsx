@@ -129,12 +129,13 @@ const TierScreen = ({ onSelect }: TierScreenProps) => {
           Same game, same rules. Just more dice.
         </p>
 
+        <div style={{ fontSize: 14, color: "#231f20", opacity: 0.5, marginTop: 36 }}>Difficulty</div>
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             gap: 16,
-            marginTop: 36,
+            marginTop: 8,
           }}
         >
           {tiers.map((tier, i) => (
