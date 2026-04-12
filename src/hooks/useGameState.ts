@@ -323,7 +323,3 @@ export function useGameState(tier: Tier = "standard") {
     removeMatchedFromGrid,
   };
 }
-    pickBonus,
-    skipRound,
-  };
-}
