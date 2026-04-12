@@ -1,43 +1,53 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import IntroScreen from "@/components/IntroScreen";
 import TierScreen from "@/components/TierScreen";
 import GameScreen from "@/components/GameScreen";
 import GameOverScreen from "@/components/GameOverScreen";
+import NavBar from "@/components/NavBar";
 
-type Screen = "intro" | "tier" | "game" | "gameover";
+type Phase = "intro" | "tier" | "playing" | "gameover";
 
 const Index = () => {
-  const [screen, setScreen] = useState<Screen>("intro");
+  const [phase, setPhase] = useState<Phase>("intro");
   const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
   const [finalScore, setFinalScore] = useState(0);
+  const [gameKey, setGameKey] = useState(0);
+
+  const handleGameOver = useCallback((score: number) => {
+    setFinalScore(score);
+    setPhase("gameover");
+  }, []);
 
   return (
-    <>
-      {screen === "intro" && <IntroScreen onComplete={() => setScreen("tier")} />}
-      {screen === "tier" && (
-        <TierScreen
-          onSelect={(id) => {
-            setTier(id as "easy" | "standard" | "cutthroat");
-            setScreen("game");
-          }}
-        />
+    <div style={{ minHeight: "100vh", background: "#f8f2e9" }}>
+      <NavBar visible={phase !== "intro"} />
+
+      {phase === "intro" && (
+        <IntroScreen onComplete={() => setPhase("tier")} />
       )}
-      {screen === "game" && (
-        <GameScreen
-          tier={tier}
-          onGameOver={(score: number) => {
-            setFinalScore(score);
-            setScreen("gameover");
-          }}
-        />
+      {phase === "tier" && (
+        <div style={{ paddingTop: 64 }}>
+          <TierScreen
+            onSelect={(id) => {
+              setTier(id as "easy" | "standard" | "cutthroat");
+              setPhase("playing");
+            }}
+          />
+        </div>
       )}
-      {screen === "gameover" && (
+      {phase === "playing" && (
+        <GameScreen key={gameKey} tier={tier} onGameOver={handleGameOver} />
+      )}
+      {phase === "gameover" && (
         <GameOverScreen
           score={finalScore}
-          onRestart={() => setScreen("tier")}
+          onRestart={() => {
+            setGameKey((k) => k + 1);
+            setPhase("tier");
+          }}
         />
       )}
-    </>
+    </div>
   );
 };
 
