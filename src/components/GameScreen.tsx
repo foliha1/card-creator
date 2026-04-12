@@ -6,6 +6,9 @@ import { playFlip, playCorrect, playWrong, playDoubleJeopardy, playDiceRoll } fr
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
+  gridSize?: "3x2" | "3x3";
+  onChangeTier?: (tier: string) => void;
+  onChangeGridSize?: (size: string) => void;
   onGameOver?: (score: number) => void;
 }
 
@@ -16,7 +19,13 @@ const MSG_COLORS: Record<string, string> = {
   warning: "#e79024",
 };
 
-const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
+const TIER_COLORS: Record<string, string> = {
+  easy: "#0072b2",
+  standard: "#e79024",
+  cutthroat: "#d72229",
+};
+
+const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier);
 
   // Message banner
@@ -284,8 +293,75 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
           </div>
         </div>
 
+        {/* Settings bar */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 16,
+            margin: "10px 0 4px",
+          }}
+        >
+          {/* Difficulty toggle */}
+          <div style={{ display: "flex", gap: 0 }}>
+            {(["easy", "standard", "cutthroat"] as const).map((t) => {
+              const active = t === tier;
+              return (
+                <button
+                  key={t}
+                  onClick={() => onChangeTier?.(t)}
+                  style={{
+                    background: active ? TIER_COLORS[t] : "transparent",
+                    color: active ? "#f8f2e9" : "rgba(35,31,32,0.4)",
+                    border: "none",
+                    borderRadius: 999,
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontStyle: "italic",
+                    fontFamily: "'Friend', sans-serif",
+                    cursor: "pointer",
+                    transition: "background 0.2s, color 0.2s",
+                  }}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Grid size toggle */}
+          <div style={{ display: "flex", gap: 0 }}>
+            {(["3x2", "3x3"] as const).map((s) => {
+              const active = s === gridSize;
+              return (
+                <button
+                  key={s}
+                  onClick={() => onChangeGridSize?.(s)}
+                  style={{
+                    background: active ? "#231f20" : "transparent",
+                    color: active ? "#f8f2e9" : "rgba(35,31,32,0.4)",
+                    border: "none",
+                    borderRadius: 999,
+                    padding: "4px 10px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontStyle: "italic",
+                    fontFamily: "'Friend', sans-serif",
+                    cursor: "pointer",
+                    transition: "background 0.2s, color 0.2s",
+                  }}
+                >
+                  {s === "3x2" ? "3×2" : "3×3"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Score row */}
-        <div style={{ textAlign: "center", fontSize: 18, color: "#231f20", opacity: 0.5, margin: "12px 0" }}>
+        <div style={{ textAlign: "center", fontSize: 18, color: "#231f20", opacity: 0.5, margin: "4px 0 12px" }}>
           <span
             style={{
               display: "inline-block",
@@ -294,7 +370,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
           >
             Score: {g.score}
           </span>
-          {" · Deck: "}{g.deck.length}{" · Round: "}{g.roundNum}
+          {" · Round: "}{g.roundNum}
         </div>
 
         {/* Double Jeopardy title */}

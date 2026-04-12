@@ -10,12 +10,23 @@ type Phase = "intro" | "tier" | "playing" | "gameover";
 const Index = () => {
   const [phase, setPhase] = useState<Phase>("intro");
   const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
+  const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
   const [finalScore, setFinalScore] = useState(0);
   const [gameKey, setGameKey] = useState(0);
 
   const handleGameOver = useCallback((score: number) => {
     setFinalScore(score);
     setPhase("gameover");
+  }, []);
+
+  const handleChangeTier = useCallback((newTier: string) => {
+    setTier(newTier as "easy" | "standard" | "cutthroat");
+    setGameKey((k) => k + 1);
+  }, []);
+
+  const handleChangeGridSize = useCallback((newSize: string) => {
+    setGridSize(newSize as "3x2" | "3x3");
+    setGameKey((k) => k + 1);
   }, []);
 
   return (
@@ -34,7 +45,14 @@ const Index = () => {
           />
       )}
       {phase === "playing" && (
-        <GameScreen key={gameKey} tier={tier} onGameOver={handleGameOver} />
+        <GameScreen
+          key={gameKey}
+          tier={tier}
+          gridSize={gridSize}
+          onChangeTier={handleChangeTier}
+          onChangeGridSize={handleChangeGridSize}
+          onGameOver={handleGameOver}
+        />
       )}
       {phase === "gameover" && (
         <GameOverScreen
