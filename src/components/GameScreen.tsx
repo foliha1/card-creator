@@ -24,19 +24,40 @@ const GameScreen = ({ tier }: GameScreenProps) => {
   const [peekedCount, setPeekedCount] = useState(0);
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [matchCheckPending, setMatchCheckPending] = useState(false);
 
-  // Track roundNum to reset peekedCount
+  // Animation states
+  const [shrinkingCards, setShrinkingCards] = useState<Set<number>>(new Set());
+  const [enteringCards, setEnteringCards] = useState<Set<number>>(new Set());
+  const [shakingCards, setShakingCards] = useState<Set<number>>(new Set());
+  const [wrongFlashCards, setWrongFlashCards] = useState<Set<number>>(new Set());
+  const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
+  const [scoreBounce, setScoreBounce] = useState(false);
+  const [diceHidden, setDiceHidden] = useState(false);
+  const [processingMatch, setProcessingMatch] = useState(false);
+
+  // Score bounce
+  const prevScoreRef = useRef(g.score);
+  useEffect(() => {
+    if (g.score !== prevScoreRef.current) {
+      prevScoreRef.current = g.score;
+      setScoreBounce(true);
+      setTimeout(() => setScoreBounce(false), 300);
+    }
+  }, [g.score]);
+
+  // Reset peekedCount on round change
   const prevRoundRef = useRef(g.roundNum);
   useEffect(() => {
     if (g.roundNum !== prevRoundRef.current) {
       prevRoundRef.current = g.roundNum;
       setPeekedCount(0);
       setPeekLocked(false);
+      setWrongWashCards(new Set());
+      setWrongFlashCards(new Set());
     }
   }, [g.roundNum]);
 
-  // Also reset peekedCount when claimMode exits after match resolution
+  // Reset peekedCount when claimMode exits
   const prevClaimRef = useRef(g.claimMode);
   useEffect(() => {
     if (prevClaimRef.current && !g.claimMode) {
@@ -56,16 +77,25 @@ const GameScreen = ({ tier }: GameScreenProps) => {
     }
   }, [g.message, g.messageType, g.roundNum, g.score]);
 
-  // Auto checkMatch after 600ms when 2 cards selected
+  // Intercept wrong guess from hook
   useEffect(() => {
-    if (g.selectedCards.length === 2 && !matchCheckPending) {
-      setMatchCheckPending(true);
+    if (g.wrongCards.size === 2 && !processingMatch) {
+      const indices = Array.from(g.wrongCards);
+      // Flash + shake
+      setWrongFlashCards(new Set(indices));
+      setShakingCards(new Set(indices));
+      setTimeout(() => {
+        setShakingCards(new Set());
+        setWrongFlashCards(new Set());
+        // Leave wash
+        setWrongWashCards((prev) => new Set([...prev, ...indices]));
+      }, 300);
     }
-  }, [g.selectedCards.length, matchCheckPending]);
+  }, [g.wrongCards, processingMatch]);
 
   const handleCardClick = useCallback(
     (index: number) => {
-      if (g.gameOver) return;
+      if (g.gameOver || processingMatch) return;
 
       if (g.bonusPicking) {
         g.pickBonus(index);
@@ -88,8 +118,19 @@ const GameScreen = ({ tier }: GameScreenProps) => {
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 2100);
     },
-    [g, peekLocked]
+    [g, peekLocked, processingMatch]
   );
+
+  // Watch for correct match (matchedCards populated) to run animation sequence
+  useEffect(() => {
+    if (g.matchedCards.size === 2 && !g.bonusPicking) {
+      // This means a correct single match just resolved in the hook
+      // The hook already updated grid/deck/round, so we animate the entering cards
+      const indices = Array.from(g.matchedCards);
+      setEnteringCards(new Set(indices));
+      setTimeout(() => setEnteringCards(new Set()), 600);
+    }
+  }, [g.matchedCards, g.bonusPicking, g.roundNum]);
 
   const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver;
 
@@ -109,9 +150,19 @@ const GameScreen = ({ tier }: GameScreenProps) => {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.03); }
         }
-        @keyframes whoop-glow {
-          0%, 100% { box-shadow: 0 0 12px rgba(215,34,41,0.4); }
-          50% { box-shadow: 0 0 24px rgba(215,34,41,0.7); }
+        @keyframes card-shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        @keyframes card-enter {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes score-bounce {
+          0% { transform: scale(1); }
+          40% { transform: scale(1.2); }
+          100% { transform: scale(1); }
         }
       `}</style>
 
@@ -128,7 +179,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
           }}
         >
           {g.dieValues.map((v, i) => (
-            <DieDisplay key={i} value={v} rolling={false} />
+            <DieDisplay key={i} value={v} rolling={diceHidden} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ color: "#f8f2e9", fontSize: 11, opacity: 0.5 }}>
@@ -157,7 +208,15 @@ const GameScreen = ({ tier }: GameScreenProps) => {
             margin: "12px 0",
           }}
         >
-          Score: {g.score} · Deck: {g.deck.length} · Round: {g.roundNum}
+          <span
+            style={{
+              display: "inline-block",
+              animation: scoreBounce ? "score-bounce 0.3s ease" : "none",
+            }}
+          >
+            Score: {g.score}
+          </span>
+          {" · Deck: "}{g.deck.length}{" · Round: "}{g.roundNum}
         </div>
 
         {/* Message banner */}
@@ -192,18 +251,29 @@ const GameScreen = ({ tier }: GameScreenProps) => {
         >
           {g.grid.map((card, i) =>
             card ? (
-              <GameCard
+              <div
                 key={card.id}
-                card={card}
-                faceUp={
-                  g.peekingCard === i ||
-                  (g.claimMode && g.selectedCards.includes(i)) ||
-                  g.bonusPicking
-                }
-                onClick={() => handleCardClick(i)}
-                highlighted={g.selectedCards.includes(i) || g.bonusPicks.includes(i)}
-                matched={g.matchedCards.has(i)}
-              />
+                style={{
+                  animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
+                }}
+              >
+                <GameCard
+                  card={card}
+                  faceUp={
+                    g.peekingCard === i ||
+                    (g.claimMode && g.selectedCards.includes(i)) ||
+                    g.bonusPicking ||
+                    wrongWashCards.has(i) ||
+                    wrongFlashCards.has(i)
+                  }
+                  onClick={() => handleCardClick(i)}
+                  highlighted={g.selectedCards.includes(i) || g.bonusPicks.includes(i)}
+                  matched={g.matchedCards.has(i)}
+                  wrong={wrongFlashCards.has(i)}
+                  wrongWash={wrongWashCards.has(i)}
+                  shaking={shakingCards.has(i)}
+                />
+              </div>
             ) : (
               <div
                 key={`empty-${i}`}
@@ -264,9 +334,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
                   opacity: g.claimMode ? 1 : whoopReady ? 1 : 0.4,
                   pointerEvents: g.claimMode ? "none" : whoopReady ? "auto" : "none",
                   animation: whoopReady && !g.claimMode ? "whoop-pulse 2s infinite" : "none",
-                  boxShadow: g.claimMode
-                    ? "0 0 24px rgba(215,34,41,0.7)"
-                    : "none",
+                  boxShadow: g.claimMode ? "0 0 24px rgba(215,34,41,0.7)" : "none",
                 }}
               >
                 WHOOP! WHOOP!
