@@ -182,51 +182,51 @@ export function useGameState(tier: Tier = "standard") {
       if (!claimMode || bonusPicking) return;
       if (selectedCards.includes(index)) return;
       if (grid[index] === null) return;
+      if (selectedCards.length >= 2) return;
 
-      const next = [...selectedCards, index];
-      setSelectedCards(next);
-
-      if (next.length === 2) {
-        const a = grid[next[0]];
-        const b = grid[next[1]];
-        if (a && b && cardsMatchRule(a, b, matchRule)) {
-          // Correct match
-          setMatchedCards(new Set(next));
-          setScore((s) => s + 2);
-          if (isDouble) {
-            // Don't refill yet — UI will drive the bonus flow
-            setBonusPicking(true);
-            setBonusPicks([]);
-            setMessage("DOUBLE JEOPARDY!");
-            setMessageType("success");
-          } else {
-            const nextRound = roundNum + 1;
-            setRoundNum(nextRound);
-
-            const { newGrid, newDeck } = refillGrid(grid, deck, next);
-            setGrid(newGrid);
-            setDeck(newDeck);
-
-            const rule = doRollDice(nextRound);
-            setClaimMode(false);
-            setSelectedCards([]);
-            setMatchedCards(new Set());
-            setMessage("Correct! +2 points.");
-            setMessageType("success");
-
-            checkGameOver(newDeck, newGrid, rule);
-          }
-        } else {
-          // Wrong
-          setWrongCards(new Set(next));
-          setSelectedCards([]);
-          setMessage("No match! Try again or skip.");
-          setMessageType("error");
-        }
-      }
+      setSelectedCards([...selectedCards, index]);
     },
-    [claimMode, bonusPicking, selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDice, checkGameOver]
+    [claimMode, bonusPicking, selectedCards, grid]
   );
+
+  const resolveMatch = useCallback(() => {
+    if (selectedCards.length !== 2) return;
+
+    const a = grid[selectedCards[0]];
+    const b = grid[selectedCards[1]];
+
+    if (a && b && cardsMatchRule(a, b, matchRule)) {
+      setMatchedCards(new Set(selectedCards));
+      setScore((s) => s + 2);
+      if (isDouble) {
+        setBonusPicking(true);
+        setBonusPicks([]);
+        setMessage("DOUBLE JEOPARDY!");
+        setMessageType("success");
+      } else {
+        const nextRound = roundNum + 1;
+        setRoundNum(nextRound);
+
+        const { newGrid, newDeck } = refillGrid(grid, deck, selectedCards);
+        setGrid(newGrid);
+        setDeck(newDeck);
+
+        const rule = doRollDice(nextRound);
+        setClaimMode(false);
+        setSelectedCards([]);
+        setMatchedCards(new Set());
+        setMessage("Correct! +2 points.");
+        setMessageType("success");
+
+        checkGameOver(newDeck, newGrid, rule);
+      }
+    } else {
+      setWrongCards(new Set(selectedCards));
+      setSelectedCards([]);
+      setMessage("No match! Try again or skip.");
+      setMessageType("error");
+    }
+  }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDice, checkGameOver]);
 
   // Remove matched cards from grid (for animated shrink step)
   const removeMatchedFromGrid = useCallback(() => {
