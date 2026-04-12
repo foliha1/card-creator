@@ -255,7 +255,7 @@ export function useGameState(tier: Tier = "standard") {
         setGrid(newGrid);
         setDeck(newDeck);
 
-        const rule = doRollDice(nextRound);
+        const rule = doRollDiceSync(nextRound);
         setClaimMode(false);
         setSelectedCards([]);
         setMatchedCards(new Set());
@@ -309,7 +309,7 @@ export function useGameState(tier: Tier = "standard") {
         setGrid(newGrid);
         setDeck(newDeck);
 
-        const rule = doRollDice(nextRound);
+        const rule = doRollDiceSync(nextRound);
         setBonusPicking(false);
         setBonusPicks([]);
         setClaimMode(false);
@@ -334,7 +334,7 @@ export function useGameState(tier: Tier = "standard") {
     setBonusPicking(false);
     setBonusPicks([]);
 
-    const rule = doRollDice(nextRound);
+    const rule = doRollDiceSync(nextRound);
     setMessage("Round skipped.");
     setMessageType("warning");
 
