@@ -260,7 +260,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
         }
       `}</style>
 
-      <div style={{ width: "100%", maxWidth: 560, padding: "0 16px" }}>
+      <div style={{ width: "100%", maxWidth: 680, padding: "0 16px" }}>
         {/* Dice bar */}
         <div
           style={{
