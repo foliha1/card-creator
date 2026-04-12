@@ -205,7 +205,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
     [g, peekLocked, doublePhase]
   );
 
-  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver;
+  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
   return (
     <div
