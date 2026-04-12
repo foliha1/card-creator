@@ -9,13 +9,13 @@ const DieDisplay = ({ value, rolling }: DieDisplayProps) => {
   return (
     <div
       style={{
-        width: 64,
-        height: 64,
+        width: 72,
+        height: 72,
         borderRadius: 10,
         border: "3px solid #231f20",
         backgroundColor: rolling ? "#231f20" : "#f8f2e9",
         color: rolling ? "#f8f2e9" : "#231f20",
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 900,
         fontStyle: "italic",
         display: "flex",
