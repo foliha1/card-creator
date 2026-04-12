@@ -157,9 +157,25 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
+  // Trigger animated dice roll on round change
+  const [diceLanded, setDiceLanded] = useState(false);
+  const prevRoundForDice = useRef(g.roundNum);
+  useEffect(() => {
+    if (g.roundNum !== prevRoundForDice.current) {
+      prevRoundForDice.current = g.roundNum;
+      playDiceRoll();
+      setDiceLanded(false);
+      // doRollDice is async — it sets rolling=true, cycles values, then resolves
+      g.doRollDice(g.roundNum).then(() => {
+        setDiceLanded(true);
+        setTimeout(() => setDiceLanded(false), 400);
+      });
+    }
+  }, [g.roundNum]);
+
   const handleCardClick = useCallback(
     (index: number) => {
-      if (g.gameOver) return;
+      if (g.gameOver || g.rolling) return;
 
       // During double jeopardy pick phase
       if (doublePhase === "pick" && g.bonusPicking) {
