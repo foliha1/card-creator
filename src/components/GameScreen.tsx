@@ -48,6 +48,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
   const prevScoreRef = useRef(g.score);
   useEffect(() => {
     if (g.score !== prevScoreRef.current) {
+      if (g.score > prevScoreRef.current) playCorrect();
       prevScoreRef.current = g.score;
       setScoreBounce(true);
       setTimeout(() => setScoreBounce(false), 300);
