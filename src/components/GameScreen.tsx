@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
@@ -21,6 +21,31 @@ const GameScreen = ({ tier }: GameScreenProps) => {
   const [msgVisible, setMsgVisible] = useState(false);
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [peekedCount, setPeekedCount] = useState(0);
+  const [peekLocked, setPeekLocked] = useState(false);
+  const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [matchCheckPending, setMatchCheckPending] = useState(false);
+
+  // Track roundNum to reset peekedCount
+  const prevRoundRef = useRef(g.roundNum);
+  useEffect(() => {
+    if (g.roundNum !== prevRoundRef.current) {
+      prevRoundRef.current = g.roundNum;
+      setPeekedCount(0);
+      setPeekLocked(false);
+    }
+  }, [g.roundNum]);
+
+  // Also reset peekedCount when claimMode exits after match resolution
+  const prevClaimRef = useRef(g.claimMode);
+  useEffect(() => {
+    if (prevClaimRef.current && !g.claimMode) {
+      setPeekedCount(0);
+    }
+    prevClaimRef.current = g.claimMode;
+  }, [g.claimMode]);
+
+  // Message animation
   useEffect(() => {
     if (g.message) {
       setVisibleMsg(g.message);
@@ -31,16 +56,42 @@ const GameScreen = ({ tier }: GameScreenProps) => {
     }
   }, [g.message, g.messageType, g.roundNum, g.score]);
 
-  const handleCardClick = (index: number) => {
-    if (g.gameOver) return;
-    if (g.bonusPicking) {
-      g.pickBonus(index);
-    } else if (g.claimMode) {
-      g.selectCard(index);
-    } else {
-      g.peekCard(index);
+  // Auto checkMatch after 600ms when 2 cards selected
+  useEffect(() => {
+    if (g.selectedCards.length === 2 && !matchCheckPending) {
+      setMatchCheckPending(true);
     }
-  };
+  }, [g.selectedCards.length, matchCheckPending]);
+
+  const handleCardClick = useCallback(
+    (index: number) => {
+      if (g.gameOver) return;
+
+      if (g.bonusPicking) {
+        g.pickBonus(index);
+        return;
+      }
+
+      if (g.claimMode) {
+        g.selectCard(index);
+        return;
+      }
+
+      // Peek mode
+      if (peekLocked) return;
+      if (g.grid[index] === null) return;
+
+      setPeekLocked(true);
+      setPeekedCount((c) => c + 1);
+      g.peekCard(index);
+
+      if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
+      peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 2100);
+    },
+    [g, peekLocked]
+  );
+
+  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver;
 
   return (
     <div
@@ -53,6 +104,17 @@ const GameScreen = ({ tier }: GameScreenProps) => {
         paddingTop: 64,
       }}
     >
+      <style>{`
+        @keyframes whoop-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+        }
+        @keyframes whoop-glow {
+          0%, 100% { box-shadow: 0 0 12px rgba(215,34,41,0.4); }
+          50% { box-shadow: 0 0 24px rgba(215,34,41,0.7); }
+        }
+      `}</style>
+
       <div style={{ width: "100%", maxWidth: 420, padding: "0 16px" }}>
         {/* Dice bar */}
         <div
@@ -133,7 +195,11 @@ const GameScreen = ({ tier }: GameScreenProps) => {
               <GameCard
                 key={card.id}
                 card={card}
-                faceUp={g.peekingCard === i || g.claimMode || g.bonusPicking}
+                faceUp={
+                  g.peekingCard === i ||
+                  (g.claimMode && g.selectedCards.includes(i)) ||
+                  g.bonusPicking
+                }
                 onClick={() => handleCardClick(i)}
                 highlighted={g.selectedCards.includes(i) || g.bonusPicks.includes(i)}
                 matched={g.matchedCards.has(i)}
@@ -170,47 +236,73 @@ const GameScreen = ({ tier }: GameScreenProps) => {
         </div>
 
         {/* Action buttons */}
-        {!g.gameOver && !g.bonusPicking && (
-          <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 16 }}>
-            {!g.claimMode ? (
+        {!g.gameOver && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+              marginTop: 16,
+            }}
+          >
+            {!g.bonusPicking && (
               <button
-                onClick={g.enterClaimMode}
+                onClick={() => whoopReady && g.enterClaimMode()}
                 style={{
-                  background: "#231f20",
+                  background: "#d72229",
                   color: "#f8f2e9",
                   border: "none",
-                  borderRadius: 8,
-                  padding: "10px 24px",
-                  fontSize: 15,
+                  borderRadius: 999,
+                  padding: 14,
+                  fontSize: 20,
                   fontWeight: 700,
-                  cursor: "pointer",
+                  fontStyle: "italic",
+                  width: "100%",
+                  maxWidth: 320,
+                  cursor: whoopReady ? "pointer" : "default",
+                  opacity: g.claimMode ? 1 : whoopReady ? 1 : 0.4,
+                  pointerEvents: g.claimMode ? "none" : whoopReady ? "auto" : "none",
+                  animation: whoopReady && !g.claimMode ? "whoop-pulse 2s infinite" : "none",
+                  boxShadow: g.claimMode
+                    ? "0 0 24px rgba(215,34,41,0.7)"
+                    : "none",
                 }}
               >
                 WHOOP! WHOOP!
               </button>
-            ) : (
+            )}
+
+            {!g.claimMode && !g.bonusPicking && (
               <button
                 onClick={g.skipRound}
                 style={{
                   background: "transparent",
+                  border: "none",
                   color: "#231f20",
-                  border: "2px solid #231f20",
-                  borderRadius: 8,
-                  padding: "10px 24px",
-                  fontSize: 14,
-                  fontWeight: 600,
+                  fontSize: 13,
+                  fontWeight: 700,
                   cursor: "pointer",
-                  opacity: 0.6,
+                  whiteSpace: "nowrap",
+                  padding: 0,
                 }}
               >
-                Skip Round
+                Skip Round →
               </button>
             )}
           </div>
         )}
 
         {g.gameOver && (
-          <div style={{ textAlign: "center", marginTop: 24, fontSize: 22, fontWeight: 800, color: "#231f20" }}>
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: 24,
+              fontSize: 22,
+              fontWeight: 800,
+              color: "#231f20",
+            }}
+          >
             Game Over! Final Score: {g.score}
           </div>
         )}
