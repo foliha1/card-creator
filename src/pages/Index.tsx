@@ -2,12 +2,14 @@ import { useState } from "react";
 import IntroScreen from "@/components/IntroScreen";
 import TierScreen from "@/components/TierScreen";
 import GameScreen from "@/components/GameScreen";
+import GameOverScreen from "@/components/GameOverScreen";
 
-type Screen = "intro" | "tier" | "game";
+type Screen = "intro" | "tier" | "game" | "gameover";
 
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("intro");
   const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
+  const [finalScore, setFinalScore] = useState(0);
 
   return (
     <>
@@ -20,7 +22,21 @@ const Index = () => {
           }}
         />
       )}
-      {screen === "game" && <GameScreen tier={tier} />}
+      {screen === "game" && (
+        <GameScreen
+          tier={tier}
+          onGameOver={(score: number) => {
+            setFinalScore(score);
+            setScreen("gameover");
+          }}
+        />
+      )}
+      {screen === "gameover" && (
+        <GameOverScreen
+          score={finalScore}
+          onRestart={() => setScreen("tier")}
+        />
+      )}
     </>
   );
 };
