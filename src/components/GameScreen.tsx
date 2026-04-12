@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleJeopardy } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDoubleJeopardy, playDiceRoll } from "@/lib/sounds";
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
