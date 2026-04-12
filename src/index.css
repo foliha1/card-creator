@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Friend";
+  src: url("/fonts/Friend Regular Font.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Friend";
+  src: url("/fonts/Friend Italic Font.woff2") format("woff2");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
