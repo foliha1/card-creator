@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
+import DrawPile from "@/components/DrawPile";
 import { playFlip, playCorrect, playWrong, playDoubleJeopardy, playDiceRoll } from "@/lib/sounds";
 
 interface GameScreenProps {
@@ -259,7 +260,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
         }
       `}</style>
 
-      <div style={{ width: "100%", maxWidth: 560, padding: "0 16px" }}>
+      <div style={{ width: "100%", maxWidth: 680, padding: "0 16px" }}>
         {/* Dice bar */}
         <div
           style={{
@@ -294,7 +295,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
           >
             Score: {g.score}
           </span>
-          {" · Deck: "}{g.deck.length}{" · Round: "}{g.roundNum}
+          {" · Round: "}{g.roundNum}
         </div>
 
         {/* Double Jeopardy title */}
@@ -336,67 +337,81 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
           )}
         </div>
 
-        {/* Card grid */}
+        {/* Grid + Draw Pile */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 160px)",
-            gap: "clamp(8px, 2vw, 16px)",
+            display: "flex",
+            alignItems: "flex-start",
             justifyContent: "center",
+            gap: 20,
+            flexWrap: "wrap",
           }}
         >
-          {g.grid.map((card, i) =>
-            card ? (
-              <div
-                key={card.id}
-                style={{
-                  animation: shrinkingCards.has(i)
-                    ? "card-shrink 0.4s ease forwards"
-                    : enteringCards.has(i)
-                    ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
-                    : shakingCards.has(i)
-                    ? "card-shake 0.2s ease"
-                    : undefined,
-                  borderRadius: 10,
-                  ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
-                    ? { animation: "orange-pulse-border 1.5s infinite" }
-                    : {}),
-                  ...(bonusHighlighted.has(i)
-                    ? { boxShadow: "0 0 0 3px #e79024, 0 0 16px rgba(231,144,36,0.6)" }
-                    : {}),
-                }}
-              >
-                <GameCard
-                  card={card}
-                  faceUp={
-                    g.peekingCard === i ||
-                    (g.claimMode && g.selectedCards.includes(i)) ||
-                    doublePhase === "pick" ||
-                    doublePhase === "shrink" ||
-                    wrongWashCards.has(i) ||
-                    wrongFlashCards.has(i)
-                  }
-                  onClick={() => handleCardClick(i)}
-                  highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
-                  matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
-                  wrong={wrongFlashCards.has(i)}
-                  wrongWash={wrongWashCards.has(i)}
-                  shaking={shakingCards.has(i)}
+          {/* Card grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 160px)",
+              gap: "clamp(8px, 2vw, 16px)",
+              justifyContent: "center",
+            }}
+          >
+            {g.grid.map((card, i) =>
+              card ? (
+                <div
+                  key={card.id}
+                  style={{
+                    animation: shrinkingCards.has(i)
+                      ? "card-shrink 0.4s ease forwards"
+                      : enteringCards.has(i)
+                      ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
+                      : shakingCards.has(i)
+                      ? "card-shake 0.2s ease"
+                      : undefined,
+                    borderRadius: 10,
+                    ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
+                      ? { animation: "orange-pulse-border 1.5s infinite" }
+                      : {}),
+                    ...(bonusHighlighted.has(i)
+                      ? { boxShadow: "0 0 0 3px #e79024, 0 0 16px rgba(231,144,36,0.6)" }
+                      : {}),
+                  }}
+                >
+                  <GameCard
+                    card={card}
+                    faceUp={
+                      g.peekingCard === i ||
+                      (g.claimMode && g.selectedCards.includes(i)) ||
+                      doublePhase === "pick" ||
+                      doublePhase === "shrink" ||
+                      wrongWashCards.has(i) ||
+                      wrongFlashCards.has(i)
+                    }
+                    onClick={() => handleCardClick(i)}
+                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
+                    matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
+                    wrong={wrongFlashCards.has(i)}
+                    wrongWash={wrongWashCards.has(i)}
+                    shaking={shakingCards.has(i)}
+                  />
+                </div>
+              ) : (
+                <div
+                  key={`empty-${i}`}
+                  style={{
+                    width: 160,
+                    height: 224,
+                    borderRadius: 8,
+                    border: "2px dashed #231f2022",
+                    animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
+                  }}
                 />
-              </div>
-            ) : (
-              <div
-                key={`empty-${i}`}
-                style={{
-                  width: 160,
-                  height: 224,
-                  borderRadius: 8,
-                  border: "2px dashed #231f2022",
-                  animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
-                }}
-              />
-            )
-          )}
+              )
+            )}
+          </div>
+
+          {/* Draw pile */}
+          <DrawPile count={g.deck.length} />
         </div>
 
         {/* Instruction text / bonus pill */}
