@@ -6,6 +6,9 @@ import { playFlip, playCorrect, playWrong, playDoubleJeopardy, playDiceRoll } fr
 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
+  gridSize?: "3x2" | "3x3";
+  onChangeTier?: (tier: string) => void;
+  onChangeGridSize?: (size: string) => void;
   onGameOver?: (score: number) => void;
 }
 
