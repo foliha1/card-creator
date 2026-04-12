@@ -215,11 +215,9 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setPeekingCard(index);
     peekTimerRef.current = setTimeout(() => {
       setPeekingCard(null);
-      if (!hasValidPair(grid, matchRule)) {
-        autoReroll();
-      }
+      // Auto-reroll is now handled by the useEffect that watches grid/matchRule
     }, 1000);
-  }, [grid, matchRule, autoReroll]);
+  }, []);
 
   const enterClaimMode = useCallback(() => {
     setClaimMode(true);
