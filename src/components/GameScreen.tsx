@@ -16,10 +16,7 @@ const MSG_COLORS: Record<string, string> = {
   warning: "#e79024",
 };
 
-const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
-  const g = useGameState(tier);
-
-  // Message banner
+const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier, gridSize);
 
   const [visibleMsg, setVisibleMsg] = useState("");
