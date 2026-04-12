@@ -41,6 +41,24 @@ function hasValidPair(grid: (Card | null)[], rule: string[]): boolean {
   return false;
 }
 
+/** Check if ANY possible rule (3 singles + 3 doubles) produces a valid pair */
+function hasAnyValidPair(grid: (Card | null)[]): boolean {
+  const allRules: string[][] = [
+    ["SHAPE"], ["NUMBER"], ["COLOR"],
+    ["SHAPE", "NUMBER"], ["SHAPE", "COLOR"], ["NUMBER", "COLOR"],
+  ];
+  return allRules.some((rule) => hasValidPair(grid, rule));
+}
+
+/** Shuffle array in place */
+function shuffleArray<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 /** isDoubleMatch = true when 2 dice show DIFFERENT attributes (genuine double match) */
 function computeRule(values: string[]): { rule: string[]; isDoubleMatch: boolean } {
   if (values.length === 2 && values[0] !== values[1]) {
@@ -166,13 +184,17 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   }, [tier, slotCount]);
 
   const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rerollAttemptsRef = useRef(0);
   const [needsAutoReroll, setNeedsAutoReroll] = useState(false);
 
   // Effect-based auto-reroll: watches grid/matchRule and triggers when no valid pairs exist
   useEffect(() => {
     if (gameOver || rolling || claimMode || bonusPicking) return;
     if (!grid.some((c) => c !== null)) return;
-    if (hasValidPair(grid, matchRule)) return;
+    if (hasValidPair(grid, matchRule)) {
+      rerollAttemptsRef.current = 0;
+      return;
+    }
     // No valid pairs — flag for auto-reroll
     setNeedsAutoReroll(true);
   }, [grid, matchRule, gameOver, rolling, claimMode, bonusPicking]);
@@ -185,6 +207,43 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     autoRerollRef.current = setTimeout(() => {
       autoRerollRef.current = null;
       setNeedsAutoReroll(false);
+      rerollAttemptsRef.current += 1;
+
+      // Dead grid safety valve: after 10 failed re-rolls, check all possible rules
+      if (rerollAttemptsRef.current >= 10) {
+        // Check if ANY rule works with current grid
+        setGrid((prevGrid) => {
+          if (hasAnyValidPair(prevGrid)) {
+            // Some rule works — just keep re-rolling normally
+            return prevGrid;
+          }
+          // Dead grid — swap 2 random grid cards back into deck and re-deal
+          setDeck((prevDeck) => {
+            const filledIndices = prevGrid
+              .map((c, i) => (c !== null ? i : -1))
+              .filter((i) => i !== -1);
+            if (filledIndices.length < 2 || prevDeck.length < 2) return prevDeck;
+
+            const swapIndices = shuffleArray([...filledIndices]).slice(0, 2);
+            const newDeck = [...prevDeck];
+            const newGrid = [...prevGrid];
+            for (const idx of swapIndices) {
+              if (newGrid[idx]) newDeck.push(newGrid[idx]!);
+            }
+            shuffleArray(newDeck);
+            for (const idx of swapIndices) {
+              newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
+            }
+            setGrid(newGrid);
+            rerollAttemptsRef.current = 0;
+            setMessage("Refreshing grid — no possible matches!");
+            setMessageType("warning");
+            return newDeck;
+          });
+          return prevGrid; // grid is set inside setDeck
+        });
+      }
+
       setRoundNum((prev) => {
         const nextRound = prev + 1;
         const count = getDieCount(tier, nextRound);
@@ -266,6 +325,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const b = grid[selectedCards[1]];
 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
+      rerollAttemptsRef.current = 0;
       setMatchedCards(new Set(selectedCards));
       setScore((s) => s + 2);
       if (isDoubleMatch) {
