@@ -65,12 +65,55 @@ export function useGameState(tier: Tier = "standard") {
   const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const doRollDice = useCallback(
-    (currentRound: number) => {
+    (currentRound: number): Promise<string[]> => {
+      const count = getDieCount(tier, currentRound);
+
+      // Compute final values upfront
+      const finalValues = rollRandomAttributes(count);
+      let rule: string[];
+      let double = false;
+      if (finalValues.length === 2 && finalValues[0] === finalValues[1]) {
+        rule = [finalValues[0]];
+        double = true;
+      } else {
+        rule = finalValues;
+        double = false;
+      }
+
+      // Start rolling animation
+      setRolling(true);
+      // Rapidly cycle random values every 100ms
+      if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+      rollIntervalRef.current = setInterval(() => {
+        setDieValues(rollRandomAttributes(count));
+      }, 100);
+
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // Stop cycling, land on final values
+          if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+          rollIntervalRef.current = null;
+          setDieValues(finalValues);
+          setMatchRule(rule);
+          setIsDouble(double);
+          // Keep rolling=true for bounce (300ms)
+          setTimeout(() => {
+            setRolling(false);
+            resolve(rule);
+          }, 300);
+        }, 800);
+      });
+    },
+    [tier]
+  );
+
+  // Synchronous version for places that need immediate result
+  const doRollDiceSync = useCallback(
+    (currentRound: number): string[] => {
       const count = getDieCount(tier, currentRound);
       const values = rollRandomAttributes(count);
       let rule: string[];
       let double = false;
-
       if (values.length === 2 && values[0] === values[1]) {
         rule = [values[0]];
         double = true;
@@ -78,7 +121,6 @@ export function useGameState(tier: Tier = "standard") {
         rule = values;
         double = false;
       }
-
       setDieValues(values);
       setMatchRule(rule);
       setIsDouble(double);
