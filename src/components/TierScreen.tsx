@@ -16,7 +16,7 @@ const tiers = [
     id: "standard",
     name: "Standard",
     badge: "Alternating 1 ↔ 2",
-    desc: "The core WHOOP! WHOOP! experience. Double Jeopardy enabled.",
+    desc: "The core WHOOP! WHOOP! experience. Double Match enabled.",
     hover: "#e79024",
   },
   {
