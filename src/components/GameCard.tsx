@@ -1,4 +1,4 @@
-import { Card, COLORS } from "@/cardData";
+import { Card, CARD_BACK_PATH } from "@/cardData";
 
 interface GameCardProps {
   card: Card;
@@ -40,9 +40,6 @@ const GameCard = ({
   if (shrinking) {
     outerTransform = "scale(0.5)";
     outerOpacity = 0;
-  } else if (entering) {
-    outerTransform = "scale(1)";
-    outerOpacity = 1;
   }
 
   const animStyle = entering
@@ -82,23 +79,22 @@ const GameCard = ({
             inset: 0,
             backfaceVisibility: "hidden",
             borderRadius: 8,
-            backgroundColor: COLORS[card.color],
-            boxShadow,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
             overflow: "hidden",
+            boxShadow,
           }}
         >
+          <img
+            src={card.svgPath}
+            alt={card.id}
+            style={{ width: "100%", height: "100%", display: "block" }}
+            draggable={false}
+          />
           {/* Red overlay for wrong */}
           {(wrong || wrongWash) && (
             <div
               style={{
                 position: "absolute",
                 inset: 0,
-                borderRadius: 8,
                 backgroundColor: wrong
                   ? "rgba(215,34,41,0.3)"
                   : "rgba(215,34,41,0.1)",
@@ -107,12 +103,6 @@ const GameCard = ({
               }}
             />
           )}
-          <span style={{ color: "#fff", fontSize: 32, fontWeight: 700, lineHeight: 1, position: "relative" }}>
-            {card.number}
-          </span>
-          <span style={{ color: "#fff", fontSize: 14, lineHeight: 1, position: "relative" }}>
-            {card.shape}
-          </span>
         </div>
 
         {/* Back */}
@@ -122,17 +112,17 @@ const GameCard = ({
             inset: 0,
             backfaceVisibility: "hidden",
             borderRadius: 8,
-            backgroundColor: "#231f20",
+            overflow: "hidden",
             boxShadow,
             transform: "rotateY(180deg)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
           }}
         >
-          <span style={{ color: "#f8f2e9", fontSize: 20, fontWeight: 700 }}>
-            W!W!
-          </span>
+          <img
+            src={CARD_BACK_PATH}
+            alt="card back"
+            style={{ width: "100%", height: "100%", display: "block" }}
+            draggable={false}
+          />
         </div>
       </div>
     </div>
