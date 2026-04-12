@@ -26,8 +26,7 @@ const Index = () => {
         <IntroScreen onComplete={() => setPhase("tier")} />
       )}
       {phase === "tier" && (
-        <div style={{ paddingTop: 64 }}>
-          <TierScreen
+        <TierScreen
             onSelect={(id) => {
               setTier(id as "easy" | "standard" | "cutthroat");
               setPhase("playing");
