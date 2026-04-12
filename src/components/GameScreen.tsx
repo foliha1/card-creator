@@ -20,6 +20,8 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier);
 
   // Message banner
+  const g = useGameState(tier, gridSize);
+
   const [visibleMsg, setVisibleMsg] = useState("");
   const [visibleMsgType, setVisibleMsgType] = useState("info");
   const [msgVisible, setMsgVisible] = useState(false);

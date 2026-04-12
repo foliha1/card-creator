@@ -41,9 +41,10 @@ function hasValidPair(grid: (Card | null)[], rule: string[]): boolean {
   return false;
 }
 
-export function useGameState(tier: Tier = "standard") {
+export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = "3x2") {
+  const slotCount = gridSize === "3x3" ? 9 : 6;
   const [deck, setDeck] = useState<Card[]>([]);
-  const [grid, setGrid] = useState<(Card | null)[]>(Array(6).fill(null));
+  const [grid, setGrid] = useState<(Card | null)[]>(Array(slotCount).fill(null));
   const [matchRule, setMatchRule] = useState<string[]>([]);
   const [dieValues, setDieValues] = useState<string[]>([]);
   const [isDouble, setIsDouble] = useState(false);
@@ -153,8 +154,8 @@ export function useGameState(tier: Tier = "standard") {
   // Init
   useEffect(() => {
     const newDeck = createDeck();
-    const dealt = newDeck.splice(0, 6);
-    const newGrid = dealt.concat(Array(6 - dealt.length).fill(null));
+    const dealt = newDeck.splice(0, slotCount);
+    const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
     setDeck(newDeck);
     setGrid(newGrid);
     setScore(0);
@@ -167,7 +168,6 @@ export function useGameState(tier: Tier = "standard") {
     setBonusPicking(false);
     setBonusPicks([]);
     setMessage("");
-    // Roll dice after init - need to do it inline
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
     let rule: string[];
@@ -183,7 +183,7 @@ export function useGameState(tier: Tier = "standard") {
     setMatchRule(rule);
     setIsDouble(double);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tier]);
+  }, [tier, slotCount]);
 
   const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
