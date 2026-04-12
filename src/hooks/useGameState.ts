@@ -41,6 +41,24 @@ function hasValidPair(grid: (Card | null)[], rule: string[]): boolean {
   return false;
 }
 
+/** Check if ANY possible rule (3 singles + 3 doubles) produces a valid pair */
+function hasAnyValidPair(grid: (Card | null)[]): boolean {
+  const allRules: string[][] = [
+    ["SHAPE"], ["NUMBER"], ["COLOR"],
+    ["SHAPE", "NUMBER"], ["SHAPE", "COLOR"], ["NUMBER", "COLOR"],
+  ];
+  return allRules.some((rule) => hasValidPair(grid, rule));
+}
+
+/** Shuffle array in place */
+function shuffleArray<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 /** isDoubleMatch = true when 2 dice show DIFFERENT attributes (genuine double match) */
 function computeRule(values: string[]): { rule: string[]; isDoubleMatch: boolean } {
   if (values.length === 2 && values[0] !== values[1]) {
