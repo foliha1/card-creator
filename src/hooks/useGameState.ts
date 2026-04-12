@@ -321,5 +321,6 @@ export function useGameState(tier: Tier = "standard") {
     pickBonus,
     skipRound,
     removeMatchedFromGrid,
+    resolveMatch,
   };
 }
