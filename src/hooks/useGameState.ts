@@ -166,40 +166,58 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   }, [tier, slotCount]);
 
   const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [needsAutoReroll, setNeedsAutoReroll] = useState(false);
 
-  const autoReroll = useCallback(() => {
+  // Effect-based auto-reroll: watches grid/matchRule and triggers when no valid pairs exist
+  useEffect(() => {
+    if (gameOver || rolling || claimMode || bonusPicking) return;
+    if (!grid.some((c) => c !== null)) return;
+    if (hasValidPair(grid, matchRule)) return;
+    // No valid pairs — flag for auto-reroll
+    setNeedsAutoReroll(true);
+  }, [grid, matchRule, gameOver, rolling, claimMode, bonusPicking]);
+
+  useEffect(() => {
+    if (!needsAutoReroll || gameOver) return;
     if (autoRerollRef.current) return;
     setMessage("No matches available — re-rolling!");
     setMessageType("warning");
     autoRerollRef.current = setTimeout(() => {
       autoRerollRef.current = null;
-      const nextRound = roundNum + 1;
-      setRoundNum(nextRound);
-      setClaimMode(false);
-      setSelectedCards([]);
-      setWrongCards(new Set());
-      setMatchedCards(new Set());
-      setBonusPicking(false);
-      setBonusPicks([]);
-      const rule = doRollDiceSync(nextRound);
-      if (deck.length === 0 && !hasValidPair(grid, rule)) {
-        setGameOver(true);
-        setMessage("Game over! No valid pairs left.");
-        setMessageType("info");
-      }
+      setNeedsAutoReroll(false);
+      setRoundNum((prev) => {
+        const nextRound = prev + 1;
+        const count = getDieCount(tier, nextRound);
+        const values = rollRandomAttributes(count);
+        const { rule, isDoubleMatch: dm } = computeRule(values);
+        setDieValues(values);
+        setMatchRule(rule);
+        setIsDoubleMatch(dm);
+        setClaimMode(false);
+        setSelectedCards([]);
+        setWrongCards(new Set());
+        setMatchedCards(new Set());
+        setBonusPicking(false);
+        setBonusPicks([]);
+        return nextRound;
+      });
     }, 1500);
-  }, [roundNum, doRollDiceSync, deck, grid]);
+    return () => {
+      if (autoRerollRef.current) {
+        clearTimeout(autoRerollRef.current);
+        autoRerollRef.current = null;
+      }
+    };
+  }, [needsAutoReroll, gameOver, tier]);
 
   const peekCard = useCallback((index: number) => {
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     setPeekingCard(index);
     peekTimerRef.current = setTimeout(() => {
       setPeekingCard(null);
-      if (!hasValidPair(grid, matchRule)) {
-        autoReroll();
-      }
+      // Auto-reroll is now handled by the useEffect that watches grid/matchRule
     }, 1000);
-  }, [grid, matchRule, autoReroll]);
+  }, []);
 
   const enterClaimMode = useCallback(() => {
     setClaimMode(true);
@@ -270,24 +288,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setMessage("Correct! +2 points.");
         setMessageType("success");
 
-        if (!checkGameOver(newDeck, newGrid, rule)) {
-          if (!hasValidPair(newGrid, rule)) {
-            setTimeout(() => {
-              setMessage("No matches available — re-rolling!");
-              setMessageType("warning");
-              setTimeout(() => {
-                const nr = nextRound + 1;
-                setRoundNum(nr);
-                const r2 = doRollDiceSync(nr);
-                if (newDeck.length === 0 && !hasValidPair(newGrid, r2)) {
-                  setGameOver(true);
-                  setMessage("Game over! No valid pairs left.");
-                  setMessageType("info");
-                }
-              }, 1500);
-            }, 500);
-          }
-        }
+        checkGameOver(newDeck, newGrid, rule);
       }
     } else {
       setWrongCards(new Set(selectedCards));
