@@ -204,7 +204,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const enterClaimMode = useCallback(() => {
     setClaimMode(true);
     setSelectedCards([]);
-    setWrongCards(new Set());
     setMatchedCards(new Set());
     setMessage("Select 2 cards that match the rule.");
     setMessageType("info");
