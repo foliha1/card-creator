@@ -477,23 +477,6 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
               WHOOP! WHOOP!
             </button>
 
-            {!g.claimMode && (
-              <button
-                onClick={g.skipRound}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#231f20",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  padding: 0,
-                }}
-              >
-                Skip Round →
-              </button>
-            )}
           </div>
         )}
 

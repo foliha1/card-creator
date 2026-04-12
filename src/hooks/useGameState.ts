@@ -186,11 +186,39 @@ export function useGameState(tier: Tier = "standard") {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier]);
 
+  const [noMatchesDetected, setNoMatchesDetected] = useState(false);
+
+  const autoReroll = useCallback(() => {
+    setNoMatchesDetected(true);
+    setMessage("No matches available — re-rolling!");
+    setMessageType("warning");
+    setTimeout(() => {
+      setNoMatchesDetected(false);
+      const nextRound = roundNum + 1;
+      setRoundNum(nextRound);
+      setClaimMode(false);
+      setSelectedCards([]);
+      setWrongCards(new Set());
+      setMatchedCards(new Set());
+      setBonusPicking(false);
+      setBonusPicks([]);
+
+      const rule = doRollDiceSync(nextRound);
+      checkGameOver(deck, grid, rule);
+    }, 1500);
+  }, [roundNum, doRollDiceSync, deck, grid, checkGameOver]);
+
   const peekCard = useCallback((index: number) => {
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     setPeekingCard(index);
-    peekTimerRef.current = setTimeout(() => setPeekingCard(null), 1000);
-  }, []);
+    peekTimerRef.current = setTimeout(() => {
+      setPeekingCard(null);
+      // Check for valid pairs after peek completes
+      if (!hasValidPair(grid, matchRule)) {
+        autoReroll();
+      }
+    }, 1000);
+  }, [grid, matchRule, autoReroll]);
 
   const enterClaimMode = useCallback(() => {
     setClaimMode(true);
@@ -262,12 +290,26 @@ export function useGameState(tier: Tier = "standard") {
         setMessage("Correct! +2 points.");
         setMessageType("success");
 
-        checkGameOver(newDeck, newGrid, rule);
+        if (!checkGameOver(newDeck, newGrid, rule)) {
+          // Check if new grid has valid pairs
+          if (!hasValidPair(newGrid, rule)) {
+            setTimeout(() => {
+              setMessage("No matches available — re-rolling!");
+              setMessageType("warning");
+              setTimeout(() => {
+                const nr = nextRound + 1;
+                setRoundNum(nr);
+                const r2 = doRollDiceSync(nr);
+                checkGameOver(newDeck, newGrid, r2);
+              }, 1500);
+            }, 500);
+          }
+        }
       }
     } else {
       setWrongCards(new Set(selectedCards));
       setSelectedCards([]);
-      setMessage("No match! Try again or skip.");
+      setMessage("No match! Try again.");
       setMessageType("error");
     }
   }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
@@ -324,22 +366,7 @@ export function useGameState(tier: Tier = "standard") {
     [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]
   );
 
-  const skipRound = useCallback(() => {
-    const nextRound = roundNum + 1;
-    setRoundNum(nextRound);
-    setClaimMode(false);
-    setSelectedCards([]);
-    setWrongCards(new Set());
-    setMatchedCards(new Set());
-    setBonusPicking(false);
-    setBonusPicks([]);
-
-    const rule = doRollDiceSync(nextRound);
-    setMessage("Round skipped.");
-    setMessageType("warning");
-
-    checkGameOver(deck, grid, rule);
-  }, [roundNum, doRollDiceSync, deck, grid, checkGameOver]);
+  // skipRound removed — replaced by automatic stale-round detection
 
   return {
     deck,
@@ -360,11 +387,11 @@ export function useGameState(tier: Tier = "standard") {
     message,
     messageType,
     rolling,
+    noMatchesDetected,
     peekCard,
     enterClaimMode,
     selectCard,
     pickBonus,
-    skipRound,
     removeMatchedFromGrid,
     resolveMatch,
     doRollDice,
