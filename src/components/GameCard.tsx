@@ -6,18 +6,63 @@ interface GameCardProps {
   onClick?: () => void;
   highlighted?: boolean;
   matched?: boolean;
+  wrong?: boolean;
+  wrongWash?: boolean;
+  shrinking?: boolean;
+  entering?: boolean;
+  enterDelay?: number;
+  shaking?: boolean;
 }
 
-const GameCard = ({ card, faceUp, onClick, highlighted, matched }: GameCardProps) => {
+const GameCard = ({
+  card,
+  faceUp,
+  onClick,
+  highlighted,
+  matched,
+  wrong,
+  wrongWash,
+  shrinking,
+  entering,
+  enterDelay = 0,
+  shaking,
+}: GameCardProps) => {
   const boxShadow = matched
     ? "0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5)"
     : highlighted
     ? "0 0 0 3px #f8f2e9, 0 0 20px rgba(255,255,255,0.5)"
     : "0 2px 8px rgba(0,0,0,0.25)";
 
+  let outerTransform = "";
+  let outerTransition = "transform 0.4s ease, opacity 0.4s ease";
+  let outerOpacity = 1;
+
+  if (shrinking) {
+    outerTransform = "scale(0.5)";
+    outerOpacity = 0;
+  } else if (entering) {
+    outerTransform = "scale(1)";
+    outerOpacity = 1;
+  }
+
+  const animStyle = entering
+    ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
+    : shaking
+    ? "card-shake 0.2s ease"
+    : "none";
+
   return (
     <div
-      style={{ perspective: 600, width: 110, height: 154, cursor: "pointer" }}
+      style={{
+        perspective: 600,
+        width: 110,
+        height: 154,
+        cursor: "pointer",
+        transform: shrinking ? outerTransform : undefined,
+        opacity: shrinking ? outerOpacity : undefined,
+        transition: shrinking ? outerTransition : undefined,
+        animation: animStyle,
+      }}
       onClick={onClick}
     >
       <div
@@ -44,12 +89,28 @@ const GameCard = ({ card, faceUp, onClick, highlighted, matched }: GameCardProps
             alignItems: "center",
             justifyContent: "center",
             gap: 4,
+            overflow: "hidden",
           }}
         >
-          <span style={{ color: "#fff", fontSize: 32, fontWeight: 700, lineHeight: 1 }}>
+          {/* Red overlay for wrong */}
+          {(wrong || wrongWash) && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: 8,
+                backgroundColor: wrong
+                  ? "rgba(215,34,41,0.3)"
+                  : "rgba(215,34,41,0.1)",
+                transition: "background-color 0.3s",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+          <span style={{ color: "#fff", fontSize: 32, fontWeight: 700, lineHeight: 1, position: "relative" }}>
             {card.number}
           </span>
-          <span style={{ color: "#fff", fontSize: 14, lineHeight: 1 }}>
+          <span style={{ color: "#fff", fontSize: 14, lineHeight: 1, position: "relative" }}>
             {card.shape}
           </span>
         </div>
