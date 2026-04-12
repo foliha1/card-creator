@@ -9,14 +9,15 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
 
   return (
     <div
+      className="die-display"
       style={{
-        width: 80,
-        height: 80,
+        width: "clamp(56px, 14vw, 80px)",
+        height: "clamp(56px, 14vw, 80px)",
         borderRadius: 10,
         border: "4px solid #231f20",
         backgroundColor: isAnimating ? "#f8f2e9" : "#f8f2e9",
         color: "#231f20",
-        fontSize: 14,
+        fontSize: "clamp(11px, 2.8vw, 14px)",
         fontWeight: 900,
         fontStyle: "italic",
         display: "flex",
@@ -32,6 +33,7 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
           : "none",
         userSelect: "none",
         transition: isAnimating ? "none" : "background-color 0.2s, color 0.15s, box-shadow 0.3s",
+        flexShrink: 0,
       }}
     >
       {isAnimating ? "?" : value}
