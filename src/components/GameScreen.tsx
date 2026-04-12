@@ -399,67 +399,115 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
           )}
         </div>
 
-        {/* Card grid */}
+        {/* Grid + Draw pile row */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 160px)",
-            gap: "clamp(8px, 2vw, 16px)",
+            display: "flex",
             justifyContent: "center",
+            alignItems: "flex-start",
+            gap: 24,
+            flexWrap: "wrap",
           }}
         >
-          {g.grid.map((card, i) =>
-            card ? (
-              <div
-                key={card.id}
-                style={{
-                  animation: shrinkingCards.has(i)
-                    ? "card-shrink 0.4s ease forwards"
-                    : enteringCards.has(i)
-                    ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
-                    : shakingCards.has(i)
-                    ? "card-shake 0.2s ease"
-                    : undefined,
-                  borderRadius: 10,
-                  ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
-                    ? { animation: "orange-pulse-border 1.5s infinite" }
-                    : {}),
-                  ...(bonusHighlighted.has(i)
-                    ? { boxShadow: "0 0 0 3px #e79024, 0 0 16px rgba(231,144,36,0.6)" }
-                    : {}),
-                }}
-              >
-                <GameCard
-                  card={card}
-                  faceUp={
-                    g.peekingCard === i ||
-                    (g.claimMode && g.selectedCards.includes(i)) ||
-                    doublePhase === "pick" ||
-                    doublePhase === "shrink" ||
-                    wrongWashCards.has(i) ||
-                    wrongFlashCards.has(i)
-                  }
-                  onClick={() => handleCardClick(i)}
-                  highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
-                  matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
-                  wrong={wrongFlashCards.has(i)}
-                  wrongWash={wrongWashCards.has(i)}
-                  shaking={shakingCards.has(i)}
+          {/* Card grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 160px)",
+              gap: "clamp(8px, 2vw, 16px)",
+              justifyContent: "center",
+            }}
+          >
+            {g.grid.map((card, i) =>
+              card ? (
+                <div
+                  key={card.id}
+                  style={{
+                    animation: shrinkingCards.has(i)
+                      ? "card-shrink 0.4s ease forwards"
+                      : enteringCards.has(i)
+                      ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
+                      : shakingCards.has(i)
+                      ? "card-shake 0.2s ease"
+                      : undefined,
+                    borderRadius: 10,
+                    ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
+                      ? { animation: "orange-pulse-border 1.5s infinite" }
+                      : {}),
+                    ...(bonusHighlighted.has(i)
+                      ? { boxShadow: "0 0 0 3px #e79024, 0 0 16px rgba(231,144,36,0.6)" }
+                      : {}),
+                  }}
+                >
+                  <GameCard
+                    card={card}
+                    faceUp={
+                      g.peekingCard === i ||
+                      (g.claimMode && g.selectedCards.includes(i)) ||
+                      doublePhase === "pick" ||
+                      doublePhase === "shrink" ||
+                      wrongWashCards.has(i) ||
+                      wrongFlashCards.has(i)
+                    }
+                    onClick={() => handleCardClick(i)}
+                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
+                    matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
+                    wrong={wrongFlashCards.has(i)}
+                    wrongWash={wrongWashCards.has(i)}
+                    shaking={shakingCards.has(i)}
+                  />
+                </div>
+              ) : (
+                <div
+                  key={`empty-${i}`}
+                  style={{
+                    width: 160,
+                    height: 224,
+                    borderRadius: 8,
+                    border: "2px dashed #231f2022",
+                    animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
+                  }}
                 />
-              </div>
-            ) : (
-              <div
-                key={`empty-${i}`}
-                style={{
-                  width: 160,
-                  height: 224,
-                  borderRadius: 8,
-                  border: "2px dashed #231f2022",
-                  animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
-                }}
-              />
-            )
-          )}
+              )
+            )}
+          </div>
+
+          {/* Draw pile */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <div style={{ position: "relative", width: 80 + 6, height: 112 + 6 }}>
+              {g.deck.length === 0 ? (
+                <div
+                  style={{
+                    width: 80,
+                    height: 112,
+                    borderRadius: 6,
+                    border: "2px dashed #231f2022",
+                  }}
+                />
+              ) : (
+                Array.from({ length: g.deck.length > 20 ? 4 : g.deck.length > 10 ? 3 : g.deck.length > 5 ? 2 : 1 }).map((_, i) => (
+                  <img
+                    key={i}
+                    src="/cards/Card Back.svg"
+                    alt="Draw pile"
+                    style={{
+                      position: "absolute",
+                      top: i * 2,
+                      left: i * 2,
+                      width: 80,
+                      height: 112,
+                      borderRadius: 6,
+                      overflow: "hidden",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                    }}
+                  />
+                ))
+              )}
+            </div>
+            <span style={{ fontSize: 14, color: "#231f20", opacity: 0.5 }}>
+              {g.deck.length} cards left
+            </span>
+          </div>
         </div>
 
         {/* Instruction text / bonus pill */}
