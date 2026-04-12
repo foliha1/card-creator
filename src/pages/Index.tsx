@@ -19,11 +19,6 @@ const Index = () => {
     setPhase("gameover");
   }, []);
 
-  const handleChangeTier = useCallback((newTier: string) => {
-    setTier(newTier as "easy" | "standard" | "cutthroat");
-    setGameKey((k) => k + 1);
-  }, []);
-
   const handleNewGame = useCallback(() => {
     setPhase("tier");
   }, []);
@@ -49,7 +44,6 @@ const Index = () => {
           key={gameKey}
           tier={tier}
           gridSize={gridSize}
-          onChangeTier={handleChangeTier}
           onNewGame={handleNewGame}
           onGameOver={handleGameOver}
         />
