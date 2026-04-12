@@ -7,6 +7,7 @@ export interface Card {
   shape: Shape;
   number: Number;
   color: ColorName;
+  svgPath: string;
 }
 
 export const SHAPES: Shape[] = ["circle", "square", "tri", "star"];
@@ -20,13 +21,16 @@ export const COLORS: Record<ColorName, string> = {
   yellow: "#e79024",
 };
 
+export const CARD_BACK_PATH = "/cards/Card Back.svg";
+
 function generateAllCards(): Card[] {
   const cards: Card[] = [];
   for (const shape of SHAPES) {
     for (const number of NUMBERS) {
       for (const color of COLOR_NAMES) {
         const id = `${shape}-${number}-${color}`;
-        cards.push({ id, shape, number, color });
+        const svgPath = `/cards/${number} ${shape} ${color}.svg`;
+        cards.push({ id, shape, number, color, svgPath });
       }
     }
   }
