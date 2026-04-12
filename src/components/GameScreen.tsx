@@ -7,7 +7,6 @@ import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from 
 interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
   gridSize?: "3x2" | "3x3";
-  onChangeTier?: (tier: string) => void;
   onNewGame?: () => void;
   onGameOver?: (score: number) => void;
 }
@@ -25,7 +24,7 @@ const TIER_COLORS: Record<string, string> = {
   cutthroat: "#d72229",
 };
 
-const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOver }: GameScreenProps) => {
+const GameScreen = ({ tier, gridSize = "3x2", onNewGame, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier, gridSize);
 
   const [visibleMsg, setVisibleMsg] = useState("");
@@ -292,56 +291,24 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOve
           </div>
         </div>
 
-        {/* Settings bar */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 16,
-            margin: "10px 0 4px",
-          }}
-        >
-          {/* Difficulty toggle */}
-          <div style={{ display: "flex", gap: 0 }}>
-            {(["easy", "standard", "cutthroat"] as const).map((t) => {
-              const active = t === tier;
-              return (
-                <button
-                  key={t}
-                  onClick={() => onChangeTier?.(t)}
-                  style={{
-                    background: active ? TIER_COLORS[t] : "transparent",
-                    color: active ? "#f8f2e9" : "rgba(35,31,32,0.4)",
-                    border: "none",
-                    borderRadius: 999,
-                    padding: "4px 10px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontStyle: "italic",
-                    cursor: "pointer",
-                    transition: "background 0.2s, color 0.2s",
-                  }}
-                >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* New Game button */}
+        {/* New Game button */}
+        <div style={{ textAlign: "center", margin: "10px 0 4px" }}>
           <button
             onClick={() => onNewGame?.()}
             style={{
               background: "transparent",
               color: "#231f20",
               border: "none",
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               fontStyle: "italic",
               cursor: "pointer",
               padding: "4px 10px",
+              opacity: 0.7,
+              transition: "opacity 0.2s",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
           >
             New Game ↺
           </button>
