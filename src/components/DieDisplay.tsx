@@ -17,6 +17,7 @@ const DieDisplay = ({ value, rolling }: DieDisplayProps) => {
         color: rolling ? "#f8f2e9" : "#231f20",
         fontSize: 11,
         fontWeight: 900,
+        fontStyle: "italic",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
