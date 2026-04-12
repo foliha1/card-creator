@@ -199,7 +199,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        paddingTop: 64,
+        paddingTop: 72,
       }}
     >
       <style>{`
@@ -243,13 +243,13 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
         }
       `}</style>
 
-      <div style={{ width: "100%", maxWidth: 480, padding: "0 16px" }}>
+      <div style={{ width: "100%", maxWidth: 560, padding: "0 16px" }}>
         {/* Dice bar */}
         <div
           style={{
             background: "#231f20",
-            borderRadius: 12,
-            padding: "10px 20px",
+            borderRadius: 14,
+            padding: "14px 24px",
             display: "flex",
             alignItems: "center",
             gap: 12,
@@ -259,17 +259,17 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
             <DieDisplay key={i} value={v} rolling={false} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
-            <div style={{ color: "#f8f2e9", fontSize: 11, opacity: 0.5, fontStyle: "italic" }}>
+            <div style={{ color: "#f8f2e9", fontSize: 14, opacity: 0.5, fontStyle: "italic" }}>
               {g.isDouble ? "Double Match" : "Match"}
             </div>
-            <div style={{ color: "#f8f2e9", fontSize: 18, fontWeight: 700, fontStyle: "italic" }}>
+            <div style={{ color: "#f8f2e9", fontSize: 22, fontWeight: 700, fontStyle: "italic" }}>
               {g.matchRule.join(" + ")}
             </div>
           </div>
         </div>
 
         {/* Score row */}
-        <div style={{ textAlign: "center", fontSize: 16, color: "#231f20", opacity: 0.5, margin: "12px 0" }}>
+        <div style={{ textAlign: "center", fontSize: 18, color: "#231f20", opacity: 0.5, margin: "12px 0" }}>
           <span
             style={{
               display: "inline-block",
@@ -292,7 +292,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
                 : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
             }}
           >
-            <span style={{ color: "#e79024", fontSize: 24, fontWeight: 700, fontStyle: "italic" }}>
+            <span style={{ color: "#e79024", fontSize: 30, fontWeight: 700, fontStyle: "italic" }}>
               DOUBLE JEOPARDY!
             </span>
           </div>
@@ -305,11 +305,11 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
               style={{
                 background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
                 color: "#f8f2e9",
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: 700,
                 fontStyle: "italic",
                 borderRadius: 8,
-                padding: "6px 18px",
+                padding: "8px 22px",
                 transition: "opacity 0.3s, transform 0.3s",
                 opacity: msgVisible ? 1 : 0,
                 transform: msgVisible ? "translateY(0)" : "translateY(-8px)",
@@ -324,7 +324,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 140px)",
+            gridTemplateColumns: "repeat(3, 160px)",
             gap: "clamp(8px, 2vw, 16px)",
             justifyContent: "center",
           }}
@@ -372,8 +372,8 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
               <div
                 key={`empty-${i}`}
                 style={{
-                  width: 140,
-                  height: 196,
+                  width: 160,
+                  height: 224,
                   borderRadius: 8,
                   border: "2px dashed #231f2022",
                   animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
@@ -402,7 +402,7 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
               Choose 2 bonus cards from the grid!
             </span>
           ) : (
-            <span style={{ fontSize: 15, color: "#231f20", opacity: 0.5 }}>
+            <span style={{ fontSize: 16, color: "#231f20", opacity: 0.5 }}>
               {g.bonusPicking
                 ? "Pick 2 bonus cards!"
                 : g.claimMode
@@ -430,12 +430,12 @@ const GameScreen = ({ tier, onGameOver }: GameScreenProps) => {
                 color: "#f8f2e9",
                 border: "none",
                 borderRadius: 999,
-                padding: 18,
-                fontSize: 24,
+                padding: 20,
+                fontSize: 28,
                 fontWeight: 700,
                 fontStyle: "italic",
                 width: "100%",
-                maxWidth: 380,
+                maxWidth: 440,
                 cursor: whoopReady ? "pointer" : "default",
                 opacity: g.claimMode ? 1 : whoopReady ? 1 : 0.4,
                 pointerEvents: g.claimMode ? "none" : whoopReady ? "auto" : "none",

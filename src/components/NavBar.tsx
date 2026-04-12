@@ -25,7 +25,7 @@ const NavBar = ({ visible }: NavBarProps) => {
           top: 0,
           left: 0,
           width: "100%",
-          height: 48,
+          height: 56,
           zIndex: 50,
           background: "#231f20ee",
           backdropFilter: "blur(8px)",
@@ -42,7 +42,7 @@ const NavBar = ({ visible }: NavBarProps) => {
           <img
             src="/WhoopWhoop_Stacked_Logo.svg"
             alt="WHOOP! WHOOP!"
-            style={{ height: 32, width: "auto" }}
+            style={{ height: 40, width: "auto" }}
             draggable={false}
           />
           <button
@@ -51,7 +51,7 @@ const NavBar = ({ visible }: NavBarProps) => {
               background: "none",
               border: "none",
               color: "#f8f2e9",
-              fontSize: 13,
+              fontSize: 15,
               fontStyle: "italic",
               fontWeight: 700,
               cursor: "pointer",
@@ -66,7 +66,7 @@ const NavBar = ({ visible }: NavBarProps) => {
           </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           {[
             { label: "Pre-order", href: "#preorder" },
             { label: "Learn More", href: "#learn" },
@@ -77,7 +77,7 @@ const NavBar = ({ visible }: NavBarProps) => {
               href={link.href}
               style={{
                 color: "#f8f2e9",
-                fontSize: 13,
+                fontSize: 15,
                 textDecoration: "none",
                 opacity: 0.7,
                 transition: "opacity 0.2s",

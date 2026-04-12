@@ -52,8 +52,8 @@ const GameCard = ({
     <div
       style={{
         perspective: 600,
-        width: 140,
-        height: 196,
+        width: 160,
+        height: 224,
         cursor: "pointer",
         transform: shrinking ? outerTransform : undefined,
         opacity: shrinking ? outerOpacity : undefined,
