@@ -89,7 +89,7 @@ const TierScreen = ({ onSelect }: TierScreenProps) => {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        paddingTop: 64,
+        paddingTop: 72,
       }}
     >
       <style>{`
