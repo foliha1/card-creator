@@ -21,7 +21,8 @@ export const COLORS: Record<ColorName, string> = {
   yellow: "#e79024",
 };
 
-export const CARD_BACK_PATH = "/cards/Card Back.svg";
+
+function generateAllCards(): Card[] {
   const cards: Card[] = [];
   for (const shape of SHAPES) {
     for (const number of NUMBERS) {
