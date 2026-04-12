@@ -270,7 +270,7 @@ export function useGameState(tier: Tier = "standard") {
       setMessage("No match! Try again or skip.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDice, checkGameOver]);
+  }, [selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
 
   // Remove matched cards from grid (for animated shrink step)
   const removeMatchedFromGrid = useCallback(() => {
@@ -359,6 +359,7 @@ export function useGameState(tier: Tier = "standard") {
     gameOver,
     message,
     messageType,
+    rolling,
     peekCard,
     enterClaimMode,
     selectCard,
@@ -366,5 +367,6 @@ export function useGameState(tier: Tier = "standard") {
     skipRound,
     removeMatchedFromGrid,
     resolveMatch,
+    doRollDice,
   };
 }
