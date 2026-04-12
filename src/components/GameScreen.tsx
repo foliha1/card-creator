@@ -8,7 +8,7 @@ interface GameScreenProps {
   tier: "easy" | "standard" | "cutthroat";
   gridSize?: "3x2" | "3x3";
   onChangeTier?: (tier: string) => void;
-  onChangeGridSize?: (size: string) => void;
+  onNewGame?: () => void;
   onGameOver?: (score: number) => void;
 }
 
@@ -25,7 +25,7 @@ const TIER_COLORS: Record<string, string> = {
   cutthroat: "#d72229",
 };
 
-const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, onGameOver }: GameScreenProps) => {
+const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onNewGame, onGameOver }: GameScreenProps) => {
   const g = useGameState(tier, gridSize);
 
   const [visibleMsg, setVisibleMsg] = useState("");
@@ -329,32 +329,22 @@ const GameScreen = ({ tier, gridSize = "3x2", onChangeTier, onChangeGridSize, on
             })}
           </div>
 
-          {/* Grid size toggle */}
-          <div style={{ display: "flex", gap: 0 }}>
-            {(["3x2", "3x3"] as const).map((s) => {
-              const active = s === gridSize;
-              return (
-                <button
-                  key={s}
-                  onClick={() => onChangeGridSize?.(s)}
-                  style={{
-                    background: active ? "#231f20" : "transparent",
-                    color: active ? "#f8f2e9" : "rgba(35,31,32,0.4)",
-                    border: "none",
-                    borderRadius: 999,
-                    padding: "4px 10px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontStyle: "italic",
-                    cursor: "pointer",
-                    transition: "background 0.2s, color 0.2s",
-                  }}
-                >
-                  {s === "3x2" ? "3×2" : "⚡ 3×3"}
-                </button>
-              );
-            })}
-          </div>
+          {/* New Game button */}
+          <button
+            onClick={() => onNewGame?.()}
+            style={{
+              background: "transparent",
+              color: "#231f20",
+              border: "none",
+              fontSize: 13,
+              fontWeight: 700,
+              fontStyle: "italic",
+              cursor: "pointer",
+              padding: "4px 10px",
+            }}
+          >
+            New Game ↺
+          </button>
         </div>
 
         {/* Score row */}
