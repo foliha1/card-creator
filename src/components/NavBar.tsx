@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import HowToPlayModal from "@/components/HowToPlayModal";
+import { setMuted, isMuted } from "@/lib/sounds";
 
 interface NavBarProps {
   visible: boolean;
@@ -7,6 +9,13 @@ interface NavBarProps {
 
 const NavBar = ({ visible }: NavBarProps) => {
   const [howToOpen, setHowToOpen] = useState(false);
+  const [muted, setMutedState] = useState(isMuted());
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMutedState(next);
+    setMuted(next);
+  };
 
   return (
     <>
@@ -57,7 +66,7 @@ const NavBar = ({ visible }: NavBarProps) => {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           {[
             { label: "Pre-order", href: "#preorder" },
             { label: "Learn More", href: "#learn" },
@@ -79,6 +88,23 @@ const NavBar = ({ visible }: NavBarProps) => {
               {link.label}
             </a>
           ))}
+          <button
+            onClick={toggleMute}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#f8f2e9",
+              opacity: 0.7,
+              transition: "opacity 0.2s",
+              padding: 0,
+              display: "flex",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
+          >
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
         </div>
       </nav>
 
