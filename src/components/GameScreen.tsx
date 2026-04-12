@@ -16,24 +16,31 @@ const MSG_COLORS: Record<string, string> = {
 
 const GameScreen = ({ tier }: GameScreenProps) => {
   const g = useGameState(tier);
+
+  // Message banner
   const [visibleMsg, setVisibleMsg] = useState("");
   const [visibleMsgType, setVisibleMsgType] = useState("info");
   const [msgVisible, setMsgVisible] = useState(false);
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Peek
   const [peekedCount, setPeekedCount] = useState(0);
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Animation states
+  // Card animations
   const [shrinkingCards, setShrinkingCards] = useState<Set<number>>(new Set());
   const [enteringCards, setEnteringCards] = useState<Set<number>>(new Set());
   const [shakingCards, setShakingCards] = useState<Set<number>>(new Set());
   const [wrongFlashCards, setWrongFlashCards] = useState<Set<number>>(new Set());
   const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
   const [scoreBounce, setScoreBounce] = useState(false);
-  const [diceHidden, setDiceHidden] = useState(false);
-  const [processingMatch, setProcessingMatch] = useState(false);
+
+  // Double Jeopardy UI state
+  const [showDoubleTitle, setShowDoubleTitle] = useState(false);
+  const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "bonusShrink">("idle");
+  const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
+  const [bonusHighlighted, setBonusHighlighted] = useState<Set<number>>(new Set());
 
   // Score bounce
   const prevScoreRef = useRef(g.score);
@@ -54,8 +61,17 @@ const GameScreen = ({ tier }: GameScreenProps) => {
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
+      // New cards entering after refill
+      const filledSlots = g.grid.map((c, i) => (c ? i : -1)).filter((i) => i !== -1);
+      setEnteringCards(new Set(filledSlots));
+      setTimeout(() => setEnteringCards(new Set()), 800);
+      // Reset double state
+      setShowDoubleTitle(false);
+      setDoublePhase("idle");
+      setOrangePulseCards(new Set());
+      setBonusHighlighted(new Set());
     }
-  }, [g.roundNum]);
+  }, [g.roundNum, g.grid]);
 
   // Reset peekedCount when claimMode exits
   const prevClaimRef = useRef(g.claimMode);
@@ -77,30 +93,68 @@ const GameScreen = ({ tier }: GameScreenProps) => {
     }
   }, [g.message, g.messageType, g.roundNum, g.score]);
 
-  // Intercept wrong guess from hook
+  // Wrong guess animation
   useEffect(() => {
-    if (g.wrongCards.size === 2 && !processingMatch) {
+    if (g.wrongCards.size === 2) {
       const indices = Array.from(g.wrongCards);
-      // Flash + shake
       setWrongFlashCards(new Set(indices));
       setShakingCards(new Set(indices));
       setTimeout(() => {
         setShakingCards(new Set());
         setWrongFlashCards(new Set());
-        // Leave wash
         setWrongWashCards((prev) => new Set([...prev, ...indices]));
       }, 300);
     }
-  }, [g.wrongCards, processingMatch]);
+  }, [g.wrongCards]);
+
+  // Double Jeopardy flow: triggered when bonusPicking becomes true
+  const prevBonusRef = useRef(g.bonusPicking);
+  useEffect(() => {
+    if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
+      // Step 1: Show title
+      setDoublePhase("title");
+      setShowDoubleTitle(true);
+
+      // Step 2: After 800ms, shrink matched cards
+      setTimeout(() => {
+        setDoublePhase("shrink");
+        setShrinkingCards(new Set(g.matchedCards));
+      }, 800);
+
+      // Step 3: After shrink completes (900ms total from title), remove from grid and enter pick phase
+      setTimeout(() => {
+        setShrinkingCards(new Set());
+        g.removeMatchedFromGrid();
+        setDoublePhase("pick");
+        // Calculate which cards are available for bonus picking
+        const available = new Set<number>();
+        g.grid.forEach((c, i) => {
+          if (c && !g.matchedCards.has(i)) available.add(i);
+        });
+        setOrangePulseCards(available);
+      }, 1400);
+    }
+    prevBonusRef.current = g.bonusPicking;
+  }, [g.bonusPicking, g.matchedCards, g.grid, g.removeMatchedFromGrid]);
+
+  // Track bonus picks for highlight
+  useEffect(() => {
+    if (g.bonusPicks.length > 0) {
+      setBonusHighlighted(new Set(g.bonusPicks));
+    }
+  }, [g.bonusPicks]);
 
   const handleCardClick = useCallback(
     (index: number) => {
-      if (g.gameOver || processingMatch) return;
+      if (g.gameOver) return;
 
-      if (g.bonusPicking) {
+      // During double jeopardy pick phase
+      if (doublePhase === "pick" && g.bonusPicking) {
         g.pickBonus(index);
         return;
       }
+
+      if (g.bonusPicking) return; // block during other double phases
 
       if (g.claimMode) {
         g.selectCard(index);
@@ -118,19 +172,8 @@ const GameScreen = ({ tier }: GameScreenProps) => {
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 2100);
     },
-    [g, peekLocked, processingMatch]
+    [g, peekLocked, doublePhase]
   );
-
-  // Watch for correct match (matchedCards populated) to run animation sequence
-  useEffect(() => {
-    if (g.matchedCards.size === 2 && !g.bonusPicking) {
-      // This means a correct single match just resolved in the hook
-      // The hook already updated grid/deck/round, so we animate the entering cards
-      const indices = Array.from(g.matchedCards);
-      setEnteringCards(new Set(indices));
-      setTimeout(() => setEnteringCards(new Set()), 600);
-    }
-  }, [g.matchedCards, g.bonusPicking, g.roundNum]);
 
   const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver;
 
@@ -164,6 +207,26 @@ const GameScreen = ({ tier }: GameScreenProps) => {
           40% { transform: scale(1.2); }
           100% { transform: scale(1); }
         }
+        @keyframes card-shrink {
+          from { opacity: 1; transform: scale(1); }
+          to { opacity: 0; transform: scale(0.5); }
+        }
+        @keyframes double-title-in {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes double-title-out {
+          from { opacity: 1; transform: scale(1); }
+          to { opacity: 0; transform: scale(0.9); }
+        }
+        @keyframes orange-pulse-border {
+          0%, 100% { box-shadow: 0 0 0 2px #e79024, 0 0 8px rgba(231,144,36,0.3); }
+          50% { box-shadow: 0 0 0 2px #e79024, 0 0 16px rgba(231,144,36,0.6); }
+        }
+        @keyframes pill-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
       `}</style>
 
       <div style={{ width: "100%", maxWidth: 420, padding: "0 16px" }}>
@@ -179,35 +242,20 @@ const GameScreen = ({ tier }: GameScreenProps) => {
           }}
         >
           {g.dieValues.map((v, i) => (
-            <DieDisplay key={i} value={v} rolling={diceHidden} />
+            <DieDisplay key={i} value={v} rolling={false} />
           ))}
           <div style={{ marginLeft: "auto", textAlign: "right" }}>
             <div style={{ color: "#f8f2e9", fontSize: 11, opacity: 0.5 }}>
               {g.isDouble ? "Double Match" : "Match"}
             </div>
-            <div
-              style={{
-                color: "#f8f2e9",
-                fontSize: 16,
-                fontWeight: 700,
-                fontStyle: "italic",
-              }}
-            >
+            <div style={{ color: "#f8f2e9", fontSize: 16, fontWeight: 700, fontStyle: "italic" }}>
               {g.matchRule.join(" + ")}
             </div>
           </div>
         </div>
 
         {/* Score row */}
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: 14,
-            color: "#231f20",
-            opacity: 0.5,
-            margin: "12px 0",
-          }}
-        >
+        <div style={{ textAlign: "center", fontSize: 14, color: "#231f20", opacity: 0.5, margin: "12px 0" }}>
           <span
             style={{
               display: "inline-block",
@@ -219,9 +267,26 @@ const GameScreen = ({ tier }: GameScreenProps) => {
           {" · Deck: "}{g.deck.length}{" · Round: "}{g.roundNum}
         </div>
 
+        {/* Double Jeopardy title */}
+        {showDoubleTitle && (
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: 12,
+              animation: doublePhase === "idle"
+                ? "double-title-out 0.3s ease forwards"
+                : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
+            }}
+          >
+            <span style={{ color: "#e79024", fontSize: 24, fontWeight: 700, fontStyle: "italic" }}>
+              DOUBLE JEOPARDY!
+            </span>
+          </div>
+        )}
+
         {/* Message banner */}
         <div style={{ height: 40, display: "flex", justifyContent: "center", marginBottom: 8 }}>
-          {visibleMsg && (
+          {visibleMsg && !showDoubleTitle && (
             <div
               style={{
                 background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
@@ -254,7 +319,20 @@ const GameScreen = ({ tier }: GameScreenProps) => {
               <div
                 key={card.id}
                 style={{
-                  animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
+                  animation: shrinkingCards.has(i)
+                    ? "card-shrink 0.4s ease forwards"
+                    : enteringCards.has(i)
+                    ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
+                    : shakingCards.has(i)
+                    ? "card-shake 0.2s ease"
+                    : undefined,
+                  borderRadius: 10,
+                  ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
+                    ? { animation: "orange-pulse-border 1.5s infinite" }
+                    : {}),
+                  ...(bonusHighlighted.has(i)
+                    ? { boxShadow: "0 0 0 3px #e79024, 0 0 16px rgba(231,144,36,0.6)" }
+                    : {}),
                 }}
               >
                 <GameCard
@@ -262,13 +340,14 @@ const GameScreen = ({ tier }: GameScreenProps) => {
                   faceUp={
                     g.peekingCard === i ||
                     (g.claimMode && g.selectedCards.includes(i)) ||
-                    g.bonusPicking ||
+                    doublePhase === "pick" ||
+                    doublePhase === "shrink" ||
                     wrongWashCards.has(i) ||
                     wrongFlashCards.has(i)
                   }
                   onClick={() => handleCardClick(i)}
-                  highlighted={g.selectedCards.includes(i) || g.bonusPicks.includes(i)}
-                  matched={g.matchedCards.has(i)}
+                  highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
+                  matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
                   wrong={wrongFlashCards.has(i)}
                   wrongWash={wrongWashCards.has(i)}
                   shaking={shakingCards.has(i)}
@@ -282,31 +361,43 @@ const GameScreen = ({ tier }: GameScreenProps) => {
                   height: 154,
                   borderRadius: 8,
                   border: "2px dashed #231f2022",
+                  animation: enteringCards.has(i) ? `card-enter 0.3s ease ${(i % 3) * 100}ms both` : undefined,
                 }}
               />
             )
           )}
         </div>
 
-        {/* Instruction text */}
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: 13,
-            color: "#231f20",
-            opacity: 0.5,
-            marginTop: 16,
-          }}
-        >
-          {g.bonusPicking
-            ? "Pick 2 bonus cards!"
-            : g.claimMode
-            ? "Tap 2 cards you think match!"
-            : "Tap a card to peek · Then call WHOOP! WHOOP!"}
+        {/* Instruction text / bonus pill */}
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          {doublePhase === "pick" ? (
+            <span
+              style={{
+                display: "inline-block",
+                background: "#e79024",
+                color: "#f8f2e9",
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 999,
+                padding: "6px 18px",
+                animation: "pill-pulse 1.5s infinite",
+              }}
+            >
+              Choose 2 bonus cards from the grid!
+            </span>
+          ) : (
+            <span style={{ fontSize: 13, color: "#231f20", opacity: 0.5 }}>
+              {g.bonusPicking
+                ? "Pick 2 bonus cards!"
+                : g.claimMode
+                ? "Tap 2 cards you think match!"
+                : "Tap a card to peek · Then call WHOOP! WHOOP!"}
+            </span>
+          )}
         </div>
 
         {/* Action buttons */}
-        {!g.gameOver && (
+        {!g.gameOver && !g.bonusPicking && (
           <div
             style={{
               display: "flex",
@@ -316,32 +407,30 @@ const GameScreen = ({ tier }: GameScreenProps) => {
               marginTop: 16,
             }}
           >
-            {!g.bonusPicking && (
-              <button
-                onClick={() => whoopReady && g.enterClaimMode()}
-                style={{
-                  background: "#d72229",
-                  color: "#f8f2e9",
-                  border: "none",
-                  borderRadius: 999,
-                  padding: 14,
-                  fontSize: 20,
-                  fontWeight: 700,
-                  fontStyle: "italic",
-                  width: "100%",
-                  maxWidth: 320,
-                  cursor: whoopReady ? "pointer" : "default",
-                  opacity: g.claimMode ? 1 : whoopReady ? 1 : 0.4,
-                  pointerEvents: g.claimMode ? "none" : whoopReady ? "auto" : "none",
-                  animation: whoopReady && !g.claimMode ? "whoop-pulse 2s infinite" : "none",
-                  boxShadow: g.claimMode ? "0 0 24px rgba(215,34,41,0.7)" : "none",
-                }}
-              >
-                WHOOP! WHOOP!
-              </button>
-            )}
+            <button
+              onClick={() => whoopReady && g.enterClaimMode()}
+              style={{
+                background: "#d72229",
+                color: "#f8f2e9",
+                border: "none",
+                borderRadius: 999,
+                padding: 14,
+                fontSize: 20,
+                fontWeight: 700,
+                fontStyle: "italic",
+                width: "100%",
+                maxWidth: 320,
+                cursor: whoopReady ? "pointer" : "default",
+                opacity: g.claimMode ? 1 : whoopReady ? 1 : 0.4,
+                pointerEvents: g.claimMode ? "none" : whoopReady ? "auto" : "none",
+                animation: whoopReady && !g.claimMode ? "whoop-pulse 2s infinite" : "none",
+                boxShadow: g.claimMode ? "0 0 24px rgba(215,34,41,0.7)" : "none",
+              }}
+            >
+              WHOOP! WHOOP!
+            </button>
 
-            {!g.claimMode && !g.bonusPicking && (
+            {!g.claimMode && (
               <button
                 onClick={g.skipRound}
                 style={{
@@ -362,15 +451,7 @@ const GameScreen = ({ tier }: GameScreenProps) => {
         )}
 
         {g.gameOver && (
-          <div
-            style={{
-              textAlign: "center",
-              marginTop: 24,
-              fontSize: 22,
-              fontWeight: 800,
-              color: "#231f20",
-            }}
-          >
+          <div style={{ textAlign: "center", marginTop: 24, fontSize: 22, fontWeight: 800, color: "#231f20" }}>
             Game Over! Final Score: {g.score}
           </div>
         )}

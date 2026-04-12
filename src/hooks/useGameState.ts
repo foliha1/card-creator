@@ -192,14 +192,14 @@ export function useGameState(tier: Tier = "standard") {
         if (a && b && cardsMatchRule(a, b, matchRule)) {
           // Correct match
           setMatchedCards(new Set(next));
+          setScore((s) => s + 2);
           if (isDouble) {
-            setScore((s) => s + 2);
+            // Don't refill yet — UI will drive the bonus flow
             setBonusPicking(true);
             setBonusPicks([]);
-            setMessage("Double! Pick 2 bonus cards.");
+            setMessage("DOUBLE JEOPARDY!");
             setMessageType("success");
           } else {
-            setScore((s) => s + 2);
             const nextRound = roundNum + 1;
             setRoundNum(nextRound);
 
@@ -228,19 +228,35 @@ export function useGameState(tier: Tier = "standard") {
     [claimMode, bonusPicking, selectedCards, grid, matchRule, isDouble, roundNum, deck, refillGrid, doRollDice, checkGameOver]
   );
 
+  // Remove matched cards from grid (for animated shrink step)
+  const removeMatchedFromGrid = useCallback(() => {
+    setGrid((prev) => {
+      const next = [...prev];
+      matchedCards.forEach((idx) => { next[idx] = null; });
+      return next;
+    });
+  }, [matchedCards]);
+
   const pickBonus = useCallback(
     (index: number) => {
       if (!bonusPicking) return;
       if (bonusPicks.includes(index)) return;
       if (grid[index] === null) return;
-      // Can't pick the matched cards
       if (matchedCards.has(index)) return;
 
       const next = [...bonusPicks, index];
       setBonusPicks(next);
 
-      if (next.length === 2) {
-        setScore((s) => s + 2); // +2 bonus on top of the 2 already added
+      // Check how many non-matched, non-null cards remain
+      const available = grid
+        .map((c, i) => (c && !matchedCards.has(i) && !next.includes(i)) ? i : -1)
+        .filter((i) => i !== -1);
+
+      const maxPicks = Math.min(2, grid.filter((c, i) => c !== null && !matchedCards.has(i)).length);
+
+      if (next.length >= maxPicks) {
+        // Finish bonus
+        setScore((s) => s + 2); // +2 bonus on top of 2 already added
         const nextRound = roundNum + 1;
         setRoundNum(nextRound);
 
@@ -304,5 +320,6 @@ export function useGameState(tier: Tier = "standard") {
     selectCard,
     pickBonus,
     skipRound,
+    removeMatchedFromGrid,
   };
 }
