@@ -292,6 +292,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     } else {
       setWrongCards(new Set(selectedCards));
       setSelectedCards([]);
+      setClaimMode(false);
       setMessage("No match! Try again.");
       setMessageType("error");
     }
