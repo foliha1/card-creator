@@ -134,48 +134,48 @@ const Window: React.FC<WindowProps> = ({
           onDragStart(t.clientX, t.clientY);
         }}
       >
-        <span style={{ flex: 1 }} />
+        <button
+          data-close-btn
+          onClick={onClose}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: mobile ? 44 : 24,
+            height: mobile ? 44 : 24,
+            color: "#231f20",
+            transition: "color 0.15s",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#d72229";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#231f20";
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="2" y1="2" x2="13" y2="13" />
+            <line x1="13" y1="2" x2="2" y2="13" />
+          </svg>
+        </button>
         <span
           style={{
+            flex: 1,
             fontFamily: '"Friend", sans-serif',
             fontStyle: "normal",
             fontSize: 20,
             color: "#231f20",
             pointerEvents: "none",
             lineHeight: 1,
+            textAlign: "right",
           }}
         >
           {title}
-        </span>
-        <span style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-          <button
-            data-close-btn
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: mobile ? 44 : 24,
-              height: mobile ? 44 : 24,
-              color: "#231f20",
-              transition: "color 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#d72229";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "#231f20";
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="2" y1="2" x2="13" y2="13" />
-              <line x1="13" y1="2" x2="2" y2="13" />
-            </svg>
-          </button>
         </span>
       </div>
 
