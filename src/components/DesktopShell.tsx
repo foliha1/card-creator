@@ -146,7 +146,7 @@ const DesktopShell: React.FC = () => {
           pointerEvents: "none",
           background: "#231F20",
           filter: "url(#noise)",
-          opacity: 0.07,
+          opacity: 0.15,
           mixBlendMode: "multiply",
           zIndex: 1,
         }}
