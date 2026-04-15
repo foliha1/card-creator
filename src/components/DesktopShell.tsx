@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
