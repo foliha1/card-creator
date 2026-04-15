@@ -585,50 +585,64 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         )}
       </div>
 
-      {/* Bottom bar */}
+      {/* Bottom HUD bar */}
       <div
         style={{
           display: "flex",
           flexDirection: isSmall ? "column" : "row",
-          gap: 6,
-          padding: "6px 8px",
-          borderTop: "2px solid rgba(35,31,32,0.2)",
+          gap: 10,
+          padding: "8px 12px",
           alignItems: "stretch",
         }}
       >
-        {/* Stats row */}
-        <div style={{ display: "flex", flexDirection: "row", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          <button
-            onClick={onNewGame}
-            style={{
-              background: "#0072b2",
-              color: "#f8f2e9",
-              fontFamily: '"Friend", serif',
-              fontStyle: "italic",
-              fontSize: 14,
-              padding: "5px 12px",
-              borderRadius: 4,
-              border: "2px solid #231f20",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              minHeight: 44,
-            }}
-          >
-            New Game
-          </button>
+        {/* New Game button */}
+        <button
+          onClick={onNewGame}
+          style={{
+            background: "#0072B2",
+            color: "#f8f2e9",
+            fontFamily: '"Friend", serif',
+            fontStyle: "italic",
+            fontSize: 18,
+            padding: "12px 16px",
+            borderRadius: 6,
+            border: "1.5px solid #231f20",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          New Game
+        </button>
 
+        {/* Game info section */}
+        <div style={{
+          display: "flex",
+          flexDirection: "row",
+          gap: 6,
+          alignItems: "stretch",
+          background: "#ADA290",
+          border: "1.5px solid #231f20",
+          borderRadius: 6,
+          padding: 6,
+          flexShrink: 0,
+        }}>
           {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
             <div
               key={label}
               style={{
-                background: "#f8f2e9",
-                border: "2px solid #231f20",
-                padding: "5px 12px",
-                borderRadius: 4,
-                fontFamily: '"Friend", serif',
-                fontSize: 13,
+                background: "#F8F2E9",
+                border: "1.5px solid #231f20",
+                padding: "8px 12px",
+                borderRadius: 6,
+                fontFamily: '"Friend", sans-serif',
+                fontStyle: "normal",
+                fontSize: 16,
                 color: "#231f20",
                 whiteSpace: "nowrap",
+                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
                 ...(label.startsWith("Score") && scoreBounce
                   ? { animation: "score-bounce 0.3s ease" }
                   : {}),
@@ -647,18 +661,17 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             }
           }}
           style={{
-            flex: isSmall ? undefined : 1,
+            flex: 1,
             width: isSmall ? "100%" : undefined,
             background: whoopReady ? "#d72229" : "#d7222966",
             color: "#f8f2e9",
             fontFamily: '"Friend", serif',
             fontStyle: "italic",
-            fontSize: isSmall ? "clamp(14px, 4vw, 18px)" : 20,
-            borderRadius: 4,
-            border: "2px solid #231f20",
+            fontSize: isSmall ? "clamp(18px, 4vw, 24px)" : 26,
+            borderRadius: 6,
+            border: "1.5px solid #231f20",
             cursor: whoopReady ? "pointer" : "default",
-            padding: isSmall ? "10px 8px" : "5px 8px",
-            minHeight: 44,
+            padding: "12px 8px",
             animation: whoopReady ? "whoop-pulse 1.5s infinite" : undefined,
           }}
         >
