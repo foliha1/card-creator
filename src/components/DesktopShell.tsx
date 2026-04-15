@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
+import HowToPlayWindow from "@/components/HowToPlayWindow";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about";
 
@@ -100,6 +101,8 @@ const DesktopShell: React.FC = () => {
         >
           {id === "game" ? (
             <GameWindow />
+          ) : id === "howtoplay" ? (
+            <HowToPlayWindow onClose={() => closeWindow("howtoplay")} />
           ) : (
             <div style={{ padding: 16, color: "#231f20", fontSize: 14 }}>
               {id} content placeholder
