@@ -8,6 +8,7 @@ const GameWindow: React.FC = () => {
   const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
   const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameKey, setGameKey] = useState(0);
 
   if (!gameStarted) {
     return (
@@ -28,7 +29,17 @@ const GameWindow: React.FC = () => {
     );
   }
 
-  return <GamePlayArea tier={tier} gridSize={gridSize} onNewGame={() => setGameStarted(false)} />;
+  return (
+    <GamePlayArea
+      key={gameKey}
+      tier={tier}
+      gridSize={gridSize}
+      onNewGame={() => {
+        setGameStarted(false);
+        setGameKey((k) => k + 1);
+      }}
+    />
+  );
 };
 
 interface GamePlayAreaProps {
@@ -55,6 +66,17 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame }
   const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
   const [bonusHighlighted, setBonusHighlighted] = useState<Set<number>>(new Set());
   const [diceLanded, setDiceLanded] = useState(false);
+  const [visibleMsg, setVisibleMsg] = useState("");
+  const [visibleMsgType, setVisibleMsgType] = useState("info");
+  const [msgVisible, setMsgVisible] = useState(false);
+  const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const MSG_COLORS: Record<string, string> = {
+    success: "#22c55e",
+    error: "#d72229",
+    info: "#0072b2",
+    warning: "#e79024",
+  };
 
   const prevScoreRef = useRef(g.score);
   const prevRoundRef = useRef(g.roundNum);
@@ -92,6 +114,17 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame }
     if (prevClaimRef.current && !g.claimMode) setPeekedCount(0);
     prevClaimRef.current = g.claimMode;
   }, [g.claimMode]);
+
+  // Message animation
+  useEffect(() => {
+    if (g.message) {
+      setVisibleMsg(g.message);
+      setVisibleMsgType(g.messageType);
+      setMsgVisible(true);
+      if (msgTimer.current) clearTimeout(msgTimer.current);
+      msgTimer.current = setTimeout(() => setMsgVisible(false), 2500);
+    }
+  }, [g.message, g.messageType, g.roundNum, g.score]);
 
   useEffect(() => {
     if (g.wrongCards.size === 2) {
@@ -175,6 +208,54 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame }
   const cardW = 58;
   const cardH = 82;
 
+  const totalCards = 48;
+  const collected = totalCards - g.deck.length - g.grid.filter((c) => c !== null).length;
+
+  if (g.gameOver) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          gap: 16,
+          padding: 24,
+          textAlign: "center",
+          color: "#231f20",
+        }}
+      >
+        <div style={{ fontSize: 28, fontWeight: 700, fontStyle: "italic", fontFamily: '"Friend", serif' }}>
+          Game Over!
+        </div>
+        <div style={{ fontSize: 14, opacity: 0.7 }}>
+          You collected {collected} of {totalCards} cards
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 700, fontFamily: '"Friend", serif' }}>
+          Score: {g.score}
+        </div>
+        <button
+          onClick={onNewGame}
+          style={{
+            background: "#0072b2",
+            color: "#f8f2e9",
+            fontFamily: '"Friend", serif',
+            fontStyle: "italic",
+            fontSize: 16,
+            padding: "10px 28px",
+            borderRadius: 6,
+            border: "2px solid #231f20",
+            cursor: "pointer",
+            marginTop: 8,
+          }}
+        >
+          Play Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <style>{`
@@ -184,7 +265,77 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame }
         @keyframes score-bounce { 0%{transform:scale(1)} 40%{transform:scale(1.2)} 100%{transform:scale(1)} }
         @keyframes card-shrink { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.5)} }
         @keyframes orange-pulse-border { 0%,100%{box-shadow:0 0 0 2px #e79024,0 0 8px rgba(231,144,36,0.3)} 50%{box-shadow:0 0 0 2px #e79024,0 0 16px rgba(231,144,36,0.6)} }
+        @keyframes double-title-in { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+        @keyframes double-title-out { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.9)} }
+        @keyframes pill-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
       `}</style>
+
+      {/* Double Match title */}
+      {showDoubleTitle && (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "6px 0",
+            animation: doublePhase === "idle"
+              ? "double-title-out 0.3s ease forwards"
+              : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
+          }}
+        >
+          <span style={{ color: "#e79024", fontSize: 20, fontWeight: 700, fontStyle: "italic", fontFamily: '"Friend", serif' }}>
+            DOUBLE MATCH!
+          </span>
+        </div>
+      )}
+
+      {/* Message banner */}
+      {visibleMsg && !showDoubleTitle && (
+        <div style={{ textAlign: "center", padding: "4px 8px" }}>
+          <span
+            style={{
+              display: "inline-block",
+              background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
+              color: "#f8f2e9",
+              fontSize: 12,
+              fontWeight: 700,
+              fontStyle: "italic",
+              borderRadius: 6,
+              padding: "4px 14px",
+              transition: "opacity 0.3s",
+              opacity: msgVisible ? 1 : 0,
+            }}
+          >
+            {visibleMsg}
+          </span>
+        </div>
+      )}
+
+      {/* Bonus pick pill */}
+      {doublePhase === "pick" && (
+        <div style={{ textAlign: "center", padding: "2px 0" }}>
+          <span
+            style={{
+              display: "inline-block",
+              background: "#e79024",
+              color: "#f8f2e9",
+              fontSize: 11,
+              fontWeight: 700,
+              fontStyle: "italic",
+              borderRadius: 999,
+              padding: "3px 12px",
+              animation: "pill-pulse 1.5s infinite",
+            }}
+          >
+            Choose 2 bonus cards!
+          </span>
+        </div>
+      )}
+
+      {/* Claim mode instruction */}
+      {g.claimMode && g.selectedCards.length < 2 && (
+        <div style={{ textAlign: "center", padding: "4px 0", fontSize: 12, color: "#231f20", fontWeight: 700, fontStyle: "italic" }}>
+          Tap 2 cards!
+        </div>
+      )}
 
       {/* Main area */}
       <div style={{ display: "flex", flexDirection: "row", gap: 12, flex: 1, padding: 8, minHeight: 0 }}>
