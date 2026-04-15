@@ -3,6 +3,8 @@ import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
 import HowToPlayWindow from "@/components/HowToPlayWindow";
+import PreOrderWindow from "@/components/PreOrderWindow";
+import AboutWindow from "@/components/AboutWindow";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about";
 
@@ -103,11 +105,11 @@ const DesktopShell: React.FC = () => {
             <GameWindow />
           ) : id === "howtoplay" ? (
             <HowToPlayWindow onClose={() => closeWindow("howtoplay")} />
-          ) : (
-            <div style={{ padding: 16, color: "#231f20", fontSize: 14 }}>
-              {id} content placeholder
-            </div>
-          )}
+          ) : id === "preorder" ? (
+            <PreOrderWindow />
+          ) : id === "about" ? (
+            <AboutWindow />
+          ) : null}
         </Window>
       ))}
 
