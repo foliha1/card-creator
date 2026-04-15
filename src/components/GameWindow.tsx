@@ -438,7 +438,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           flexDirection: mobile ? "row" : "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: mobile ? 6 : 12,
+          gap: mobile ? 8 : 12,
           flexShrink: 0,
           ...(mobile ? {} : {
             background: "#ADA290",
@@ -451,8 +451,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             <div
               key={i}
               style={{
-                width: 89,
-                height: 89,
+                width: mobile ? 60 : 89,
+                height: mobile ? 60 : 89,
                 background: "#F8F2E9",
                 borderRadius: 6,
                 display: "flex",
@@ -482,9 +482,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gridTemplateColumns: "repeat(3, 1fr)",
               gap: isSmall ? 6 : 10,
               width: "100%",
+              maxWidth: mobile ? 360 : undefined,
               justifyContent: "center",
             }}
           >
@@ -603,13 +604,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             color: "#f8f2e9",
             fontFamily: '"Friend", serif',
             fontStyle: "italic",
-            fontSize: 18,
+            fontSize: mobile ? 14 : 18,
             padding: "12px 16px",
             borderRadius: 6,
             border: "1.5px solid #231f20",
             cursor: "pointer",
             whiteSpace: "nowrap",
             flexShrink: 0,
+            width: isSmall ? "100%" : undefined,
           }}
         >
           New Game
@@ -626,6 +628,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           borderRadius: 6,
           padding: 6,
           flexShrink: 0,
+          flexWrap: isSmall ? "wrap" : undefined,
+          width: isSmall ? "100%" : undefined,
         }}>
           {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
             <div
@@ -637,7 +641,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 borderRadius: 6,
                 fontFamily: '"Friend", sans-serif',
                 fontStyle: "normal",
-                fontSize: 16,
+                fontSize: mobile ? 12 : 16,
                 color: "#231f20",
                 whiteSpace: "nowrap",
                 textAlign: "center",
@@ -661,7 +665,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             }
           }}
           style={{
-            flex: 1,
+            flex: isSmall ? undefined : 1,
             width: isSmall ? "100%" : undefined,
             background: whoopReady ? "#d72229" : "#d7222966",
             color: "#f8f2e9",
@@ -672,6 +676,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             border: "1.5px solid #231f20",
             cursor: whoopReady ? "pointer" : "default",
             padding: "12px 8px",
+            minHeight: mobile ? 48 : undefined,
             animation: whoopReady ? "whoop-pulse 1.5s infinite" : undefined,
           }}
         >

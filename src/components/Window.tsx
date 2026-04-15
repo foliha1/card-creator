@@ -86,8 +86,8 @@ const Window: React.FC<WindowProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        minHeight: 300,
-        maxHeight: "calc(100vh - 120px)",
+        maxHeight: "calc(100dvh - 80px)",
+        overflow: "auto",
       }
     : {
         position: "absolute",
