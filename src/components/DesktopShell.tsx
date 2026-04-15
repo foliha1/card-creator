@@ -5,6 +5,7 @@ import GameWindow from "@/components/GameWindow";
 import HowToPlayWindow from "@/components/HowToPlayWindow";
 import PreOrderWindow from "@/components/PreOrderWindow";
 import AboutWindow from "@/components/AboutWindow";
+import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about";
@@ -27,6 +28,7 @@ const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about"];
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
+  const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
 
@@ -74,9 +76,13 @@ const DesktopShell: React.FC = () => {
     }
   };
 
+  const isFocused = (id: WindowId) => {
+    if (mobile) return activeWindow === id;
+    return windowOrder[windowOrder.length - 1] === id;
+  };
+
   const renderWindow = (id: WindowId) => {
     if (!openWindows.has(id)) return null;
-    // On mobile, only show the active window
     if (mobile && activeWindow !== id) return null;
 
     const cfg = WINDOW_CONFIGS[id];
@@ -92,6 +98,7 @@ const DesktopShell: React.FC = () => {
           onClose={() => closeWindow(id)}
           onFocus={focusWindow}
           mobile={mobile}
+          focused={isFocused(id)}
         >
           {renderWindowContent(id)}
         </Window>
@@ -99,8 +106,13 @@ const DesktopShell: React.FC = () => {
     );
   };
 
+  if (!booted) {
+    return <BootScreen onComplete={() => setBooted(true)} />;
+  }
+
   return (
     <div
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         width: "100vw",
         height: "100vh",
@@ -118,7 +130,6 @@ const DesktopShell: React.FC = () => {
         }
       `}</style>
 
-      {/* Watermark — hidden on mobile */}
       {!mobile && (
         <img
           src="/WhoopWhoop_Stacked_Logo.svg"
