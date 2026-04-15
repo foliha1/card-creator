@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
@@ -28,6 +28,23 @@ const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about"];
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
+  const noiseUrl = useMemo(() => {
+    if (typeof document === "undefined") return "";
+    const canvas = document.createElement("canvas");
+    const w = 200, h = 200;
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    const img = ctx.createImageData(w, h);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (Math.random() < 0.6) {
+        d[i] = 35; d[i+1] = 31; d[i+2] = 32;
+        d[i+3] = Math.floor(Math.random() * 50 + 10);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return canvas.toDataURL("image/png");
+  }, []);
   const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
@@ -130,24 +147,14 @@ const DesktopShell: React.FC = () => {
         }
       `}</style>
 
-      {/* Inline SVG noise filter */}
-      <svg width="0" height="0" style={{ position: "absolute" }}>
-        <filter id="noise">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={4} stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-      </svg>
-
       {/* Noise overlay */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background: "#231F20",
-          filter: "url(#noise)",
-          opacity: 0.07,
-          mixBlendMode: "multiply",
+          backgroundImage: noiseUrl ? `url(${noiseUrl})` : undefined,
+          backgroundRepeat: "repeat",
           zIndex: 1,
         }}
       />
