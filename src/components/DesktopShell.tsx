@@ -11,14 +11,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 type WindowId = "game" | "howtoplay" | "preorder" | "about";
 
 const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
-  game: { x: 60, y: 30 },
+  game: { x: 40, y: 20 },
   howtoplay: { x: 520, y: 80 },
   preorder: { x: 180, y: 60 },
   about: { x: 280, y: 100 },
 };
 
 const WINDOW_CONFIGS: Record<WindowId, { width: number; height: number; title: string }> = {
-  game: { width: 700, height: 540, title: "PLAY WHOOP! WHOOP!" },
+  game: { width: 820, height: 620, title: "PLAY WHOOP! WHOOP!" },
   howtoplay: { width: 340, height: 420, title: "HOW TO PLAY" },
   preorder: { width: 400, height: 320, title: "PRE-ORDER" },
   about: { width: 400, height: 380, title: "ABOUT" },
