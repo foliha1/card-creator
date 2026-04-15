@@ -425,36 +425,43 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       <div style={{
         display: "flex",
         flexDirection: mobile ? "column" : "row",
-        gap: mobile ? 8 : 12,
+        gap: mobile ? 8 : 38,
         flex: 1,
-        padding: 12,
+        padding: mobile ? 12 : "50px 40px",
         minHeight: 0,
+        alignItems: "center",
+        justifyContent: "center",
       }}>
-        {/* Dice / rule cards — horizontal row on mobile */}
+        {/* Dice / rule cards */}
         <div style={{
-          width: mobile ? "100%" : 90,
           display: "flex",
           flexDirection: mobile ? "row" : "column",
           alignItems: "center",
-          justifyContent: mobile ? "center" : undefined,
-          gap: 6,
+          justifyContent: "center",
+          gap: mobile ? 6 : 12,
           flexShrink: 0,
+          ...(mobile ? {} : {
+            background: "#ADA290",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            padding: 16,
+          }),
         }}>
           {g.matchRule.map((attr, i) => (
             <div
               key={i}
               style={{
-                width: cardW,
-                height: cardH,
-                background: "#f8f2e9",
-                border: "2px solid #231f20",
-                borderRadius: 4,
+                width: 89,
+                height: 89,
+                background: "#F8F2E9",
+                borderRadius: 6,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                transform: mobile ? undefined : i === 0 ? "rotate(-5deg)" : "rotate(3deg)",
+                transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
                 color: "#231f20",
+                filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
               }}
             >
               <span style={{ fontSize: 10, fontFamily: '"Friend", serif', fontStyle: "italic" }}>Match the</span>
@@ -471,7 +478,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </div>
 
         {/* Center: card grid */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
           <div
             style={{
               display: "grid",
@@ -536,30 +543,42 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
         {/* Right column: draw pile — desktop only */}
         {!mobile && (
-          <div style={{ width: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <div style={{ position: "relative", width: cardW + 6, height: cardH + 6 }}>
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            flexShrink: 0,
+            background: "#ADA290",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            padding: 16,
+          }}>
+            <div style={{ position: "relative", width: 80, height: 112 }}>
               {g.deck.length === 0 ? (
-                <div style={{ width: cardW, height: cardH, borderRadius: 4, border: "2px dashed rgba(35,31,32,0.13)" }} />
+                <div style={{ width: 72, height: 101, borderRadius: 6, border: "2px dashed rgba(35,31,32,0.13)" }} />
               ) : (
-                Array.from({ length: Math.min(4, Math.ceil(g.deck.length / 5)) }).map((_, i) => (
+                [-3.81, 0, 4.63].map((rot, i) => (
                   <img
                     key={i}
                     src="/cards/Card Back.svg"
                     alt="Draw pile"
                     style={{
                       position: "absolute",
-                      top: i * 1.5,
-                      left: i * 1.5,
-                      width: cardW,
-                      height: cardH,
-                      borderRadius: 4,
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                      top: "50%",
+                      left: "50%",
+                      width: 72,
+                      height: 101,
+                      borderRadius: 6,
+                      transform: `translate(-50%, -50%) rotate(${rot}deg) translateX(${(i - 1) * 3}px)`,
+                      filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
                     }}
                   />
                 ))
               )}
             </div>
-            <span style={{ fontSize: 11, color: "#231f20", opacity: 0.5, textAlign: "center" }}>
+            <span style={{ fontSize: 11, color: "#231f20", opacity: 0.7, textAlign: "center" }}>
               {g.deck.length} left
             </span>
           </div>
