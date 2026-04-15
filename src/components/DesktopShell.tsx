@@ -48,6 +48,23 @@ const DesktopShell: React.FC = () => {
   const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
+  const [viewW, setViewW] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const [viewH, setViewH] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+
+  useEffect(() => {
+    const onResize = () => { setViewW(window.innerWidth); setViewH(window.innerHeight); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const getWindowSize = useCallback((id: WindowId) => {
+    const base = BASE_SIZES[id];
+    return {
+      ...base,
+      width: Math.min(base.width, viewW - 40),
+      height: Math.min(base.height, viewH - 120),
+    };
+  }, [viewW, viewH]);
 
   const openWindow = useCallback((id: WindowId) => {
     setOpenWindows((prev) => {
@@ -102,7 +119,7 @@ const DesktopShell: React.FC = () => {
     if (!openWindows.has(id)) return null;
     if (mobile && activeWindow !== id) return null;
 
-    const cfg = WINDOW_CONFIGS[id];
+    const cfg = getWindowSize(id);
     return (
       <div key={id} style={{ animation: "win-open 0.2s ease-out" }}>
         <Window
