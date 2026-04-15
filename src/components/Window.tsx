@@ -183,7 +183,7 @@ const Window: React.FC<WindowProps> = ({
       <div
         style={{
           flex: 1,
-          overflow: "auto",
+          overflow: "hidden",
           background: "#D0C3AF",
           border: "1.5px solid #231f20",
           borderRadius: 6,
