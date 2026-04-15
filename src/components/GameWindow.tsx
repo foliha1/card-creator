@@ -281,8 +281,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
   const isSmall = mobile && window.innerWidth < 480;
-  const cardW = isSmall ? 48 : 58;
-  const cardH = isSmall ? 67 : 82;
+  const cardW = isSmall ? 48 : 72;
+  const cardH = isSmall ? 67 : 101;
 
   const totalCards = 48;
   const collected = totalCards - g.deck.length - g.grid.filter((c) => c !== null).length;
@@ -419,12 +419,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         flexDirection: mobile ? "column" : "row",
         gap: mobile ? 8 : 12,
         flex: 1,
-        padding: 8,
+        padding: 12,
         minHeight: 0,
       }}>
         {/* Dice / rule cards — horizontal row on mobile */}
         <div style={{
-          width: mobile ? "100%" : 70,
+          width: mobile ? "100%" : 90,
           display: "flex",
           flexDirection: mobile ? "row" : "column",
           alignItems: "center",
@@ -449,8 +449,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 color: "#231f20",
               }}
             >
-              <span style={{ fontSize: 8, fontFamily: '"Friend", serif', fontStyle: "italic" }}>Match the</span>
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", fontFamily: '"Friend", serif' }}>{attr}</span>
+              <span style={{ fontSize: 10, fontFamily: '"Friend", serif', fontStyle: "italic" }}>Match the</span>
+              <span style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase", fontFamily: '"Friend", serif' }}>{attr}</span>
             </div>
           ))}
 
@@ -467,10 +467,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: isSmall ? 6 : 8,
+              gridTemplateColumns: "repeat(3, minmax(0, 140px))",
+              gap: isSmall ? 6 : 10,
               width: "100%",
-              maxWidth: mobile ? undefined : 300,
+              justifyContent: "center",
             }}
           >
             {g.grid.map((card, i) =>
@@ -528,7 +528,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
         {/* Right column: draw pile — desktop only */}
         {!mobile && (
-          <div style={{ width: 70, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
             <div style={{ position: "relative", width: cardW + 6, height: cardH + 6 }}>
               {g.deck.length === 0 ? (
                 <div style={{ width: cardW, height: cardH, borderRadius: 4, border: "2px dashed rgba(35,31,32,0.13)" }} />
@@ -578,7 +578,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               color: "#f8f2e9",
               fontFamily: '"Friend", serif',
               fontStyle: "italic",
-              fontSize: 12,
+              fontSize: 14,
               padding: "5px 12px",
               borderRadius: 4,
               border: "2px solid #231f20",
@@ -596,10 +596,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               style={{
                 background: "#f8f2e9",
                 border: "2px solid #231f20",
-                padding: "3px 8px",
+                padding: "5px 12px",
                 borderRadius: 4,
                 fontFamily: '"Friend", serif',
-                fontSize: 11,
+                fontSize: 13,
                 color: "#231f20",
                 whiteSpace: "nowrap",
                 ...(label.startsWith("Score") && scoreBounce
@@ -626,7 +626,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             color: "#f8f2e9",
             fontFamily: '"Friend", serif',
             fontStyle: "italic",
-            fontSize: isSmall ? "clamp(14px, 4vw, 18px)" : 16,
+            fontSize: isSmall ? "clamp(14px, 4vw, 18px)" : 20,
             borderRadius: 4,
             border: "2px solid #231f20",
             cursor: whoopReady ? "pointer" : "default",
