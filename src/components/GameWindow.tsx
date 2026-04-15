@@ -562,52 +562,57 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       <div
         style={{
           display: "flex",
-          flexDirection: "row",
+          flexDirection: isSmall ? "column" : "row",
           gap: 6,
           padding: "6px 8px",
           borderTop: "2px solid rgba(35,31,32,0.2)",
-          alignItems: "center",
+          alignItems: "stretch",
         }}
       >
-        <button
-          onClick={onNewGame}
-          style={{
-            background: "#0072b2",
-            color: "#f8f2e9",
-            fontFamily: '"Friend", serif',
-            fontStyle: "italic",
-            fontSize: 12,
-            padding: "5px 12px",
-            borderRadius: 4,
-            border: "2px solid #231f20",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          New Game
-        </button>
-
-        {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
-          <div
-            key={label}
+        {/* Stats row */}
+        <div style={{ display: "flex", flexDirection: "row", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={onNewGame}
             style={{
-              background: "#f8f2e9",
-              border: "2px solid #231f20",
-              padding: "3px 8px",
-              borderRadius: 4,
+              background: "#0072b2",
+              color: "#f8f2e9",
               fontFamily: '"Friend", serif',
-              fontSize: 11,
-              color: "#231f20",
+              fontStyle: "italic",
+              fontSize: 12,
+              padding: "5px 12px",
+              borderRadius: 4,
+              border: "2px solid #231f20",
+              cursor: "pointer",
               whiteSpace: "nowrap",
-              ...(label.startsWith("Score") && scoreBounce
-                ? { animation: "score-bounce 0.3s ease" }
-                : {}),
+              minHeight: 44,
             }}
           >
-            {label}
-          </div>
-        ))}
+            New Game
+          </button>
 
+          {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
+            <div
+              key={label}
+              style={{
+                background: "#f8f2e9",
+                border: "2px solid #231f20",
+                padding: "3px 8px",
+                borderRadius: 4,
+                fontFamily: '"Friend", serif',
+                fontSize: 11,
+                color: "#231f20",
+                whiteSpace: "nowrap",
+                ...(label.startsWith("Score") && scoreBounce
+                  ? { animation: "score-bounce 0.3s ease" }
+                  : {}),
+              }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* WHOOP button */}
         <button
           onClick={() => {
             if (whoopReady) {
@@ -615,16 +620,18 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             }
           }}
           style={{
-            flex: 1,
+            flex: isSmall ? undefined : 1,
+            width: isSmall ? "100%" : undefined,
             background: whoopReady ? "#d72229" : "#d7222966",
             color: "#f8f2e9",
             fontFamily: '"Friend", serif',
             fontStyle: "italic",
-            fontSize: 16,
+            fontSize: isSmall ? "clamp(14px, 4vw, 18px)" : 16,
             borderRadius: 4,
             border: "2px solid #231f20",
             cursor: whoopReady ? "pointer" : "default",
-            padding: "5px 8px",
+            padding: isSmall ? "10px 8px" : "5px 8px",
+            minHeight: 44,
             animation: whoopReady ? "whoop-pulse 1.5s infinite" : undefined,
           }}
         >
