@@ -153,7 +153,7 @@ const DesktopShell: React.FC = () => {
         overflow: mobile ? "auto" : "hidden",
         position: "relative",
         background: "#0072B2",
-        paddingBottom: mobile ? 60 : 0,
+        paddingBottom: mobile ? 100 : 0,
         paddingTop: mobile ? 16 : 0,
       }}
     >
