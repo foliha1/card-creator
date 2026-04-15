@@ -3,6 +3,7 @@ import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
+import { ALL_CARDS } from "@/cardData";
 
 interface GameWindowProps {
   mobile?: boolean;
@@ -98,6 +99,13 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
         >
           Start Game
         </button>
+
+        {/* Preload all card images while user picks settings */}
+        <div style={{ display: "none" }}>
+          {ALL_CARDS.map((c) => (
+            <img key={c.id} src={c.svgPath} alt="" width={0} height={0} />
+          ))}
+        </div>
       </div>
     );
   }
