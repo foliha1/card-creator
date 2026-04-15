@@ -130,29 +130,52 @@ const DesktopShell: React.FC = () => {
         }
       `}</style>
 
+      {/* Inline SVG noise filter */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <filter id="noise">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={4} stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+      </svg>
+
+      {/* Noise overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: "#231F20",
+          filter: "url(#noise)",
+          opacity: 0.07,
+          mixBlendMode: "multiply",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Logo watermark using CSS mask */}
       {!mobile && (
         <div
           style={{
             position: "absolute",
             width: "55vw",
+            aspectRatio: "1 / 1",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -55%)",
             pointerEvents: "none",
-            overflow: "hidden",
-          }}
-        >
-          <img
-            src="/WhoopWhoop_Stacked_Logo.svg"
-            alt=""
-            style={{
-              width: "100%",
-              display: "block",
-              filter: "brightness(0) saturate(100%)",
-              opacity: 0.12,
-            }}
-          />
-        </div>
+            zIndex: 2,
+            background: "#01527F",
+            WebkitMaskImage: "url(/WhoopWhoop_Stacked_Logo.svg)",
+            WebkitMaskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskImage: "url(/WhoopWhoop_Stacked_Logo.svg)",
+            maskSize: "contain",
+            maskRepeat: "no-repeat",
+            maskPosition: "center",
+            opacity: 0.7,
+          } as React.CSSProperties}
+        />
       )}
 
       {ALL_IDS.map(renderWindow)}
