@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Window from "@/components/Window";
+import Taskbar from "@/components/Taskbar";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about";
 
@@ -101,6 +102,8 @@ const DesktopShell: React.FC = () => {
           </div>
         </Window>
       ))}
+
+      <Taskbar openWindows={openWindows} onOpen={openWindow} onFocus={focusWindow} />
     </div>
   );
 };
