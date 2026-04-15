@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
+import GameWindow from "@/components/GameWindow";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about";
 
@@ -97,9 +98,13 @@ const DesktopShell: React.FC = () => {
           onClose={() => closeWindow(id)}
           onFocus={focusWindow}
         >
-          <div style={{ padding: 16, color: "#231f20", fontSize: 14 }}>
-            {id} content placeholder
-          </div>
+          {id === "game" ? (
+            <GameWindow />
+          ) : (
+            <div style={{ padding: 16, color: "#231f20", fontSize: 14 }}>
+              {id} content placeholder
+            </div>
+          )}
         </Window>
       ))}
 
