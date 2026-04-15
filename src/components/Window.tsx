@@ -11,6 +11,7 @@ interface WindowProps {
   zIndex: number;
   children: React.ReactNode;
   mobile?: boolean;
+  focused?: boolean;
 }
 
 const Window: React.FC<WindowProps> = ({
@@ -24,6 +25,7 @@ const Window: React.FC<WindowProps> = ({
   zIndex,
   children,
   mobile = false,
+  focused = false,
 }) => {
   const [pos, setPos] = useState(defaultPosition);
   const [dragging, setDragging] = useState(false);
@@ -92,7 +94,7 @@ const Window: React.FC<WindowProps> = ({
         height,
         border: "2px solid #231f20",
         borderRadius: 4,
-        boxShadow: "4px 6px 0 rgba(0,0,0,0.25)",
+        boxShadow: focused ? "5px 7px 0 rgba(0,0,0,0.3)" : "3px 4px 0 rgba(0,0,0,0.15)",
         zIndex,
         display: "flex",
         flexDirection: "column",
@@ -118,6 +120,7 @@ const Window: React.FC<WindowProps> = ({
           borderRadius: "2px 2px 0 0",
           flexShrink: 0,
         }}
+        onDoubleClick={(e) => e.preventDefault()}
         onMouseDown={(e) => {
           if ((e.target as HTMLElement).closest("[data-close-btn]")) return;
           onDragStart(e.clientX, e.clientY);
