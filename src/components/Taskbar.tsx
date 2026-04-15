@@ -13,7 +13,7 @@ interface TaskbarProps {
 }
 
 const BUTTONS: { label: string; id: WindowId }[] = [
-  { label: "Play Whoop! Whoop!", id: "game" },
+  { label: "Play Whoop! Woop!", id: "game" },
   { label: "How to Play", id: "howtoplay" },
   { label: "Pre-Order", id: "preorder" },
   { label: "About", id: "about" },
