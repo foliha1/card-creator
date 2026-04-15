@@ -7,23 +7,14 @@ interface HowToPlayWindowProps {
 const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
 
-  const headlineStyle: React.CSSProperties = {
+  const textStyle: React.CSSProperties = {
     fontFamily: '"Friend", sans-serif',
     fontStyle: "normal",
-    fontWeight: 700,
-    fontSize: 20,
+    fontSize: "clamp(18px, 4vw, 28px)",
+    lineHeight: "35px",
+    textAlign: "center",
     color: "#000000",
-    marginBottom: 8,
-  };
-
-  const bodyStyle: React.CSSProperties = {
-    fontFamily: '"Friend", sans-serif',
-    fontStyle: "normal",
-    fontSize: 18,
-    color: "#000000",
-    opacity: 0.6,
-    maxWidth: 280,
-    lineHeight: 1.5,
+    whiteSpace: "pre-line",
   };
 
   const btnStyle = (disabled?: boolean): React.CSSProperties => ({
@@ -55,9 +46,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 16 }}>
         {slide === 0 && (
           <>
-            <div style={headlineStyle}>Peek cards to memorize</div>
-            <div style={bodyStyle}>
-              Tap any face-down card to peek at it for 2 seconds. Try to remember what you see!
+            <div style={textStyle}>
+              {"Peek cards to memorize\n\nTap any face-down card to peek at it for 2 seconds.\nTry to remember what you see!"}
             </div>
             <img
               src="/cards/3 tri red.svg"
@@ -69,9 +59,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
         {slide === 1 && (
           <>
-            <div style={headlineStyle}>Match the dice rule</div>
-            <div style={bodyStyle}>
-              Each round, the dice tell you what to match. Double match rounds are harder but worth more!
+            <div style={textStyle}>
+              {"Match the dice rule\n\nEach round, the dice tell you what to match.\nDouble match rounds are harder but worth more!"}
             </div>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
               {["SHAPE", "COLOR"].map((label) => (
@@ -101,9 +90,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
         {slide === 2 && (
           <>
-            <div style={headlineStyle}>Call WHOOP! WHOOP!</div>
-            <div style={bodyStyle}>
-              Spot a match, hit the button, tap two cards. Get it right and claim them!
+            <div style={textStyle}>
+              {"Call WHOOP! WHOOP!\n\nSpot a match, hit the button, tap two cards.\nGet it right and claim them!"}
             </div>
             <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
               {["1 circle blue", "2 circle red"].map((name) => (
