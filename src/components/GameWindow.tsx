@@ -280,8 +280,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
   const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
-  const cardW = 58;
-  const cardH = 82;
+  const isSmall = mobile && window.innerWidth < 480;
+  const cardW = isSmall ? 48 : 58;
+  const cardH = isSmall ? 67 : 82;
 
   const totalCards = 48;
   const collected = totalCards - g.deck.length - g.grid.filter((c) => c !== null).length;
@@ -413,9 +414,24 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       )}
 
       {/* Main area */}
-      <div style={{ display: "flex", flexDirection: "row", gap: 12, flex: 1, padding: 8, minHeight: 0 }}>
-        {/* Left column: dice / rule cards */}
-        <div style={{ width: 70, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+      <div style={{
+        display: "flex",
+        flexDirection: mobile ? "column" : "row",
+        gap: mobile ? 8 : 12,
+        flex: 1,
+        padding: 8,
+        minHeight: 0,
+      }}>
+        {/* Dice / rule cards — horizontal row on mobile */}
+        <div style={{
+          width: mobile ? "100%" : 70,
+          display: "flex",
+          flexDirection: mobile ? "row" : "column",
+          alignItems: "center",
+          justifyContent: mobile ? "center" : undefined,
+          gap: 6,
+          flexShrink: 0,
+        }}>
           {g.matchRule.map((attr, i) => (
             <div
               key={i}
@@ -429,7 +445,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                transform: i === 0 ? "rotate(-5deg)" : "rotate(3deg)",
+                transform: mobile ? undefined : i === 0 ? "rotate(-5deg)" : "rotate(3deg)",
                 color: "#231f20",
               }}
             >
@@ -437,6 +453,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", fontFamily: '"Friend", serif' }}>{attr}</span>
             </div>
           ))}
+
+          {/* Draw pile inline on mobile */}
+          {mobile && (
+            <span style={{ fontSize: 11, color: "#231f20", opacity: 0.5, marginLeft: 8 }}>
+              {g.deck.length} left
+            </span>
+          )}
         </div>
 
         {/* Center: card grid */}
@@ -445,9 +468,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 8,
+              gap: isSmall ? 6 : 8,
               width: "100%",
-              maxWidth: 300,
+              maxWidth: mobile ? undefined : 300,
             }}
           >
             {g.grid.map((card, i) =>
@@ -503,34 +526,36 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         </div>
 
-        {/* Right column: draw pile */}
-        <div style={{ width: 70, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div style={{ position: "relative", width: cardW + 6, height: cardH + 6 }}>
-            {g.deck.length === 0 ? (
-              <div style={{ width: cardW, height: cardH, borderRadius: 4, border: "2px dashed rgba(35,31,32,0.13)" }} />
-            ) : (
-              Array.from({ length: Math.min(4, Math.ceil(g.deck.length / 5)) }).map((_, i) => (
-                <img
-                  key={i}
-                  src="/cards/Card Back.svg"
-                  alt="Draw pile"
-                  style={{
-                    position: "absolute",
-                    top: i * 1.5,
-                    left: i * 1.5,
-                    width: cardW,
-                    height: cardH,
-                    borderRadius: 4,
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                  }}
-                />
-              ))
-            )}
+        {/* Right column: draw pile — desktop only */}
+        {!mobile && (
+          <div style={{ width: 70, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div style={{ position: "relative", width: cardW + 6, height: cardH + 6 }}>
+              {g.deck.length === 0 ? (
+                <div style={{ width: cardW, height: cardH, borderRadius: 4, border: "2px dashed rgba(35,31,32,0.13)" }} />
+              ) : (
+                Array.from({ length: Math.min(4, Math.ceil(g.deck.length / 5)) }).map((_, i) => (
+                  <img
+                    key={i}
+                    src="/cards/Card Back.svg"
+                    alt="Draw pile"
+                    style={{
+                      position: "absolute",
+                      top: i * 1.5,
+                      left: i * 1.5,
+                      width: cardW,
+                      height: cardH,
+                      borderRadius: 4,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                    }}
+                  />
+                ))
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: "#231f20", opacity: 0.5, textAlign: "center" }}>
+              {g.deck.length} left
+            </span>
           </div>
-          <span style={{ fontSize: 11, color: "#231f20", opacity: 0.5, textAlign: "center" }}>
-            {g.deck.length} left
-          </span>
-        </div>
+        )}
       </div>
 
       {/* Bottom bar */}
