@@ -19,7 +19,7 @@ const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
 
 const WINDOW_CONFIGS: Record<WindowId, { width: number; height: number; title: string }> = {
   game: { width: 960, height: 700, title: "PLAY WHOOP! WHOOP!" },
-  howtoplay: { width: 340, height: 520, title: "HOW TO PLAY" },
+  howtoplay: { width: 340, height: 580, title: "HOW TO PLAY" },
   preorder: { width: 400, height: 320, title: "PRE-ORDER" },
   about: { width: 400, height: 380, title: "ABOUT" },
 };
