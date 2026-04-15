@@ -7,37 +7,38 @@ interface HowToPlayWindowProps {
 const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
 
-  const titleStyle: React.CSSProperties = {
-    fontFamily: '"Friend", serif',
-    fontStyle: "italic",
-    fontSize: 18,
-    color: "#231f20",
+  const headlineStyle: React.CSSProperties = {
+    fontFamily: '"Friend", sans-serif',
+    fontStyle: "normal",
+    fontWeight: 700,
+    fontSize: 20,
+    color: "#000000",
     marginBottom: 8,
   };
 
   const bodyStyle: React.CSSProperties = {
-    fontFamily: '"Friend", serif',
-    fontStyle: "italic",
-    fontSize: 13,
-    color: "#231f20",
-    opacity: 0.7,
+    fontFamily: '"Friend", sans-serif',
+    fontStyle: "normal",
+    fontSize: 18,
+    color: "#000000",
+    opacity: 0.6,
     maxWidth: 280,
     lineHeight: 1.5,
-    marginBottom: 16,
   };
 
   const btnStyle = (disabled?: boolean): React.CSSProperties => ({
     flex: 1,
-    background: "#f8f2e9",
-    border: "2px solid #231f20",
+    background: "#F8F2E9",
+    border: "1.5px solid #231f20",
     fontFamily: '"Friend", serif',
     fontStyle: "italic",
-    fontSize: 13,
-    padding: 8,
-    borderRadius: 4,
+    fontSize: 17,
+    padding: 12,
+    borderRadius: 6,
     cursor: disabled ? "default" : "pointer",
     opacity: disabled ? 0.3 : 1,
     color: "#231f20",
+    textAlign: "center",
   });
 
   return (
@@ -46,29 +47,29 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        background: "#f8f2e9",
-        padding: 20,
+        padding: 24,
+        gap: 24,
       }}
     >
       {/* Slide content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 16 }}>
         {slide === 0 && (
           <>
-            <div style={titleStyle}>Peek cards to memorize</div>
+            <div style={headlineStyle}>Peek cards to memorize</div>
             <div style={bodyStyle}>
               Tap any face-down card to peek at it for 2 seconds. Try to remember what you see!
             </div>
             <img
               src="/cards/3 tri red.svg"
               alt="Example card"
-              style={{ width: 120, height: 168, borderRadius: 6 }}
+              style={{ width: 167, height: 234, borderRadius: 6 }}
             />
           </>
         )}
 
         {slide === 1 && (
           <>
-            <div style={titleStyle}>Match the dice rule</div>
+            <div style={headlineStyle}>Match the dice rule</div>
             <div style={bodyStyle}>
               Each round, the dice tell you what to match. Double match rounds are harder but worth more!
             </div>
@@ -100,7 +101,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
         {slide === 2 && (
           <>
-            <div style={titleStyle}>Call WHOOP! WHOOP!</div>
+            <div style={headlineStyle}>Call WHOOP! WHOOP!</div>
             <div style={bodyStyle}>
               Spot a match, hit the button, tap two cards. Get it right and claim them!
             </div>
@@ -124,7 +125,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       </div>
 
       {/* Nav dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -141,7 +142,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       </div>
 
       {/* Buttons */}
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 10 }}>
         <button
           style={btnStyle(slide === 0)}
           disabled={slide === 0}
