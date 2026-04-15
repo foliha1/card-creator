@@ -15,18 +15,11 @@ const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
   about: { x: 280, y: 100 },
 };
 
-const WINDOW_SIZES: Record<WindowId, { width: number; height: number }> = {
-  game: { width: 420, height: 620 },
-  howtoplay: { width: 400, height: 500 },
-  preorder: { width: 380, height: 480 },
-  about: { width: 360, height: 400 },
-};
-
-const WINDOW_TITLES: Record<WindowId, string> = {
-  game: "Whoop! Whoop!",
-  howtoplay: "How to Play",
-  preorder: "Pre-Order",
-  about: "About",
+const WINDOW_CONFIGS: Record<WindowId, { width: number; height: number; title: string }> = {
+  game: { width: 700, height: 540, title: "PLAY WHOOP! WHOOP!" },
+  howtoplay: { width: 340, height: 420, title: "HOW TO PLAY" },
+  preorder: { width: 400, height: 320, title: "PRE-ORDER" },
+  about: { width: 400, height: 380, title: "ABOUT" },
 };
 
 const DesktopShell: React.FC = () => {
@@ -73,6 +66,13 @@ const DesktopShell: React.FC = () => {
         background: "#2568B0",
       }}
     >
+      <style>{`
+        @keyframes win-open {
+          from { opacity: 0; transform: scale(0.92); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
       {/* Watermark */}
       <img
         src="/WhoopWhoop_Stacked_Logo.svg"
@@ -89,29 +89,34 @@ const DesktopShell: React.FC = () => {
       />
 
       {/* Windows */}
-      {(Array.from(openWindows) as WindowId[]).map((id) => (
-        <Window
-          key={id}
-          id={id}
-          title={WINDOW_TITLES[id]}
-          defaultPosition={DEFAULT_POSITIONS[id]}
-          width={WINDOW_SIZES[id].width}
-          height={WINDOW_SIZES[id].height}
-          zIndex={10 + windowOrder.indexOf(id)}
-          onClose={() => closeWindow(id)}
-          onFocus={focusWindow}
-        >
-          {id === "game" ? (
+      {openWindows.has("game") && (
+        <div style={{ animation: "win-open 0.2s ease-out" }}>
+          <Window id="game" title={WINDOW_CONFIGS.game.title} defaultPosition={DEFAULT_POSITIONS.game} width={WINDOW_CONFIGS.game.width} height={WINDOW_CONFIGS.game.height} zIndex={10 + windowOrder.indexOf("game")} onClose={() => closeWindow("game")} onFocus={focusWindow}>
             <GameWindow />
-          ) : id === "howtoplay" ? (
+          </Window>
+        </div>
+      )}
+      {openWindows.has("howtoplay") && (
+        <div style={{ animation: "win-open 0.2s ease-out" }}>
+          <Window id="howtoplay" title={WINDOW_CONFIGS.howtoplay.title} defaultPosition={DEFAULT_POSITIONS.howtoplay} width={WINDOW_CONFIGS.howtoplay.width} height={WINDOW_CONFIGS.howtoplay.height} zIndex={10 + windowOrder.indexOf("howtoplay")} onClose={() => closeWindow("howtoplay")} onFocus={focusWindow}>
             <HowToPlayWindow onClose={() => closeWindow("howtoplay")} />
-          ) : id === "preorder" ? (
+          </Window>
+        </div>
+      )}
+      {openWindows.has("preorder") && (
+        <div style={{ animation: "win-open 0.2s ease-out" }}>
+          <Window id="preorder" title={WINDOW_CONFIGS.preorder.title} defaultPosition={DEFAULT_POSITIONS.preorder} width={WINDOW_CONFIGS.preorder.width} height={WINDOW_CONFIGS.preorder.height} zIndex={10 + windowOrder.indexOf("preorder")} onClose={() => closeWindow("preorder")} onFocus={focusWindow}>
             <PreOrderWindow />
-          ) : id === "about" ? (
+          </Window>
+        </div>
+      )}
+      {openWindows.has("about") && (
+        <div style={{ animation: "win-open 0.2s ease-out" }}>
+          <Window id="about" title={WINDOW_CONFIGS.about.title} defaultPosition={DEFAULT_POSITIONS.about} width={WINDOW_CONFIGS.about.width} height={WINDOW_CONFIGS.about.height} zIndex={10 + windowOrder.indexOf("about")} onClose={() => closeWindow("about")} onFocus={focusWindow}>
             <AboutWindow />
-          ) : null}
-        </Window>
-      ))}
+          </Window>
+        </div>
+      )}
 
       <Taskbar openWindows={openWindows} onOpen={openWindow} onFocus={focusWindow} />
     </div>
