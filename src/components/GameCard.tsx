@@ -27,7 +27,7 @@ const GameCard = ({
   enterDelay = 0,
   shaking,
 }: GameCardProps) => {
-  const baseShadow = "0 2px 8px rgba(0,0,0,0.25)";
+  const baseShadow = "0 6px 14px rgba(0,0,0,0.25)";
   const boxShadow = matched
     ? `0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5), ${baseShadow}`
     : highlighted
