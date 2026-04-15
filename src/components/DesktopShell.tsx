@@ -118,7 +118,7 @@ const DesktopShell: React.FC = () => {
         height: "100vh",
         overflow: mobile ? "auto" : "hidden",
         position: "relative",
-        background: "#2568B0",
+        background: "#0072B2",
         paddingBottom: mobile ? 60 : 0,
         paddingTop: mobile ? 16 : 0,
       }}
@@ -131,19 +131,28 @@ const DesktopShell: React.FC = () => {
       `}</style>
 
       {!mobile && (
-        <img
-          src="/WhoopWhoop_Stacked_Logo.svg"
-          alt=""
+        <div
           style={{
             position: "absolute",
             width: "55vw",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -55%)",
-            opacity: 0.1,
             pointerEvents: "none",
+            overflow: "hidden",
           }}
-        />
+        >
+          <img
+            src="/WhoopWhoop_Stacked_Logo.svg"
+            alt=""
+            style={{
+              width: "100%",
+              display: "block",
+              filter: "brightness(0) saturate(100%)",
+              opacity: 0.12,
+            }}
+          />
+        </div>
       )}
 
       {ALL_IDS.map(renderWindow)}
