@@ -79,7 +79,7 @@ const GameCard = ({
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
-            borderRadius: 8,
+            borderRadius: 6,
             overflow: "hidden",
             boxShadow,
           }}
@@ -112,7 +112,7 @@ const GameCard = ({
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
-            borderRadius: 8,
+            borderRadius: 6,
             overflow: "hidden",
             boxShadow,
             transform: "rotateY(180deg)",
