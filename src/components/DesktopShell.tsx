@@ -132,9 +132,15 @@ const DesktopShell: React.FC = () => {
 
       {/* Inline SVG noise filter */}
       <svg width="0" height="0" style={{ position: "absolute" }}>
-        <filter id="noise">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={4} stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
+        <filter id="noise" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves={4} stitchTiles="stitch" result="turbulence" />
+          <feColorMatrix type="saturate" values="0" in="turbulence" result="gray" />
+          <feComponentTransfer in="gray" result="contrast">
+            <feFuncR type="discrete" tableValues="0 1" />
+            <feFuncG type="discrete" tableValues="0 1" />
+            <feFuncB type="discrete" tableValues="0 1" />
+          </feComponentTransfer>
+          <feBlend in="SourceGraphic" in2="contrast" mode="multiply" />
         </filter>
       </svg>
 
@@ -144,8 +150,9 @@ const DesktopShell: React.FC = () => {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
+          background: "#0072B2",
           filter: "url(#noise)",
-          opacity: 0.12,
+          opacity: 0.3,
           zIndex: 1,
         }}
       />
