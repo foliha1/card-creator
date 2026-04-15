@@ -33,8 +33,8 @@ const Window: React.FC<WindowProps> = ({
 
   const clamp = useCallback(
     (x: number, y: number) => ({
-      x: Math.max(0, Math.min(x, window.innerWidth - width)),
-      y: Math.max(0, Math.min(y, window.innerHeight - height)),
+      x: Math.max(0, Math.min(x, Math.max(0, window.innerWidth - width))),
+      y: Math.max(0, Math.min(y, Math.max(0, window.innerHeight - height))),
     }),
     [width, height]
   );
