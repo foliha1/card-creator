@@ -4,7 +4,11 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 
-const GameWindow: React.FC = () => {
+interface GameWindowProps {
+  mobile?: boolean;
+}
+
+const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
   const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
   const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
   const [gameStarted, setGameStarted] = useState(false);
@@ -107,6 +111,7 @@ const GameWindow: React.FC = () => {
         setGameStarted(false);
         setGameKey((k) => k + 1);
       }}
+      mobile={mobile}
     />
   );
 };
@@ -115,9 +120,10 @@ interface GamePlayAreaProps {
   tier: "easy" | "standard" | "cutthroat";
   gridSize: "3x2" | "3x3";
   onNewGame: () => void;
+  mobile?: boolean;
 }
 
-const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame }) => {
+const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false }) => {
   const g = useGameState(tier, gridSize);
 
   // --- Animation state (carried from old GameScreen) ---
