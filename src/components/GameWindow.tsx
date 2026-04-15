@@ -10,21 +10,90 @@ const GameWindow: React.FC = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [gameKey, setGameKey] = useState(0);
 
+  const pillStyle = (active: boolean, accentColor?: string): React.CSSProperties => ({
+    fontFamily: '"Friend", serif',
+    fontStyle: "italic",
+    fontSize: 12,
+    padding: "6px 12px",
+    borderRadius: 999,
+    border: active ? `2px solid ${accentColor || "#231f20"}` : "2px solid #231f20",
+    background: active ? (accentColor || "#231f20") : "#f8f2e9",
+    color: active ? "#f8f2e9" : "#231f20",
+    cursor: "pointer",
+    transition: "all 0.15s",
+  });
+
+  const TIERS = [
+    { id: "easy" as const, label: "Easy Going", color: "#0072b2" },
+    { id: "standard" as const, label: "Standard", color: "#e79024" },
+    { id: "cutthroat" as const, label: "Cutthroat", color: "#d72229" },
+  ];
+
+  const GRIDS = [
+    { id: "3x2" as const, label: "3×2" },
+    { id: "3x3" as const, label: "3×3 Challenge" },
+  ];
+
   if (!gameStarted) {
     return (
       <div
         style={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           height: "100%",
-          color: "#231f20",
-          fontFamily: '"Friend", serif',
-          fontStyle: "italic",
-          fontSize: 18,
+          padding: 24,
         }}
       >
-        Setup
+        <div style={{ fontFamily: '"Friend", serif', fontStyle: "italic", fontSize: 20, color: "#231f20", textAlign: "center", marginBottom: 24 }}>
+          Choose Your Settings
+        </div>
+
+        {/* Difficulty */}
+        <div style={{ width: "100%", maxWidth: 280 }}>
+          <div style={{ fontSize: 11, color: "#231f20", opacity: 0.5, marginBottom: 6 }}>Difficulty</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {TIERS.map((t) => (
+              <button key={t.id} style={pillStyle(tier === t.id, t.color)} onClick={() => setTier(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Grid Size */}
+        <div style={{ width: "100%", maxWidth: 280, marginTop: 16 }}>
+          <div style={{ fontSize: 11, color: "#231f20", opacity: 0.5, marginBottom: 6 }}>Grid Size</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {GRIDS.map((g) => (
+              <button key={g.id} style={pillStyle(gridSize === g.id)} onClick={() => setGridSize(g.id)}>
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Start */}
+        <button
+          onClick={() => setGameStarted(true)}
+          style={{
+            marginTop: 28,
+            background: "#231f20",
+            color: "#f8f2e9",
+            fontFamily: '"Friend", serif',
+            fontStyle: "italic",
+            fontSize: 16,
+            padding: "12px 32px",
+            borderRadius: 4,
+            border: "none",
+            cursor: "pointer",
+            width: "100%",
+            maxWidth: 240,
+          }}
+        >
+          Start Game
+        </button>
       </div>
     );
   }
