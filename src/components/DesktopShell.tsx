@@ -144,10 +144,8 @@ const DesktopShell: React.FC = () => {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          background: "#231F20",
           filter: "url(#noise)",
-          opacity: 0.15,
-          mixBlendMode: "multiply",
+          opacity: 0.12,
           zIndex: 1,
         }}
       />
