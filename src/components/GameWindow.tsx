@@ -3,6 +3,7 @@ import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
+import { ALL_CARDS } from "@/cardData";
 
 interface GameWindowProps {
   mobile?: boolean;
