@@ -62,7 +62,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             <img
               src="/cards/3 tri red.svg"
               alt="Example card"
-              style={{ width: 167, height: 234, borderRadius: 6 }}
+              style={{ width: 130, height: 182, borderRadius: 6 }}
             />
           </>
         )}
