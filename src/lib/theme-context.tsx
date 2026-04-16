@@ -51,10 +51,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const logoColor = useMemo(() => {
-    if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface) return COLORS.panelMuted;
+    if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface || bgTheme === "wild") return COLORS.panelMuted;
     return deriveLogoColor(bgTheme);
   }, [bgTheme]);
-  const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue) ? COLORS.surface : COLORS.ink, [bgTheme]);
+  const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue || bgTheme === "wild") ? COLORS.surface : COLORS.ink, [bgTheme]);
 
   const value = useMemo(() => ({ bgTheme, logoColor, setTheme, themeInk }), [bgTheme, logoColor, setTheme, themeInk]);
 

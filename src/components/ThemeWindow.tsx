@@ -40,7 +40,7 @@ const ThemeWindow: React.FC = () => {
                 width: 56,
                 height: 56,
                 borderRadius: "50%",
-                background: color,
+                background: color === "wild" ? `url(/Whoop_Whoop_Wild.png) center/cover` : color,
                 border: isActive ? BORDER.heavy : BORDER.standard,
                 boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
                 cursor: "pointer",
