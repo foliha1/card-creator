@@ -344,7 +344,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Mute toggle — top right */}
       <div style={{ position: "absolute", top: SPACE[4], right: SPACE[4], zIndex: 10 }}>
-        <IconButton tone="default" onClick={toggleMute} size={mobile ? 36 : 32}>
+        <IconButton tone="default" onClick={toggleMute}>
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </IconButton>
       </div>
