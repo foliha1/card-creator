@@ -96,7 +96,7 @@ const DesktopShell: React.FC = () => {
     : undefined;
 
   const WindowLoader = () => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.ink, fontFamily: '"Friend", sans-serif', fontSize: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.ink, fontFamily: '"Friend", sans-serif', fontSize: TYPE.body }}>
       Loading…
     </div>
   );

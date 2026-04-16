@@ -153,7 +153,7 @@ const Window: React.FC<WindowProps> = ({
             flex: 1,
             fontFamily: FONT_FAMILY,
             fontStyle: "normal",
-            fontSize: 20,
+            fontSize: TYPE.subhead,
             color: COLORS.ink,
             pointerEvents: "none",
             lineHeight: 1,

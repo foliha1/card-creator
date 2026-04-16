@@ -239,7 +239,7 @@ const MusicWindow: React.FC = () => {
       }}>
         <span style={{
           fontFamily: FONT_FAMILY,
-          fontSize: 14,
+          fontSize: TYPE.body,
           color: COLORS.ink,
           flexShrink: 0,
         }}>

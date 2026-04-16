@@ -13,7 +13,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
     fontWeight: 700,
-    fontSize: 20,
+    fontSize: TYPE.subhead,
     color: COLORS.ink,
     marginBottom: SPACE[4],
   };
@@ -21,7 +21,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const bodyStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
-    fontSize: 18,
+    fontSize: TYPE.subhead,
     color: COLORS.ink,
     opacity: 0.6,
     maxWidth: 280,
@@ -75,7 +75,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                     color: COLORS.surface,
                     fontFamily: FONT_FAMILY,
                     fontStyle: "italic",
-                    fontSize: 9,
+                    fontSize: TYPE.caption,
                     fontWeight: 700,
                   }}
                 >
@@ -137,7 +137,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           fullWidth
           disabled={slide === 0}
           onClick={() => setSlide((s) => s - 1)}
-          style={{ flex: 1, fontSize: 17, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: TYPE.ui, padding: SPACE[6] }}
         >
           Back
         </AppButton>
@@ -153,7 +153,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               setSlide((s) => s + 1);
             }
           }}
-          style={{ flex: 1, fontSize: 17, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: TYPE.ui, padding: SPACE[6] }}
         >
           {slide === 2 ? "Got it!" : "Next"}
         </AppButton>
