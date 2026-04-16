@@ -255,30 +255,32 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </IconButton>
       </div>
 
-      {/* Toast overlay — floats above game area, does not affect layout */}
-      <div style={{
-        position: "absolute",
-        top: SPACE[6],
-        left: 0,
-        right: 0,
-        zIndex: 20,
-        display: "flex",
-        justifyContent: "center",
-        pointerEvents: "none",
-      }}>
-        {showDoubleTitle && (
-          <div style={{
-            padding: `${SPACE[3]}px ${SPACE[7]}px`,
-            animation: doublePhase === "idle"
-              ? "double-title-out 0.3s ease forwards"
-              : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
+      {showDoubleTitle && (
+        <div style={{
+          position: "absolute",
+          top: "40%",
+          left: 0,
+          right: 0,
+          zIndex: 20,
+          display: "flex",
+          justifyContent: "center",
+          pointerEvents: "none",
+          animation: doublePhase === "idle"
+            ? "double-title-out 0.3s ease forwards"
+            : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
+        }}>
+          <span style={{
+            color: COLORS.orange,
+            fontSize: TYPE.display,
+            fontWeight: 700,
+            fontStyle: "italic",
+            fontFamily: FONT_FAMILY,
+            textShadow: `0 2px 8px rgba(0,0,0,0.2)`,
           }}>
-            <span style={{ color: COLORS.orange, fontSize: TYPE.subhead, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
-              DOUBLE MATCH!
-            </span>
-          </div>
-        )}
-      </div>
+            DOUBLE MATCH!
+          </span>
+        </div>
+      )}
 
 
       {/* Bonus pick pill */}
