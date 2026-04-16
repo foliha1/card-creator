@@ -43,7 +43,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           alignItems: "center",
           justifyContent: "center",
           height: "100%",
-          padding: 24,
+          padding: SPACE[12],
         }}
       >
         <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 20, color: COLORS.ink, textAlign: "center", marginBottom: SPACE[12] }}>
