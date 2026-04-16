@@ -28,11 +28,10 @@ const SC_EVENTS = {
   FINISH: "finish",
 };
 
-const formatTime = (ms: number) => {
-  const totalSeconds = Math.floor(ms / 1000);
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+const fmt = (ms: number) => {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return String(m).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
 };
 
 const MusicWindow: React.FC = () => {
@@ -47,6 +46,11 @@ const MusicWindow: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+
+  const [playHover, setPlayHover] = useState(false);
+  const [pauseHover, setPauseHover] = useState(false);
+  const [prevHover, setPrevHover] = useState(false);
+  const [nextHover, setNextHover] = useState(false);
 
   useEffect(() => {
     if (!document.getElementById("sc-widget-api")) {
@@ -98,6 +102,8 @@ const MusicWindow: React.FC = () => {
     widgetRef.current.seekTo(pct * duration);
   };
 
+  const disabledStyle: React.CSSProperties = !ready ? { opacity: 0.5, pointerEvents: "none" } : {};
+
   return (
     <div style={{ display: "flex", flexDirection: "column", padding: 10, gap: 10, height: "100%" }}>
       <iframe
@@ -145,6 +151,7 @@ const MusicWindow: React.FC = () => {
         alignItems: "center",
         gap: 12,
         height: 32,
+        ...disabledStyle,
       }}>
         <span style={{
           fontFamily: '"Friend", sans-serif',
@@ -152,7 +159,7 @@ const MusicWindow: React.FC = () => {
           color: "#000000",
           flexShrink: 0,
         }}>
-          {formatTime(currentTime)}
+          {fmt(currentTime)}
         </span>
         <div
           ref={progressBarRef}
@@ -177,20 +184,23 @@ const MusicWindow: React.FC = () => {
       </div>
 
       {/* ROW 3 — Controls */}
-      <div style={{ display: "flex", gap: 4, width: "100%" }}>
-        {/* Play */}
+      <div style={{ display: "flex", gap: 4, width: "100%", ...disabledStyle }}>
         <button
           onClick={() => widgetRef.current?.play()}
+          onMouseEnter={() => setPlayHover(true)}
+          onMouseLeave={() => setPlayHover(false)}
           style={{
             flex: 1,
             height: 54,
-            background: "#0072B2",
+            background: playHover ? "#005f94" : "#0072B2",
             border: "1.5px solid #231f20",
             borderRadius: 6,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
+            transition: "background 0.15s",
+            boxShadow: !playing ? "inset 0 2px 0 rgba(0,0,0,0.2)" : "none",
           }}
         >
           <div style={{
@@ -202,13 +212,14 @@ const MusicWindow: React.FC = () => {
           }} />
         </button>
 
-        {/* Pause */}
         <button
           onClick={() => widgetRef.current?.pause()}
+          onMouseEnter={() => setPauseHover(true)}
+          onMouseLeave={() => setPauseHover(false)}
           style={{
             flex: 1,
             height: 54,
-            background: "#E79024",
+            background: pauseHover ? "#cf7d1f" : "#E79024",
             border: "1.5px solid #231f20",
             borderRadius: 6,
             display: "flex",
@@ -216,43 +227,49 @@ const MusicWindow: React.FC = () => {
             justifyContent: "center",
             cursor: "pointer",
             gap: 6,
+            transition: "background 0.15s",
+            boxShadow: playing ? "inset 0 2px 0 rgba(0,0,0,0.2)" : "none",
           }}
         >
           <div style={{ width: 7, height: 26, background: "#231f20" }} />
           <div style={{ width: 7, height: 26, background: "#231f20" }} />
         </button>
 
-        {/* Skip Back */}
         <button
           onClick={() => widgetRef.current?.prev()}
+          onMouseEnter={() => setPrevHover(true)}
+          onMouseLeave={() => setPrevHover(false)}
           style={{
             flex: 0.5,
             height: 54,
-            background: "#F8F2E9",
+            background: prevHover ? "#e8e0d4" : "#F8F2E9",
             border: "1.5px solid #231f20",
             borderRadius: 6,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
+            transition: "background 0.15s",
           }}
         >
           <SkipBack size={22} color="#231f20" />
         </button>
 
-        {/* Skip Forward */}
         <button
           onClick={() => widgetRef.current?.next()}
+          onMouseEnter={() => setNextHover(true)}
+          onMouseLeave={() => setNextHover(false)}
           style={{
             flex: 0.5,
             height: 54,
-            background: "#F8F2E9",
+            background: nextHover ? "#e8e0d4" : "#F8F2E9",
             border: "1.5px solid #231f20",
             borderRadius: 6,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
+            transition: "background 0.15s",
           }}
         >
           <SkipForward size={22} color="#231f20" />
