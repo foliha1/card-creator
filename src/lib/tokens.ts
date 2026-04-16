@@ -24,6 +24,22 @@ export const RADIUS = {
   lg: 8,
 } as const;
 
+export const SPACE = {
+  0: 0,
+  1: 2,
+  2: 4,
+  3: 6,
+  4: 8,
+  5: 10,
+  6: 12,
+  7: 14,
+  8: 16,
+  10: 20,
+  12: 24,
+  14: 28,
+  16: 32,
+} as const;
+
 export const SHADOW = {
   windowFocused: "4px 6px 0 rgba(0,0,0,0.3)",
   windowUnfocused: "3px 4px 0 rgba(0,0,0,0.15)",
