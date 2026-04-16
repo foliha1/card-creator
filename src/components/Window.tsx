@@ -148,7 +148,7 @@ const Window: React.FC<WindowProps> = ({
             <line x1="13" y1="2" x2="2" y2="13" />
           </svg>
         </IconButton>
-        <span
+        <h2
           style={{
             flex: 1,
             fontFamily: FONT_FAMILY,
@@ -158,10 +158,12 @@ const Window: React.FC<WindowProps> = ({
             pointerEvents: "none",
             lineHeight: 1,
             textAlign: "right",
+            margin: 0,
+            fontWeight: "normal",
           }}
         >
           {title}
-        </span>
+        </h2>
       </div>
 
       {/* Content */}
