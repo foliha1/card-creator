@@ -21,12 +21,55 @@ const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "About", id: "about" },
 ];
 
+interface ThemeSwatchProps {
+  color: string;
+  label: string;
+  isActive: boolean;
+  onSelect: (color: string) => void;
+}
+
+const ThemeSwatch = React.memo<ThemeSwatchProps>(({ color, label, isActive, onSelect }) => {
+  const handleEnter = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = "scale(1.1)";
+  }, []);
+  const handleLeave = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = "scale(1)";
+  }, []);
+  const handleClick = React.useCallback(() => onSelect(color), [color, onSelect]);
+  return (
+    <button
+      aria-label={label}
+      onClick={handleClick}
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: "50%",
+        background: color,
+        border: isActive ? BORDER.heavy : BORDER.standard,
+        boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
+        cursor: "pointer",
+        transition: `transform ${MOTION.fast}`,
+        padding: 0,
+        flexShrink: 0,
+      }}
+    />
+  );
+});
+ThemeSwatch.displayName = "ThemeSwatch";
+
 const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeWindow, mobile = false }) => {
   const { bgTheme, setTheme } = useTheme();
   const [muted, setMutedState] = useState(isMuted());
   const [themeOpen, setThemeOpen] = useState(false);
   const themeBtnRef = useRef<HTMLButtonElement>(null);
   const themePanelRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectTheme = React.useCallback((color: string) => {
+    setTheme(color);
+    setThemeOpen(false);
+  }, [setTheme]);
 
   const toggleMute = () => {
     const next = !muted;
@@ -195,30 +238,15 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
                 BACKGROUND
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                {THEME_SWATCHES.map(({ color, label }) => {
-                  const isActive = bgTheme === color;
-                  return (
-                    <button
-                      key={color}
-                      aria-label={label}
-                      onClick={() => { setTheme(color); setThemeOpen(false); }}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "50%",
-                        background: color,
-                        border: isActive ? BORDER.heavy : BORDER.standard,
-                        boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
-                        cursor: "pointer",
-                        transition: `transform ${MOTION.fast}`,
-                        padding: 0,
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                    />
-                  );
-                })}
+                {THEME_SWATCHES.map(({ color, label }) => (
+                  <ThemeSwatch
+                    key={color}
+                    color={color}
+                    label={label}
+                    isActive={bgTheme === color}
+                    onSelect={handleSelectTheme}
+                  />
+                ))}
               </div>
             </div>
           </div>
