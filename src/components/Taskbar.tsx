@@ -82,8 +82,10 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
             flexShrink: 0,
           }}
         >
-          {btn.icon && <span style={{ display: "flex", alignItems: "center", marginRight: SPACE[3] }}>{btn.icon}</span>}
-          {btn.label}
+          <span style={{ display: "flex", alignItems: "center", gap: SPACE[3] }}>
+            {btn.icon}
+            {btn.label}
+          </span>
         </AppButton>
       ))}
     </div>

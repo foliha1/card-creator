@@ -6,7 +6,15 @@ const ThemeWindow: React.FC = () => {
   const { bgTheme, setTheme } = useTheme();
 
   return (
-    <div style={{ padding: SPACE[12], display: "flex", flexDirection: "column", gap: SPACE[10] }}>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100%",
+      padding: SPACE[8],
+      gap: SPACE[6],
+    }}>
       <div
         style={{
           fontFamily: FONT_FAMILY,
