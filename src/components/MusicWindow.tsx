@@ -169,7 +169,7 @@ const MusicWindow: React.FC = () => {
     <div style={{ display: "flex", flexDirection: "column", padding: SPACE[5], gap: SPACE[5] }}>
       <iframe
         ref={iframeRef}
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/racesmusic/sets/races-god-gaming-playlist&auto_play=false"
+        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/foliha/sets/whoop-whoop-house-mix&auto_play=false"
         style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
         allow="autoplay"
       />
