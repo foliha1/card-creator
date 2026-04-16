@@ -10,4 +10,9 @@ export const PLAYLISTS: Playlist[] = [
     label: "WHOOP! WHOOP! House Mix",
     url: "https://soundcloud.com/foliha/sets/whoop-whoop-house-mix",
   },
+  {
+    id: "test",
+    label: "Test Playlist",
+    url: "https://soundcloud.com/racesmusic/sets/races-god-gaming-playlist",
+  },
 ];
