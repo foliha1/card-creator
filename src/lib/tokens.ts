@@ -58,6 +58,7 @@ export const THEME_SWATCHES = [
   { color: COLORS.blue, label: "Blue" },
   { color: COLORS.orange, label: "Orange" },
   { color: COLORS.offWhite, label: "Off-White" },
+  { color: "wild", label: "Wild" },
 ] as const;
 
 export const FONT_FAMILY = '"Friend", sans-serif';
