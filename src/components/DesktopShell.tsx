@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, Suspense } from "reac
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
-import { COLORS } from "@/lib/tokens";
+
 
 const HowToPlayWindow = React.lazy(() => import("@/components/HowToPlayWindow"));
 const PreOrderWindow = React.lazy(() => import("@/components/PreOrderWindow"));
