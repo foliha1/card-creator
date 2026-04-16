@@ -264,76 +264,8 @@ const MusicWindow: React.FC = () => {
         )}
       </div>
 
-      {/* Playlist selector — only visible when multiple playlists exist */}
-      {PLAYLISTS.length > 1 && (
-        <div ref={playlistRef} style={{ position: "relative" }}>
-          <button
-            onClick={() => setPlaylistOpen((v) => !v)}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              background: COLORS.surface,
-              border: BORDER.standard,
-              borderRadius: RADIUS.md,
-              padding: `${SPACE[3]}px ${SPACE[6]}px`,
-              cursor: "pointer",
-              fontFamily: FONT_FAMILY,
-              fontStyle: "italic",
-              fontSize: TYPE.body,
-              color: COLORS.ink,
-              transition: `background ${MOTION.fast}`,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = COLORS.panelMutedHover; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = COLORS.surface; }}
-          >
-            {currentPlaylist.label}
-            <ChevronDown size={16} style={{ transform: playlistOpen ? "rotate(180deg)" : "none", transition: `transform ${MOTION.fast}` }} />
-          </button>
 
-          {playlistOpen && (
-            <div style={{
-              position: "absolute",
-              top: "100%",
-              left: 0,
-              right: 0,
-              zIndex: 10,
-              background: COLORS.surface,
-              border: BORDER.standard,
-              borderRadius: RADIUS.md,
-              marginTop: 2,
-              overflow: "hidden",
-              boxShadow: SHADOW.windowFocused,
-            }}>
-              {PLAYLISTS.map((pl, idx) => (
-                <button
-                  key={pl.id}
-                  onClick={() => { handlePlaylistChange(pl); setPlaylistOpen(false); }}
-                  style={{
-                    width: "100%",
-                    padding: `${SPACE[4]}px ${SPACE[6]}px`,
-                    background: pl.id === currentPlaylist.id ? COLORS.panel : "transparent",
-                    border: "none",
-                    borderBottom: idx === PLAYLISTS.length - 1 ? "none" : BORDER.standard,
-                    fontFamily: FONT_FAMILY,
-                    fontStyle: "italic",
-                    fontSize: TYPE.body,
-                    color: COLORS.ink,
-                    cursor: "pointer",
-                    textAlign: "left",
-                    transition: `background ${MOTION.fast}`,
-                  }}
-                  onMouseEnter={(e) => { if (pl.id !== currentPlaylist.id) e.currentTarget.style.background = COLORS.panelMutedHover; }}
-                  onMouseLeave={(e) => { if (pl.id !== currentPlaylist.id) e.currentTarget.style.background = "transparent"; }}
-                >
-                  {pl.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+
 
       {/* ROW 2 — Progress Bar */}
       <div style={{
@@ -526,6 +458,76 @@ const MusicWindow: React.FC = () => {
             pointerEvents: "none",
           }} />
         </div>
+        {PLAYLISTS.length > 1 && (
+          <div ref={playlistRef} style={{ position: "relative", flexShrink: 0, marginLeft: SPACE[3] }}>
+            <button
+              onClick={() => setPlaylistOpen((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: SPACE[2],
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontSize: TYPE.caption,
+                color: COLORS.ink,
+                padding: `${SPACE[1]}px ${SPACE[2]}px`,
+                borderRadius: RADIUS.sm,
+                transition: `background ${MOTION.fast}`,
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = COLORS.panelMutedHover; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              {currentPlaylist.label}
+              <ChevronDown size={12} style={{
+                transform: playlistOpen ? "rotate(180deg)" : "rotate(0deg)",
+                transition: `transform ${MOTION.fast}`,
+              }} />
+            </button>
+            {playlistOpen && (
+              <div style={{
+                position: "absolute",
+                bottom: "calc(100% + 4px)",
+                right: 0,
+                minWidth: 180,
+                background: COLORS.surface,
+                border: BORDER.standard,
+                borderRadius: RADIUS.md,
+                boxShadow: SHADOW.windowFocused,
+                zIndex: 50,
+                overflow: "hidden",
+              }}>
+                {PLAYLISTS.map((pl, idx) => (
+                  <button
+                    key={pl.id}
+                    onClick={() => { handlePlaylistChange(pl); setPlaylistOpen(false); }}
+                    style={{
+                      width: "100%",
+                      padding: `${SPACE[4]}px ${SPACE[6]}px`,
+                      background: pl.id === currentPlaylist.id ? COLORS.panel : "transparent",
+                      border: "none",
+                      borderBottom: idx === PLAYLISTS.length - 1 ? "none" : BORDER.standard,
+                      fontFamily: FONT_FAMILY,
+                      fontStyle: "italic",
+                      fontSize: TYPE.body,
+                      color: COLORS.ink,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: `background ${MOTION.fast}`,
+                    }}
+                    onMouseEnter={(e) => { if (pl.id !== currentPlaylist.id) e.currentTarget.style.background = COLORS.panelMutedHover; }}
+                    onMouseLeave={(e) => { if (pl.id !== currentPlaylist.id) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {pl.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
