@@ -161,53 +161,63 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               position: "absolute",
               bottom: "calc(100% + 8px)",
               right: 0,
-              width: 200,
-              background: "#D0C3AF",
-              border: "1px solid #231f20",
-              borderRadius: 4,
-              padding: 12,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              width: 260,
+              background: "#F8F2E9",
+              border: "1.5px solid #231f20",
+              borderRadius: 6,
+              padding: 10,
+              boxShadow: "4px 6px 0 rgba(0,0,0,0.3)",
               zIndex: 200,
+              display: "flex",
+              flexDirection: "column" as const,
+              gap: 10,
             }}
           >
-            <div
-              style={{
-                fontFamily: '"Friend", sans-serif',
-                fontStyle: "normal",
-                fontSize: 10,
-                color: "rgba(35,31,32,0.5)",
-                textTransform: "uppercase",
-                letterSpacing: 1,
-                marginBottom: 10,
-              }}
-            >
-              BACKGROUND
+            <div style={{ height: 26, padding: "0 4px", display: "flex", flexDirection: "row" as const, alignItems: "center" }}>
+              <div style={{ fontFamily: '"Friend", sans-serif', fontStyle: "normal", fontSize: 20, color: "#231f20", lineHeight: 1, textAlign: "right" as const, flex: 1 }}>
+                APPEARANCE
+              </div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {THEME_SWATCHES.map(({ color, label }) => {
-                const isActive = theme === color;
-                return (
-                  <button
-                    key={color}
-                    aria-label={label}
-                    onClick={() => { onThemeChange?.(color); setThemeOpen(false); }}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      background: color,
-                      border: isActive ? "2px solid #231f20" : "1.5px solid #231f20",
-                      boxShadow: isActive ? "inset 0 0 0 3px #fef9f0" : "none",
-                      cursor: "pointer",
-                      transition: "transform 150ms ease-out",
-                      padding: 0,
-                      flexShrink: 0,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  />
-                );
-              })}
+            <div style={{ background: "#D0C3AF", border: "1.5px solid #231f20", borderRadius: 6, padding: 12 }}>
+              <div
+                style={{
+                  fontFamily: '"Friend", sans-serif',
+                  fontStyle: "normal",
+                  fontSize: 10,
+                  color: "rgba(35,31,32,0.5)",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  marginBottom: 10,
+                }}
+              >
+                BACKGROUND
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                {THEME_SWATCHES.map(({ color, label }) => {
+                  const isActive = theme === color;
+                  return (
+                    <button
+                      key={color}
+                      aria-label={label}
+                      onClick={() => { onThemeChange?.(color); setThemeOpen(false); }}
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: "50%",
+                        background: color,
+                        border: isActive ? "2px solid #231f20" : "1.5px solid #231f20",
+                        boxShadow: isActive ? "inset 0 0 0 4px #F8F2E9" : "none",
+                        cursor: "pointer",
+                        transition: "transform 150ms ease-out",
+                        padding: 0,
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
