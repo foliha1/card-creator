@@ -585,6 +585,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         }}
       >
         {/* New Game button */}
+        <IconButton tone="default" onClick={toggleMute} size={mobile ? 40 : 36}>
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </IconButton>
+
         <AppButton
           variant="primary"
           tone="blue"
