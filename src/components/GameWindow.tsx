@@ -4,7 +4,7 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
-import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY } from "@/lib/tokens";
 
 interface GameWindowProps {
   mobile?: boolean;
@@ -26,7 +26,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
     background: active ? (accentColor || COLORS.ink) : COLORS.surface,
     color: active ? COLORS.surface : COLORS.ink,
     cursor: "pointer",
-    transition: "all 0.15s",
+    transition: `all ${MOTION.fast}`,
   });
 
   const TIERS = [

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY } from "@/lib/tokens";
 
 interface WindowProps {
   title: string;
@@ -149,7 +149,7 @@ const Window: React.FC<WindowProps> = ({
             width: mobile ? 44 : 24,
             height: mobile ? 44 : 24,
             color: COLORS.ink,
-            transition: "color 0.15s",
+            transition: `color ${MOTION.fast}`,
             flexShrink: 0,
           }}
           onMouseEnter={(e) => {
