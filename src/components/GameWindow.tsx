@@ -54,7 +54,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 
         {/* Difficulty */}
         <div style={{ width: "100%", maxWidth: 280 }}>
-          <div style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Difficulty</div>
+          <div style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginBottom: SPACE[3] }}>Difficulty</div>
           <div style={{ display: "flex", gap: SPACE[3] }}>
             {TIERS.map((t) => (
               <AppButton
@@ -73,7 +73,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 
         {/* Grid Size */}
         <div style={{ width: "100%", maxWidth: 280, marginTop: SPACE[8] }}>
-          <div style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Grid Size</div>
+          <div style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginBottom: SPACE[3] }}>Grid Size</div>
           <div style={{ display: "flex", gap: SPACE[3] }}>
             {GRIDS.map((g) => (
               <AppButton
@@ -320,7 +320,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         <div style={{ fontSize: TYPE.display, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
           Game Over!
         </div>
-        <div style={{ fontSize: TYPE.body, opacity: 0.7 }}>
+        <div style={{ fontSize: TYPE.body, color: COLORS.inkSubtle }}>
           You collected {collected} of {totalCards} cards
         </div>
         <div style={{ fontSize: TYPE.head, fontWeight: 700, fontFamily: FONT_FAMILY }}>
@@ -466,7 +466,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
           {/* Draw pile inline on mobile */}
           {mobile && (
-            <span style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.5, marginLeft: SPACE[4] }}>
+            <span style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginLeft: SPACE[4] }}>
               {g.deck.length} left
             </span>
           )}
@@ -574,7 +574,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 ))
               )}
             </div>
-            <span style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.7, textAlign: "center" }}>
+            <span style={{ fontSize: TYPE.caption, color: COLORS.inkSubtle, textAlign: "center" }}>
               {g.deck.length} left
             </span>
           </div>

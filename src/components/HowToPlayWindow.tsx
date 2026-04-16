@@ -22,8 +22,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
     fontSize: TYPE.subhead,
-    color: COLORS.ink,
-    opacity: 0.6,
+    color: COLORS.inkMuted,
     maxWidth: 280,
     lineHeight: 1.5,
   };
