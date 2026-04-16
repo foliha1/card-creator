@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
+import { PLAYLISTS, Playlist } from "@/lib/playlists";
 
 declare global {
   interface Window {
@@ -12,6 +13,7 @@ declare global {
 
 interface SCWidget {
   bind: (event: string, callback: (...args: any[]) => void) => void;
+  load: (url: string, options?: { auto_play?: boolean; callback?: () => void }) => void;
   play: () => void;
   pause: () => void;
   toggle: () => void;
@@ -53,6 +55,7 @@ const MusicWindow: React.FC = () => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [currentPlaylist, setCurrentPlaylist] = useState<Playlist>(PLAYLISTS[0]);
 
   const [playHover, setPlayHover] = useState(false);
   const [pauseHover, setPauseHover] = useState(false);
@@ -75,6 +78,26 @@ const MusicWindow: React.FC = () => {
       if (sound.duration) setDuration(sound.duration);
     });
   }, []);
+
+  const handlePlaylistChange = useCallback((playlist: Playlist) => {
+    if (playlist.id === currentPlaylist.id) return;
+    if (!widgetRef.current) return;
+    setReady(false);
+    setPlaying(false);
+    setTrackTitle("");
+    setArtist("");
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+    setCurrentPlaylist(playlist);
+    widgetRef.current.load(playlist.url, {
+      auto_play: false,
+      callback: () => {
+        setReady(true);
+        if (widgetRef.current) updateTrackInfo(widgetRef.current);
+      },
+    });
+  }, [currentPlaylist, updateTrackInfo]);
 
   useEffect(() => {
     const interval = setInterval(() => {
