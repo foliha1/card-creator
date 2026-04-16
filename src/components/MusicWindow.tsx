@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
 
 declare global {
   interface Window {
@@ -182,9 +183,9 @@ const MusicWindow: React.FC = () => {
 
       {/* ROW 1 — Track Info */}
       <div style={{
-        background: "#D0C3AF",
-        border: "1.5px solid #231f20",
-        borderRadius: 6,
+        background: COLORS.panel,
+        border: BORDER.standard,
+        borderRadius: RADIUS.md,
         padding: 12,
         display: "flex",
         flexDirection: "column",
@@ -197,10 +198,10 @@ const MusicWindow: React.FC = () => {
           <>
             <div style={{ overflow: "hidden", whiteSpace: "nowrap", width: "100%", textAlign: "center" }}>
               <span style={{
-                fontFamily: '"Friend", sans-serif',
+                fontFamily: FONT_FAMILY,
                 fontSize: "clamp(18px, 3vw, 28px)",
                 lineHeight: "35px",
-                color: "#231f20",
+                color: COLORS.ink,
                 fontStyle: "normal",
                 ...marqueeStyle(trackTitle),
               }}>
@@ -209,10 +210,10 @@ const MusicWindow: React.FC = () => {
             </div>
             <div style={{ overflow: "hidden", whiteSpace: "nowrap", width: "100%", textAlign: "center" }}>
               <span style={{
-                fontFamily: '"Friend", sans-serif',
+                fontFamily: FONT_FAMILY,
                 fontSize: "clamp(13px, 2.2vw, 20px)",
                 lineHeight: "24px",
-                color: "#231f20",
+                color: COLORS.ink,
                 fontStyle: "italic",
                 ...marqueeStyle(artist),
               }}>
@@ -222,19 +223,19 @@ const MusicWindow: React.FC = () => {
           </>
         ) : (
           <div style={{
-            fontFamily: '"Friend", sans-serif',
+            fontFamily: FONT_FAMILY,
             fontSize: "clamp(16px, 3vw, 28px)",
             lineHeight: "35px",
-            color: "#231f20",
+            color: COLORS.ink,
           }}>Loading...</div>
         )}
       </div>
 
       {/* ROW 2 — Progress Bar */}
       <div style={{
-        background: "#D0C3AF",
-        border: "1.5px solid #231f20",
-        borderRadius: 6,
+        background: COLORS.panel,
+        border: BORDER.standard,
+        borderRadius: RADIUS.md,
         padding: "4px 12px",
         display: "flex",
         alignItems: "center",
@@ -243,7 +244,7 @@ const MusicWindow: React.FC = () => {
         ...disabledStyle,
       }}>
         <span style={{
-          fontFamily: '"Friend", sans-serif',
+          fontFamily: FONT_FAMILY,
           fontSize: 14,
           color: "#000000",
           flexShrink: 0,
@@ -256,9 +257,9 @@ const MusicWindow: React.FC = () => {
           style={{
             flex: 1,
             height: 7,
-            background: "#D0C3AF",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: COLORS.panel,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             overflow: "hidden",
             cursor: "pointer",
           }}
@@ -266,7 +267,7 @@ const MusicWindow: React.FC = () => {
           <div style={{
             width: `${progress * 100}%`,
             height: 14,
-            background: "#231f20",
+            background: COLORS.ink,
             borderRadius: 0,
           }} />
         </div>
@@ -281,9 +282,9 @@ const MusicWindow: React.FC = () => {
           style={{
             flex: 1,
             height: 54,
-            background: playHover ? "#005f94" : "#0072B2",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: playHover ? "#005f94" : COLORS.blue,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -294,7 +295,7 @@ const MusicWindow: React.FC = () => {
         >
           <div style={{
             width: 0, height: 0,
-            borderLeft: "16px solid #231f20",
+            borderLeft: `16px solid ${COLORS.ink}`,
             borderTop: "10px solid transparent",
             borderBottom: "10px solid transparent",
           }} />
@@ -307,9 +308,9 @@ const MusicWindow: React.FC = () => {
           style={{
             flex: 1,
             height: 54,
-            background: pauseHover ? "#cf7d1f" : "#E79024",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: pauseHover ? "#cf7d1f" : COLORS.orange,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -319,8 +320,8 @@ const MusicWindow: React.FC = () => {
             boxShadow: playing ? "inset 0 2px 0 rgba(0,0,0,0.2)" : "none",
           }}
         >
-          <div style={{ width: 7, height: 26, background: "#231f20" }} />
-          <div style={{ width: 7, height: 26, background: "#231f20" }} />
+          <div style={{ width: 7, height: 26, background: COLORS.ink }} />
+          <div style={{ width: 7, height: 26, background: COLORS.ink }} />
         </button>
 
         <button
@@ -329,14 +330,14 @@ const MusicWindow: React.FC = () => {
           onMouseLeave={() => setPrevHover(false)}
           style={{
             flex: 0.5, height: 54,
-            background: prevHover ? "#e8e0d4" : "#F8F2E9",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: prevHover ? "#e8e0d4" : COLORS.surface,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", transition: "background 0.15s",
           }}
         >
-          <SkipBack size={22} color="#231f20" />
+          <SkipBack size={22} color={COLORS.ink} />
         </button>
 
         <button
@@ -345,22 +346,22 @@ const MusicWindow: React.FC = () => {
           onMouseLeave={() => setNextHover(false)}
           style={{
             flex: 0.5, height: 54,
-            background: nextHover ? "#e8e0d4" : "#F8F2E9",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: nextHover ? "#e8e0d4" : COLORS.surface,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer", transition: "background 0.15s",
           }}
         >
-          <SkipForward size={22} color="#231f20" />
+          <SkipForward size={22} color={COLORS.ink} />
         </button>
       </div>
 
       {/* ROW 4 — Volume */}
       <div style={{
-        background: "#F8F2E9",
-        border: "1.5px solid #231f20",
-        borderRadius: 6,
+        background: COLORS.surface,
+        border: BORDER.standard,
+        borderRadius: RADIUS.md,
         padding: "4px 12px",
         display: "flex",
         alignItems: "center",
@@ -370,7 +371,7 @@ const MusicWindow: React.FC = () => {
       }}>
         <VolumeIcon
           size={16}
-          color="#231f20"
+          color={COLORS.ink}
           style={{ flexShrink: 0, cursor: "pointer" }}
           onClick={toggleMute}
         />
@@ -392,9 +393,9 @@ const MusicWindow: React.FC = () => {
           <div style={{
             width: "100%",
             height: 7,
-            background: "#F8F2E9",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: COLORS.surface,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             overflow: "hidden",
             position: "relative",
           }}>
@@ -402,7 +403,7 @@ const MusicWindow: React.FC = () => {
             <div style={{
               width: `${volume * 100}%`,
               height: "100%",
-               background: "#d72229",
+               background: COLORS.red,
               transition: volumeDragging.current ? "none" : "width 0.1s",
             }} />
           </div>
@@ -411,8 +412,8 @@ const MusicWindow: React.FC = () => {
             position: "absolute",
             width: 14,
             height: 14,
-            background: "#d72229",
-            border: "1.5px solid #231f20",
+            background: COLORS.red,
+            border: BORDER.standard,
             borderLeft: "none",
             borderRadius: "50%",
             top: "50%",

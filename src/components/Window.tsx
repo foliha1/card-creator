@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY } from "@/lib/tokens";
 
 interface WindowProps {
   title: string;
@@ -77,11 +78,11 @@ const Window: React.FC<WindowProps> = ({
         width: "calc(100vw - 32px)",
         margin: "0 auto",
         height: "auto",
-        background: "#F8F2E9",
-        border: "1.5px solid #231f20",
-        borderRadius: 6,
+        background: COLORS.surface,
+        border: BORDER.standard,
+        borderRadius: RADIUS.md,
         padding: 10,
-        boxShadow: "4px 6px 0 rgba(0,0,0,0.3)",
+        boxShadow: SHADOW.windowFocused,
         zIndex,
         display: "flex",
         flexDirection: "column",
@@ -95,11 +96,11 @@ const Window: React.FC<WindowProps> = ({
         top: pos.y,
         width,
         height,
-        background: "#F8F2E9",
-        border: "1.5px solid #231f20",
-        borderRadius: 6,
+        background: COLORS.surface,
+        border: BORDER.standard,
+        borderRadius: RADIUS.md,
         padding: 10,
-        boxShadow: focused ? "4px 6px 0 rgba(0,0,0,0.3)" : "3px 4px 0 rgba(0,0,0,0.15)",
+        boxShadow: focused ? SHADOW.windowFocused : SHADOW.windowUnfocused,
         zIndex,
         display: "flex",
         flexDirection: "column",
@@ -147,15 +148,15 @@ const Window: React.FC<WindowProps> = ({
             justifyContent: "center",
             width: mobile ? 44 : 24,
             height: mobile ? 44 : 24,
-            color: "#231f20",
+            color: COLORS.ink,
             transition: "color 0.15s",
             flexShrink: 0,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = "#d72229";
+            e.currentTarget.style.color = COLORS.red;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.color = "#231f20";
+            e.currentTarget.style.color = COLORS.ink;
           }}
         >
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -166,10 +167,10 @@ const Window: React.FC<WindowProps> = ({
         <span
           style={{
             flex: 1,
-            fontFamily: '"Friend", sans-serif',
+            fontFamily: FONT_FAMILY,
             fontStyle: "normal",
             fontSize: 20,
-            color: "#231f20",
+            color: COLORS.ink,
             pointerEvents: "none",
             lineHeight: 1,
             textAlign: "right",
@@ -184,9 +185,9 @@ const Window: React.FC<WindowProps> = ({
         style={{
           flex: 1,
           overflow: "auto",
-          background: "#D0C3AF",
-          border: "1.5px solid #231f20",
-          borderRadius: 6,
+          background: COLORS.panel,
+          border: BORDER.standard,
+          borderRadius: RADIUS.md,
           minHeight: mobile ? 260 : undefined,
           display: "flex",
           flexDirection: "column",

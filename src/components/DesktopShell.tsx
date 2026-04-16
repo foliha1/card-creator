@@ -8,6 +8,7 @@ import AboutWindow from "@/components/AboutWindow";
 import MusicWindow from "@/components/MusicWindow";
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { COLORS, MOTION } from "@/lib/tokens";
 
 function deriveLogoColor(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -54,7 +55,7 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
 
 const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music"];
 
-const DEFAULT_THEME = "#fef9f0";
+const DEFAULT_THEME = COLORS.offWhite;
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
@@ -196,7 +197,7 @@ const DesktopShell: React.FC = () => {
         overflow: mobile ? "auto" : "hidden",
         position: "relative",
         background: bgTheme,
-        transition: "background 400ms ease-in-out",
+        transition: `background ${MOTION.slow}`,
         paddingBottom: mobile ? 100 : 0,
         paddingTop: mobile ? 16 : 0,
       }}
@@ -221,7 +222,7 @@ const DesktopShell: React.FC = () => {
       />
 
       {/* Logo watermark using CSS mask */}
-      {!mobile && bgTheme === "#f8f2e9" && (
+      {!mobile && bgTheme === COLORS.surface && (
         <img
           src="/WhoopWhoop_Dark_Logo.svg"
           alt=""
@@ -234,11 +235,11 @@ const DesktopShell: React.FC = () => {
             pointerEvents: "none",
             zIndex: 2,
             opacity: 0.4,
-            transition: "opacity 400ms ease-in-out",
+            transition: `opacity ${MOTION.slow}`,
           }}
         />
       )}
-      {!mobile && bgTheme !== "#f8f2e9" && (
+      {!mobile && bgTheme !== COLORS.surface && (
         <div
           style={{
             position: "absolute",
@@ -250,7 +251,7 @@ const DesktopShell: React.FC = () => {
             pointerEvents: "none",
             zIndex: 2,
             background: logoColor,
-            transition: "background 400ms ease-in-out",
+            transition: `background ${MOTION.slow}`,
             WebkitMaskImage: "url(/WhoopWhoop_Stacked_Logo.svg)",
             WebkitMaskSize: "contain",
             WebkitMaskRepeat: "no-repeat",

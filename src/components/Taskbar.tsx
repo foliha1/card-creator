@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
+import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
@@ -13,13 +14,6 @@ interface TaskbarProps {
   theme?: string;
   onThemeChange?: (color: string) => void;
 }
-
-const THEME_SWATCHES = [
-  { color: "#d72229", label: "Red" },
-  { color: "#0072b2", label: "Blue" },
-  { color: "#e79024", label: "Yellow" },
-  { color: "#f8f2e9", label: "Off-White" },
-];
 
 const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "Play Whoop! Whoop!", id: "game" },
@@ -70,16 +64,16 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
   const btnStyle = (id: WindowId): React.CSSProperties => {
     const active = activeWindow === id;
     const game = isGame(id);
-    const baseBg = game ? "#231f20" : "#ADA290";
+    const baseBg = game ? COLORS.ink : COLORS.panelMuted;
     return {
-      background: active ? (game ? "#3a3637" : "#bdb5a4") : baseBg,
-      color: "#f8f2e9",
-      fontFamily: '"Friend", sans-serif',
+      background: active ? (game ? COLORS.inkSoft : COLORS.panelMutedHover) : baseBg,
+      color: COLORS.inverse,
+      fontFamily: FONT_FAMILY,
       fontStyle: "normal",
       fontSize: mobile ? 14 : "clamp(16px, 2vw, 24px)",
       padding: mobile ? "10px 14px" : "16px",
-      borderRadius: 8,
-      border: "2px solid #231f20",
+      borderRadius: RADIUS.lg,
+      border: BORDER.heavy,
       cursor: "pointer",
       transition: "background 0.15s, transform 0.15s",
       whiteSpace: "nowrap" as const,
@@ -90,7 +84,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
 
   const iconBtnStyle: React.CSSProperties = {
     background: "transparent",
-    color: "#231f20",
+    color: COLORS.ink,
     border: "none",
     cursor: "pointer",
     padding: "8px",
@@ -114,9 +108,9 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
         alignItems: "center",
         gap: mobile ? 6 : 8,
         zIndex: 100,
-        background: "#F8F2E9",
-        border: "2px solid #231f20",
-        borderRadius: 8,
+        background: COLORS.surface,
+        border: BORDER.heavy,
+        borderRadius: RADIUS.lg,
         padding: mobile ? 8 : 12,
         overflowX: mobile ? "auto" : undefined,
         WebkitOverflowScrolling: "touch",
@@ -129,13 +123,13 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           onClick={() => handleClick(id)}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.background = isGame(id) ? "#3a3637" : "#bdb5a4";
+            e.currentTarget.style.background = isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             const active = activeWindow === id;
-            const baseBg = isGame(id) ? "#231f20" : "#ADA290";
-            e.currentTarget.style.background = active ? (isGame(id) ? "#3a3637" : "#bdb5a4") : baseBg;
+            const baseBg = isGame(id) ? COLORS.ink : COLORS.panelMuted;
+            e.currentTarget.style.background = active ? (isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover) : baseBg;
           }}
         >
           {label}
@@ -162,11 +156,11 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               bottom: "calc(100% + 8px)",
               right: 0,
               width: 260,
-              background: "#F8F2E9",
-              border: "1.5px solid #231f20",
-              borderRadius: 6,
+              background: COLORS.surface,
+              border: BORDER.standard,
+              borderRadius: RADIUS.md,
               padding: 10,
-              boxShadow: "4px 6px 0 rgba(0,0,0,0.3)",
+              boxShadow: SHADOW.windowFocused,
               zIndex: 200,
               display: "flex",
               flexDirection: "column" as const,
@@ -174,14 +168,14 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
             }}
           >
             <div style={{ height: 26, padding: "0 4px", display: "flex", flexDirection: "row" as const, alignItems: "center" }}>
-              <div style={{ fontFamily: '"Friend", sans-serif', fontStyle: "normal", fontSize: 20, color: "#231f20", lineHeight: 1, textAlign: "right" as const, flex: 1 }}>
+              <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: 20, color: COLORS.ink, lineHeight: 1, textAlign: "right" as const, flex: 1 }}>
                 APPEARANCE
               </div>
             </div>
-            <div style={{ background: "#D0C3AF", border: "1.5px solid #231f20", borderRadius: 6, padding: 12 }}>
+            <div style={{ background: COLORS.panel, border: BORDER.standard, borderRadius: RADIUS.md, padding: 12 }}>
               <div
                 style={{
-                  fontFamily: '"Friend", sans-serif',
+                  fontFamily: FONT_FAMILY,
                   fontStyle: "normal",
                   fontSize: 10,
                   color: "rgba(35,31,32,0.5)",
@@ -205,10 +199,10 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
                         height: 44,
                         borderRadius: "50%",
                         background: color,
-                        border: isActive ? "2px solid #231f20" : "1.5px solid #231f20",
-                        boxShadow: isActive ? "inset 0 0 0 4px #F8F2E9" : "none",
+                        border: isActive ? BORDER.heavy : BORDER.standard,
+                        boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
                         cursor: "pointer",
-                        transition: "transform 150ms ease-out",
+                        transition: `transform ${MOTION_FAST}`,
                         padding: 0,
                         flexShrink: 0,
                       }}
