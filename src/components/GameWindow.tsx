@@ -13,155 +13,25 @@ interface GameWindowProps {
   mobile?: boolean;
 }
 
-const TIER_TONE_MAP: Record<string, "blue" | "orange"> = {
-  [COLORS.blue]: "blue",
-  [COLORS.orange]: "orange",
-};
-
 const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
-  const [tier, setTier] = useState<"easy" | "standard">("standard");
-  const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
-  const [gameStarted, setGameStarted] = useState(false);
   const [gameKey, setGameKey] = useState(0);
 
-  const TIERS = [
-    { id: "easy" as const, label: "Easy Going", color: COLORS.blue },
-    { id: "standard" as const, label: "Standard", color: COLORS.orange },
-  ];
-
-  const GRIDS = [
-    { id: "3x2" as const, label: "3×2" },
-    { id: "3x3" as const, label: "3×3 Challenge" },
-  ];
-
-  if (!gameStarted) {
-    return (
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        padding: SPACE[6],
-        gap: SPACE[5],
-      }}>
-        {/* Header */}
-        <div style={{
-          fontFamily: FONT_FAMILY,
-          fontStyle: "italic",
-          fontSize: TYPE.head,
-          color: COLORS.ink,
-          textAlign: "center",
-          padding: `${SPACE[8]}px 0`,
-        }}>
-          Choose Your Settings
-        </div>
-
-        {/* Difficulty section */}
-        <div style={{
-          background: COLORS.panelMuted,
-          border: BORDER.standard,
-          borderRadius: RADIUS.md,
-          padding: SPACE[6],
-        }}>
-          <div style={{
-            fontFamily: FONT_FAMILY,
-            fontSize: TYPE.caption,
-            color: COLORS.inkMuted,
-            textTransform: "uppercase",
-            letterSpacing: 1,
-            marginBottom: SPACE[5],
-          }}>
-            Difficulty
-          </div>
-          <div style={{ display: "flex", gap: SPACE[3] }}>
-            {TIERS.map((t) => (
-              <AppButton
-                key={t.id}
-                variant="primary"
-                size="md"
-                active={tier === t.id}
-                tone={tier === t.id ? TIER_TONE_MAP[t.color] : "neutral"}
-                onClick={() => setTier(t.id)}
-                style={{ flex: 1 }}
-              >
-                {t.label}
-              </AppButton>
-            ))}
-          </div>
-        </div>
-
-        {/* Grid Size section */}
-        <div style={{
-          background: COLORS.panelMuted,
-          border: BORDER.standard,
-          borderRadius: RADIUS.md,
-          padding: SPACE[6],
-        }}>
-          <div style={{
-            fontFamily: FONT_FAMILY,
-            fontSize: TYPE.caption,
-            color: COLORS.inkMuted,
-            textTransform: "uppercase",
-            letterSpacing: 1,
-            marginBottom: SPACE[5],
-          }}>
-            Grid Size
-          </div>
-          <div style={{ display: "flex", gap: SPACE[3] }}>
-            {GRIDS.map((g) => (
-              <AppButton
-                key={g.id}
-                variant="primary"
-                size="md"
-                active={gridSize === g.id}
-                tone="neutral"
-                onClick={() => setGridSize(g.id)}
-                style={{ flex: 1 }}
-              >
-                {g.label}
-              </AppButton>
-            ))}
-          </div>
-        </div>
-
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Start Game */}
-        <AppButton
-          variant="primary"
-          tone="red"
-          size="lg"
-          fullWidth
-          onClick={() => setGameStarted(true)}
-          style={{
-            fontSize: TYPE.head,
-            padding: `${SPACE[8]}px ${SPACE[6]}px`,
-          }}
-        >
-          Start Game
-        </AppButton>
-
-        {/* Preload card images while user picks settings */}
-        <div style={{ display: "none" }}>
-          {ALL_CARDS.map((c) => (
-            <img key={c.id} src={c.svgPath} alt="" width={0} height={0} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <GamePlayArea
-      key={gameKey}
-      tier={tier}
-      gridSize={gridSize}
-      onNewGame={() => {
-        setGameStarted(false);
-        setGameKey((k) => k + 1);
-      }}
-      mobile={mobile}
-    />
+    <>
+      <GamePlayArea
+        key={gameKey}
+        tier="standard"
+        gridSize="3x2"
+        onNewGame={() => setGameKey((k) => k + 1)}
+        mobile={mobile}
+      />
+      {/* Preload card images */}
+      <div style={{ display: "none" }}>
+        {ALL_CARDS.map((c) => (
+          <img key={c.id} src={c.svgPath} alt="" width={0} height={0} />
+        ))}
+      </div>
+    </>
   );
 };
 
