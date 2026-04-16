@@ -13,14 +13,13 @@ interface GameWindowProps {
   mobile?: boolean;
 }
 
-const TIER_TONE_MAP: Record<string, "blue" | "orange" | "red"> = {
+const TIER_TONE_MAP: Record<string, "blue" | "orange"> = {
   [COLORS.blue]: "blue",
   [COLORS.orange]: "orange",
-  [COLORS.red]: "red",
 };
 
 const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
-  const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
+  const [tier, setTier] = useState<"easy" | "standard">("standard");
   const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
   const [gameStarted, setGameStarted] = useState(false);
   const [gameKey, setGameKey] = useState(0);
@@ -28,7 +27,6 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
   const TIERS = [
     { id: "easy" as const, label: "Easy Going", color: COLORS.blue },
     { id: "standard" as const, label: "Standard", color: COLORS.orange },
-    { id: "cutthroat" as const, label: "Cutthroat", color: COLORS.red },
   ];
 
   const GRIDS = [
@@ -127,7 +125,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 };
 
 interface GamePlayAreaProps {
-  tier: "easy" | "standard" | "cutthroat";
+  tier: "easy" | "standard";
   gridSize: "3x2" | "3x3";
   onNewGame: () => void;
   mobile?: boolean;

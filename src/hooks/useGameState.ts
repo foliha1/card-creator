@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 
 type MessageType = "info" | "success" | "error" | "warning";
-type Tier = "easy" | "standard" | "cutthroat";
+type Tier = "easy" | "standard";
 
 function rollRandomAttributes(count: number): string[] {
   const result: string[] = [];
@@ -14,7 +14,6 @@ function rollRandomAttributes(count: number): string[] {
 
 function getDieCount(tier: Tier, roundNum: number): number {
   if (tier === "easy") return 1;
-  if (tier === "cutthroat") return 2;
   return roundNum % 2 === 1 ? 1 : 2;
 }
 
