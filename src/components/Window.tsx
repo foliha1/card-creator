@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY } from "@/lib/tokens";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface WindowProps {
   title: string;
@@ -135,35 +136,18 @@ const Window: React.FC<WindowProps> = ({
           onDragStart(t.clientX, t.clientY);
         }}
       >
-        <button
+        <IconButton
+          tone="close"
+          size={mobile ? 44 : 24}
           data-close-btn
           onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: mobile ? 44 : 24,
-            height: mobile ? 44 : 24,
-            color: COLORS.ink,
-            transition: `color ${MOTION.fast}`,
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = COLORS.red;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = COLORS.ink;
-          }}
+          style={{ flexShrink: 0 }}
         >
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="2" y1="2" x2="13" y2="13" />
             <line x1="13" y1="2" x2="2" y2="13" />
           </svg>
-        </button>
+        </IconButton>
         <span
           style={{
             flex: 1,

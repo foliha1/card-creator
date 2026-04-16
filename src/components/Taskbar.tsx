@@ -4,6 +4,7 @@ import { setMuted, isMuted } from "@/lib/sounds";
 import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 import { AppButton } from "@/components/ui/AppButton";
+import { IconButton } from "@/components/ui/IconButton";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
@@ -116,25 +117,6 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
     }
   };
 
-  const iconBtnStyle: React.CSSProperties = {
-    background: "transparent",
-    color: COLORS.ink,
-    border: "none",
-    cursor: "pointer",
-    padding: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    opacity: 0.5,
-    transition: `opacity ${MOTION.fast}`,
-    flexShrink: 0,
-  };
-
-  const iconHoverHandlers = {
-    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = "1"; },
-    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = "0.5"; },
-  };
-
   return (
     <div
       style={{
@@ -178,14 +160,12 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
 
       {/* Theme switcher */}
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <button
+        <IconButton
           ref={themeBtnRef}
-          style={iconBtnStyle}
           onClick={() => setThemeOpen((v) => !v)}
-          {...iconHoverHandlers}
         >
           <Palette size={18} />
-        </button>
+        </IconButton>
 
         {themeOpen && (
           <div
@@ -242,24 +222,18 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       </div>
 
       {/* Music */}
-      <button
-        style={iconBtnStyle}
+      <IconButton
         onClick={() => handleClick("music")}
-        onMouseEnter={(e) => { preloadSoundCloudWidget(); iconHoverHandlers.onMouseEnter(e); }}
-        onMouseLeave={iconHoverHandlers.onMouseLeave}
+        onMouseEnter={preloadSoundCloudWidget}
         onFocus={preloadSoundCloudWidget}
       >
         <Music size={18} />
-      </button>
+      </IconButton>
 
       {/* Mute */}
-      <button
-        style={iconBtnStyle}
-        onClick={toggleMute}
-        {...iconHoverHandlers}
-      >
+      <IconButton onClick={toggleMute}>
         {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-      </button>
+      </IconButton>
     </div>
   );
 };
