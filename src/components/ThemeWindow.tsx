@@ -14,16 +14,6 @@ const ThemeWindow: React.FC = () => {
       height: "100%",
       justifyContent: "center",
     }}>
-      <div style={{
-        fontFamily: FONT_FAMILY,
-        fontSize: TYPE.caption,
-        color: COLORS.inkMuted,
-        textTransform: "uppercase",
-        letterSpacing: 1,
-        textAlign: "center",
-      }}>
-        BACKGROUND
-      </div>
       <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center" }}>
         {THEME_SWATCHES.map(({ color, label }) => {
           const isActive = bgTheme === color;
