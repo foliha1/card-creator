@@ -21,6 +21,19 @@ const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "About", id: "about" },
 ];
 
+let scWidgetPreloaded = false;
+
+const preloadSoundCloudWidget = () => {
+  if (scWidgetPreloaded) return;
+  if (typeof document === "undefined") return;
+  scWidgetPreloaded = true;
+  const link = document.createElement("link");
+  link.rel = "preload";
+  link.as = "script";
+  link.href = "https://w.soundcloud.com/player/api.js";
+  document.head.appendChild(link);
+};
+
 interface ThemeSwatchProps {
   color: string;
   label: string;
@@ -257,7 +270,9 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       <button
         style={iconBtnStyle}
         onClick={() => handleClick("music")}
-        {...iconHoverHandlers}
+        onMouseEnter={(e) => { preloadSoundCloudWidget(); iconHoverHandlers.onMouseEnter(e); }}
+        onMouseLeave={iconHoverHandlers.onMouseLeave}
+        onFocus={preloadSoundCloudWidget}
       >
         <Music size={18} />
       </button>
