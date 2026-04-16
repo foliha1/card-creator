@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
 import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
+import { useTheme } from "@/lib/theme-context";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
@@ -11,8 +12,6 @@ interface TaskbarProps {
   onFocus: (id: string) => void;
   activeWindow?: string;
   mobile?: boolean;
-  theme?: string;
-  onThemeChange?: (color: string) => void;
 }
 
 const BUTTONS: { label: string; id: WindowId }[] = [
@@ -22,7 +21,8 @@ const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "About", id: "about" },
 ];
 
-const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeWindow, mobile = false, theme, onThemeChange }) => {
+const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeWindow, mobile = false }) => {
+  const { bgTheme, setTheme } = useTheme();
   const [muted, setMutedState] = useState(isMuted());
   const [themeOpen, setThemeOpen] = useState(false);
   const themeBtnRef = useRef<HTMLButtonElement>(null);
@@ -196,12 +196,12 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 {THEME_SWATCHES.map(({ color, label }) => {
-                  const isActive = theme === color;
+                  const isActive = bgTheme === color;
                   return (
                     <button
                       key={color}
                       aria-label={label}
-                      onClick={() => { onThemeChange?.(color); setThemeOpen(false); }}
+                      onClick={() => { setTheme(color); setThemeOpen(false); }}
                       style={{
                         width: 44,
                         height: 44,
