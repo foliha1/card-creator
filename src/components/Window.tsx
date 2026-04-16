@@ -121,7 +121,7 @@ const Window: React.FC<WindowProps> = ({
           height: 26,
           display: "flex",
           alignItems: "center",
-          padding: "0 4px",
+          padding: `0 ${SPACE[2]}px`,
           cursor: mobile ? "default" : dragging ? "grabbing" : "grab",
           flexShrink: 0,
         }}

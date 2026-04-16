@@ -186,7 +186,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               gap: SPACE[5],
             }}
           >
-            <div style={{ height: 26, padding: "0 4px", display: "flex", flexDirection: "row" as const, alignItems: "center" }}>
+            <div style={{ height: 26, padding: `0 ${SPACE[2]}px`, display: "flex", flexDirection: "row" as const, alignItems: "center" }}>
               <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: 20, color: COLORS.ink, lineHeight: 1, textAlign: "right" as const, flex: 1 }}>
                 APPEARANCE
               </div>

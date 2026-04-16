@@ -350,7 +350,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         <div
           style={{
             textAlign: "center",
-            padding: "6px 0",
+            padding: `${SPACE[3]}px 0`,
             animation: doublePhase === "idle"
               ? "double-title-out 0.3s ease forwards"
               : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
@@ -364,7 +364,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Message banner */}
       {visibleMsg && !showDoubleTitle && (
-        <div style={{ textAlign: "center", padding: "4px 8px" }}>
+        <div style={{ textAlign: "center", padding: `${SPACE[2]}px ${SPACE[4]}px` }}>
           <span
             style={{
               display: "inline-block",
@@ -374,7 +374,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               fontWeight: 700,
               fontStyle: "italic",
               borderRadius: RADIUS.md,
-              padding: "4px 14px",
+              padding: `${SPACE[2]}px ${SPACE[7]}px`,
               transition: "opacity 0.3s",
               opacity: msgVisible ? 1 : 0,
             }}
@@ -386,7 +386,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Bonus pick pill */}
       {doublePhase === "pick" && (
-        <div style={{ textAlign: "center", padding: "2px 0" }}>
+        <div style={{ textAlign: "center", padding: `${SPACE[1]}px 0` }}>
           <span
             style={{
               display: "inline-block",
@@ -407,7 +407,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Claim mode instruction */}
       {g.claimMode && g.selectedCards.length < 2 && (
-        <div style={{ textAlign: "center", padding: "4px 0", fontSize: 12, color: COLORS.ink, fontWeight: 700, fontStyle: "italic" }}>
+        <div style={{ textAlign: "center", padding: `${SPACE[2]}px 0`, fontSize: 12, color: COLORS.ink, fontWeight: 700, fontStyle: "italic" }}>
           Tap 2 cards!
         </div>
       )}
@@ -583,7 +583,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           display: "flex",
           flexDirection: isSmall ? "column" : "row",
           gap: SPACE[5],
-          padding: "8px 12px",
+          padding: `${SPACE[4]}px ${SPACE[6]}px`,
           alignItems: "stretch",
         }}
       >
@@ -595,7 +595,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           onClick={onNewGame}
           style={{
             fontSize: mobile ? 14 : 18,
-            padding: "12px 16px",
+            padding: `${SPACE[6]}px ${SPACE[8]}px`,
             flexShrink: 0,
             width: isSmall ? "100%" : undefined,
           }}
@@ -623,7 +623,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               style={{
                 background: COLORS.surface,
                 border: BORDER.standard,
-                padding: "8px 12px",
+                padding: `${SPACE[4]}px ${SPACE[6]}px`,
                 borderRadius: RADIUS.md,
                 fontFamily: FONT_FAMILY,
                 fontStyle: "normal",
@@ -658,7 +658,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             flex: isSmall ? undefined : 1,
             width: isSmall ? "100%" : undefined,
             fontSize: isSmall ? "clamp(18px, 4vw, 24px)" : 26,
-            padding: "12px 8px",
+            padding: `${SPACE[6]}px ${SPACE[4]}px`,
             minHeight: mobile ? 48 : undefined,
             animation: whoopReady ? "whoop-pulse 1.5s infinite" : undefined,
           }}
