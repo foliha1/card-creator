@@ -32,6 +32,7 @@ interface ThemeContextValue {
   bgTheme: string;
   logoColor: string;
   setTheme: (color: string) => void;
+  themeInk: string;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -50,8 +51,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const logoColor = useMemo(() => deriveLogoColor(bgTheme), [bgTheme]);
+  const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue) ? COLORS.surface : COLORS.ink, [bgTheme]);
 
-  const value = useMemo(() => ({ bgTheme, logoColor, setTheme }), [bgTheme, logoColor, setTheme]);
+  const value = useMemo(() => ({ bgTheme, logoColor, setTheme, themeInk }), [bgTheme, logoColor, setTheme, themeInk]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
