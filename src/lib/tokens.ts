@@ -64,10 +64,10 @@ export const THEME_SWATCHES = [
 export const FONT_FAMILY = '"Friend", sans-serif';
 
 export const TYPE = {
-  caption: 13,
-  body: 15,
-  ui: 17,
-  subhead: 20,
-  head: 24,
-  display: 28,
+  caption: 16,
+  body: 18,
+  ui: 20,
+  subhead: 24,
+  head: 28,
+  display: 34,
 } as const;
