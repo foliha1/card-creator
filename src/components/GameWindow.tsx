@@ -402,7 +402,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             borderRadius: RADIUS.md,
             padding: SPACE[8],
           }}>
-            <div style={{ position: "relative", width: 80, height: 112 }}>
+            <div ref={drawPileRef} style={{ position: "relative", width: 80, height: 112 }}>
               {g.deck.length === 0 ? (
                 <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
               ) : (
