@@ -9,7 +9,7 @@ interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
 }
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ tone = "default", size = 36, style, onMouseEnter, onMouseLeave, children, ...rest }, ref) => {
+  ({ tone = "default", size = 44, style, onMouseEnter, onMouseLeave, children, ...rest }, ref) => {
     const [focusVisible, setFocusVisible] = React.useState(false);
     const isClose = tone === "close";
 
