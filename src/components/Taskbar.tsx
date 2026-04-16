@@ -75,7 +75,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           onMouseEnter={btn.id === "music" ? preloadSoundCloudWidget : undefined}
           style={{
             fontStyle: "normal",
-            fontSize: mobile ? 14 : "clamp(16px, 2vw, 24px)",
+            fontSize: mobile ? TYPE.body : "clamp(16px, 2vw, 24px)",
             padding: mobile ? "10px 14px" : "16px",
             borderRadius: RADIUS.lg,
             border: BORDER.heavy,
