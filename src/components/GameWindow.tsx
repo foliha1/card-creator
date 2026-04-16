@@ -344,50 +344,45 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         alignItems: "center",
         justifyContent: "center",
       }}>
-        {/* Dice / rule cards */}
-        <div style={{
-          display: "flex",
-          flexDirection: mobile ? "row" : "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: mobile ? SPACE[4] : SPACE[6],
-          flexShrink: 0,
-          ...(mobile ? {} : {
+        {/* Left column: draw pile — desktop only */}
+        {!mobile && (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: SPACE[4],
+            flexShrink: 0,
             background: COLORS.panelMuted,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             padding: SPACE[8],
-          }),
-        }}>
-          {g.matchRule.map((attr, i) => (
-            <div
-              key={i}
-              style={{
-                width: mobile ? 60 : 89,
-                height: mobile ? 60 : 89,
-                background: COLORS.surface,
-                borderRadius: RADIUS.md,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
-                color: COLORS.ink,
-                filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-              }}
-            >
-              <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-              <span style={{ fontSize: TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+          }}>
+            <div style={{ position: "relative", width: 80, height: 112 }}>
+              {g.deck.length === 0 ? (
+                <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
+              ) : (
+                [-3.81, 0, 4.63].map((rot, i) => (
+                  <img
+                    key={i}
+                    src="/cards/Card Back.svg"
+                    alt="Draw pile"
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      width: 72,
+                      height: 101,
+                      borderRadius: RADIUS.md,
+                      transform: `translate(-50%, -50%) rotate(${rot}deg) translateX(${(i - 1) * 3}px)`,
+                      filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+                    }}
+                  />
+                ))
+              )}
             </div>
-          ))}
-
-          {/* Draw pile inline on mobile */}
-          {mobile && (
-            <span style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginLeft: SPACE[4] }}>
-              {g.deck.length} left
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Center: card grid */}
         <div style={{ flex: mobile ? undefined : 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0, width: mobile ? "100%" : undefined }}>
@@ -454,48 +449,43 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         </div>
 
-        {/* Right column: draw pile — desktop only */}
-        {!mobile && (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: SPACE[4],
-            flexShrink: 0,
+        {/* Right column: dice / rule cards */}
+        <div style={{
+          display: "flex",
+          flexDirection: mobile ? "row" : "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: mobile ? SPACE[4] : SPACE[6],
+          flexShrink: 0,
+          ...(mobile ? {} : {
             background: COLORS.panelMuted,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             padding: SPACE[8],
-          }}>
-            <div style={{ position: "relative", width: 80, height: 112 }}>
-              {g.deck.length === 0 ? (
-                <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
-              ) : (
-                [-3.81, 0, 4.63].map((rot, i) => (
-                  <img
-                    key={i}
-                    src="/cards/Card Back.svg"
-                    alt="Draw pile"
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      width: 72,
-                      height: 101,
-                      borderRadius: RADIUS.md,
-                      transform: `translate(-50%, -50%) rotate(${rot}deg) translateX(${(i - 1) * 3}px)`,
-                      filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-                    }}
-                  />
-                ))
-              )}
+          }),
+        }}>
+          {g.matchRule.map((attr, i) => (
+            <div
+              key={i}
+              style={{
+                width: mobile ? 60 : 89,
+                height: mobile ? 60 : 89,
+                background: COLORS.surface,
+                borderRadius: RADIUS.md,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
+                color: COLORS.ink,
+                filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+              }}
+            >
+              <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+              <span style={{ fontSize: TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
             </div>
-            <span style={{ fontSize: TYPE.caption, color: COLORS.inkSubtle, textAlign: "center" }}>
-              {g.deck.length} left
-            </span>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
 
       {/* Bottom HUD bar */}
