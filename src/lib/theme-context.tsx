@@ -50,7 +50,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem("whoop-theme", color);
   }, []);
 
-  const logoColor = useMemo(() => deriveLogoColor(bgTheme), [bgTheme]);
+  const logoColor = useMemo(() => {
+    if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface) return COLORS.panelMuted;
+    return deriveLogoColor(bgTheme);
+  }, [bgTheme]);
   const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue) ? COLORS.surface : COLORS.ink, [bgTheme]);
 
   const value = useMemo(() => ({ bgTheme, logoColor, setTheme, themeInk }), [bgTheme, logoColor, setTheme, themeInk]);
