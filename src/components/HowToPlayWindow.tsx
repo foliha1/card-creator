@@ -139,32 +139,46 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
         {slide === 1 && (
           <>
-            <div style={headlineStyle}>Match the dice rule</div>
+            <div style={headlineStyle}>Roll the Dice</div>
             <div style={bodyStyle}>
-              Each round, the dice tell you what to match. Double match rounds are harder but worth more!
+              Each round, the match dice roll to decide what counts as a pair. Match by SHAPE, NUMBER, or COLOR — or two at once for a Double Match!
             </div>
-            <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
-              {["SHAPE", "COLOR"].map((label) => (
+            <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center", alignItems: "center" }}>
+              {["SHAPE", "COLOR"].map((label, i) => (
                 <div
                   key={label}
                   style={{
-                    width: 48,
-                    height: 48,
-                    background: COLORS.ink,
-                    borderRadius: RADIUS.lg,
+                    width: 64,
+                    height: 64,
+                    borderRadius: 10,
+                    border: `4px solid ${COLORS.ink}`,
+                    background: COLORS.surface,
+                    color: COLORS.ink,
+                    fontFamily: FONT_FAMILY,
+                    fontStyle: "italic",
+                    fontWeight: 900,
+                    fontSize: TYPE.body,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: COLORS.surface,
-                    fontFamily: FONT_FAMILY,
-                    fontStyle: "italic",
-                    fontSize: TYPE.caption,
-                    fontWeight: 700,
+                    boxShadow: "2px 4px 8px rgba(0,0,0,0.3)",
+                    transform: i === 0 ? "rotate(-4deg)" : "rotate(6deg)",
                   }}
                 >
                   {label}
                 </div>
               ))}
+            </div>
+            <div
+              style={{
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontSize: TYPE.caption,
+                color: COLORS.inkMuted,
+                marginTop: SPACE[2],
+              }}
+            >
+              These two? Match by shape AND color.
             </div>
           </>
         )}
