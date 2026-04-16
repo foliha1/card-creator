@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, SPACE } from "@/lib/tokens";
 import { IconButton } from "@/components/ui/IconButton";
 
 interface WindowProps {
@@ -82,12 +82,12 @@ const Window: React.FC<WindowProps> = ({
         background: COLORS.surface,
         border: BORDER.standard,
         borderRadius: RADIUS.md,
-        padding: 10,
+        padding: SPACE[5],
         boxShadow: SHADOW.windowFocused,
         zIndex,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: SPACE[5],
         maxHeight: "calc(100dvh - 80px)",
         overflow: "auto",
       }
@@ -100,12 +100,12 @@ const Window: React.FC<WindowProps> = ({
         background: COLORS.surface,
         border: BORDER.standard,
         borderRadius: RADIUS.md,
-        padding: 10,
+        padding: SPACE[5],
         boxShadow: focused ? SHADOW.windowFocused : SHADOW.windowUnfocused,
         zIndex,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: SPACE[5],
         userSelect: dragging ? "none" : undefined,
       };
 
