@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, BORDER, RADIUS, FONT_FAMILY, MOTION } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, FONT_FAMILY, MOTION, TYPE } from "@/lib/tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "pill";
 export type ButtonTone = "ink" | "red" | "blue" | "orange" | "neutral" | "muted";
@@ -24,9 +24,9 @@ const TONE_MAP: Record<ButtonTone, { bg: string; hoverBg: string; fg: string }> 
 };
 
 const SIZE_MAP: Record<ButtonSize, { fontSize: number | string; padding: string }> = {
-  sm: { fontSize: 12, padding: "6px 12px" },
-  md: { fontSize: 16, padding: "10px 20px" },
-  lg: { fontSize: 18, padding: "12px 24px" },
+  sm: { fontSize: TYPE.caption, padding: "6px 12px" },
+  md: { fontSize: TYPE.ui, padding: "10px 20px" },
+  lg: { fontSize: TYPE.subhead, padding: "12px 24px" },
 };
 
 export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
