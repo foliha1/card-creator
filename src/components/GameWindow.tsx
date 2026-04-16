@@ -135,6 +135,12 @@ interface GamePlayAreaProps {
 
 const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false }) => {
   const g = useGameState(tier, gridSize);
+  const [muted, setMutedState] = useState(isMuted());
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+  };
 
   // --- Animation state ---
   const [peekedCount, setPeekedCount] = useState(0);
