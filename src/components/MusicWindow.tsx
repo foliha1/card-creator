@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE } from "@/lib/tokens";
 
 declare global {
   interface Window {
@@ -166,7 +166,7 @@ const MusicWindow: React.FC = () => {
   const VolumeIcon = volume === 0 ? VolumeX : Volume2;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", padding: 10, gap: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: SPACE[5], gap: SPACE[5] }}>
       <iframe
         ref={iframeRef}
         src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/racesmusic/sets/races-god-gaming-playlist&auto_play=false"
@@ -186,13 +186,13 @@ const MusicWindow: React.FC = () => {
         background: COLORS.panel,
         border: BORDER.standard,
         borderRadius: RADIUS.md,
-        padding: 12,
+        padding: SPACE[6],
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
-        gap: 2,
+        gap: SPACE[1],
       }}>
         {ready ? (
           <>
@@ -239,7 +239,7 @@ const MusicWindow: React.FC = () => {
         padding: "4px 12px",
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: SPACE[6],
         height: 32,
         ...disabledStyle,
       }}>
@@ -274,7 +274,7 @@ const MusicWindow: React.FC = () => {
       </div>
 
       {/* ROW 3 — Controls */}
-      <div style={{ display: "flex", gap: 4, width: "100%", ...disabledStyle }}>
+      <div style={{ display: "flex", gap: SPACE[2], width: "100%", ...disabledStyle }}>
         <button
           onClick={() => widgetRef.current?.play()}
           onMouseEnter={() => setPlayHover(true)}
@@ -315,7 +315,7 @@ const MusicWindow: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            gap: 6,
+            gap: SPACE[3],
             transition: `background ${MOTION.fast}`,
             boxShadow: playing ? "inset 0 2px 0 rgba(0,0,0,0.2)" : "none",
           }}
@@ -365,7 +365,7 @@ const MusicWindow: React.FC = () => {
         padding: "4px 12px",
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: SPACE[6],
         height: 32,
         ...disabledStyle,
       }}>

@@ -1,19 +1,19 @@
 import React from "react";
-import { COLORS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, FONT_FAMILY, SPACE } from "@/lib/tokens";
 
 const AboutWindow: React.FC = () => {
   return (
     <div
       style={{
         background: COLORS.surface,
-        padding: 24,
+        padding: SPACE[12],
         textAlign: "left",
         overflowY: "auto",
         height: "100%",
       }}
     >
-      <img src="/WhoopWhoop_Dark_Logo.svg" alt="Whoop Whoop" style={{ height: 40, marginBottom: 14 }} />
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 18, color: COLORS.ink, marginBottom: 12 }}>
+      <img src="/WhoopWhoop_Dark_Logo.svg" alt="Whoop Whoop" style={{ height: 40, marginBottom: SPACE[7] }} />
+      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 18, color: COLORS.ink, marginBottom: SPACE[6] }}>
         From Oleeha &amp; Co
       </div>
       <p style={{ fontSize: 13, color: COLORS.ink, opacity: 0.75, lineHeight: 1.6, margin: "0 0 12px" }}>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { COLORS, RADIUS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, RADIUS, FONT_FAMILY, SPACE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
 interface HowToPlayWindowProps {
@@ -15,7 +15,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
     fontWeight: 700,
     fontSize: 20,
     color: "#000000",
-    marginBottom: 8,
+    marginBottom: SPACE[4],
   };
 
   const bodyStyle: React.CSSProperties = {
@@ -39,7 +39,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       }}
     >
       {/* Slide content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 16 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: SPACE[8] }}>
         {slide === 0 && (
           <>
             <div style={headlineStyle}>Peek cards to memorize</div>
@@ -60,7 +60,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             <div style={bodyStyle}>
               Each round, the dice tell you what to match. Double match rounds are harder but worth more!
             </div>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
               {["SHAPE", "COLOR"].map((label) => (
                 <div
                   key={label}
@@ -92,7 +92,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             <div style={bodyStyle}>
               Spot a match, hit the button, tap two cards. Get it right and claim them!
             </div>
-            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
               {["1 circle blue", "2 circle red"].map((name) => (
                 <img
                   key={name}
@@ -112,7 +112,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       </div>
 
       {/* Nav dots */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: SPACE[3] }}>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -129,7 +129,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       </div>
 
       {/* Buttons */}
-      <div style={{ display: "flex", gap: 10 }}>
+      <div style={{ display: "flex", gap: SPACE[5] }}>
         <AppButton
           variant="secondary"
           tone="neutral"
@@ -137,7 +137,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           fullWidth
           disabled={slide === 0}
           onClick={() => setSlide((s) => s - 1)}
-          style={{ flex: 1, fontSize: 17, padding: 12 }}
+          style={{ flex: 1, fontSize: 17, padding: SPACE[6] }}
         >
           Back
         </AppButton>
@@ -153,7 +153,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               setSlide((s) => s + 1);
             }
           }}
-          style={{ flex: 1, fontSize: 17, padding: 12 }}
+          style={{ flex: 1, fontSize: 17, padding: SPACE[6] }}
         >
           {slide === 2 ? "Got it!" : "Next"}
         </AppButton>

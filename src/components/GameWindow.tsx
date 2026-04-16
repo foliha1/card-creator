@@ -4,7 +4,7 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
 interface GameWindowProps {
@@ -46,14 +46,14 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           padding: 24,
         }}
       >
-        <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 20, color: COLORS.ink, textAlign: "center", marginBottom: 24 }}>
+        <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 20, color: COLORS.ink, textAlign: "center", marginBottom: SPACE[12] }}>
           Choose Your Settings
         </div>
 
         {/* Difficulty */}
         <div style={{ width: "100%", maxWidth: 280 }}>
-          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: 6 }}>Difficulty</div>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Difficulty</div>
+          <div style={{ display: "flex", gap: SPACE[3] }}>
             {TIERS.map((t) => (
               <AppButton
                 key={t.id}
@@ -70,9 +70,9 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
         </div>
 
         {/* Grid Size */}
-        <div style={{ width: "100%", maxWidth: 280, marginTop: 16 }}>
-          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: 6 }}>Grid Size</div>
-          <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ width: "100%", maxWidth: 280, marginTop: SPACE[8] }}>
+          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Grid Size</div>
+          <div style={{ display: "flex", gap: SPACE[3] }}>
             {GRIDS.map((g) => (
               <AppButton
                 key={g.id}
@@ -95,7 +95,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           size="md"
           fullWidth
           onClick={() => setGameStarted(true)}
-          style={{ marginTop: 28, maxWidth: 240 }}
+          style={{ marginTop: SPACE[14], maxWidth: 240 }}
         >
           Start Game
         </AppButton>
@@ -303,8 +303,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           alignItems: "center",
           justifyContent: "center",
           height: "100%",
-          gap: 16,
-          padding: 24,
+          gap: SPACE[8],
+          padding: SPACE[12],
           textAlign: "center",
           color: COLORS.ink,
         }}
@@ -323,7 +323,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           tone="blue"
           size="md"
           onClick={onNewGame}
-          style={{ marginTop: 8 }}
+          style={{ marginTop: SPACE[4] }}
         >
           Play Again
         </AppButton>
@@ -416,9 +416,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       <div style={{
         display: "flex",
         flexDirection: mobile ? "column" : "row",
-        gap: mobile ? 8 : (typeof window !== 'undefined' && !mobile && window.innerWidth < 1100) ? 20 : 38,
+        gap: mobile ? SPACE[4] : (typeof window !== 'undefined' && !mobile && window.innerWidth < 1100) ? SPACE[10] : 38,
         flex: 1,
-        padding: mobile ? 12 : (typeof window !== 'undefined' && !mobile && window.innerWidth < 1100) ? "24px 16px" : "50px 40px",
+        padding: mobile ? SPACE[6] : (typeof window !== 'undefined' && !mobile && window.innerWidth < 1100) ? "24px 16px" : "50px 40px",
         minHeight: 0,
         alignItems: "center",
         justifyContent: "center",
@@ -429,13 +429,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           flexDirection: mobile ? "row" : "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: mobile ? 8 : 12,
+          gap: mobile ? SPACE[4] : SPACE[6],
           flexShrink: 0,
           ...(mobile ? {} : {
             background: COLORS.panelMuted,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
-            padding: 16,
+            padding: SPACE[8],
           }),
         }}>
           {g.matchRule.map((attr, i) => (
@@ -462,7 +462,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
           {/* Draw pile inline on mobile */}
           {mobile && (
-            <span style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginLeft: 8 }}>
+            <span style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginLeft: SPACE[4] }}>
               {g.deck.length} left
             </span>
           )}
@@ -474,7 +474,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: isSmall ? 6 : 10,
+              gap: isSmall ? SPACE[3] : SPACE[5],
               width: "100%",
               maxWidth: mobile ? 360 : undefined,
               justifyContent: "center",
@@ -540,12 +540,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
+            gap: SPACE[4],
             flexShrink: 0,
             background: COLORS.panelMuted,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
-            padding: 16,
+            padding: SPACE[8],
           }}>
             <div style={{ position: "relative", width: 80, height: 112 }}>
               {g.deck.length === 0 ? (
@@ -582,7 +582,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         style={{
           display: "flex",
           flexDirection: isSmall ? "column" : "row",
-          gap: 10,
+          gap: SPACE[5],
           padding: "8px 12px",
           alignItems: "stretch",
         }}
@@ -607,12 +607,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         <div style={{
           display: "flex",
           flexDirection: "row",
-          gap: 6,
+          gap: SPACE[3],
           alignItems: "stretch",
           background: COLORS.panelMuted,
           border: BORDER.standard,
           borderRadius: RADIUS.md,
-          padding: 6,
+          padding: SPACE[3],
           flexShrink: 0,
           flexWrap: isSmall ? "wrap" : undefined,
           width: isSmall ? "100%" : undefined,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { COLORS } from "@/lib/tokens";
+import { COLORS, SPACE } from "@/lib/tokens";
 
 interface BootScreenProps {
   onComplete: () => void;
@@ -60,7 +60,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
             height: 4,
             border: `1px solid ${COLORS.surface}`,
             borderRadius: 2,
-            marginTop: 24,
+            marginTop: SPACE[12],
             overflow: "hidden",
           }}
         >
