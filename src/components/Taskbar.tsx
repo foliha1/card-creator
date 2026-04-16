@@ -45,7 +45,8 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
   };
 
   return (
-    <div
+    <nav
+      aria-label="Application navigation"
       style={{
         position: "fixed",
         bottom: 16,
@@ -88,7 +89,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           </span>
         </AppButton>
       ))}
-    </div>
+    </nav>
   );
 };
 
