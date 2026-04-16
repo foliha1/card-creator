@@ -69,6 +69,55 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [whoopFeedback, setWhoopFeedback] = useState<{ text: string; tone: "success" | "red" } | null>(null);
   const whoopFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const drawPileRef = useRef<HTMLDivElement | null>(null);
+  const gridCellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  interface FlyingCard {
+    id: string;
+    index: number;
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    toW: number;
+    toH: number;
+    delay: number;
+  }
+  const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
+  const prevGridRef = useRef(g.grid);
+
+  const launchFlyers = useCallback((targetIndices: number[]) => {
+    if (!drawPileRef.current || targetIndices.length === 0) {
+      setEnteringCards(new Set(targetIndices));
+      setTimeout(() => setEnteringCards(new Set()), 800);
+      return;
+    }
+    const pileRect = drawPileRef.current.getBoundingClientRect();
+    const flyers: FlyingCard[] = [];
+    targetIndices.forEach((idx, i) => {
+      const cellEl = gridCellRefs.current.get(idx);
+      if (!cellEl) return;
+      const cellRect = cellEl.getBoundingClientRect();
+      flyers.push({
+        id: `fly-${idx}-${Date.now()}`,
+        index: idx,
+        fromX: pileRect.left + pileRect.width / 2 - cellRect.width / 2,
+        fromY: pileRect.top + pileRect.height / 2 - cellRect.height / 2,
+        toX: cellRect.left,
+        toY: cellRect.top,
+        toW: cellRect.width,
+        toH: cellRect.height,
+        delay: i * 100,
+      });
+    });
+    setFlyingCards(flyers);
+    setTimeout(() => {
+      setFlyingCards([]);
+      setEnteringCards(new Set(targetIndices));
+      setTimeout(() => setEnteringCards(new Set()), 400);
+    }, 400 + targetIndices.length * 100);
+  }, []);
+
   const prevScoreRef = useRef(g.score);
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
@@ -162,6 +211,19 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   useEffect(() => {
     if (g.bonusPicks.length > 0) setBonusHighlighted(new Set(g.bonusPicks));
   }, [g.bonusPicks]);
+
+  // Detect mid-round refills (null -> filled without round change) and fly cards in
+  useEffect(() => {
+    const prev = prevGridRef.current;
+    if (g.roundNum === prevRoundRef.current && prev !== g.grid) {
+      const newSlots: number[] = [];
+      g.grid.forEach((c, i) => {
+        if (c && !prev[i]) newSlots.push(i);
+      });
+      if (newSlots.length > 0) launchFlyers(newSlots);
+    }
+    prevGridRef.current = g.grid;
+  }, [g.grid, g.roundNum, launchFlyers]);
 
   useEffect(() => {
     if (g.selectedCards.length === 2 && g.claimMode) {
@@ -340,7 +402,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             borderRadius: RADIUS.md,
             padding: SPACE[8],
           }}>
-            <div style={{ position: "relative", width: 80, height: 112 }}>
+            <div ref={drawPileRef} style={{ position: "relative", width: 80, height: 112 }}>
               {g.deck.length === 0 ? (
                 <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
               ) : (
@@ -382,7 +444,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               card ? (
                 <div
                   key={card.id}
+                  ref={(el) => {
+                    if (el) gridCellRefs.current.set(i, el);
+                    else gridCellRefs.current.delete(i);
+                  }}
                   style={{
+                    visibility: flyingCards.some((f) => f.index === i) ? "hidden" : "visible",
                     animation: shrinkingCards.has(i)
                       ? "card-shrink 0.4s ease forwards"
                       : enteringCards.has(i)
@@ -559,6 +626,29 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           {whoopFeedback ? whoopFeedback.text : g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
         </AppButton>
       </div>
+
+      {/* Flying card overlays (mid-round refills) */}
+      {flyingCards.map((fc) => (
+        <img
+          key={fc.id}
+          src="/cards/Card Back.svg"
+          alt=""
+          style={{
+            position: "fixed",
+            left: fc.fromX,
+            top: fc.fromY,
+            width: fc.toW,
+            height: fc.toH,
+            borderRadius: RADIUS.md,
+            pointerEvents: "none",
+            zIndex: 50,
+            filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.3))",
+            ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
+            ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
+            animation: `fly-to-grid 0.4s ease ${fc.delay}ms both`,
+          }}
+        />
+      ))}
     </div>
   );
 };
