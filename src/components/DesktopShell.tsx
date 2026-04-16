@@ -10,7 +10,7 @@ const AboutWindow = React.lazy(() => import("@/components/AboutWindow"));
 const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { COLORS, MOTION } from "@/lib/tokens";
+import { COLORS, MOTION, SPACE } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
@@ -152,8 +152,8 @@ const DesktopShell: React.FC = () => {
         position: "relative",
         background: bgTheme,
         transition: `background ${MOTION.slow}`,
-        paddingBottom: mobile ? 100 : 0,
-        paddingTop: mobile ? 16 : 0,
+        paddingBottom: mobile ? 100 : SPACE[0],
+        paddingTop: mobile ? SPACE[8] : SPACE[0],
       }}
     >
       <style>{`

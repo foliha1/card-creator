@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
-import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES, SPACE } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 import { AppButton } from "@/components/ui/AppButton";
 import { IconButton } from "@/components/ui/IconButton";
@@ -127,12 +127,12 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        gap: mobile ? 6 : 8,
+        gap: mobile ? SPACE[3] : SPACE[4],
         zIndex: 100,
         background: COLORS.surface,
         border: BORDER.heavy,
         borderRadius: RADIUS.lg,
-        padding: mobile ? 8 : 12,
+        padding: mobile ? SPACE[4] : SPACE[6],
         overflowX: mobile ? "auto" : undefined,
         WebkitOverflowScrolling: "touch",
       }}
@@ -178,12 +178,12 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               background: COLORS.surface,
               border: BORDER.standard,
               borderRadius: RADIUS.md,
-              padding: 10,
+              padding: SPACE[5],
               boxShadow: SHADOW.windowFocused,
               zIndex: 200,
               display: "flex",
               flexDirection: "column" as const,
-              gap: 10,
+              gap: SPACE[5],
             }}
           >
             <div style={{ height: 26, padding: "0 4px", display: "flex", flexDirection: "row" as const, alignItems: "center" }}>
@@ -191,7 +191,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
                 APPEARANCE
               </div>
             </div>
-            <div style={{ background: COLORS.panel, border: BORDER.standard, borderRadius: RADIUS.md, padding: 12 }}>
+            <div style={{ background: COLORS.panel, border: BORDER.standard, borderRadius: RADIUS.md, padding: SPACE[6] }}>
               <div
                 style={{
                   fontFamily: FONT_FAMILY,
@@ -200,12 +200,12 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
                   color: COLORS.inkMuted,
                   textTransform: "uppercase",
                   letterSpacing: 1,
-                  marginBottom: 10,
+                  marginBottom: SPACE[5],
                 }}
               >
                 BACKGROUND
               </div>
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex", gap: SPACE[5] }}>
                 {THEME_SWATCHES.map(({ color, label }) => (
                   <ThemeSwatch
                     key={color}
