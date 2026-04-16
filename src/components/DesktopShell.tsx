@@ -249,7 +249,7 @@ const DesktopShell: React.FC = () => {
             transform: "translate(-50%, -55%)",
             pointerEvents: "none",
             zIndex: 2,
-            background: deriveLogoColor(bgTheme),
+            background: logoColor,
             transition: "background 400ms ease-in-out",
             WebkitMaskImage: "url(/WhoopWhoop_Stacked_Logo.svg)",
             WebkitMaskSize: "contain",
