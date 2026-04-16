@@ -185,24 +185,42 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
         {slide === 2 && (
           <>
-            <div style={headlineStyle}>Call WHOOP! WHOOP!</div>
+            <div style={headlineStyle}>Claim Your Match</div>
             <div style={bodyStyle}>
-              Spot a match, hit the button, tap two cards. Get it right and claim them!
+              Spot a pair? Hit WHOOP! WHOOP!, then tap the two matching cards. Get it right and they're yours!
             </div>
-            <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
-              {["1-circle-blue", "2-circle-red"].map((name) => (
-                <img
-                  key={name}
-                  src={`/cards/${name}.svg`}
-                  alt="Match card"
-                  style={{
-                    width: 80,
-                    height: 112,
-                    borderRadius: RADIUS.md,
-                    boxShadow: "0 0 12px rgba(34,197,94,0.6), 0 0 4px rgba(34,197,94,0.3)",
-                  }}
-                />
-              ))}
+            <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
+              <img
+                src="/cards/2-circle-blue.svg"
+                alt="Blue Circle 2"
+                style={{
+                  width: 72,
+                  height: 101,
+                  borderRadius: RADIUS.md,
+                  boxShadow: `0 0 0 3px ${COLORS.success}, 0 0 16px rgba(89,205,144,0.5)`,
+                }}
+              />
+              <img
+                src="/cards/4-circle-red.svg"
+                alt="Red Circle 4"
+                style={{
+                  width: 72,
+                  height: 101,
+                  borderRadius: RADIUS.md,
+                  boxShadow: `0 0 0 3px ${COLORS.success}, 0 0 16px rgba(89,205,144,0.5)`,
+                }}
+              />
+            </div>
+            <div
+              style={{
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontSize: TYPE.caption,
+                color: COLORS.inkMuted,
+                marginTop: SPACE[2],
+              }}
+            >
+              Both circles — that's a SHAPE match!
             </div>
           </>
         )}
