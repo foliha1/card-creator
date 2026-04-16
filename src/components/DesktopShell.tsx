@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useCallback, useEffect, Suspense } from "react";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
@@ -11,31 +11,7 @@ const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { COLORS, MOTION } from "@/lib/tokens";
-
-function deriveLogoColor(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const d = max - min;
-  let h = 0;
-  if (d) {
-    if (max === r) h = ((g - b) / d + 6) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h *= 60;
-  }
-  let l = (max + min) / 2;
-  let s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
-  l = Math.max(l * 0.42, 0.12);
-  s = Math.min(s + 0.08, 1);
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    return Math.round((l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255);
-  };
-  return `#${f(0).toString(16).padStart(2, "0")}${f(8).toString(16).padStart(2, "0")}${f(4).toString(16).padStart(2, "0")}`;
-}
+import { useTheme } from "@/lib/theme-context";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
@@ -57,22 +33,9 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
 
 const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music"];
 
-const DEFAULT_THEME = COLORS.offWhite;
-
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
-  const [bgTheme, setBgTheme] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("whoop-theme") || DEFAULT_THEME;
-    }
-    return DEFAULT_THEME;
-  });
-
-  const handleThemeChange = useCallback((color: string) => {
-    setBgTheme(color);
-    localStorage.setItem("whoop-theme", color);
-  }, []);
-  const logoColor = useMemo(() => deriveLogoColor(bgTheme), [bgTheme]);
+  const { bgTheme, logoColor } = useTheme();
   const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
@@ -264,8 +227,6 @@ const DesktopShell: React.FC = () => {
         onFocus={focusWindow}
         activeWindow={activeWindow}
         mobile={mobile}
-        theme={bgTheme}
-        onThemeChange={handleThemeChange}
       />
     </div>
   );
