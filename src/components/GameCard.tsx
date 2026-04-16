@@ -29,6 +29,8 @@ const GameCard = ({
   enterDelay = 0,
   shaking,
 }: GameCardProps) => {
+  const [focusVis, setFocusVis] = useState(false);
+
   const baseShadow = "0 6px 14px rgba(0,0,0,0.25)";
   const boxShadow = matched
     ? `0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5), ${baseShadow}`
@@ -51,8 +53,16 @@ const GameCard = ({
     ? "card-shake 0.2s ease"
     : "none";
 
+  const shapeLabel = card.shape === "tri" ? "triangle" : card.shape;
+  const ariaLabel = faceUp
+    ? `${card.color} ${shapeLabel}, ${card.number}`
+    : `Card ${card.id}, face down`;
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel}
       style={{
         perspective: 600,
         width: "100%",
@@ -62,8 +72,18 @@ const GameCard = ({
         opacity: shrinking ? outerOpacity : undefined,
         transition: shrinking ? outerTransition : undefined,
         animation: animStyle,
+        outline: focusVis ? `2px solid ${COLORS.blue}` : "none",
+        outlineOffset: 2,
       }}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) setFocusVis(true); }}
+      onBlur={() => setFocusVis(false)}
     >
       <div
         style={{
