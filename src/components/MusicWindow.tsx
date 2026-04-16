@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { SkipBack, SkipForward, Play, Pause } from "lucide-react";
+import { SkipBack, SkipForward } from "lucide-react";
 
 declare global {
   interface Window {
@@ -11,12 +11,13 @@ declare global {
 
 interface SCWidget {
   bind: (event: string, callback: (...args: any[]) => void) => void;
+  play: () => void;
+  pause: () => void;
   toggle: () => void;
   next: () => void;
   prev: () => void;
   seekTo: (ms: number) => void;
   getCurrentSound: (cb: (sound: { title: string; duration: number; user: { username: string } }) => void) => void;
-  getDuration: (cb: (d: number) => void) => void;
 }
 
 const SC_EVENTS = {
@@ -25,6 +26,13 @@ const SC_EVENTS = {
   PAUSE: "pause",
   PLAY_PROGRESS: "playProgress",
   FINISH: "finish",
+};
+
+const formatTime = (ms: number) => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
 const MusicWindow: React.FC = () => {
@@ -38,6 +46,7 @@ const MusicWindow: React.FC = () => {
   const [artist, setArtist] = useState("");
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
     if (!document.getElementById("sc-widget-api")) {
@@ -74,6 +83,7 @@ const MusicWindow: React.FC = () => {
         w.bind(SC_EVENTS.PAUSE, () => setPlaying(false));
         w.bind(SC_EVENTS.PLAY_PROGRESS, (e: any) => {
           setProgress(e.relativePosition ?? 0);
+          setCurrentTime(e.currentPosition ?? 0);
         });
         w.bind(SC_EVENTS.FINISH, () => w.next());
       }
@@ -89,7 +99,7 @@ const MusicWindow: React.FC = () => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", padding: 16, gap: 12, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: 10, gap: 10, height: "100%" }}>
       <iframe
         ref={iframeRef}
         src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/racesmusic/sets/races-god-gaming-playlist&auto_play=false"
@@ -97,106 +107,157 @@ const MusicWindow: React.FC = () => {
         allow="autoplay"
       />
 
-      {!ready ? (
+      {/* ROW 1 — Track Info */}
+      <div style={{
+        background: "#D0C3AF",
+        border: "1.5px solid #231f20",
+        borderRadius: 6,
+        padding: 12,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        textAlign: "center",
+      }}>
         <div style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           fontFamily: '"Friend", sans-serif',
-          fontStyle: "italic",
-          fontSize: 14,
+          fontSize: "clamp(16px, 3vw, 28px)",
+          lineHeight: "35px",
           color: "#231f20",
-          opacity: 0.5,
         }}>
-          Loading...
+          {ready ? (
+            <>
+              <div>{trackTitle || "—"}</div>
+              <div style={{ fontStyle: "italic" }}>{artist || "—"}</div>
+            </>
+          ) : (
+            <div>Loading...</div>
+          )}
         </div>
-      ) : (
-        <>
-          <div style={{ minWidth: 0, maxWidth: "100%" }}>
-            <div style={{
-              fontFamily: '"Friend", sans-serif',
-              fontStyle: "normal",
-              fontSize: 10,
-              color: "#231f20",
-              opacity: 0.5,
-              textTransform: "uppercase",
-              letterSpacing: 1,
-              marginBottom: 4,
-            }}>
-              Now Playing
-            </div>
-            <div style={{
-              fontFamily: '"Friend", sans-serif',
-              fontStyle: "italic",
-              fontSize: 16,
-              color: "#231f20",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              maxWidth: "100%",
-            }}>
-              {trackTitle || "—"}
-            </div>
-            <div style={{
-              fontFamily: '"Friend", sans-serif',
-              fontStyle: "normal",
-              fontSize: 12,
-              color: "#231f20",
-              opacity: 0.6,
-              marginTop: 2,
-            }}>
-              {artist || "—"}
-            </div>
-          </div>
+      </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-            <button
-              onClick={() => widgetRef.current?.prev()}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.7"; }}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#231f20", display: "flex", opacity: 0.7, transition: "opacity 0.15s" }}
-            >
-              <SkipBack size={18} />
-            </button>
-            <button
-              onClick={() => widgetRef.current?.toggle()}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#3a3637"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#231f20"; }}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: "#231f20",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 0.15s",
-              }}
-            >
-              {playing ? <Pause size={18} color="#f8f2e9" /> : <Play size={18} color="#f8f2e9" style={{ marginLeft: 2 }} />}
-            </button>
-            <button
-              onClick={() => widgetRef.current?.next()}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.7"; }}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#231f20", display: "flex", opacity: 0.7, transition: "opacity 0.15s" }}
-            >
-              <SkipForward size={18} />
-            </button>
-          </div>
+      {/* ROW 2 — Progress Bar */}
+      <div style={{
+        background: "#D0C3AF",
+        border: "1.5px solid #231f20",
+        borderRadius: 6,
+        padding: "4px 12px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        height: 32,
+      }}>
+        <span style={{
+          fontFamily: '"Friend", sans-serif',
+          fontSize: 14,
+          color: "#000000",
+          flexShrink: 0,
+        }}>
+          {formatTime(currentTime)}
+        </span>
+        <div
+          ref={progressBarRef}
+          onClick={handleSeek}
+          style={{
+            flex: 1,
+            height: 7,
+            background: "#D0C3AF",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            overflow: "hidden",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{
+            width: `${progress * 100}%`,
+            height: 14,
+            background: "#231f20",
+            borderRadius: 0,
+          }} />
+        </div>
+      </div>
 
-          <div
-            ref={progressBarRef}
-            onClick={handleSeek}
-            style={{ width: "100%", height: 4, background: "#ADA290", borderRadius: 2, cursor: "pointer", marginTop: "auto" }}
-          >
-            <div style={{ width: `${progress * 100}%`, height: "100%", background: "#d72229", borderRadius: 2, transition: "width 0.2s" }} />
-          </div>
-        </>
-      )}
+      {/* ROW 3 — Controls */}
+      <div style={{ display: "flex", gap: 4, width: "100%" }}>
+        {/* Play */}
+        <button
+          onClick={() => widgetRef.current?.play()}
+          style={{
+            flex: 1,
+            height: 54,
+            background: "#0072B2",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{
+            width: 0,
+            height: 0,
+            borderLeft: "16px solid #231f20",
+            borderTop: "10px solid transparent",
+            borderBottom: "10px solid transparent",
+          }} />
+        </button>
+
+        {/* Pause */}
+        <button
+          onClick={() => widgetRef.current?.pause()}
+          style={{
+            flex: 1,
+            height: 54,
+            background: "#E79024",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            gap: 6,
+          }}
+        >
+          <div style={{ width: 7, height: 26, background: "#231f20" }} />
+          <div style={{ width: 7, height: 26, background: "#231f20" }} />
+        </button>
+
+        {/* Skip Back */}
+        <button
+          onClick={() => widgetRef.current?.prev()}
+          style={{
+            flex: 0.5,
+            height: 54,
+            background: "#F8F2E9",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <SkipBack size={22} color="#231f20" />
+        </button>
+
+        {/* Skip Forward */}
+        <button
+          onClick={() => widgetRef.current?.next()}
+          style={{
+            flex: 0.5,
+            height: 54,
+            background: "#F8F2E9",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <SkipForward size={22} color="#231f20" />
+        </button>
+      </div>
     </div>
   );
 };
