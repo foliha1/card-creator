@@ -30,7 +30,7 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
   howtoplay: { width: 340, height: 580, title: "HOW TO PLAY" },
   preorder: { width: 400, height: 320, title: "PRE-ORDER" },
   about: { width: 400, height: 380, title: "ABOUT" },
-  music: { width: 396, height: 320, title: "NOW PLAYING" },
+  music: { width: 396, height: 340, title: "NOW PLAYING" },
   theme: { width: 380, height: 150, title: "APPEARANCE" },
 };
 
