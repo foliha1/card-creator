@@ -40,7 +40,9 @@ const MusicWindow: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const widgetRef = useRef<SCWidget | null>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const volumeBarRef = useRef<HTMLDivElement>(null);
+  const volumeTrackRef = useRef<HTMLDivElement>(null);
+  const volumeDragging = useRef(false);
+  const prevVolumeRef = useRef(0.8);
 
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -107,13 +109,51 @@ const MusicWindow: React.FC = () => {
     widgetRef.current.seekTo(pct * duration);
   };
 
-  const handleVolume = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!volumeBarRef.current || !widgetRef.current) return;
-    const rect = volumeBarRef.current.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  // Volume drag helpers
+  const calcVolumeFromEvent = useCallback((clientX: number) => {
+    if (!volumeTrackRef.current) return null;
+    const rect = volumeTrackRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  }, []);
+
+  const applyVolume = useCallback((pct: number) => {
     setVolume(pct);
-    widgetRef.current.setVolume(pct * 100);
-  };
+    widgetRef.current?.setVolume(pct * 100);
+  }, []);
+
+  const handleVolumePointerDown = useCallback((e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    volumeDragging.current = true;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const pct = calcVolumeFromEvent(clientX);
+    if (pct !== null) applyVolume(pct);
+
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      if (!volumeDragging.current) return;
+      const cx = "touches" in ev ? ev.touches[0].clientX : (ev as MouseEvent).clientX;
+      const p = calcVolumeFromEvent(cx);
+      if (p !== null) applyVolume(p);
+    };
+    const onUp = () => {
+      volumeDragging.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove);
+    window.addEventListener("touchend", onUp);
+  }, [calcVolumeFromEvent, applyVolume]);
+
+  const toggleMute = useCallback(() => {
+    if (volume > 0) {
+      prevVolumeRef.current = volume;
+      applyVolume(0);
+    } else {
+      applyVolume(prevVolumeRef.current || 0.8);
+    }
+  }, [volume, applyVolume]);
 
   const disabledStyle: React.CSSProperties = !ready ? { opacity: 0.5, pointerEvents: "none" } : {};
 
@@ -155,12 +195,7 @@ const MusicWindow: React.FC = () => {
       }}>
         {ready ? (
           <>
-            <div style={{
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              width: "100%",
-              textAlign: "center",
-            }}>
+            <div style={{ overflow: "hidden", whiteSpace: "nowrap", width: "100%", textAlign: "center" }}>
               <span style={{
                 fontFamily: '"Friend", sans-serif',
                 fontSize: "clamp(18px, 3vw, 28px)",
@@ -172,12 +207,7 @@ const MusicWindow: React.FC = () => {
                 {trackTitle || "—"}
               </span>
             </div>
-            <div style={{
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              width: "100%",
-              textAlign: "center",
-            }}>
+            <div style={{ overflow: "hidden", whiteSpace: "nowrap", width: "100%", textAlign: "center" }}>
               <span style={{
                 fontFamily: '"Friend", sans-serif',
                 fontSize: "clamp(13px, 2.2vw, 20px)",
@@ -263,8 +293,7 @@ const MusicWindow: React.FC = () => {
           }}
         >
           <div style={{
-            width: 0,
-            height: 0,
+            width: 0, height: 0,
             borderLeft: "16px solid #231f20",
             borderTop: "10px solid transparent",
             borderBottom: "10px solid transparent",
@@ -299,16 +328,12 @@ const MusicWindow: React.FC = () => {
           onMouseEnter={() => setPrevHover(true)}
           onMouseLeave={() => setPrevHover(false)}
           style={{
-            flex: 0.5,
-            height: 54,
+            flex: 0.5, height: 54,
             background: prevHover ? "#e8e0d4" : "#F8F2E9",
             border: "1.5px solid #231f20",
             borderRadius: 6,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "background 0.15s",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", transition: "background 0.15s",
           }}
         >
           <SkipBack size={22} color="#231f20" />
@@ -319,16 +344,12 @@ const MusicWindow: React.FC = () => {
           onMouseEnter={() => setNextHover(true)}
           onMouseLeave={() => setNextHover(false)}
           style={{
-            flex: 0.5,
-            height: 54,
+            flex: 0.5, height: 54,
             background: nextHover ? "#e8e0d4" : "#F8F2E9",
             border: "1.5px solid #231f20",
             borderRadius: 6,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "background 0.15s",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", transition: "background 0.15s",
           }}
         >
           <SkipForward size={22} color="#231f20" />
@@ -337,7 +358,7 @@ const MusicWindow: React.FC = () => {
 
       {/* ROW 4 — Volume */}
       <div style={{
-        background: "#D0C3AF",
+        background: "#F8F2E9",
         border: "1.5px solid #231f20",
         borderRadius: 6,
         padding: "4px 12px",
@@ -347,25 +368,57 @@ const MusicWindow: React.FC = () => {
         height: 32,
         ...disabledStyle,
       }}>
-        <VolumeIcon size={16} color="#231f20" style={{ flexShrink: 0 }} />
+        <VolumeIcon
+          size={16}
+          color="#231f20"
+          style={{ flexShrink: 0, cursor: "pointer" }}
+          onClick={toggleMute}
+        />
+        {/* Volume track outer — relative, overflow visible for ball */}
         <div
-          ref={volumeBarRef}
-          onClick={handleVolume}
+          ref={volumeTrackRef}
+          onMouseDown={handleVolumePointerDown}
+          onTouchStart={handleVolumePointerDown}
           style={{
             flex: 1,
+            height: 14,
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            cursor: volumeDragging.current ? "grabbing" : "grab",
+          }}
+        >
+          {/* Inner track */}
+          <div style={{
+            width: "100%",
             height: 7,
-            background: "#D0C3AF",
+            background: "#F8F2E9",
             border: "1.5px solid #231f20",
             borderRadius: 6,
             overflow: "hidden",
-            cursor: "pointer",
-          }}
-        >
+            position: "relative",
+          }}>
+            {/* Fill */}
+            <div style={{
+              width: `${volume * 100}%`,
+              height: "100%",
+              background: "#231f20",
+              transition: volumeDragging.current ? "none" : "width 0.1s",
+            }} />
+          </div>
+          {/* Drag handle ball */}
           <div style={{
-            width: `${volume * 100}%`,
+            position: "absolute",
+            width: 14,
             height: 14,
             background: "#231f20",
-            borderRadius: 0,
+            border: "2px solid #F8F2E9",
+            borderRadius: "50%",
+            top: "50%",
+            left: `calc(${volume * 100}% - 7px)`,
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
           }} />
         </div>
       </div>
