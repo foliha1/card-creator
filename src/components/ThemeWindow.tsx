@@ -15,18 +15,6 @@ const ThemeWindow: React.FC = () => {
       padding: SPACE[6],
       gap: SPACE[6],
     }}>
-      <div
-        style={{
-          fontFamily: FONT_FAMILY,
-          fontStyle: "normal",
-          fontSize: TYPE.caption,
-          color: COLORS.inkMuted,
-          textTransform: "uppercase",
-          letterSpacing: 1,
-        }}
-      >
-        BACKGROUND
-      </div>
 
       <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
         {THEME_SWATCHES.map(({ color, label }) => {
