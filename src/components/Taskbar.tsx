@@ -114,6 +114,26 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
     },
   });
 
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: mobile ? 6 : 8,
+        zIndex: 100,
+        background: COLORS.surface,
+        border: BORDER.heavy,
+        borderRadius: RADIUS.lg,
+        padding: mobile ? 8 : 12,
+        overflowX: mobile ? "auto" : undefined,
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
       {BUTTONS.map(({ label, id }) => (
         <button
           key={id}
@@ -131,8 +151,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           ref={themeBtnRef}
           style={iconBtnStyle}
           onClick={() => setThemeOpen((v) => !v)}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+          {...iconHoverHandlers}
         >
           <Palette size={18} />
         </button>
@@ -210,8 +229,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       <button
         style={iconBtnStyle}
         onClick={() => handleClick("music")}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+        {...iconHoverHandlers}
       >
         <Music size={18} />
       </button>
@@ -220,8 +238,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       <button
         style={iconBtnStyle}
         onClick={toggleMute}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+        {...iconHoverHandlers}
       >
         {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
       </button>
