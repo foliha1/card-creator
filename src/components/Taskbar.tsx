@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
-import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
@@ -202,7 +202,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
                         border: isActive ? BORDER.heavy : BORDER.standard,
                         boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
                         cursor: "pointer",
-                        transition: `transform ${MOTION_FAST}`,
+                        transition: `transform ${MOTION.fast}`,
                         padding: 0,
                         flexShrink: 0,
                       }}
