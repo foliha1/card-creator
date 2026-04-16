@@ -85,6 +85,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }
   const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
   const prevGridRef = useRef(g.grid);
+  const initialDealDone = useRef(false);
 
   const launchFlyers = useCallback((targetIndices: number[]) => {
     if (!drawPileRef.current || targetIndices.length === 0) {
