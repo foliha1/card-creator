@@ -165,7 +165,7 @@ const MusicWindow: React.FC = () => {
   const VolumeIcon = volume === 0 ? VolumeX : Volume2;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", padding: 10, gap: 10, height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", padding: 10, gap: 10 }}>
       <iframe
         ref={iframeRef}
         src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/racesmusic/sets/races-god-gaming-playlist&auto_play=false"
