@@ -1,0 +1,78 @@
+import React from "react";
+import { COLORS, BORDER, RADIUS, FONT_FAMILY, MOTION } from "@/lib/tokens";
+
+export type ButtonVariant = "primary" | "secondary" | "pill";
+export type ButtonTone = "ink" | "red" | "blue" | "orange" | "neutral";
+export type ButtonSize = "sm" | "md" | "lg";
+
+interface AppButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style"> {
+  variant?: ButtonVariant;
+  tone?: ButtonTone;
+  size?: ButtonSize;
+  active?: boolean;
+  fullWidth?: boolean;
+  style?: React.CSSProperties;
+}
+
+const TONE_MAP: Record<ButtonTone, { bg: string; hoverBg: string; fg: string }> = {
+  ink:     { bg: COLORS.ink,        hoverBg: COLORS.inkSoft,          fg: COLORS.surface },
+  red:     { bg: COLORS.red,        hoverBg: "#b81b20",               fg: COLORS.surface },
+  blue:    { bg: COLORS.blue,       hoverBg: "#005a8f",               fg: COLORS.surface },
+  orange:  { bg: COLORS.orange,     hoverBg: "#c47618",               fg: COLORS.surface },
+  neutral: { bg: COLORS.surface,    hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
+};
+
+const SIZE_MAP: Record<ButtonSize, { fontSize: number | string; padding: string }> = {
+  sm: { fontSize: 12, padding: "6px 12px" },
+  md: { fontSize: 16, padding: "10px 20px" },
+  lg: { fontSize: 18, padding: "12px 24px" },
+};
+
+export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
+  ({ variant = "primary", tone = "ink", size = "md", active = false, fullWidth = false, disabled, style, onMouseEnter, onMouseLeave, ...rest }, ref) => {
+    const toneColors = TONE_MAP[tone];
+    const sizing = SIZE_MAP[size];
+    const isPill = variant === "pill";
+    const isSecondary = variant === "secondary";
+
+    const baseBg = isSecondary ? COLORS.surface : toneColors.bg;
+    const baseFg = isSecondary ? COLORS.ink : toneColors.fg;
+    const hoverBg = isSecondary ? COLORS.panelMutedHover : toneColors.hoverBg;
+
+    const mergedStyle: React.CSSProperties = {
+      fontFamily: FONT_FAMILY,
+      fontStyle: "italic",
+      fontSize: sizing.fontSize,
+      padding: sizing.padding,
+      borderRadius: isPill ? 999 : RADIUS.md,
+      border: BORDER.standard,
+      background: active ? hoverBg : baseBg,
+      color: baseFg,
+      cursor: disabled ? "default" : "pointer",
+      opacity: disabled ? 0.4 : 1,
+      transition: `background ${MOTION.fast}`,
+      whiteSpace: "nowrap",
+      textAlign: "center",
+      width: fullWidth ? "100%" : undefined,
+      ...style,
+    };
+
+    return (
+      <button
+        ref={ref}
+        disabled={disabled}
+        style={mergedStyle}
+        onMouseEnter={(e) => {
+          if (!disabled) e.currentTarget.style.background = hoverBg;
+          onMouseEnter?.(e);
+        }}
+        onMouseLeave={(e) => {
+          if (!disabled) e.currentTarget.style.background = active ? hoverBg : baseBg;
+          onMouseLeave?.(e);
+        }}
+        {...rest}
+      />
+    );
+  }
+);
+AppButton.displayName = "AppButton";
