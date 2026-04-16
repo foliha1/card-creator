@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface GameWindowProps {
   mobile?: boolean;
@@ -133,6 +135,12 @@ interface GamePlayAreaProps {
 
 const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false }) => {
   const g = useGameState(tier, gridSize);
+  const [muted, setMutedState] = useState(isMuted());
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    setMutedState(next);
+  };
 
   // --- Animation state ---
   const [peekedCount, setPeekedCount] = useState(0);
@@ -577,6 +585,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         }}
       >
         {/* New Game button */}
+        <IconButton tone="default" onClick={toggleMute} size={mobile ? 40 : 36}>
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </IconButton>
+
         <AppButton
           variant="primary"
           tone="blue"
