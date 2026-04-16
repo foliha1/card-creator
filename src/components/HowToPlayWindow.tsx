@@ -46,7 +46,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               Tap any face-down card to peek at it for 2 seconds. Try to remember what you see!
             </div>
             <img
-              src="/cards/3 tri red.svg"
+              src="/cards/3-tri-red.svg"
               alt="Example card"
               style={{ width: "clamp(100px, 40vw, 130px)", aspectRatio: "5/7", borderRadius: RADIUS.md }}
             />
@@ -92,7 +92,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               Spot a match, hit the button, tap two cards. Get it right and claim them!
             </div>
             <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
-              {["1 circle blue", "2 circle red"].map((name) => (
+              {["1-circle-blue", "2-circle-red"].map((name) => (
                 <img
                   key={name}
                   src={`/cards/${name}.svg`}

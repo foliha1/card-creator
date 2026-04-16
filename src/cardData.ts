@@ -21,7 +21,7 @@ export const COLORS: Record<ColorName, string> = {
   yellow: "#e79024",
 };
 
-export const CARD_BACK_PATH = "/cards/Card Back.svg";
+export const CARD_BACK_PATH = "/cards/card-back.svg";
 
 function generateAllCards(): Card[] {
   const cards: Card[] = [];
@@ -29,7 +29,7 @@ function generateAllCards(): Card[] {
     for (const number of NUMBERS) {
       for (const color of COLOR_NAMES) {
         const id = `${shape}-${number}-${color}`;
-        const svgPath = `/cards/${number} ${shape} ${color}.svg`;
+        const svgPath = `/cards/${number}-${shape}-${color}.svg`;
         cards.push({ id, shape, number, color, svgPath });
       }
     }
