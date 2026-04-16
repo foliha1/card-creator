@@ -34,6 +34,7 @@ const preloadSoundCloudWidget = () => {
   document.head.appendChild(link);
 };
 
+interface ThemeSwatchProps {
   color: string;
   label: string;
   isActive: boolean;
