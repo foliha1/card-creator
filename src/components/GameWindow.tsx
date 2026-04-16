@@ -149,15 +149,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
-      const filledSlots = g.grid.map((c, i) => (c ? i : -1)).filter((i) => i !== -1);
-      setEnteringCards(new Set(filledSlots));
-      setTimeout(() => setEnteringCards(new Set()), 800);
       setShowDoubleTitle(false);
       setDoublePhase("idle");
       setOrangePulseCards(new Set());
       setBonusHighlighted(new Set());
     }
-  }, [g.roundNum, g.grid]);
+  }, [g.roundNum]);
 
   useEffect(() => {
     if (prevClaimRef.current && !g.claimMode) setPeekedCount(0);
