@@ -24,12 +24,6 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
   const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
   const [gameStarted, setGameStarted] = useState(false);
   const [gameKey, setGameKey] = useState(0);
-  const [muted, setMutedState] = useState(isMuted());
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    setMutedState(next);
-  };
 
   const TIERS = [
     { id: "easy" as const, label: "Easy Going", color: COLORS.blue },
