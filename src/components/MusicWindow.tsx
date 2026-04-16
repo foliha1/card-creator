@@ -114,31 +114,63 @@ const MusicWindow: React.FC = () => {
       />
 
       {/* ROW 1 — Track Info */}
+      <style>{`
+        @keyframes marquee {
+          0%, 15% { transform: translateX(0); }
+          85%, 100% { transform: translateX(calc(-100% + 280px)); }
+        }
+      `}</style>
       <div style={{
         background: "#D0C3AF",
         border: "1.5px solid #231f20",
         borderRadius: 6,
         padding: 12,
         display: "flex",
+        flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
+        gap: 2,
       }}>
-        <div style={{
-          fontFamily: '"Friend", sans-serif',
-          fontSize: "clamp(16px, 3vw, 28px)",
-          lineHeight: "35px",
-          color: "#231f20",
-        }}>
-          {ready ? (
-            <>
-              <div>{trackTitle || "—"}</div>
-              <div style={{ fontStyle: "italic" }}>{artist || "—"}</div>
-            </>
-          ) : (
-            <div>Loading...</div>
-          )}
-        </div>
+        {ready ? (
+          <>
+            <div style={{
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              width: "100%",
+              textOverflow: "ellipsis",
+            }}>
+              <span style={{
+                fontFamily: '"Friend", sans-serif',
+                fontSize: "clamp(18px, 3vw, 28px)",
+                lineHeight: "35px",
+                color: "#231f20",
+                fontStyle: "normal",
+                display: "inline-block",
+                whiteSpace: "nowrap",
+                ...(trackTitle.length > 25 ? { animation: "marquee 8s linear infinite" } : {}),
+              }}>
+                {trackTitle || "—"}
+              </span>
+            </div>
+            <div style={{
+              fontFamily: '"Friend", sans-serif',
+              fontSize: "clamp(13px, 2.2vw, 20px)",
+              lineHeight: "24px",
+              color: "#231f20",
+              fontStyle: "italic",
+            }}>
+              {artist || "—"}
+            </div>
+          </>
+        ) : (
+          <div style={{
+            fontFamily: '"Friend", sans-serif',
+            fontSize: "clamp(16px, 3vw, 28px)",
+            lineHeight: "35px",
+            color: "#231f20",
+          }}>Loading...</div>
+        )}
       </div>
 
       {/* ROW 2 — Progress Bar */}
