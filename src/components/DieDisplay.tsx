@@ -18,7 +18,7 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
         border: `4px solid ${COLORS.ink}`,
         backgroundColor: COLORS.surface,
         color: COLORS.ink,
-        fontSize: TYPE.head,
+        fontSize: 28,
         fontWeight: 900,
         fontStyle: "italic",
         display: "flex",
