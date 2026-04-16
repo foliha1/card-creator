@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
 
 interface HowToPlayWindowProps {
   onClose: () => void;
@@ -8,7 +9,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
 
   const headlineStyle: React.CSSProperties = {
-    fontFamily: '"Friend", sans-serif',
+    fontFamily: FONT_FAMILY,
     fontStyle: "normal",
     fontWeight: 700,
     fontSize: 20,
@@ -17,7 +18,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   };
 
   const bodyStyle: React.CSSProperties = {
-    fontFamily: '"Friend", sans-serif',
+    fontFamily: FONT_FAMILY,
     fontStyle: "normal",
     fontSize: 18,
     color: "#000000",
@@ -28,16 +29,16 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
   const btnStyle = (disabled?: boolean): React.CSSProperties => ({
     flex: 1,
-    background: "#F8F2E9",
-    border: "1.5px solid #231f20",
-    fontFamily: '"Friend", serif',
+    background: COLORS.surface,
+    border: BORDER.standard,
+    fontFamily: FONT_FAMILY,
     fontStyle: "italic",
     fontSize: 17,
     padding: 12,
-    borderRadius: 6,
+    borderRadius: RADIUS.md,
     cursor: disabled ? "default" : "pointer",
     opacity: disabled ? 0.3 : 1,
-    color: "#231f20",
+    color: COLORS.ink,
     textAlign: "center",
   });
 
@@ -62,7 +63,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             <img
               src="/cards/3 tri red.svg"
               alt="Example card"
-              style={{ width: "clamp(100px, 40vw, 130px)", aspectRatio: "5/7", borderRadius: 6 }}
+              style={{ width: "clamp(100px, 40vw, 130px)", aspectRatio: "5/7", borderRadius: RADIUS.md }}
             />
           </>
         )}
@@ -80,13 +81,13 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                   style={{
                     width: 48,
                     height: 48,
-                    background: "#231f20",
-                    borderRadius: 8,
+                    background: COLORS.ink,
+                    borderRadius: RADIUS.lg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#f8f2e9",
-                    fontFamily: '"Friend", serif',
+                    color: COLORS.surface,
+                    fontFamily: FONT_FAMILY,
                     fontStyle: "italic",
                     fontSize: 9,
                     fontWeight: 700,
@@ -114,7 +115,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                   style={{
                     width: 80,
                     height: 112,
-                    borderRadius: 6,
+                    borderRadius: RADIUS.md,
                     boxShadow: "0 0 12px rgba(34,197,94,0.6), 0 0 4px rgba(34,197,94,0.3)",
                   }}
                 />
@@ -133,7 +134,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "#231f20",
+              background: COLORS.ink,
               opacity: slide === i ? 1 : 0.25,
               transition: "opacity 0.2s",
             }}
