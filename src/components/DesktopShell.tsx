@@ -1,11 +1,13 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, Suspense } from "react";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
-import HowToPlayWindow from "@/components/HowToPlayWindow";
-import PreOrderWindow from "@/components/PreOrderWindow";
-import AboutWindow from "@/components/AboutWindow";
-import MusicWindow from "@/components/MusicWindow";
+import { COLORS } from "@/lib/tokens";
+
+const HowToPlayWindow = React.lazy(() => import("@/components/HowToPlayWindow"));
+const PreOrderWindow = React.lazy(() => import("@/components/PreOrderWindow"));
+const AboutWindow = React.lazy(() => import("@/components/AboutWindow"));
+const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { COLORS, MOTION } from "@/lib/tokens";
@@ -144,13 +146,19 @@ const DesktopShell: React.FC = () => {
     ? [...windowOrder].reverse().find((id) => openWindows.has(id))
     : undefined;
 
+  const WindowLoader = () => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: COLORS.ink, fontFamily: '"Friend", sans-serif', fontSize: 14 }}>
+      Loading…
+    </div>
+  );
+
   const renderWindowContent = (id: WindowId) => {
     switch (id) {
       case "game": return <GameWindow mobile={mobile} />;
-      case "howtoplay": return <HowToPlayWindow onClose={() => closeWindow("howtoplay")} />;
-      case "preorder": return <PreOrderWindow />;
-      case "about": return <AboutWindow />;
-      case "music": return <MusicWindow />;
+      case "howtoplay": return <Suspense fallback={<WindowLoader />}><HowToPlayWindow onClose={() => closeWindow("howtoplay")} /></Suspense>;
+      case "preorder": return <Suspense fallback={<WindowLoader />}><PreOrderWindow /></Suspense>;
+      case "about": return <Suspense fallback={<WindowLoader />}><AboutWindow /></Suspense>;
+      case "music": return <Suspense fallback={<WindowLoader />}><MusicWindow /></Suspense>;
     }
   };
 
