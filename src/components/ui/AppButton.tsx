@@ -31,6 +31,7 @@ const SIZE_MAP: Record<ButtonSize, { fontSize: number | string; padding: string 
 
 export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
   ({ variant = "primary", tone = "ink", size = "md", active = false, fullWidth = false, disabled, style, onMouseEnter, onMouseLeave, ...rest }, ref) => {
+    const [focusVisible, setFocusVisible] = React.useState(false);
     const toneColors = TONE_MAP[tone];
     const sizing = SIZE_MAP[size];
     const isPill = variant === "pill";
@@ -55,6 +56,8 @@ export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
       whiteSpace: "nowrap",
       textAlign: "center",
       width: fullWidth ? "100%" : undefined,
+      outline: focusVisible ? `2px solid ${COLORS.blue}` : "none",
+      outlineOffset: 2,
       ...style,
     };
 
@@ -63,6 +66,10 @@ export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
         ref={ref}
         disabled={disabled}
         style={mergedStyle}
+        onFocus={(e) => {
+          if (e.currentTarget.matches(":focus-visible")) setFocusVisible(true);
+        }}
+        onBlur={() => setFocusVisible(false)}
         onMouseEnter={(e) => {
           if (!disabled) e.currentTarget.style.background = hoverBg;
           onMouseEnter?.(e);
