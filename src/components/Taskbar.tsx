@@ -229,7 +229,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
                   fontFamily: FONT_FAMILY,
                   fontStyle: "normal",
                   fontSize: 10,
-                  color: "rgba(35,31,32,0.5)",
+                  color: COLORS.inkMuted,
                   textTransform: "uppercase",
                   letterSpacing: 1,
                   marginBottom: 10,
