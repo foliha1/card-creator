@@ -44,6 +44,7 @@ interface ThemeSwatchProps {
 }
 
 const ThemeSwatch = React.memo<ThemeSwatchProps>(({ color, label, isActive, onSelect }) => {
+  const [focusVisible, setFocusVisible] = React.useState(false);
   const handleEnter = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.currentTarget.style.transform = "scale(1.1)";
   }, []);
@@ -57,6 +58,10 @@ const ThemeSwatch = React.memo<ThemeSwatchProps>(({ color, label, isActive, onSe
       onClick={handleClick}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+      onFocus={(e) => {
+        if (e.currentTarget.matches(":focus-visible")) setFocusVisible(true);
+      }}
+      onBlur={() => setFocusVisible(false)}
       style={{
         width: 44,
         height: 44,
@@ -68,6 +73,8 @@ const ThemeSwatch = React.memo<ThemeSwatchProps>(({ color, label, isActive, onSe
         transition: `transform ${MOTION.fast}`,
         padding: 0,
         flexShrink: 0,
+        outline: focusVisible ? `2px solid ${COLORS.ink}` : "none",
+        outlineOffset: 3,
       }}
     />
   );

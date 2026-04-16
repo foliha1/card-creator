@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, MOTION } from "@/lib/tokens";
+import { COLORS, MOTION, RADIUS } from "@/lib/tokens";
 
 interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style"> {
   tone?: "default" | "close";
@@ -10,6 +10,7 @@ interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
   ({ tone = "default", size = 36, style, onMouseEnter, onMouseLeave, children, ...rest }, ref) => {
+    const [focusVisible, setFocusVisible] = React.useState(false);
     const isClose = tone === "close";
 
     const baseColor = COLORS.ink;
@@ -31,6 +32,9 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       opacity: baseOpacity,
       transition: `opacity ${MOTION.fast}, color ${MOTION.fast}`,
       flexShrink: 0,
+      outline: focusVisible ? `2px solid ${COLORS.blue}` : "none",
+      outlineOffset: 2,
+      borderRadius: isClose ? RADIUS.sm : "50%",
       ...style,
     };
 
@@ -38,6 +42,10 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       <button
         ref={ref}
         style={mergedStyle}
+        onFocus={(e) => {
+          if (e.currentTarget.matches(":focus-visible")) setFocusVisible(true);
+        }}
+        onBlur={() => setFocusVisible(false)}
         onMouseEnter={(e) => {
           e.currentTarget.style.opacity = String(hoverOpacity);
           e.currentTarget.style.color = hoverColor;
