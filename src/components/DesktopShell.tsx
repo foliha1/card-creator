@@ -24,8 +24,8 @@ function deriveLogoColor(hex: string): string {
   }
   let l = (max + min) / 2;
   let s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
-  l = Math.max(l * 0.45, 0.12);
-  s = Math.min(s + 0.1, 1);
+  l = Math.max(l * 0.42, 0.12);
+  s = Math.min(s + 0.08, 1);
   const a = s * Math.min(l, 1 - l);
   const f = (n: number) => {
     const k = (n + h / 30) % 12;
