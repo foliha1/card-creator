@@ -34,8 +34,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        padding: 24,
-        gap: 24,
+        padding: SPACE[12],
+        gap: SPACE[12],
       }}
     >
       {/* Slide content */}
