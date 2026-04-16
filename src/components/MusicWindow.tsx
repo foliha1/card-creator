@@ -412,13 +412,12 @@ const MusicWindow: React.FC = () => {
             width: 14,
             height: 14,
             background: "#d72229",
-            border: "2px solid #F8F2E9",
+            border: "none",
             borderRadius: "50%",
             top: "50%",
             left: `calc(${volume * 100}% - 7px)`,
             transform: "translateY(-50%)",
             pointerEvents: "none",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
           }} />
         </div>
       </div>
