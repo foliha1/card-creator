@@ -327,11 +327,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       )}
 
       {/* Claim mode instruction */}
-      {g.claimMode && g.selectedCards.length < 2 && (
-        <div style={{ textAlign: "center", padding: `${SPACE[2]}px 0`, fontSize: TYPE.caption, color: COLORS.ink, fontWeight: 700, fontStyle: "italic" }}>
-          Tap 2 cards!
-        </div>
-      )}
 
       {/* Main area */}
       <div style={{
@@ -557,11 +552,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         {/* WHOOP button */}
         <AppButton
           variant="primary"
-          tone="red"
+          tone={g.claimMode ? "orange" : "red"}
           size="lg"
-          disabled={!whoopReady}
+          disabled={!whoopReady && !g.claimMode}
           onClick={() => {
-            if (whoopReady) {
+            if (whoopReady && !g.claimMode) {
               g.enterClaimMode();
             }
           }}
@@ -571,10 +566,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             fontSize: isSmall ? "clamp(18px, 4vw, 24px)" : 26,
             padding: `${SPACE[6]}px ${SPACE[4]}px`,
             minHeight: mobile ? 48 : undefined,
-            animation: whoopReady ? "whoop-pulse 1.5s infinite" : undefined,
+            transition: `background ${MOTION.base}, color ${MOTION.base}`,
           }}
         >
-          WHOOP! WHOOP!
+          {g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
         </AppButton>
       </div>
     </div>
