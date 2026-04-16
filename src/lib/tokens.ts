@@ -37,9 +37,9 @@ export const MOTION = {
 
 export const THEME_SWATCHES = [
   { color: COLORS.red, label: "Red" },
-  { color: "#0072b2", label: "Blue" },
-  { color: COLORS.orange, label: "Yellow" },
-  { color: COLORS.surface, label: "Off-White" },
+  { color: COLORS.blue, label: "Blue" },
+  { color: COLORS.yellow, label: "Yellow" },
+  { color: COLORS.offWhite, label: "Off-White" },
 ] as const;
 
 export const FONT_FAMILY = '"Friend", sans-serif';
