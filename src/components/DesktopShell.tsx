@@ -24,7 +24,7 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
   howtoplay: { width: 340, height: 580, title: "HOW TO PLAY" },
   preorder: { width: 400, height: 320, title: "PRE-ORDER" },
   about: { width: 400, height: 380, title: "ABOUT" },
-  music: { width: 396, height: 290, title: "NOW PLAYING" },
+  music: { width: 396, height: 330, title: "NOW PLAYING" },
 };
 
 const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music"];

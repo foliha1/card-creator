@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { SkipBack, SkipForward } from "lucide-react";
+import { SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 
 declare global {
   interface Window {
@@ -17,6 +17,8 @@ interface SCWidget {
   next: () => void;
   prev: () => void;
   seekTo: (ms: number) => void;
+  setVolume: (vol: number) => void;
+  getVolume: (cb: (vol: number) => void) => void;
   getCurrentSound: (cb: (sound: { title: string; duration: number; user: { username: string } }) => void) => void;
 }
 
@@ -38,6 +40,7 @@ const MusicWindow: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const widgetRef = useRef<SCWidget | null>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const volumeBarRef = useRef<HTMLDivElement>(null);
 
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -46,6 +49,7 @@ const MusicWindow: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(0.8);
 
   const [playHover, setPlayHover] = useState(false);
   const [pauseHover, setPauseHover] = useState(false);
@@ -79,6 +83,7 @@ const MusicWindow: React.FC = () => {
         w.bind(SC_EVENTS.READY, () => {
           setReady(true);
           updateTrackInfo(w);
+          w.getVolume((vol) => setVolume(vol / 100));
         });
         w.bind(SC_EVENTS.PLAY, () => {
           setPlaying(true);
@@ -102,7 +107,22 @@ const MusicWindow: React.FC = () => {
     widgetRef.current.seekTo(pct * duration);
   };
 
+  const handleVolume = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!volumeBarRef.current || !widgetRef.current) return;
+    const rect = volumeBarRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setVolume(pct);
+    widgetRef.current.setVolume(pct * 100);
+  };
+
   const disabledStyle: React.CSSProperties = !ready ? { opacity: 0.5, pointerEvents: "none" } : {};
+
+  const marqueeStyle = (text: string): React.CSSProperties =>
+    text.length > 25
+      ? { display: "inline-block", whiteSpace: "nowrap", animation: "marquee 8s linear infinite" }
+      : { display: "inline-block", whiteSpace: "nowrap" };
+
+  const VolumeIcon = volume === 0 ? VolumeX : Volume2;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", padding: 10, gap: 10, height: "100%" }}>
@@ -113,13 +133,14 @@ const MusicWindow: React.FC = () => {
         allow="autoplay"
       />
 
-      {/* ROW 1 — Track Info */}
       <style>{`
         @keyframes marquee {
           0%, 15% { transform: translateX(0); }
           85%, 100% { transform: translateX(calc(-100% + 280px)); }
         }
       `}</style>
+
+      {/* ROW 1 — Track Info */}
       <div style={{
         background: "#D0C3AF",
         border: "1.5px solid #231f20",
@@ -138,7 +159,7 @@ const MusicWindow: React.FC = () => {
               overflow: "hidden",
               whiteSpace: "nowrap",
               width: "100%",
-              textOverflow: "ellipsis",
+              textAlign: "center",
             }}>
               <span style={{
                 fontFamily: '"Friend", sans-serif',
@@ -146,21 +167,27 @@ const MusicWindow: React.FC = () => {
                 lineHeight: "35px",
                 color: "#231f20",
                 fontStyle: "normal",
-                display: "inline-block",
-                whiteSpace: "nowrap",
-                ...(trackTitle.length > 25 ? { animation: "marquee 8s linear infinite" } : {}),
+                ...marqueeStyle(trackTitle),
               }}>
                 {trackTitle || "—"}
               </span>
             </div>
             <div style={{
-              fontFamily: '"Friend", sans-serif',
-              fontSize: "clamp(13px, 2.2vw, 20px)",
-              lineHeight: "24px",
-              color: "#231f20",
-              fontStyle: "italic",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              width: "100%",
+              textAlign: "center",
             }}>
-              {artist || "—"}
+              <span style={{
+                fontFamily: '"Friend", sans-serif',
+                fontSize: "clamp(13px, 2.2vw, 20px)",
+                lineHeight: "24px",
+                color: "#231f20",
+                fontStyle: "italic",
+                ...marqueeStyle(artist),
+              }}>
+                {artist || "—"}
+              </span>
             </div>
           </>
         ) : (
@@ -306,6 +333,41 @@ const MusicWindow: React.FC = () => {
         >
           <SkipForward size={22} color="#231f20" />
         </button>
+      </div>
+
+      {/* ROW 4 — Volume */}
+      <div style={{
+        background: "#D0C3AF",
+        border: "1.5px solid #231f20",
+        borderRadius: 6,
+        padding: "4px 12px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        height: 32,
+        ...disabledStyle,
+      }}>
+        <VolumeIcon size={16} color="#231f20" style={{ flexShrink: 0 }} />
+        <div
+          ref={volumeBarRef}
+          onClick={handleVolume}
+          style={{
+            flex: 1,
+            height: 7,
+            background: "#D0C3AF",
+            border: "1.5px solid #231f20",
+            borderRadius: 6,
+            overflow: "hidden",
+            cursor: "pointer",
+          }}
+        >
+          <div style={{
+            width: `${volume * 100}%`,
+            height: 14,
+            background: "#231f20",
+            borderRadius: 0,
+          }} />
+        </div>
       </div>
     </div>
   );
