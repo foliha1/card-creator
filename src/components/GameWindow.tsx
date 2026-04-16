@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface GameWindowProps {
   mobile?: boolean;
