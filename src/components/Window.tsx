@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY } from "@/lib/tokens";
 
 interface WindowProps {
   title: string;

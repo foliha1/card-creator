@@ -4,7 +4,7 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
-import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY } from "@/lib/tokens";
 
 interface GameWindowProps {
   mobile?: boolean;

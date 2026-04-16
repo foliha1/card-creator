@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY } from "@/lib/tokens";
 
 declare global {
   interface Window {
