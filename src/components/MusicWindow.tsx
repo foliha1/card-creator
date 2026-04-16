@@ -266,7 +266,7 @@ const MusicWindow: React.FC = () => {
           <div style={{
             width: `${progress * 100}%`,
             height: 14,
-            background: "#231f20",
+            background: "#d72229",
             borderRadius: 0,
           }} />
         </div>
