@@ -73,23 +73,6 @@ const DesktopShell: React.FC = () => {
     localStorage.setItem("whoop-theme", color);
   }, []);
   const logoColor = useMemo(() => deriveLogoColor(bgTheme), [bgTheme]);
-  const noiseUrl = useMemo(() => {
-    if (typeof document === "undefined") return "";
-    const canvas = document.createElement("canvas");
-    const w = 200, h = 200;
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext("2d")!;
-    const img = ctx.createImageData(w, h);
-    const d = img.data;
-    for (let i = 0; i < d.length; i += 4) {
-      if (Math.random() < 0.6) {
-        d[i] = 35; d[i+1] = 31; d[i+2] = 32;
-        d[i+3] = Math.floor(Math.random() * 50 + 10);
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    return canvas.toDataURL("image/png");
-  }, []);
   const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
@@ -223,7 +206,7 @@ const DesktopShell: React.FC = () => {
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          backgroundImage: noiseUrl ? `url(${noiseUrl})` : undefined,
+          backgroundImage: "url(/noise.png)",
           backgroundRepeat: "repeat",
           zIndex: 1,
         }}
