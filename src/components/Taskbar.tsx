@@ -66,6 +66,11 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
   const themeBtnRef = useRef<HTMLButtonElement>(null);
   const themePanelRef = useRef<HTMLDivElement>(null);
 
+  const handleSelectTheme = React.useCallback((color: string) => {
+    setTheme(color);
+    setThemeOpen(false);
+  }, [setTheme]);
+
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
