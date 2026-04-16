@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Volume2, VolumeX, Music } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
@@ -10,7 +10,16 @@ interface TaskbarProps {
   onFocus: (id: string) => void;
   activeWindow?: string;
   mobile?: boolean;
+  theme?: string;
+  onThemeChange?: (color: string) => void;
 }
+
+const THEME_SWATCHES = [
+  { color: "#d72229", label: "Red" },
+  { color: "#0072b2", label: "Blue" },
+  { color: "#f0e443", label: "Yellow" },
+  { color: "#fef9f0", label: "Off-White" },
+];
 
 const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "Play Whoop! Woop!", id: "game" },
