@@ -2,7 +2,7 @@ import React from "react";
 import { COLORS, BORDER, RADIUS, FONT_FAMILY, MOTION, TYPE } from "@/lib/tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "pill";
-export type ButtonTone = "ink" | "red" | "blue" | "orange" | "neutral" | "muted";
+export type ButtonTone = "ink" | "red" | "blue" | "orange" | "neutral" | "muted" | "success";
 export type ButtonSize = "sm" | "md" | "lg";
 
 interface AppButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style"> {
@@ -21,6 +21,7 @@ const TONE_MAP: Record<ButtonTone, { bg: string; hoverBg: string; fg: string }> 
   orange:  { bg: COLORS.orange,     hoverBg: "#c47618",               fg: COLORS.surface },
   neutral: { bg: COLORS.surface,    hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
   muted:   { bg: COLORS.panelMuted, hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
+  success: { bg: COLORS.success,   hoverBg: "#4ab87d",               fg: COLORS.ink },
 };
 
 const SIZE_MAP: Record<ButtonSize, { fontSize: number | string; padding: string }> = {

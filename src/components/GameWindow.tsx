@@ -66,17 +66,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
   const [bonusHighlighted, setBonusHighlighted] = useState<Set<number>>(new Set());
   const [diceLanded, setDiceLanded] = useState(false);
-  const [visibleMsg, setVisibleMsg] = useState("");
-  const [visibleMsgType, setVisibleMsgType] = useState("info");
-  const [msgVisible, setMsgVisible] = useState(false);
-  const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const MSG_COLORS: Record<string, string> = {
-    success: COLORS.success,
-    error: COLORS.red,
-    info: COLORS.blue,
-    warning: COLORS.orange,
-  };
+  const [whoopFeedback, setWhoopFeedback] = useState<{ text: string; tone: "success" | "red" } | null>(null);
+  const whoopFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const prevScoreRef = useRef(g.score);
   const prevRoundRef = useRef(g.roundNum);
@@ -84,14 +75,23 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const prevBonusRef = useRef(g.bonusPicking);
   const prevRoundForDice = useRef(g.roundNum);
 
+  const showWhoopFeedback = useCallback((text: string, tone: "success" | "red") => {
+    setWhoopFeedback({ text, tone });
+    if (whoopFeedbackTimer.current) clearTimeout(whoopFeedbackTimer.current);
+    whoopFeedbackTimer.current = setTimeout(() => setWhoopFeedback(null), 1800);
+  }, []);
+
   useEffect(() => {
     if (g.score !== prevScoreRef.current) {
-      if (g.score > prevScoreRef.current) playCorrect();
+      if (g.score > prevScoreRef.current) {
+        playCorrect();
+        showWhoopFeedback("Good Match!", "success");
+      }
       prevScoreRef.current = g.score;
       setScoreBounce(true);
       setTimeout(() => setScoreBounce(false), 300);
     }
-  }, [g.score]);
+  }, [g.score, showWhoopFeedback]);
 
   useEffect(() => {
     if (g.roundNum !== prevRoundRef.current) {
@@ -117,17 +117,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
   useEffect(() => {
     if (g.message) {
-      setVisibleMsg(g.message);
-      setVisibleMsgType(g.messageType);
-      setMsgVisible(true);
-      if (msgTimer.current) clearTimeout(msgTimer.current);
-      msgTimer.current = setTimeout(() => setMsgVisible(false), 2500);
+      // no-op: toast removed, feedback handled by WHOOP button
     }
   }, [g.message, g.messageType, g.roundNum, g.score]);
 
   useEffect(() => {
     if (g.wrongCards.size === 2) {
       playWrong();
+      showWhoopFeedback("Wrong Match!", "red");
       const indices = Array.from(g.wrongCards);
       setWrongFlashCards(new Set(indices));
       setShakingCards(new Set(indices));
@@ -137,7 +134,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         setWrongWashCards((prev) => new Set([...prev, ...indices]));
       }, 300);
     }
-  }, [g.wrongCards]);
+  }, [g.wrongCards, showWhoopFeedback]);
 
   useEffect(() => {
     if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
@@ -280,27 +277,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               DOUBLE MATCH!
             </span>
           </div>
-        )}
-        {visibleMsg && !showDoubleTitle && (
-          <span
-            style={{
-              display: "inline-block",
-              background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
-              color: COLORS.surface,
-              fontSize: TYPE.caption,
-              fontWeight: 700,
-              fontStyle: "italic",
-              borderRadius: RADIUS.md,
-              padding: `${SPACE[2]}px ${SPACE[7]}px`,
-              opacity: msgVisible ? 1 : 0,
-              transition: "opacity 0.3s",
-              pointerEvents: "auto",
-            }}
-          >
-            {visibleMsgType === "success" && <Check size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: SPACE[2] }} />}
-            {visibleMsgType === "error" && <X size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: SPACE[2] }} />}
-            {visibleMsg}
-          </span>
         )}
       </div>
 
@@ -552,9 +528,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         {/* WHOOP button */}
         <AppButton
           variant="primary"
-          tone={g.claimMode ? "orange" : "red"}
+          tone={whoopFeedback ? whoopFeedback.tone : g.claimMode ? "orange" : "red"}
           size="lg"
-          disabled={!whoopReady && !g.claimMode}
+          disabled={!whoopReady && !g.claimMode && !whoopFeedback}
           onClick={() => {
             if (whoopReady && !g.claimMode) {
               g.enterClaimMode();
@@ -569,7 +545,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             transition: `background ${MOTION.base}, color ${MOTION.base}`,
           }}
         >
-          {g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
+          {whoopFeedback ? whoopFeedback.text : g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
         </AppButton>
       </div>
     </div>
