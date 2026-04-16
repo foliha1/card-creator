@@ -125,7 +125,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 };
 
 interface GamePlayAreaProps {
-  tier: "easy" | "standard" | "cutthroat";
+  tier: "easy" | "standard";
   gridSize: "3x2" | "3x3";
   onNewGame: () => void;
   mobile?: boolean;
