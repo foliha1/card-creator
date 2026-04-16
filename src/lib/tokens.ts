@@ -8,7 +8,6 @@ export const COLORS = {
   inverse: "#F8F2E9",
   red: "#d72229",
   blue: "#0072B2",
-  yellow: "#f0e443",
   orange: "#E79024",
   offWhite: "#fef9f0",
 } as const;
@@ -38,7 +37,7 @@ export const MOTION = {
 export const THEME_SWATCHES = [
   { color: COLORS.red, label: "Red" },
   { color: COLORS.blue, label: "Blue" },
-  { color: COLORS.yellow, label: "Yellow" },
+  { color: COLORS.orange, label: "Orange" },
   { color: COLORS.offWhite, label: "Off-White" },
 ] as const;
 
