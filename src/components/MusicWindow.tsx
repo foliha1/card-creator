@@ -79,6 +79,26 @@ const MusicWindow: React.FC = () => {
     });
   }, []);
 
+  const handlePlaylistChange = useCallback((playlist: Playlist) => {
+    if (playlist.id === currentPlaylist.id) return;
+    if (!widgetRef.current) return;
+    setReady(false);
+    setPlaying(false);
+    setTrackTitle("");
+    setArtist("");
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+    setCurrentPlaylist(playlist);
+    widgetRef.current.load(playlist.url, {
+      auto_play: false,
+      callback: () => {
+        setReady(true);
+        if (widgetRef.current) updateTrackInfo(widgetRef.current);
+      },
+    });
+  }, [currentPlaylist, updateTrackInfo]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       if (window.SC && iframeRef.current) {
