@@ -8,13 +8,14 @@ import AboutWindow from "@/components/AboutWindow";
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type WindowId = "game" | "howtoplay" | "preorder" | "about";
+type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
 const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
   game: { x: 40, y: 20 },
   howtoplay: { x: 520, y: 80 },
   preorder: { x: 180, y: 60 },
   about: { x: 280, y: 100 },
+  music: { x: 600, y: 500 },
 };
 
 const BASE_SIZES: Record<WindowId, { width: number; height: number; title: string }> = {
@@ -22,9 +23,10 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
   howtoplay: { width: 340, height: 580, title: "HOW TO PLAY" },
   preorder: { width: 400, height: 320, title: "PRE-ORDER" },
   about: { width: 400, height: 380, title: "ABOUT" },
+  music: { width: 320, height: 180, title: "NOW PLAYING" },
 };
 
-const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about"];
+const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music"];
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
@@ -107,6 +109,7 @@ const DesktopShell: React.FC = () => {
       case "howtoplay": return <HowToPlayWindow onClose={() => closeWindow("howtoplay")} />;
       case "preorder": return <PreOrderWindow />;
       case "about": return <AboutWindow />;
+      case "music": return <MusicWindow />;
     }
   };
 
