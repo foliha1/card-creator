@@ -5,6 +5,7 @@ import GameWindow from "@/components/GameWindow";
 import HowToPlayWindow from "@/components/HowToPlayWindow";
 import PreOrderWindow from "@/components/PreOrderWindow";
 import AboutWindow from "@/components/AboutWindow";
+import MusicWindow from "@/components/MusicWindow";
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 
