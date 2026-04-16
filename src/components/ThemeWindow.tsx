@@ -43,17 +43,6 @@ const ThemeWindow: React.FC = () => {
         })}
       </div>
 
-      <div
-        style={{
-          fontFamily: FONT_FAMILY,
-          fontStyle: "italic",
-          fontSize: TYPE.caption,
-          color: COLORS.inkMuted,
-          textAlign: "center",
-        }}
-      >
-        Pick a vibe. The whole desktop follows.
-      </div>
     </div>
   );
 };
