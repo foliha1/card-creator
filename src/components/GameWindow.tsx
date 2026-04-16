@@ -218,7 +218,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       g.grid.forEach((c, i) => {
         if (c && !prev[i]) newSlots.push(i);
       });
-      if (newSlots.length > 0) launchFlyers(newSlots);
+      if (newSlots.length > 0) {
+        if (!initialDealDone.current) {
+          initialDealDone.current = true;
+          launchFlyers(newSlots);
+        } else {
+          setEnteringCards(new Set(newSlots));
+          setTimeout(() => setEnteringCards(new Set()), 800);
+        }
+      }
     }
     prevGridRef.current = g.grid;
   }, [g.grid, launchFlyers]);
