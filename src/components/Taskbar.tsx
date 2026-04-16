@@ -196,12 +196,12 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 {THEME_SWATCHES.map(({ color, label }) => {
-                  const isActive = theme === color;
+                  const isActive = bgTheme === color;
                   return (
                     <button
                       key={color}
                       aria-label={label}
-                      onClick={() => { onThemeChange?.(color); setThemeOpen(false); }}
+                      onClick={() => { setTheme(color); setThemeOpen(false); }}
                       style={{
                         width: 44,
                         height: 44,
