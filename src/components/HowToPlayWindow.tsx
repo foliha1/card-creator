@@ -6,6 +6,94 @@ interface HowToPlayWindowProps {
   onClose: () => void;
 }
 
+const PeekDemo: React.FC = () => {
+  const [flipped, setFlipped] = React.useState(false);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTap = () => {
+    if (flipped) return;
+    setFlipped(true);
+    timerRef.current = setTimeout(() => setFlipped(false), 2000);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4] }}>
+      <div
+        onClick={handleTap}
+        style={{
+          width: 100,
+          aspectRatio: "5/7",
+          perspective: 600,
+          cursor: "pointer",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "relative",
+            transformStyle: "preserve-3d",
+            transition: "transform 0.5s cubic-bezier(0.4,0,0.2,1)",
+            transform: flipped ? "rotateY(0deg)" : "rotateY(180deg)",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backfaceVisibility: "hidden",
+              borderRadius: RADIUS.md,
+              overflow: "hidden",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.25)",
+            }}
+          >
+            <img
+              src="/cards/3-star-red.svg"
+              alt="Red Star 3"
+              style={{ width: "100%", height: "100%", display: "block" }}
+              draggable={false}
+            />
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backfaceVisibility: "hidden",
+              borderRadius: RADIUS.md,
+              overflow: "hidden",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.25)",
+              transform: "rotateY(180deg)",
+            }}
+          >
+            <img
+              src="/cards/card-back.svg"
+              alt="Card back"
+              style={{ width: "100%", height: "100%", display: "block" }}
+              draggable={false}
+            />
+          </div>
+        </div>
+      </div>
+      <span
+        style={{
+          fontFamily: FONT_FAMILY,
+          fontStyle: "italic",
+          fontSize: TYPE.caption,
+          color: COLORS.inkMuted,
+        }}
+      >
+        {flipped ? "Memorize it!" : "Tap to peek"}
+      </span>
+    </div>
+  );
+};
+
 const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
 
@@ -41,15 +129,11 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: SPACE[8] }}>
         {slide === 0 && (
           <>
-            <div style={headlineStyle}>Peek cards to memorize</div>
+            <div style={headlineStyle}>Peek & Memorize</div>
             <div style={bodyStyle}>
-              Tap any face-down card to peek at it for 2 seconds. Try to remember what you see!
+              Tap a card to peek at it. Remember its shape, number, and color — you'll need it later.
             </div>
-            <img
-              src="/cards/3-tri-red.svg"
-              alt="Example card"
-              style={{ width: "clamp(100px, 40vw, 130px)", aspectRatio: "5/7", borderRadius: RADIUS.md }}
-            />
+            <PeekDemo />
           </>
         )}
 
