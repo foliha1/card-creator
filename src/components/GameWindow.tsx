@@ -209,10 +209,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     if (g.bonusPicks.length > 0) setBonusHighlighted(new Set(g.bonusPicks));
   }, [g.bonusPicks]);
 
-  // Detect mid-round refills (null -> filled without round change) and fly cards in
+  // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
     const prev = prevGridRef.current;
-    if (g.roundNum === prevRoundRef.current && prev !== g.grid) {
+    if (prev !== g.grid) {
       const newSlots: number[] = [];
       g.grid.forEach((c, i) => {
         if (c && !prev[i]) newSlots.push(i);
@@ -220,7 +220,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (newSlots.length > 0) launchFlyers(newSlots);
     }
     prevGridRef.current = g.grid;
-  }, [g.grid, g.roundNum, launchFlyers]);
+  }, [g.grid, launchFlyers]);
 
   useEffect(() => {
     if (g.selectedCards.length === 2 && g.claimMode) {
