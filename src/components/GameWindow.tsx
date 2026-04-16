@@ -285,20 +285,29 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Bonus pick pill */}
       {doublePhase === "pick" && (
-        <div style={{ textAlign: "center", padding: `${SPACE[1]}px 0` }}>
-          <span
-            style={{
-              display: "inline-block",
-              background: COLORS.orange,
-              color: COLORS.surface,
-              fontSize: TYPE.caption,
-              fontWeight: 700,
-              fontStyle: "italic",
-              borderRadius: 999,
-              padding: "3px 12px",
-              animation: "pill-pulse 1.5s infinite",
-            }}
-          >
+        <div style={{
+          position: "absolute",
+          top: SPACE[6],
+          left: 0,
+          right: 0,
+          zIndex: 20,
+          display: "flex",
+          justifyContent: "center",
+          pointerEvents: "none",
+        }}>
+          <span style={{
+            display: "inline-block",
+            background: COLORS.orange,
+            color: COLORS.ink,
+            fontSize: TYPE.ui,
+            fontWeight: 700,
+            fontStyle: "italic",
+            fontFamily: FONT_FAMILY,
+            borderRadius: 999,
+            padding: `${SPACE[3]}px ${SPACE[8]}px`,
+            animation: "pill-pulse 1.5s infinite",
+            pointerEvents: "auto",
+          }}>
             Choose 2 bonus cards!
           </span>
         </div>
