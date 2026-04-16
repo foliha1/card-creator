@@ -6,6 +6,7 @@ export const COLORS = {
   ink: "#231f20",
   inkSoft: "#3a3637",
   inkMuted: "#706662",
+  inkSubtle: "#524b48",
   inverse: "#F8F2E9",
   red: "#d72229",
   blue: "#0072B2",
