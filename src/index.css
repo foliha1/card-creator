@@ -201,3 +201,16 @@ All colors MUST be HSL.
     scroll-behavior: auto !important;
   }
 }
+
+/* DieDisplay animations — uses COLORS.orange (#E79024) and COLORS.surface (#F8F2E9) */
+@keyframes die-roll {
+  0% { transform: rotate(-8deg) scale(0.95); }
+  50% { transform: rotate(8deg) scale(1.05); }
+  100% { transform: rotate(-8deg) scale(0.95); }
+}
+
+@keyframes die-land {
+  0% { transform: scale(1.15); background-color: #E79024; }
+  60% { background-color: #E79024; }
+  100% { transform: scale(1); background-color: #F8F2E9; }
+}

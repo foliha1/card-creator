@@ -1,4 +1,4 @@
-import { TYPE } from "@/lib/tokens";
+import { COLORS, TYPE } from "@/lib/tokens";
 
 interface DieDisplayProps {
   value: string;
@@ -15,10 +15,10 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
         width: 80,
         height: 80,
         borderRadius: 10,
-        border: "4px solid #231f20",
-        backgroundColor: isAnimating ? "#f8f2e9" : "#f8f2e9",
-        color: "#231f20",
-        fontSize: TYPE.body,
+        border: `4px solid ${COLORS.ink}`,
+        backgroundColor: COLORS.surface,
+        color: COLORS.ink,
+        fontSize: TYPE.head,
         fontWeight: 900,
         fontStyle: "italic",
         display: "flex",
@@ -37,18 +37,6 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
       }}
     >
       {isAnimating ? "?" : value}
-      <style>{`
-        @keyframes die-roll {
-          0% { transform: rotate(-8deg) scale(0.95); }
-          50% { transform: rotate(8deg) scale(1.05); }
-          100% { transform: rotate(-8deg) scale(0.95); }
-        }
-        @keyframes die-land {
-          0% { transform: scale(1.15); background-color: #e79024; }
-          60% { background-color: #e79024; }
-          100% { transform: scale(1); background-color: #f8f2e9; }
-        }
-      `}</style>
     </div>
   );
 };
