@@ -8,12 +8,13 @@ const HowToPlayWindow = React.lazy(() => import("@/components/HowToPlayWindow"))
 const PreOrderWindow = React.lazy(() => import("@/components/PreOrderWindow"));
 const AboutWindow = React.lazy(() => import("@/components/AboutWindow"));
 const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
+const ThemeWindow = React.lazy(() => import("@/components/ThemeWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { COLORS, MOTION, SPACE } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 
-type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
+type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
 
 const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
   game: { x: 40, y: 20 },
@@ -21,6 +22,7 @@ const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
   preorder: { x: 180, y: 60 },
   about: { x: 280, y: 100 },
   music: { x: 600, y: 500 },
+  theme: { x: 400, y: 200 },
 };
 
 const BASE_SIZES: Record<WindowId, { width: number; height: number; title: string }> = {
@@ -29,9 +31,10 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
   preorder: { width: 400, height: 320, title: "PRE-ORDER" },
   about: { width: 400, height: 380, title: "ABOUT" },
   music: { width: 396, height: 340, title: "NOW PLAYING" },
+  theme: { width: 300, height: 260, title: "APPEARANCE" },
 };
 
-const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music"];
+const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", "theme"];
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
@@ -105,6 +108,7 @@ const DesktopShell: React.FC = () => {
       case "preorder": return <Suspense fallback={<WindowLoader />}><PreOrderWindow /></Suspense>;
       case "about": return <Suspense fallback={<WindowLoader />}><AboutWindow /></Suspense>;
       case "music": return <Suspense fallback={<WindowLoader />}><MusicWindow /></Suspense>;
+      case "theme": return <Suspense fallback={<WindowLoader />}><ThemeWindow /></Suspense>;
     }
   };
 
