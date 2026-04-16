@@ -258,26 +258,30 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </IconButton>
       </div>
 
-      {/* Double Match title */}
-      {showDoubleTitle && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: `${SPACE[3]}px 0`,
+      {/* Toast overlay — floats above game area, does not affect layout */}
+      <div style={{
+        position: "absolute",
+        top: SPACE[6],
+        left: 0,
+        right: 0,
+        zIndex: 20,
+        display: "flex",
+        justifyContent: "center",
+        pointerEvents: "none",
+      }}>
+        {showDoubleTitle && (
+          <div style={{
+            padding: `${SPACE[3]}px ${SPACE[7]}px`,
             animation: doublePhase === "idle"
               ? "double-title-out 0.3s ease forwards"
               : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
-          }}
-        >
-          <span style={{ color: COLORS.orange, fontSize: TYPE.subhead, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
-            DOUBLE MATCH!
-          </span>
-        </div>
-      )}
-
-      {/* Message banner */}
-      {visibleMsg && !showDoubleTitle && (
-        <div style={{ textAlign: "center", padding: `${SPACE[2]}px ${SPACE[4]}px` }}>
+          }}>
+            <span style={{ color: COLORS.orange, fontSize: TYPE.subhead, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
+              DOUBLE MATCH!
+            </span>
+          </div>
+        )}
+        {visibleMsg && !showDoubleTitle && (
           <span
             style={{
               display: "inline-block",
@@ -288,16 +292,18 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               fontStyle: "italic",
               borderRadius: RADIUS.md,
               padding: `${SPACE[2]}px ${SPACE[7]}px`,
-              transition: "opacity 0.3s",
               opacity: msgVisible ? 1 : 0,
+              transition: "opacity 0.3s",
+              pointerEvents: "auto",
             }}
           >
             {visibleMsgType === "success" && <Check size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: SPACE[2] }} />}
             {visibleMsgType === "error" && <X size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: SPACE[2] }} />}
             {visibleMsg}
           </span>
-        </div>
-      )}
+        )}
+      </div>
+
 
       {/* Bonus pick pill */}
       {doublePhase === "pick" && (
