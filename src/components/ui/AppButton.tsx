@@ -20,7 +20,7 @@ const TONE_MAP: Record<ButtonTone, { bg: string; hoverBg: string; fg: string }> 
   blue:    { bg: COLORS.blue,       hoverBg: "#005a8f",               fg: COLORS.surface },
   orange:  { bg: COLORS.orange,     hoverBg: "#c47618",               fg: COLORS.surface },
   neutral: { bg: COLORS.surface,    hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
-  muted:   { bg: COLORS.panelMuted, hoverBg: COLORS.panelMutedHover,  fg: COLORS.inverse },
+  muted:   { bg: COLORS.panelMuted, hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
 };
 
 const SIZE_MAP: Record<ButtonSize, { fontSize: number | string; padding: string }> = {
