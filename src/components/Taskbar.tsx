@@ -3,6 +3,7 @@ import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
 import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
+import { AppButton } from "@/components/ui/AppButton";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
@@ -115,29 +116,6 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
     }
   };
 
-  const isGame = (id: WindowId) => id === "game";
-
-  const btnStyle = (id: WindowId): React.CSSProperties => {
-    const active = activeWindow === id;
-    const game = isGame(id);
-    const baseBg = game ? COLORS.ink : COLORS.panelMuted;
-    return {
-      background: active ? (game ? COLORS.inkSoft : COLORS.panelMutedHover) : baseBg,
-      color: COLORS.inverse,
-      fontFamily: FONT_FAMILY,
-      fontStyle: "normal",
-      fontSize: mobile ? 14 : "clamp(16px, 2vw, 24px)",
-      padding: mobile ? "10px 14px" : "16px",
-      borderRadius: RADIUS.lg,
-      border: BORDER.heavy,
-      cursor: "pointer",
-      transition: `background ${MOTION.fast}, transform ${MOTION.fast}`,
-      whiteSpace: "nowrap" as const,
-      textAlign: "center" as const,
-      flexShrink: 0,
-    };
-  };
-
   const iconBtnStyle: React.CSSProperties = {
     background: "transparent",
     color: COLORS.ink,
@@ -156,19 +134,6 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
     onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = "1"; },
     onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = "0.5"; },
   };
-
-  const labeledHoverHandlers = (id: WindowId) => ({
-    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.currentTarget.style.transform = "translateY(-1px)";
-      e.currentTarget.style.background = isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover;
-    },
-    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.currentTarget.style.transform = "translateY(0)";
-      const active = activeWindow === id;
-      const baseBg = isGame(id) ? COLORS.ink : COLORS.panelMuted;
-      e.currentTarget.style.background = active ? (isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover) : baseBg;
-    },
-  });
 
   return (
     <div
@@ -191,14 +156,24 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       }}
     >
       {BUTTONS.map(({ label, id }) => (
-        <button
+        <AppButton
           key={id}
-          style={btnStyle(id)}
+          variant="primary"
+          tone={id === "game" ? "ink" : "muted"}
+          size="lg"
+          active={activeWindow === id}
           onClick={() => handleClick(id)}
-          {...labeledHoverHandlers(id)}
+          style={{
+            fontStyle: "normal",
+            fontSize: mobile ? 14 : "clamp(16px, 2vw, 24px)",
+            padding: mobile ? "10px 14px" : "16px",
+            borderRadius: RADIUS.lg,
+            border: BORDER.heavy,
+            flexShrink: 0,
+          }}
         >
           {label}
-        </button>
+        </AppButton>
       ))}
 
       {/* Theme switcher */}
