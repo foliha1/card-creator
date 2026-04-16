@@ -9,14 +9,22 @@ const ThemeWindow: React.FC = () => {
     <div style={{
       display: "flex",
       flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
+      padding: SPACE[5],
+      gap: SPACE[5],
       height: "100%",
-      padding: SPACE[6],
-      gap: SPACE[6],
+      justifyContent: "center",
     }}>
-
-      <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
+      <div style={{
+        fontFamily: FONT_FAMILY,
+        fontSize: TYPE.caption,
+        color: COLORS.inkMuted,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        textAlign: "center",
+      }}>
+        BACKGROUND
+      </div>
+      <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center" }}>
         {THEME_SWATCHES.map(({ color, label }) => {
           const isActive = bgTheme === color;
           return (
@@ -25,12 +33,12 @@ const ThemeWindow: React.FC = () => {
               aria-label={label}
               onClick={() => setTheme(color)}
               style={{
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 borderRadius: "50%",
                 background: color === "wild" ? "url(/Whoop_Whoop_Wild.png) center/cover no-repeat" : color,
                 border: isActive ? BORDER.heavy : BORDER.standard,
-                boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
+                boxShadow: isActive ? `inset 0 0 0 3px ${COLORS.surface}` : "none",
                 cursor: "pointer",
                 transition: `transform ${MOTION.fast}`,
                 padding: 0,
@@ -42,7 +50,6 @@ const ThemeWindow: React.FC = () => {
           );
         })}
       </div>
-
     </div>
   );
 };
