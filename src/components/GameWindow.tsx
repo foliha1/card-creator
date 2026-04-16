@@ -626,6 +626,29 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           {whoopFeedback ? whoopFeedback.text : g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
         </AppButton>
       </div>
+
+      {/* Flying card overlays (mid-round refills) */}
+      {flyingCards.map((fc) => (
+        <img
+          key={fc.id}
+          src="/cards/Card Back.svg"
+          alt=""
+          style={{
+            position: "fixed",
+            left: fc.fromX,
+            top: fc.fromY,
+            width: fc.toW,
+            height: fc.toH,
+            borderRadius: RADIUS.md,
+            pointerEvents: "none",
+            zIndex: 50,
+            filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.3))",
+            ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
+            ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
+            animation: `fly-to-grid 0.4s ease ${fc.delay}ms both`,
+          }}
+        />
+      ))}
     </div>
   );
 };
