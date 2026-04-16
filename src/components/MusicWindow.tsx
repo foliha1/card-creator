@@ -289,7 +289,7 @@ const MusicWindow: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            transition: "background 0.15s",
+            transition: `background ${MOTION.fast}`,
             boxShadow: !playing ? "inset 0 2px 0 rgba(0,0,0,0.2)" : "none",
           }}
         >
@@ -316,7 +316,7 @@ const MusicWindow: React.FC = () => {
             justifyContent: "center",
             cursor: "pointer",
             gap: 6,
-            transition: "background 0.15s",
+            transition: `background ${MOTION.fast}`,
             boxShadow: playing ? "inset 0 2px 0 rgba(0,0,0,0.2)" : "none",
           }}
         >
@@ -334,7 +334,7 @@ const MusicWindow: React.FC = () => {
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", transition: "background 0.15s",
+            cursor: "pointer", transition: `background ${MOTION.fast}`,
           }}
         >
           <SkipBack size={22} color={COLORS.ink} />
@@ -350,7 +350,7 @@ const MusicWindow: React.FC = () => {
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", transition: "background 0.15s",
+            cursor: "pointer", transition: `background ${MOTION.fast}`,
           }}
         >
           <SkipForward size={22} color={COLORS.ink} />

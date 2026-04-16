@@ -26,7 +26,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
     background: active ? (accentColor || COLORS.ink) : COLORS.surface,
     color: active ? COLORS.surface : COLORS.ink,
     cursor: "pointer",
-    transition: "all 0.15s",
+    transition: `all ${MOTION.fast}`,
   });
 
   const TIERS = [
