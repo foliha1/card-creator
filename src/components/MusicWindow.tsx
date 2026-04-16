@@ -174,12 +174,6 @@ const MusicWindow: React.FC = () => {
         allow="autoplay"
       />
 
-      <style>{`
-        @keyframes marquee {
-          0%, 15% { transform: translateX(0); }
-          85%, 100% { transform: translateX(calc(-100% + 280px)); }
-        }
-      `}</style>
 
       {/* ROW 1 — Track Info */}
       <div style={{

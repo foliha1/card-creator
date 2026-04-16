@@ -31,16 +31,6 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
         opacity: phase === "fadeout" ? 0 : 1,
       }}
     >
-      <style>{`
-        @keyframes boot-logo-in {
-          from { opacity: 0; transform: scale(0.85); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes boot-fill {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-      `}</style>
 
       <img
         src="/WhoopWhoop_Stacked_Logo.svg"
