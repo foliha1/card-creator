@@ -69,6 +69,7 @@ const DesktopShell: React.FC = () => {
     setBgTheme(color);
     localStorage.setItem("whoop-theme", color);
   }, []);
+  const logoColor = useMemo(() => deriveLogoColor(bgTheme), [bgTheme]);
   const noiseUrl = useMemo(() => {
     if (typeof document === "undefined") return "";
     const canvas = document.createElement("canvas");
