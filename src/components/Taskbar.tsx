@@ -17,8 +17,8 @@ interface TaskbarProps {
 const THEME_SWATCHES = [
   { color: "#d72229", label: "Red" },
   { color: "#0072b2", label: "Blue" },
-  { color: "#f0e443", label: "Yellow" },
-  { color: "#fef9f0", label: "Off-White" },
+  { color: "#e79024", label: "Yellow" },
+  { color: "#f8f2e9", label: "Off-White" },
 ];
 
 const BUTTONS: { label: string; id: WindowId }[] = [
