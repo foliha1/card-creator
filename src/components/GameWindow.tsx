@@ -5,7 +5,7 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { IconButton } from "@/components/ui/IconButton";
 
@@ -48,13 +48,13 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           padding: SPACE[12],
         }}
       >
-        <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 20, color: COLORS.ink, textAlign: "center", marginBottom: SPACE[12] }}>
+        <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: TYPE.subhead, color: COLORS.ink, textAlign: "center", marginBottom: SPACE[12] }}>
           Choose Your Settings
         </div>
 
         {/* Difficulty */}
         <div style={{ width: "100%", maxWidth: 280 }}>
-          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Difficulty</div>
+          <div style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Difficulty</div>
           <div style={{ display: "flex", gap: SPACE[3] }}>
             {TIERS.map((t) => (
               <AppButton
@@ -73,7 +73,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 
         {/* Grid Size */}
         <div style={{ width: "100%", maxWidth: 280, marginTop: SPACE[8] }}>
-          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Grid Size</div>
+          <div style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.5, marginBottom: SPACE[3] }}>Grid Size</div>
           <div style={{ display: "flex", gap: SPACE[3] }}>
             {GRIDS.map((g) => (
               <AppButton
@@ -317,13 +317,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           color: COLORS.ink,
         }}
       >
-        <div style={{ fontSize: 28, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
+        <div style={{ fontSize: TYPE.display, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
           Game Over!
         </div>
-        <div style={{ fontSize: 14, opacity: 0.7 }}>
+        <div style={{ fontSize: TYPE.body, opacity: 0.7 }}>
           You collected {collected} of {totalCards} cards
         </div>
-        <div style={{ fontSize: 22, fontWeight: 700, fontFamily: FONT_FAMILY }}>
+        <div style={{ fontSize: TYPE.head, fontWeight: 700, fontFamily: FONT_FAMILY }}>
           Score: {g.score}
         </div>
         <AppButton
@@ -360,7 +360,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
           }}
         >
-          <span style={{ color: COLORS.orange, fontSize: 20, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
+          <span style={{ color: COLORS.orange, fontSize: TYPE.subhead, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
             DOUBLE MATCH!
           </span>
         </div>
@@ -374,7 +374,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               display: "inline-block",
               background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
               color: COLORS.surface,
-              fontSize: 12,
+              fontSize: TYPE.caption,
               fontWeight: 700,
               fontStyle: "italic",
               borderRadius: RADIUS.md,
@@ -396,7 +396,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               display: "inline-block",
               background: COLORS.orange,
               color: COLORS.surface,
-              fontSize: 11,
+              fontSize: TYPE.caption,
               fontWeight: 700,
               fontStyle: "italic",
               borderRadius: 999,
@@ -411,7 +411,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Claim mode instruction */}
       {g.claimMode && g.selectedCards.length < 2 && (
-        <div style={{ textAlign: "center", padding: `${SPACE[2]}px 0`, fontSize: 12, color: COLORS.ink, fontWeight: 700, fontStyle: "italic" }}>
+        <div style={{ textAlign: "center", padding: `${SPACE[2]}px 0`, fontSize: TYPE.caption, color: COLORS.ink, fontWeight: 700, fontStyle: "italic" }}>
           Tap 2 cards!
         </div>
       )}
@@ -459,14 +459,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
               }}
             >
-              <span style={{ fontSize: 10, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-              <span style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+              <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+              <span style={{ fontSize: TYPE.body, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
             </div>
           ))}
 
           {/* Draw pile inline on mobile */}
           {mobile && (
-            <span style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginLeft: SPACE[4] }}>
+            <span style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.5, marginLeft: SPACE[4] }}>
               {g.deck.length} left
             </span>
           )}
@@ -574,7 +574,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 ))
               )}
             </div>
-            <span style={{ fontSize: 11, color: COLORS.ink, opacity: 0.7, textAlign: "center" }}>
+            <span style={{ fontSize: TYPE.caption, color: COLORS.ink, opacity: 0.7, textAlign: "center" }}>
               {g.deck.length} left
             </span>
           </div>
@@ -598,7 +598,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           size="md"
           onClick={onNewGame}
           style={{
-            fontSize: mobile ? 14 : 18,
+            fontSize: mobile ? TYPE.body : TYPE.subhead,
             padding: `${SPACE[6]}px ${SPACE[8]}px`,
             flexShrink: 0,
             width: isSmall ? "100%" : undefined,
@@ -631,7 +631,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 borderRadius: RADIUS.md,
                 fontFamily: FONT_FAMILY,
                 fontStyle: "normal",
-                fontSize: mobile ? 12 : 16,
+                fontSize: mobile ? TYPE.caption : TYPE.ui,
                 color: COLORS.ink,
                 whiteSpace: "nowrap",
                 textAlign: "center",

@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, THEME_SWATCHES } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, THEME_SWATCHES, TYPE } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 
 const ThemeWindow: React.FC = () => {
@@ -19,7 +19,7 @@ const ThemeWindow: React.FC = () => {
         style={{
           fontFamily: FONT_FAMILY,
           fontStyle: "normal",
-          fontSize: 10,
+          fontSize: TYPE.caption,
           color: COLORS.inkMuted,
           textTransform: "uppercase",
           letterSpacing: 1,
@@ -59,7 +59,7 @@ const ThemeWindow: React.FC = () => {
         style={{
           fontFamily: FONT_FAMILY,
           fontStyle: "italic",
-          fontSize: 12,
+          fontSize: TYPE.caption,
           color: COLORS.inkMuted,
           textAlign: "center",
         }}

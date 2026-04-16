@@ -1,3 +1,5 @@
+import { TYPE } from "@/lib/tokens";
+
 interface DieDisplayProps {
   value: string;
   rolling: boolean;
@@ -16,7 +18,7 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
         border: "4px solid #231f20",
         backgroundColor: isAnimating ? "#f8f2e9" : "#f8f2e9",
         color: "#231f20",
-        fontSize: 14,
+        fontSize: TYPE.body,
         fontWeight: 900,
         fontStyle: "italic",
         display: "flex",

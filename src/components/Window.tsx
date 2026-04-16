@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, SPACE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
 import { IconButton } from "@/components/ui/IconButton";
 
 interface WindowProps {
@@ -153,7 +153,7 @@ const Window: React.FC<WindowProps> = ({
             flex: 1,
             fontFamily: FONT_FAMILY,
             fontStyle: "normal",
-            fontSize: 20,
+            fontSize: TYPE.subhead,
             color: COLORS.ink,
             pointerEvents: "none",
             lineHeight: 1,

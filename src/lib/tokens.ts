@@ -60,3 +60,12 @@ export const THEME_SWATCHES = [
 ] as const;
 
 export const FONT_FAMILY = '"Friend", sans-serif';
+
+export const TYPE = {
+  caption: 13,
+  body: 15,
+  ui: 17,
+  subhead: 20,
+  head: 24,
+  display: 28,
+} as const;
