@@ -74,6 +74,19 @@ const MusicWindow: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!playlistOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPlaylistOpen(false); };
+    const onClick = (e: MouseEvent) => {
+      if (playlistRef.current && !playlistRef.current.contains(e.target as Node)) {
+        setPlaylistOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("mousedown", onClick); };
+  }, [playlistOpen]);
+
   const updateTrackInfo = useCallback((widget: SCWidget) => {
     widget.getCurrentSound((sound) => {
       setTrackTitle(sound.title || "");
