@@ -11,7 +11,7 @@ const AboutWindow: React.FC = () => {
         height: "100%",
       }}
     >
-      <img src="/WhoopWhoop_Stacked_Logo.svg" alt="Whoop Whoop" style={{ height: 40, marginBottom: 14 }} />
+      <img src="/WhoopWhoop_Dark_Logo.svg" alt="Whoop Whoop" style={{ height: 40, marginBottom: 14 }} />
       <div style={{ fontFamily: '"Friend", serif', fontStyle: "italic", fontSize: 18, color: "#231f20", marginBottom: 12 }}>
         From Oleeha &amp; Co
       </div>
