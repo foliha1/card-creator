@@ -538,7 +538,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           flexWrap: isSmall ? "wrap" : undefined,
           width: isSmall ? "100%" : undefined,
         }}>
-          {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
+          {[`Score: ${g.score}`, `Round: ${g.roundNum}`].map((label) => (
             <div
               key={label}
               style={{
