@@ -169,7 +169,8 @@ const DesktopShell: React.FC = () => {
         height: "100vh",
         overflow: mobile ? "auto" : "hidden",
         position: "relative",
-        background: "#0072B2",
+        background: bgTheme,
+        transition: "background 400ms ease-in-out",
         paddingBottom: mobile ? 100 : 0,
         paddingTop: mobile ? 16 : 0,
       }}
@@ -227,6 +228,8 @@ const DesktopShell: React.FC = () => {
         onFocus={focusWindow}
         activeWindow={activeWindow}
         mobile={mobile}
+        theme={bgTheme}
+        onThemeChange={handleThemeChange}
       />
     </div>
   );
