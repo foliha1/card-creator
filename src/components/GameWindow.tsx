@@ -36,32 +36,52 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 
   if (!gameStarted) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          padding: SPACE[12],
-        }}
-      >
-        <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: TYPE.subhead, color: COLORS.ink, textAlign: "center", marginBottom: SPACE[12] }}>
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: SPACE[6],
+        gap: SPACE[5],
+      }}>
+        {/* Header */}
+        <div style={{
+          fontFamily: FONT_FAMILY,
+          fontStyle: "italic",
+          fontSize: TYPE.head,
+          color: COLORS.ink,
+          textAlign: "center",
+          padding: `${SPACE[8]}px 0`,
+        }}>
           Choose Your Settings
         </div>
 
-        {/* Difficulty */}
-        <div style={{ width: "100%", maxWidth: 280 }}>
-          <div style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginBottom: SPACE[3] }}>Difficulty</div>
+        {/* Difficulty section */}
+        <div style={{
+          background: COLORS.panelMuted,
+          border: BORDER.standard,
+          borderRadius: RADIUS.md,
+          padding: SPACE[6],
+        }}>
+          <div style={{
+            fontFamily: FONT_FAMILY,
+            fontSize: TYPE.caption,
+            color: COLORS.inkMuted,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: SPACE[5],
+          }}>
+            Difficulty
+          </div>
           <div style={{ display: "flex", gap: SPACE[3] }}>
             {TIERS.map((t) => (
               <AppButton
                 key={t.id}
-                variant="pill"
-                size="sm"
+                variant="primary"
+                size="md"
                 active={tier === t.id}
                 tone={tier === t.id ? TIER_TONE_MAP[t.color] : "neutral"}
                 onClick={() => setTier(t.id)}
+                style={{ flex: 1 }}
               >
                 {t.label}
               </AppButton>
@@ -69,18 +89,33 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           </div>
         </div>
 
-        {/* Grid Size */}
-        <div style={{ width: "100%", maxWidth: 280, marginTop: SPACE[8] }}>
-          <div style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginBottom: SPACE[3] }}>Grid Size</div>
+        {/* Grid Size section */}
+        <div style={{
+          background: COLORS.panelMuted,
+          border: BORDER.standard,
+          borderRadius: RADIUS.md,
+          padding: SPACE[6],
+        }}>
+          <div style={{
+            fontFamily: FONT_FAMILY,
+            fontSize: TYPE.caption,
+            color: COLORS.inkMuted,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: SPACE[5],
+          }}>
+            Grid Size
+          </div>
           <div style={{ display: "flex", gap: SPACE[3] }}>
             {GRIDS.map((g) => (
               <AppButton
                 key={g.id}
-                variant="pill"
-                size="sm"
+                variant="primary"
+                size="md"
                 active={gridSize === g.id}
                 tone="neutral"
                 onClick={() => setGridSize(g.id)}
+                style={{ flex: 1 }}
               >
                 {g.label}
               </AppButton>
@@ -88,19 +123,25 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           </div>
         </div>
 
-        {/* Start */}
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Start Game */}
         <AppButton
           variant="primary"
-          tone="ink"
-          size="md"
+          tone="red"
+          size="lg"
           fullWidth
           onClick={() => setGameStarted(true)}
-          style={{ marginTop: SPACE[14], maxWidth: 240 }}
+          style={{
+            fontSize: TYPE.head,
+            padding: `${SPACE[8]}px ${SPACE[6]}px`,
+          }}
         >
           Start Game
         </AppButton>
 
-        {/* Preload all card images while user picks settings */}
+        {/* Preload card images while user picks settings */}
         <div style={{ display: "none" }}>
           {ALL_CARDS.map((c) => (
             <img key={c.id} src={c.svgPath} alt="" width={0} height={0} />
