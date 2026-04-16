@@ -12,7 +12,7 @@ const ThemeWindow: React.FC = () => {
       alignItems: "center",
       justifyContent: "center",
       height: "100%",
-      padding: SPACE[8],
+      padding: SPACE[6],
       gap: SPACE[6],
     }}>
       <div
@@ -28,7 +28,7 @@ const ThemeWindow: React.FC = () => {
         BACKGROUND
       </div>
 
-      <div style={{ display: "flex", gap: SPACE[10], justifyContent: "center" }}>
+      <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center" }}>
         {THEME_SWATCHES.map(({ color, label }) => {
           const isActive = bgTheme === color;
           return (
