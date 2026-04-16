@@ -444,7 +444,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               card ? (
                 <div
                   key={card.id}
+                  ref={(el) => {
+                    if (el) gridCellRefs.current.set(i, el);
+                    else gridCellRefs.current.delete(i);
+                  }}
                   style={{
+                    visibility: flyingCards.some((f) => f.index === i) ? "hidden" : "visible",
                     animation: shrinkingCards.has(i)
                       ? "card-shrink 0.4s ease forwards"
                       : enteringCards.has(i)
