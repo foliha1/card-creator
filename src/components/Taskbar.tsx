@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Volume2, VolumeX, Music } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Volume2, VolumeX, Music, Palette } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
@@ -10,7 +10,16 @@ interface TaskbarProps {
   onFocus: (id: string) => void;
   activeWindow?: string;
   mobile?: boolean;
+  theme?: string;
+  onThemeChange?: (color: string) => void;
 }
+
+const THEME_SWATCHES = [
+  { color: "#d72229", label: "Red" },
+  { color: "#0072b2", label: "Blue" },
+  { color: "#f0e443", label: "Yellow" },
+  { color: "#fef9f0", label: "Off-White" },
+];
 
 const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "Play Whoop! Woop!", id: "game" },
@@ -19,14 +28,34 @@ const BUTTONS: { label: string; id: WindowId }[] = [
   { label: "About", id: "about" },
 ];
 
-const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeWindow, mobile = false }) => {
+const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeWindow, mobile = false, theme, onThemeChange }) => {
   const [muted, setMutedState] = useState(isMuted());
+  const [themeOpen, setThemeOpen] = useState(false);
+  const themeBtnRef = useRef<HTMLButtonElement>(null);
+  const themePanelRef = useRef<HTMLDivElement>(null);
 
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
     setMutedState(next);
   };
+
+  // Close theme panel on outside click or ESC
+  useEffect(() => {
+    if (!themeOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setThemeOpen(false); };
+    const onClick = (e: MouseEvent) => {
+      if (
+        themePanelRef.current && !themePanelRef.current.contains(e.target as Node) &&
+        themeBtnRef.current && !themeBtnRef.current.contains(e.target as Node)
+      ) {
+        setThemeOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onClick);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("mousedown", onClick); };
+  }, [themeOpen]);
 
   const handleClick = (id: WindowId) => {
     if (openWindows.has(id)) {
@@ -57,6 +86,20 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       textAlign: "center" as const,
       flexShrink: 0,
     };
+  };
+
+  const iconBtnStyle: React.CSSProperties = {
+    background: "transparent",
+    color: "#231f20",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0.5,
+    transition: "opacity 0.15s",
+    flexShrink: 0,
   };
 
   return (
@@ -99,20 +142,80 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
         </button>
       ))}
 
+      {/* Theme switcher */}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <button
+          ref={themeBtnRef}
+          style={iconBtnStyle}
+          onClick={() => setThemeOpen((v) => !v)}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+        >
+          <Palette size={18} />
+        </button>
+
+        {themeOpen && (
+          <div
+            ref={themePanelRef}
+            style={{
+              position: "absolute",
+              bottom: "calc(100% + 8px)",
+              right: 0,
+              width: 200,
+              background: "#D0C3AF",
+              border: "1px solid #231f20",
+              borderRadius: 4,
+              padding: 12,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              zIndex: 200,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: '"Friend", sans-serif',
+                fontStyle: "normal",
+                fontSize: 10,
+                color: "rgba(35,31,32,0.5)",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                marginBottom: 10,
+              }}
+            >
+              BACKGROUND
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {THEME_SWATCHES.map(({ color, label }) => {
+                const isActive = theme === color;
+                return (
+                  <button
+                    key={color}
+                    aria-label={label}
+                    onClick={() => { onThemeChange?.(color); setThemeOpen(false); }}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: color,
+                      border: isActive ? "2px solid #231f20" : "1.5px solid #231f20",
+                      boxShadow: isActive ? "inset 0 0 0 3px #fef9f0" : "none",
+                      cursor: "pointer",
+                      transition: "transform 150ms ease-out",
+                      padding: 0,
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Music */}
       <button
-        style={{
-          background: "transparent",
-          color: "#231f20",
-          border: "none",
-          cursor: "pointer",
-          padding: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0.5,
-          transition: "opacity 0.15s",
-          flexShrink: 0,
-        }}
+        style={iconBtnStyle}
         onClick={() => handleClick("music")}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
@@ -120,20 +223,9 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
         <Music size={18} />
       </button>
 
+      {/* Mute */}
       <button
-        style={{
-          background: "transparent",
-          color: "#231f20",
-          border: "none",
-          cursor: "pointer",
-          padding: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0.5,
-          transition: "opacity 0.15s",
-          flexShrink: 0,
-        }}
+        style={iconBtnStyle}
         onClick={toggleMute}
         onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
         onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}

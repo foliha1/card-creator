@@ -29,8 +29,21 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
 
 const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music"];
 
+const DEFAULT_THEME = "#fef9f0";
+
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
+  const [bgTheme, setBgTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("whoop-theme") || DEFAULT_THEME;
+    }
+    return DEFAULT_THEME;
+  });
+
+  const handleThemeChange = useCallback((color: string) => {
+    setBgTheme(color);
+    localStorage.setItem("whoop-theme", color);
+  }, []);
   const noiseUrl = useMemo(() => {
     if (typeof document === "undefined") return "";
     const canvas = document.createElement("canvas");
@@ -156,7 +169,8 @@ const DesktopShell: React.FC = () => {
         height: "100vh",
         overflow: mobile ? "auto" : "hidden",
         position: "relative",
-        background: "#0072B2",
+        background: bgTheme,
+        transition: "background 400ms ease-in-out",
         paddingBottom: mobile ? 100 : 0,
         paddingTop: mobile ? 16 : 0,
       }}
@@ -214,6 +228,8 @@ const DesktopShell: React.FC = () => {
         onFocus={focusWindow}
         activeWindow={activeWindow}
         mobile={mobile}
+        theme={bgTheme}
+        onThemeChange={handleThemeChange}
       />
     </div>
   );
