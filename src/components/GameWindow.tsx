@@ -69,6 +69,55 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [whoopFeedback, setWhoopFeedback] = useState<{ text: string; tone: "success" | "red" } | null>(null);
   const whoopFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const drawPileRef = useRef<HTMLDivElement | null>(null);
+  const gridCellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  interface FlyingCard {
+    id: string;
+    index: number;
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    toW: number;
+    toH: number;
+    delay: number;
+  }
+  const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
+  const prevGridRef = useRef(g.grid);
+
+  const launchFlyers = useCallback((targetIndices: number[]) => {
+    if (!drawPileRef.current || targetIndices.length === 0) {
+      setEnteringCards(new Set(targetIndices));
+      setTimeout(() => setEnteringCards(new Set()), 800);
+      return;
+    }
+    const pileRect = drawPileRef.current.getBoundingClientRect();
+    const flyers: FlyingCard[] = [];
+    targetIndices.forEach((idx, i) => {
+      const cellEl = gridCellRefs.current.get(idx);
+      if (!cellEl) return;
+      const cellRect = cellEl.getBoundingClientRect();
+      flyers.push({
+        id: `fly-${idx}-${Date.now()}`,
+        index: idx,
+        fromX: pileRect.left + pileRect.width / 2 - cellRect.width / 2,
+        fromY: pileRect.top + pileRect.height / 2 - cellRect.height / 2,
+        toX: cellRect.left,
+        toY: cellRect.top,
+        toW: cellRect.width,
+        toH: cellRect.height,
+        delay: i * 100,
+      });
+    });
+    setFlyingCards(flyers);
+    setTimeout(() => {
+      setFlyingCards([]);
+      setEnteringCards(new Set(targetIndices));
+      setTimeout(() => setEnteringCards(new Set()), 400);
+    }, 400 + targetIndices.length * 100);
+  }, []);
+
   const prevScoreRef = useRef(g.score);
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
