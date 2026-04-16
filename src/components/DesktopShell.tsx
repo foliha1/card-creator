@@ -154,15 +154,27 @@ const DesktopShell: React.FC = () => {
         height: "100vh",
         overflow: mobile ? "auto" : "hidden",
         position: "relative",
-        background: bgTheme === "wild" ? undefined : bgTheme,
-        backgroundImage: bgTheme === "wild" ? "url(/Whoop_Whoop_Wild.png)" : undefined,
-        backgroundSize: bgTheme === "wild" ? "cover" : undefined,
-        backgroundPosition: bgTheme === "wild" ? "center" : undefined,
+        background: bgTheme === "wild" ? COLORS.ink : bgTheme,
         transition: `background ${MOTION.slow}`,
         paddingBottom: mobile ? 100 : SPACE[0],
         paddingTop: mobile ? SPACE[8] : SPACE[0],
       }}
     >
+
+      {/* Wallpaper overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "url(/Whoop_Whoop_Wild.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: bgTheme === "wild" ? 1 : 0,
+          transition: `opacity ${MOTION.slow}`,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
 
       {/* Noise overlay */}
       <div
