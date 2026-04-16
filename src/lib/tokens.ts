@@ -5,7 +5,7 @@ export const COLORS = {
   panelMutedHover: "#bdb5a4",
   ink: "#231f20",
   inkSoft: "#3a3637",
-  inkMuted: "rgba(35,31,32,0.5)",
+  inkMuted: "#706662",
   inverse: "#F8F2E9",
   red: "#d72229",
   blue: "#0072B2",
