@@ -1,5 +1,6 @@
 import React from "react";
-import { COLORS, FONT_FAMILY, RADIUS } from "@/lib/tokens";
+import { COLORS, FONT_FAMILY } from "@/lib/tokens";
+import { AppButton } from "@/components/ui/AppButton";
 
 const PreOrderWindow: React.FC = () => {
   return (
@@ -21,22 +22,14 @@ const PreOrderWindow: React.FC = () => {
       <div style={{ fontSize: 13, color: COLORS.ink, opacity: 0.55, maxWidth: 280, marginTop: 10, lineHeight: 1.5 }}>
         48 cards, 2 match dice, and enough competition to ruin your family dinner.
       </div>
-      <button
-        style={{
-          marginTop: 28,
-          background: COLORS.red,
-          color: COLORS.surface,
-          fontFamily: FONT_FAMILY,
-          fontStyle: "italic",
-          fontSize: 16,
-          padding: "12px 28px",
-          borderRadius: RADIUS.sm,
-          border: "none",
-          cursor: "pointer",
-        }}
+      <AppButton
+        variant="primary"
+        tone="red"
+        size="md"
+        style={{ marginTop: 28 }}
       >
         Pre-Order Now
-      </button>
+      </AppButton>
       <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.35, marginTop: 14 }}>
         Coming soon — Oleeha &amp; Co
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, RADIUS, FONT_FAMILY } from "@/lib/tokens";
+import { AppButton } from "@/components/ui/AppButton";
 
 interface HowToPlayWindowProps {
   onClose: () => void;
@@ -26,21 +27,6 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
     maxWidth: 280,
     lineHeight: 1.5,
   };
-
-  const btnStyle = (disabled?: boolean): React.CSSProperties => ({
-    flex: 1,
-    background: COLORS.surface,
-    border: BORDER.standard,
-    fontFamily: FONT_FAMILY,
-    fontStyle: "italic",
-    fontSize: 17,
-    padding: 12,
-    borderRadius: RADIUS.md,
-    cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? 0.3 : 1,
-    color: COLORS.ink,
-    textAlign: "center",
-  });
 
   return (
     <div
@@ -144,15 +130,22 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
 
       {/* Buttons */}
       <div style={{ display: "flex", gap: 10 }}>
-        <button
-          style={btnStyle(slide === 0)}
+        <AppButton
+          variant="secondary"
+          tone="neutral"
+          size="md"
+          fullWidth
           disabled={slide === 0}
           onClick={() => setSlide((s) => s - 1)}
+          style={{ flex: 1, fontSize: 17, padding: 12 }}
         >
           Back
-        </button>
-        <button
-          style={btnStyle()}
+        </AppButton>
+        <AppButton
+          variant="secondary"
+          tone="neutral"
+          size="md"
+          fullWidth
           onClick={() => {
             if (slide === 2) {
               onClose();
@@ -160,9 +153,10 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               setSlide((s) => s + 1);
             }
           }}
+          style={{ flex: 1, fontSize: 17, padding: 12 }}
         >
           {slide === 2 ? "Got it!" : "Next"}
-        </button>
+        </AppButton>
       </div>
     </div>
   );

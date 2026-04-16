@@ -5,29 +5,23 @@ import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY } from "@/lib/tokens";
+import { AppButton } from "@/components/ui/AppButton";
 
 interface GameWindowProps {
   mobile?: boolean;
 }
+
+const TIER_TONE_MAP: Record<string, "blue" | "orange" | "red"> = {
+  [COLORS.blue]: "blue",
+  [COLORS.orange]: "orange",
+  [COLORS.red]: "red",
+};
 
 const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
   const [tier, setTier] = useState<"easy" | "standard" | "cutthroat">("standard");
   const [gridSize, setGridSize] = useState<"3x2" | "3x3">("3x2");
   const [gameStarted, setGameStarted] = useState(false);
   const [gameKey, setGameKey] = useState(0);
-
-  const pillStyle = (active: boolean, accentColor?: string): React.CSSProperties => ({
-    fontFamily: FONT_FAMILY,
-    fontStyle: "italic",
-    fontSize: 12,
-    padding: "6px 12px",
-    borderRadius: 999,
-    border: active ? `2px solid ${accentColor || COLORS.ink}` : BORDER.heavy,
-    background: active ? (accentColor || COLORS.ink) : COLORS.surface,
-    color: active ? COLORS.surface : COLORS.ink,
-    cursor: "pointer",
-    transition: `all ${MOTION.fast}`,
-  });
 
   const TIERS = [
     { id: "easy" as const, label: "Easy Going", color: COLORS.blue },
@@ -61,9 +55,16 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: 6 }}>Difficulty</div>
           <div style={{ display: "flex", gap: 6 }}>
             {TIERS.map((t) => (
-              <button key={t.id} style={pillStyle(tier === t.id, t.color)} onClick={() => setTier(t.id)}>
+              <AppButton
+                key={t.id}
+                variant="pill"
+                size="sm"
+                active={tier === t.id}
+                tone={tier === t.id ? TIER_TONE_MAP[t.color] : "neutral"}
+                onClick={() => setTier(t.id)}
+              >
                 {t.label}
-              </button>
+              </AppButton>
             ))}
           </div>
         </div>
@@ -73,33 +74,31 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: 6 }}>Grid Size</div>
           <div style={{ display: "flex", gap: 6 }}>
             {GRIDS.map((g) => (
-              <button key={g.id} style={pillStyle(gridSize === g.id)} onClick={() => setGridSize(g.id)}>
+              <AppButton
+                key={g.id}
+                variant="pill"
+                size="sm"
+                active={gridSize === g.id}
+                tone="neutral"
+                onClick={() => setGridSize(g.id)}
+              >
                 {g.label}
-              </button>
+              </AppButton>
             ))}
           </div>
         </div>
 
         {/* Start */}
-        <button
+        <AppButton
+          variant="primary"
+          tone="ink"
+          size="md"
+          fullWidth
           onClick={() => setGameStarted(true)}
-          style={{
-            marginTop: 28,
-            background: COLORS.ink,
-            color: COLORS.surface,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontSize: 16,
-            padding: "12px 32px",
-            borderRadius: RADIUS.sm,
-            border: "none",
-            cursor: "pointer",
-            width: "100%",
-            maxWidth: 240,
-          }}
+          style={{ marginTop: 28, maxWidth: 240 }}
         >
           Start Game
-        </button>
+        </AppButton>
 
         {/* Preload all card images while user picks settings */}
         <div style={{ display: "none" }}>
@@ -319,23 +318,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         <div style={{ fontSize: 22, fontWeight: 700, fontFamily: FONT_FAMILY }}>
           Score: {g.score}
         </div>
-        <button
+        <AppButton
+          variant="primary"
+          tone="blue"
+          size="md"
           onClick={onNewGame}
-          style={{
-            background: COLORS.blue,
-            color: COLORS.surface,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontSize: 16,
-            padding: "10px 28px",
-            borderRadius: RADIUS.md,
-            border: BORDER.heavy,
-            cursor: "pointer",
-            marginTop: 8,
-          }}
+          style={{ marginTop: 8 }}
         >
           Play Again
-        </button>
+        </AppButton>
       </div>
     );
   }
@@ -597,25 +588,20 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         }}
       >
         {/* New Game button */}
-        <button
+        <AppButton
+          variant="primary"
+          tone="blue"
+          size="md"
           onClick={onNewGame}
           style={{
-            background: COLORS.blue,
-            color: COLORS.surface,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
             fontSize: mobile ? 14 : 18,
             padding: "12px 16px",
-            borderRadius: RADIUS.md,
-            border: BORDER.standard,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
             flexShrink: 0,
             width: isSmall ? "100%" : undefined,
           }}
         >
           New Game
-        </button>
+        </AppButton>
 
         {/* Game info section */}
         <div style={{
@@ -658,7 +644,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </div>
 
         {/* WHOOP button */}
-        <button
+        <AppButton
+          variant="primary"
+          tone="red"
+          size="lg"
+          disabled={!whoopReady}
           onClick={() => {
             if (whoopReady) {
               g.enterClaimMode();
@@ -667,21 +657,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           style={{
             flex: isSmall ? undefined : 1,
             width: isSmall ? "100%" : undefined,
-            background: whoopReady ? COLORS.red : `${COLORS.red}66`,
-            color: COLORS.surface,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
             fontSize: isSmall ? "clamp(18px, 4vw, 24px)" : 26,
-            borderRadius: RADIUS.md,
-            border: BORDER.standard,
-            cursor: whoopReady ? "pointer" : "default",
             padding: "12px 8px",
             minHeight: mobile ? 48 : undefined,
             animation: whoopReady ? "whoop-pulse 1.5s infinite" : undefined,
           }}
         >
           WHOOP! WHOOP!
-        </button>
+        </AppButton>
       </div>
     </div>
   );
