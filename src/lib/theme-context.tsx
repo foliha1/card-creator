@@ -51,7 +51,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const logoColor = useMemo(() => {
-    if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface || bgTheme === "wild") return COLORS.panelMuted;
+    if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface) return COLORS.panelMuted;
+    if (bgTheme === "wild") return "rgba(35,31,32,0.35)";
     return deriveLogoColor(bgTheme);
   }, [bgTheme]);
   const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue || bgTheme === "wild") ? COLORS.surface : COLORS.ink, [bgTheme]);
