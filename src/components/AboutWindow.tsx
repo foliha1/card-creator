@@ -5,7 +5,6 @@ const AboutWindow: React.FC = () => {
   return (
     <div
       style={{
-        background: COLORS.surface,
         padding: SPACE[12],
         textAlign: "left",
         overflowY: "auto",
@@ -16,15 +15,16 @@ const AboutWindow: React.FC = () => {
       <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: TYPE.subhead, color: COLORS.ink, marginBottom: SPACE[6] }}>
         From Oleeha &amp; Co
       </div>
-      <p style={{ fontSize: TYPE.body, color: COLORS.inkSubtle, lineHeight: 1.6, margin: "0 0 12px" }}>
+      <p style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: TYPE.body, color: COLORS.inkSubtle, lineHeight: 1.6, margin: "0 0 12px" }}>
         WHOOP! WHOOP! is a competitive memory card game where the matching rules change every round. Players flip face-down cards, memorize positions, and race to call out matching pairs. What counts as a match shifts constantly via dice rolls, forcing you to reorganize your mental map on the fly.
       </p>
-      <p style={{ fontSize: TYPE.body, color: COLORS.inkSubtle, lineHeight: 1.6, margin: "0 0 16px" }}>
+      <p style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: TYPE.body, color: COLORS.inkSubtle, lineHeight: 1.6, margin: "0 0 16px" }}>
         Designed for 2–6 players, ages 7+, 15–20 minute play time. Three tiers mean everyone can play.
       </p>
       <a
         href="#"
         style={{
+          fontFamily: FONT_FAMILY,
           color: COLORS.blue,
           fontStyle: "italic",
           fontSize: TYPE.body,

@@ -6,7 +6,6 @@ const PreOrderWindow: React.FC = () => {
   return (
     <div
       style={{
-        background: COLORS.surface,
         padding: SPACE[14],
         display: "flex",
         flexDirection: "column",
@@ -19,7 +18,7 @@ const PreOrderWindow: React.FC = () => {
       <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: TYPE.head, color: COLORS.ink }}>
         Get the physical game
       </div>
-      <div style={{ fontSize: TYPE.body, color: COLORS.inkMuted, maxWidth: 280, marginTop: SPACE[5], lineHeight: 1.5 }}>
+      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: TYPE.body, color: COLORS.inkMuted, maxWidth: 280, marginTop: SPACE[5], lineHeight: 1.5 }}>
         48 cards, 2 match dice, and enough competition to ruin your family dinner.
       </div>
       <AppButton
@@ -30,7 +29,7 @@ const PreOrderWindow: React.FC = () => {
       >
         Pre-Order Now
       </AppButton>
-      <div style={{ fontSize: TYPE.caption, color: COLORS.inkMuted, marginTop: SPACE[7] }}>
+      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: TYPE.caption, color: COLORS.inkMuted, marginTop: SPACE[7] }}>
         Coming soon — Oleeha &amp; Co
       </div>
     </div>
