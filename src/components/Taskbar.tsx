@@ -1,12 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Volume2, VolumeX, Music, Palette } from "lucide-react";
-import { setMuted, isMuted } from "@/lib/sounds";
-import { COLORS, BORDER, RADIUS, SHADOW, MOTION, FONT_FAMILY, THEME_SWATCHES, SPACE } from "@/lib/tokens";
-import { useTheme } from "@/lib/theme-context";
+import React, { useState } from "react";
+import { Music, Palette } from "lucide-react";
+import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
-import { IconButton } from "@/components/ui/IconButton";
 
-type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
+type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
 
 interface TaskbarProps {
   openWindows: Set<string>;
@@ -16,11 +13,13 @@ interface TaskbarProps {
   mobile?: boolean;
 }
 
-const BUTTONS: { label: string; id: WindowId }[] = [
-  { label: "Play Whoop! Whoop!", id: "game" },
-  { label: "How to Play", id: "howtoplay" },
-  { label: "Pre-Order", id: "preorder" },
-  { label: "About", id: "about" },
+const BUTTONS: { label: string; id: WindowId; icon?: React.ReactNode; tone?: "ink" | "muted" | "orange" | "blue" }[] = [
+  { label: "Play Whoop! Whoop!", id: "game", tone: "ink" },
+  { label: "How to Play", id: "howtoplay", tone: "muted" },
+  { label: "Pre-Order", id: "preorder", tone: "muted" },
+  { label: "About", id: "about", tone: "muted" },
+  { label: "Theme", id: "theme", icon: <Palette size={16} />, tone: "orange" },
+  { label: "Music", id: "music", icon: <Music size={16} />, tone: "blue" },
 ];
 
 let scWidgetPreloaded = false;
@@ -36,86 +35,7 @@ const preloadSoundCloudWidget = () => {
   document.head.appendChild(link);
 };
 
-interface ThemeSwatchProps {
-  color: string;
-  label: string;
-  isActive: boolean;
-  onSelect: (color: string) => void;
-}
-
-const ThemeSwatch = React.memo<ThemeSwatchProps>(({ color, label, isActive, onSelect }) => {
-  const [focusVisible, setFocusVisible] = React.useState(false);
-  const handleEnter = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.transform = "scale(1.1)";
-  }, []);
-  const handleLeave = React.useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.transform = "scale(1)";
-  }, []);
-  const handleClick = React.useCallback(() => onSelect(color), [color, onSelect]);
-  return (
-    <button
-      aria-label={label}
-      onClick={handleClick}
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-      onFocus={(e) => {
-        if (e.currentTarget.matches(":focus-visible")) setFocusVisible(true);
-      }}
-      onBlur={() => setFocusVisible(false)}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: "50%",
-        background: color,
-        border: isActive ? BORDER.heavy : BORDER.standard,
-        boxShadow: isActive ? `inset 0 0 0 4px ${COLORS.surface}` : "none",
-        cursor: "pointer",
-        transition: `transform ${MOTION.fast}`,
-        padding: 0,
-        flexShrink: 0,
-        outline: focusVisible ? `2px solid ${COLORS.ink}` : "none",
-        outlineOffset: 3,
-      }}
-    />
-  );
-});
-ThemeSwatch.displayName = "ThemeSwatch";
-
 const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeWindow, mobile = false }) => {
-  const { bgTheme, setTheme } = useTheme();
-  const [muted, setMutedState] = useState(isMuted());
-  const [themeOpen, setThemeOpen] = useState(false);
-  const themeBtnRef = useRef<HTMLButtonElement>(null);
-  const themePanelRef = useRef<HTMLDivElement>(null);
-
-  const handleSelectTheme = React.useCallback((color: string) => {
-    setTheme(color);
-    setThemeOpen(false);
-  }, [setTheme]);
-
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    setMutedState(next);
-  };
-
-  // Close theme panel on outside click or ESC
-  useEffect(() => {
-    if (!themeOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setThemeOpen(false); };
-    const onClick = (e: MouseEvent) => {
-      if (
-        themePanelRef.current && !themePanelRef.current.contains(e.target as Node) &&
-        themeBtnRef.current && !themeBtnRef.current.contains(e.target as Node)
-      ) {
-        setThemeOpen(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("mousedown", onClick);
-    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("mousedown", onClick); };
-  }, [themeOpen]);
-
   const handleClick = (id: WindowId) => {
     if (openWindows.has(id)) {
       onFocus(id);
@@ -144,14 +64,15 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
         WebkitOverflowScrolling: "touch",
       }}
     >
-      {BUTTONS.map(({ label, id }) => (
+      {BUTTONS.map((btn) => (
         <AppButton
-          key={id}
+          key={btn.id}
           variant="primary"
-          tone={id === "game" ? "ink" : "muted"}
+          tone={btn.tone || "muted"}
           size="lg"
-          active={activeWindow === id}
-          onClick={() => handleClick(id)}
+          active={activeWindow === btn.id}
+          onClick={() => handleClick(btn.id)}
+          onMouseEnter={btn.id === "music" ? preloadSoundCloudWidget : undefined}
           style={{
             fontStyle: "normal",
             fontSize: mobile ? 14 : "clamp(16px, 2vw, 24px)",
@@ -161,86 +82,10 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
             flexShrink: 0,
           }}
         >
-          {label}
+          {btn.icon && <span style={{ display: "flex", alignItems: "center", marginRight: SPACE[3] }}>{btn.icon}</span>}
+          {btn.label}
         </AppButton>
       ))}
-
-      {/* Theme switcher */}
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <IconButton
-          ref={themeBtnRef}
-          onClick={() => setThemeOpen((v) => !v)}
-        >
-          <Palette size={18} />
-        </IconButton>
-
-        {themeOpen && (
-          <div
-            ref={themePanelRef}
-            style={{
-              position: "absolute",
-              bottom: "calc(100% + 8px)",
-              right: 0,
-              width: 260,
-              background: COLORS.surface,
-              border: BORDER.standard,
-              borderRadius: RADIUS.md,
-              padding: SPACE[5],
-              boxShadow: SHADOW.windowFocused,
-              zIndex: 200,
-              display: "flex",
-              flexDirection: "column" as const,
-              gap: SPACE[5],
-            }}
-          >
-            <div style={{ height: 26, padding: `0 ${SPACE[2]}px`, display: "flex", flexDirection: "row" as const, alignItems: "center" }}>
-              <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: 20, color: COLORS.ink, lineHeight: 1, textAlign: "right" as const, flex: 1 }}>
-                APPEARANCE
-              </div>
-            </div>
-            <div style={{ background: COLORS.panel, border: BORDER.standard, borderRadius: RADIUS.md, padding: SPACE[6] }}>
-              <div
-                style={{
-                  fontFamily: FONT_FAMILY,
-                  fontStyle: "normal",
-                  fontSize: 10,
-                  color: COLORS.inkMuted,
-                  textTransform: "uppercase",
-                  letterSpacing: 1,
-                  marginBottom: SPACE[5],
-                }}
-              >
-                BACKGROUND
-              </div>
-              <div style={{ display: "flex", gap: SPACE[5] }}>
-                {THEME_SWATCHES.map(({ color, label }) => (
-                  <ThemeSwatch
-                    key={color}
-                    color={color}
-                    label={label}
-                    isActive={bgTheme === color}
-                    onSelect={handleSelectTheme}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Music */}
-      <IconButton
-        onClick={() => handleClick("music")}
-        onMouseEnter={preloadSoundCloudWidget}
-        onFocus={preloadSoundCloudWidget}
-      >
-        <Music size={18} />
-      </IconButton>
-
-      {/* Mute */}
-      <IconButton onClick={toggleMute}>
-        {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-      </IconButton>
     </div>
   );
 };
