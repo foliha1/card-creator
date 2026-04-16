@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Music } from "lucide-react";
 import { setMuted, isMuted } from "@/lib/sounds";
 
-type WindowId = "game" | "howtoplay" | "preorder" | "about";
+type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music";
 
 interface TaskbarProps {
   openWindows: Set<string>;
@@ -98,6 +98,27 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           {label}
         </button>
       ))}
+
+      <button
+        style={{
+          background: "transparent",
+          color: "#231f20",
+          border: "none",
+          cursor: "pointer",
+          padding: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0.5,
+          transition: "opacity 0.15s",
+          flexShrink: 0,
+        }}
+        onClick={() => handleClick("music")}
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+      >
+        <Music size={18} />
+      </button>
 
       <button
         style={{
