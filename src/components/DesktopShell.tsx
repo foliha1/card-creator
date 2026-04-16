@@ -148,6 +148,8 @@ const DesktopShell: React.FC = () => {
 
   return (
     <div
+      role="main"
+      aria-label="WHOOP! WHOOP! desktop"
       onContextMenu={(e) => e.preventDefault()}
       style={{
         width: "100vw",

@@ -111,6 +111,8 @@ const Window: React.FC<WindowProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-label={title}
       style={outerStyle}
       onMouseDown={() => onFocus(id)}
       onTouchStart={() => onFocus(id)}
