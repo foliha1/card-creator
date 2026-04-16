@@ -75,7 +75,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       borderRadius: RADIUS.lg,
       border: BORDER.heavy,
       cursor: "pointer",
-      transition: "background 0.15s, transform 0.15s",
+      transition: `background ${MOTION.fast}, transform ${MOTION.fast}`,
       whiteSpace: "nowrap" as const,
       textAlign: "center" as const,
       flexShrink: 0,
@@ -92,9 +92,27 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
     alignItems: "center",
     justifyContent: "center",
     opacity: 0.5,
-    transition: "opacity 0.15s",
+    transition: `opacity ${MOTION.fast}`,
     flexShrink: 0,
   };
+
+  const iconHoverHandlers = {
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = "1"; },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.opacity = "0.5"; },
+  };
+
+  const labeledHoverHandlers = (id: WindowId) => ({
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.currentTarget.style.transform = "translateY(-1px)";
+      e.currentTarget.style.background = isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover;
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      const active = activeWindow === id;
+      const baseBg = isGame(id) ? COLORS.ink : COLORS.panelMuted;
+      e.currentTarget.style.background = active ? (isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover) : baseBg;
+    },
+  });
 
   return (
     <div
@@ -121,16 +139,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           key={id}
           style={btnStyle(id)}
           onClick={() => handleClick(id)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.background = isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            const active = activeWindow === id;
-            const baseBg = isGame(id) ? COLORS.ink : COLORS.panelMuted;
-            e.currentTarget.style.background = active ? (isGame(id) ? COLORS.inkSoft : COLORS.panelMutedHover) : baseBg;
-          }}
+          {...labeledHoverHandlers(id)}
         >
           {label}
         </button>
@@ -142,8 +151,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
           ref={themeBtnRef}
           style={iconBtnStyle}
           onClick={() => setThemeOpen((v) => !v)}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+          {...iconHoverHandlers}
         >
           <Palette size={18} />
         </button>
@@ -221,8 +229,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       <button
         style={iconBtnStyle}
         onClick={() => handleClick("music")}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+        {...iconHoverHandlers}
       >
         <Music size={18} />
       </button>
@@ -231,8 +238,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
       <button
         style={iconBtnStyle}
         onClick={toggleMute}
-        onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.5"; }}
+        {...iconHoverHandlers}
       >
         {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
       </button>
