@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Check, X } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
@@ -383,6 +383,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               opacity: msgVisible ? 1 : 0,
             }}
           >
+            {visibleMsgType === "success" && <Check size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: SPACE[2] }} />}
+            {visibleMsgType === "error" && <X size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: SPACE[2] }} />}
             {visibleMsg}
           </span>
         </div>
