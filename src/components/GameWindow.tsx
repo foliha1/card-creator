@@ -333,17 +333,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <style>{`
-        @keyframes whoop-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
-        @keyframes card-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
-        @keyframes card-enter { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
-        @keyframes score-bounce { 0%{transform:scale(1)} 40%{transform:scale(1.2)} 100%{transform:scale(1)} }
-        @keyframes card-shrink { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.5)} }
-        @keyframes orange-pulse-border { 0%,100%{box-shadow:0 0 0 2px ${COLORS.orange},0 0 8px rgba(231,144,36,0.3)} 50%{box-shadow:0 0 0 2px ${COLORS.orange},0 0 16px rgba(231,144,36,0.6)} }
-        @keyframes double-title-in { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
-        @keyframes double-title-out { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.9)} }
-        @keyframes pill-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
-      `}</style>
 
       {/* Double Match title */}
       {showDoubleTitle && (

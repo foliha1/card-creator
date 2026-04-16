@@ -156,12 +156,6 @@ const DesktopShell: React.FC = () => {
         paddingTop: mobile ? SPACE[8] : SPACE[0],
       }}
     >
-      <style>{`
-        @keyframes win-open {
-          from { opacity: 0; transform: scale(0.92); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
 
       {/* Noise overlay */}
       <div
