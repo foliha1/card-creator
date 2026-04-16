@@ -10,6 +10,7 @@ export const COLORS = {
   red: "#d72229",
   blue: "#0072B2",
   orange: "#E79024",
+  success: "#22c55e",
   offWhite: "#fef9f0",
 } as const;
 

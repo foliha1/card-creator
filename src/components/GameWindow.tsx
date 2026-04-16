@@ -155,7 +155,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const MSG_COLORS: Record<string, string> = {
-    success: "#22c55e",
+    success: COLORS.success,
     error: COLORS.red,
     info: COLORS.blue,
     warning: COLORS.orange,

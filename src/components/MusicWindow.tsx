@@ -246,7 +246,7 @@ const MusicWindow: React.FC = () => {
         <span style={{
           fontFamily: FONT_FAMILY,
           fontSize: 14,
-          color: "#000000",
+          color: COLORS.ink,
           flexShrink: 0,
         }}>
           {fmt(currentTime)}
