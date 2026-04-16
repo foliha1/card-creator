@@ -8,6 +8,7 @@ const HowToPlayWindow = React.lazy(() => import("@/components/HowToPlayWindow"))
 const PreOrderWindow = React.lazy(() => import("@/components/PreOrderWindow"));
 const AboutWindow = React.lazy(() => import("@/components/AboutWindow"));
 const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
+const ThemeWindow = React.lazy(() => import("@/components/ThemeWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { COLORS, MOTION, SPACE } from "@/lib/tokens";
