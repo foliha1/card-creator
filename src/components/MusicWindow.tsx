@@ -402,7 +402,7 @@ const MusicWindow: React.FC = () => {
             <div style={{
               width: `${volume * 100}%`,
               height: "100%",
-              background: "#231f20",
+               background: "#d72229",
               transition: volumeDragging.current ? "none" : "width 0.1s",
             }} />
           </div>
