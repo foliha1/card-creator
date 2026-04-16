@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { COLORS } from "@/lib/tokens";
 
 interface BootScreenProps {
   onComplete: () => void;
@@ -20,7 +21,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
       style={{
         position: "fixed",
         inset: 0,
-        background: "#231f20",
+        background: COLORS.ink,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -57,7 +58,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
           style={{
             width: 200,
             height: 4,
-            border: "1px solid #f8f2e9",
+            border: `1px solid ${COLORS.surface}`,
             borderRadius: 2,
             marginTop: 24,
             overflow: "hidden",
@@ -66,7 +67,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
           <div
             style={{
               height: "100%",
-              background: "#d72229",
+              background: COLORS.red,
               animation: "boot-fill 1200ms ease-out forwards",
             }}
           />

@@ -4,6 +4,7 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
+import { COLORS, BORDER, RADIUS, FONT_FAMILY } from "@/lib/tokens";
 
 interface GameWindowProps {
   mobile?: boolean;
@@ -16,22 +17,22 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
   const [gameKey, setGameKey] = useState(0);
 
   const pillStyle = (active: boolean, accentColor?: string): React.CSSProperties => ({
-    fontFamily: '"Friend", serif',
+    fontFamily: FONT_FAMILY,
     fontStyle: "italic",
     fontSize: 12,
     padding: "6px 12px",
     borderRadius: 999,
-    border: active ? `2px solid ${accentColor || "#231f20"}` : "2px solid #231f20",
-    background: active ? (accentColor || "#231f20") : "#f8f2e9",
-    color: active ? "#f8f2e9" : "#231f20",
+    border: active ? `2px solid ${accentColor || COLORS.ink}` : BORDER.heavy,
+    background: active ? (accentColor || COLORS.ink) : COLORS.surface,
+    color: active ? COLORS.surface : COLORS.ink,
     cursor: "pointer",
     transition: "all 0.15s",
   });
 
   const TIERS = [
-    { id: "easy" as const, label: "Easy Going", color: "#0072b2" },
-    { id: "standard" as const, label: "Standard", color: "#e79024" },
-    { id: "cutthroat" as const, label: "Cutthroat", color: "#d72229" },
+    { id: "easy" as const, label: "Easy Going", color: COLORS.blue },
+    { id: "standard" as const, label: "Standard", color: COLORS.orange },
+    { id: "cutthroat" as const, label: "Cutthroat", color: COLORS.red },
   ];
 
   const GRIDS = [
@@ -51,13 +52,13 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           padding: 24,
         }}
       >
-        <div style={{ fontFamily: '"Friend", serif', fontStyle: "italic", fontSize: 20, color: "#231f20", textAlign: "center", marginBottom: 24 }}>
+        <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: 20, color: COLORS.ink, textAlign: "center", marginBottom: 24 }}>
           Choose Your Settings
         </div>
 
         {/* Difficulty */}
         <div style={{ width: "100%", maxWidth: 280 }}>
-          <div style={{ fontSize: 11, color: "#231f20", opacity: 0.5, marginBottom: 6 }}>Difficulty</div>
+          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: 6 }}>Difficulty</div>
           <div style={{ display: "flex", gap: 6 }}>
             {TIERS.map((t) => (
               <button key={t.id} style={pillStyle(tier === t.id, t.color)} onClick={() => setTier(t.id)}>
@@ -69,7 +70,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
 
         {/* Grid Size */}
         <div style={{ width: "100%", maxWidth: 280, marginTop: 16 }}>
-          <div style={{ fontSize: 11, color: "#231f20", opacity: 0.5, marginBottom: 6 }}>Grid Size</div>
+          <div style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginBottom: 6 }}>Grid Size</div>
           <div style={{ display: "flex", gap: 6 }}>
             {GRIDS.map((g) => (
               <button key={g.id} style={pillStyle(gridSize === g.id)} onClick={() => setGridSize(g.id)}>
@@ -84,13 +85,13 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
           onClick={() => setGameStarted(true)}
           style={{
             marginTop: 28,
-            background: "#231f20",
-            color: "#f8f2e9",
-            fontFamily: '"Friend", serif',
+            background: COLORS.ink,
+            color: COLORS.surface,
+            fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: 16,
             padding: "12px 32px",
-            borderRadius: 4,
+            borderRadius: RADIUS.sm,
             border: "none",
             cursor: "pointer",
             width: "100%",
@@ -134,7 +135,7 @@ interface GamePlayAreaProps {
 const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false }) => {
   const g = useGameState(tier, gridSize);
 
-  // --- Animation state (carried from old GameScreen) ---
+  // --- Animation state ---
   const [peekedCount, setPeekedCount] = useState(0);
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,9 +157,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
   const MSG_COLORS: Record<string, string> = {
     success: "#22c55e",
-    error: "#d72229",
-    info: "#0072b2",
-    warning: "#e79024",
+    error: COLORS.red,
+    info: COLORS.blue,
+    warning: COLORS.orange,
   };
 
   const prevScoreRef = useRef(g.score);
@@ -198,7 +199,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     prevClaimRef.current = g.claimMode;
   }, [g.claimMode]);
 
-  // Message animation
   useEffect(() => {
     if (g.message) {
       setVisibleMsg(g.message);
@@ -307,29 +307,29 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           gap: 16,
           padding: 24,
           textAlign: "center",
-          color: "#231f20",
+          color: COLORS.ink,
         }}
       >
-        <div style={{ fontSize: 28, fontWeight: 700, fontStyle: "italic", fontFamily: '"Friend", serif' }}>
+        <div style={{ fontSize: 28, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
           Game Over!
         </div>
         <div style={{ fontSize: 14, opacity: 0.7 }}>
           You collected {collected} of {totalCards} cards
         </div>
-        <div style={{ fontSize: 22, fontWeight: 700, fontFamily: '"Friend", serif' }}>
+        <div style={{ fontSize: 22, fontWeight: 700, fontFamily: FONT_FAMILY }}>
           Score: {g.score}
         </div>
         <button
           onClick={onNewGame}
           style={{
-            background: "#0072b2",
-            color: "#f8f2e9",
-            fontFamily: '"Friend", serif',
+            background: COLORS.blue,
+            color: COLORS.surface,
+            fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: 16,
             padding: "10px 28px",
-            borderRadius: 6,
-            border: "2px solid #231f20",
+            borderRadius: RADIUS.md,
+            border: BORDER.heavy,
             cursor: "pointer",
             marginTop: 8,
           }}
@@ -348,7 +348,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         @keyframes card-enter { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
         @keyframes score-bounce { 0%{transform:scale(1)} 40%{transform:scale(1.2)} 100%{transform:scale(1)} }
         @keyframes card-shrink { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.5)} }
-        @keyframes orange-pulse-border { 0%,100%{box-shadow:0 0 0 2px #e79024,0 0 8px rgba(231,144,36,0.3)} 50%{box-shadow:0 0 0 2px #e79024,0 0 16px rgba(231,144,36,0.6)} }
+        @keyframes orange-pulse-border { 0%,100%{box-shadow:0 0 0 2px ${COLORS.orange},0 0 8px rgba(231,144,36,0.3)} 50%{box-shadow:0 0 0 2px ${COLORS.orange},0 0 16px rgba(231,144,36,0.6)} }
         @keyframes double-title-in { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
         @keyframes double-title-out { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.9)} }
         @keyframes pill-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
@@ -365,7 +365,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
           }}
         >
-          <span style={{ color: "#e79024", fontSize: 20, fontWeight: 700, fontStyle: "italic", fontFamily: '"Friend", serif' }}>
+          <span style={{ color: COLORS.orange, fontSize: 20, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
             DOUBLE MATCH!
           </span>
         </div>
@@ -378,11 +378,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             style={{
               display: "inline-block",
               background: MSG_COLORS[visibleMsgType] || MSG_COLORS.info,
-              color: "#f8f2e9",
+              color: COLORS.surface,
               fontSize: 12,
               fontWeight: 700,
               fontStyle: "italic",
-              borderRadius: 6,
+              borderRadius: RADIUS.md,
               padding: "4px 14px",
               transition: "opacity 0.3s",
               opacity: msgVisible ? 1 : 0,
@@ -399,8 +399,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           <span
             style={{
               display: "inline-block",
-              background: "#e79024",
-              color: "#f8f2e9",
+              background: COLORS.orange,
+              color: COLORS.surface,
               fontSize: 11,
               fontWeight: 700,
               fontStyle: "italic",
@@ -416,7 +416,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Claim mode instruction */}
       {g.claimMode && g.selectedCards.length < 2 && (
-        <div style={{ textAlign: "center", padding: "4px 0", fontSize: 12, color: "#231f20", fontWeight: 700, fontStyle: "italic" }}>
+        <div style={{ textAlign: "center", padding: "4px 0", fontSize: 12, color: COLORS.ink, fontWeight: 700, fontStyle: "italic" }}>
           Tap 2 cards!
         </div>
       )}
@@ -441,9 +441,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           gap: mobile ? 8 : 12,
           flexShrink: 0,
           ...(mobile ? {} : {
-            background: "#ADA290",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: COLORS.panelMuted,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             padding: 16,
           }),
         }}>
@@ -453,25 +453,25 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               style={{
                 width: mobile ? 60 : 89,
                 height: mobile ? 60 : 89,
-                background: "#F8F2E9",
-                borderRadius: 6,
+                background: COLORS.surface,
+                borderRadius: RADIUS.md,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
                 transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
-                color: "#231f20",
+                color: COLORS.ink,
                 filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
               }}
             >
-              <span style={{ fontSize: 10, fontFamily: '"Friend", serif', fontStyle: "italic" }}>Match the</span>
-              <span style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase", fontFamily: '"Friend", serif' }}>{attr}</span>
+              <span style={{ fontSize: 10, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+              <span style={{ fontSize: 14, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
             </div>
           ))}
 
           {/* Draw pile inline on mobile */}
           {mobile && (
-            <span style={{ fontSize: 11, color: "#231f20", opacity: 0.5, marginLeft: 8 }}>
+            <span style={{ fontSize: 11, color: COLORS.ink, opacity: 0.5, marginLeft: 8 }}>
               {g.deck.length} left
             </span>
           )}
@@ -501,12 +501,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       : shakingCards.has(i)
                       ? "card-shake 0.2s ease"
                       : undefined,
-                    borderRadius: 6,
+                    borderRadius: RADIUS.md,
                     ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
                       ? { animation: "orange-pulse-border 1.5s infinite" }
                       : {}),
                     ...(bonusHighlighted.has(i)
-                      ? { boxShadow: "0 0 0 3px #e79024, 0 0 16px rgba(231,144,36,0.6)" }
+                      ? { boxShadow: `0 0 0 3px ${COLORS.orange}, 0 0 16px rgba(231,144,36,0.6)` }
                       : {}),
                   }}
                 >
@@ -533,8 +533,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   key={`empty-${i}`}
                   style={{
                     aspectRatio: "5/7",
-                    borderRadius: 4,
-                    border: "2px dashed rgba(35,31,32,0.13)",
+                    borderRadius: RADIUS.sm,
+                    border: `2px dashed rgba(35,31,32,0.13)`,
                   }}
                 />
               )
@@ -551,14 +551,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             justifyContent: "center",
             gap: 8,
             flexShrink: 0,
-            background: "#ADA290",
-            border: "1.5px solid #231f20",
-            borderRadius: 6,
+            background: COLORS.panelMuted,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
             padding: 16,
           }}>
             <div style={{ position: "relative", width: 80, height: 112 }}>
               {g.deck.length === 0 ? (
-                <div style={{ width: 72, height: 101, borderRadius: 6, border: "2px dashed rgba(35,31,32,0.13)" }} />
+                <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
               ) : (
                 [-3.81, 0, 4.63].map((rot, i) => (
                   <img
@@ -571,7 +571,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       left: "50%",
                       width: 72,
                       height: 101,
-                      borderRadius: 6,
+                      borderRadius: RADIUS.md,
                       transform: `translate(-50%, -50%) rotate(${rot}deg) translateX(${(i - 1) * 3}px)`,
                       filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
                     }}
@@ -579,7 +579,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 ))
               )}
             </div>
-            <span style={{ fontSize: 11, color: "#231f20", opacity: 0.7, textAlign: "center" }}>
+            <span style={{ fontSize: 11, color: COLORS.ink, opacity: 0.7, textAlign: "center" }}>
               {g.deck.length} left
             </span>
           </div>
@@ -600,14 +600,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         <button
           onClick={onNewGame}
           style={{
-            background: "#0072B2",
-            color: "#f8f2e9",
-            fontFamily: '"Friend", serif',
+            background: COLORS.blue,
+            color: COLORS.surface,
+            fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: mobile ? 14 : 18,
             padding: "12px 16px",
-            borderRadius: 6,
-            border: "1.5px solid #231f20",
+            borderRadius: RADIUS.md,
+            border: BORDER.standard,
             cursor: "pointer",
             whiteSpace: "nowrap",
             flexShrink: 0,
@@ -623,9 +623,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           flexDirection: "row",
           gap: 6,
           alignItems: "stretch",
-          background: "#ADA290",
-          border: "1.5px solid #231f20",
-          borderRadius: 6,
+          background: COLORS.panelMuted,
+          border: BORDER.standard,
+          borderRadius: RADIUS.md,
           padding: 6,
           flexShrink: 0,
           flexWrap: isSmall ? "wrap" : undefined,
@@ -635,14 +635,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             <div
               key={label}
               style={{
-                background: "#F8F2E9",
-                border: "1.5px solid #231f20",
+                background: COLORS.surface,
+                border: BORDER.standard,
                 padding: "8px 12px",
-                borderRadius: 6,
-                fontFamily: '"Friend", sans-serif',
+                borderRadius: RADIUS.md,
+                fontFamily: FONT_FAMILY,
                 fontStyle: "normal",
                 fontSize: mobile ? 12 : 16,
-                color: "#231f20",
+                color: COLORS.ink,
                 whiteSpace: "nowrap",
                 textAlign: "center",
                 display: "flex",
@@ -667,13 +667,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           style={{
             flex: isSmall ? undefined : 1,
             width: isSmall ? "100%" : undefined,
-            background: whoopReady ? "#d72229" : "#d7222966",
-            color: "#f8f2e9",
-            fontFamily: '"Friend", serif',
+            background: whoopReady ? COLORS.red : `${COLORS.red}66`,
+            color: COLORS.surface,
+            fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: isSmall ? "clamp(18px, 4vw, 24px)" : 26,
-            borderRadius: 6,
-            border: "1.5px solid #231f20",
+            borderRadius: RADIUS.md,
+            border: BORDER.standard,
             cursor: whoopReady ? "pointer" : "default",
             padding: "12px 8px",
             minHeight: mobile ? 48 : undefined,
