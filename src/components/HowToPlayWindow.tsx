@@ -109,7 +109,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const bodyStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
-    fontSize: TYPE.subhead,
+    fontSize: TYPE.body,
     color: COLORS.inkMuted,
     maxWidth: 280,
     lineHeight: 1.5,
