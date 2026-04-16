@@ -415,7 +415,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 [-3.81, 0, 4.63].map((rot, i) => (
                   <img
                     key={i}
-                    src="/cards/Card Back.svg"
+                    src="/cards/card-back.svg"
                     alt="Draw pile"
                     style={{
                       position: "absolute",
@@ -637,7 +637,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       {flyingCards.map((fc) => (
         <img
           key={fc.id}
-          src="/cards/Card Back.svg"
+          src="/cards/card-back.svg"
           alt=""
           style={{
             position: "fixed",
