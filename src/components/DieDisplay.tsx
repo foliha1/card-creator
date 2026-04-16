@@ -1,3 +1,5 @@
+import { TYPE } from "@/lib/tokens";
+
 interface DieDisplayProps {
   value: string;
   rolling: boolean;

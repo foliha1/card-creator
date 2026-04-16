@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Music, Palette } from "lucide-react";
-import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY, TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
