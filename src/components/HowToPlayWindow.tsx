@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { COLORS, RADIUS, FONT_FAMILY, SPACE } from "@/lib/tokens";
+import { COLORS, RADIUS, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
 interface HowToPlayWindowProps {

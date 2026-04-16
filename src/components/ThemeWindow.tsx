@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, THEME_SWATCHES } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, THEME_SWATCHES, TYPE } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 
 const ThemeWindow: React.FC = () => {

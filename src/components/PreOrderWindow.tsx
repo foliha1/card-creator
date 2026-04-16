@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, FONT_FAMILY, SPACE } from "@/lib/tokens";
+import { COLORS, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
 const PreOrderWindow: React.FC = () => {

@@ -11,7 +11,7 @@ const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
 const ThemeWindow = React.lazy(() => import("@/components/ThemeWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { COLORS, MOTION, SPACE } from "@/lib/tokens";
+import { COLORS, MOTION, SPACE, TYPE } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
