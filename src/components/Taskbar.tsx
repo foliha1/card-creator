@@ -22,7 +22,7 @@ const THEME_SWATCHES = [
 ];
 
 const BUTTONS: { label: string; id: WindowId }[] = [
-  { label: "Play Whoop! Woop!", id: "game" },
+  { label: "Play Whoop! Whoop!", id: "game" },
   { label: "How to Play", id: "howtoplay" },
   { label: "Pre-Order", id: "preorder" },
   { label: "About", id: "about" },
