@@ -340,7 +340,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
+
+      {/* Mute toggle — top right */}
+      <div style={{ position: "absolute", top: SPACE[4], right: SPACE[4], zIndex: 10 }}>
+        <IconButton tone="default" onClick={toggleMute} size={mobile ? 36 : 32}>
+          {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </IconButton>
+      </div>
 
       {/* Double Match title */}
       {showDoubleTitle && (
