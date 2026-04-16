@@ -411,7 +411,7 @@ const MusicWindow: React.FC = () => {
             position: "absolute",
             width: 14,
             height: 14,
-            background: "#231f20",
+            background: "#d72229",
             border: "2px solid #F8F2E9",
             borderRadius: "50%",
             top: "50%",
