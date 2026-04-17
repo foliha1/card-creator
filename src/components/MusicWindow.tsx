@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronDown, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, SHADOW } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, SHADOW, MOBILE_TYPE } from "@/lib/tokens";
 import { PLAYLISTS, Playlist } from "@/lib/playlists";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 declare global {
   interface Window {
@@ -40,6 +41,7 @@ const fmt = (ms: number) => {
 };
 
 const MusicWindow: React.FC = () => {
+  const mobile = useIsMobile();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const widgetRef = useRef<SCWidget | null>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -281,7 +283,7 @@ const MusicWindow: React.FC = () => {
       }}>
         <span style={{
           fontFamily: FONT_FAMILY,
-          fontSize: TYPE.body,
+          fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
           color: COLORS.ink,
           flexShrink: 0,
         }}>
@@ -471,7 +473,7 @@ const MusicWindow: React.FC = () => {
                 cursor: "pointer",
                 fontFamily: FONT_FAMILY,
                 fontStyle: "italic",
-                fontSize: TYPE.caption,
+                fontSize: mobile ? MOBILE_TYPE.caption : TYPE.body,
                 color: COLORS.ink,
                 padding: `${SPACE[1]}px ${SPACE[2]}px`,
                 borderRadius: RADIUS.sm,
@@ -512,7 +514,7 @@ const MusicWindow: React.FC = () => {
                       borderBottom: idx === PLAYLISTS.length - 1 ? "none" : BORDER.standard,
                       fontFamily: FONT_FAMILY,
                       fontStyle: "italic",
-                      fontSize: TYPE.body,
+                      fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
                       color: COLORS.ink,
                       cursor: "pointer",
                       textAlign: "left",
