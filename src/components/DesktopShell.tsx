@@ -201,7 +201,7 @@ const DesktopShell: React.FC = () => {
           alt=""
           style={{
             position: "absolute",
-            width: mobile ? "70vw" : "55vw",
+            width: mobile ? "84vw" : "55vw",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -55%)",
@@ -216,7 +216,7 @@ const DesktopShell: React.FC = () => {
         <div
           style={{
             position: "absolute",
-            width: mobile ? "70vw" : "55vw",
+            width: mobile ? "84vw" : "55vw",
             aspectRatio: "1 / 1",
             top: "50%",
             left: "50%",
