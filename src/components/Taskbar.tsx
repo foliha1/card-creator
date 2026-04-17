@@ -48,8 +48,17 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
-    const amount = 160;
-    scrollRef.current.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
+    const el = scrollRef.current;
+    const step = 160;
+    if (direction === "left") {
+      const amount = Math.min(step, el.scrollLeft);
+      el.scrollBy({ left: -amount, behavior: "smooth" });
+    } else {
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      const remaining = maxScroll - el.scrollLeft;
+      const amount = Math.min(step, remaining);
+      el.scrollBy({ left: amount, behavior: "smooth" });
+    }
   };
 
   if (mobile) {
