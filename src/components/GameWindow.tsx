@@ -391,9 +391,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             size="md"
             onClick={onNewGame}
             style={{
-              fontSize: mobile ? TYPE.body : TYPE.subhead,
-              padding: `${SPACE[6]}px ${SPACE[8]}px`,
+              fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead,
+              padding: mobile ? `${SPACE[3]}px ${SPACE[5]}px` : `${SPACE[6]}px ${SPACE[8]}px`,
               flexShrink: 0,
+              whiteSpace: mobile ? "normal" : undefined,
+              lineHeight: mobile ? 1.2 : undefined,
+              width: mobile ? 64 : undefined,
+              textAlign: "center",
             }}
           >
             New Game
@@ -634,8 +638,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 overflow: "hidden",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: `0 ${SPACE[3]}px`,
-                padding: SPACE[6],
+                margin: `0 ${SPACE[6]}px`,
+                padding: SPACE[5],
                 background: COLORS.panel,
                 border: BORDER.standard,
                 borderRadius: RADIUS.md,
