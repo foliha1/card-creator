@@ -43,15 +43,15 @@ const Window: React.FC<WindowProps> = ({
 
   const onDragStart = useCallback(
     (clientX: number, clientY: number) => {
-      if (mobile) return;
+      // Mobile dragging is enabled — no guard
       offsetRef.current = { x: clientX - pos.x, y: clientY - pos.y };
       setDragging(true);
     },
-    [pos, mobile]
+    [pos]
   );
 
   useEffect(() => {
-    if (!dragging || mobile) return;
+    if (!dragging) return;
 
     const onMove = (e: MouseEvent | TouchEvent) => {
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
@@ -71,25 +71,26 @@ const Window: React.FC<WindowProps> = ({
       window.removeEventListener("touchmove", onMove);
       window.removeEventListener("touchend", onUp);
     };
-  }, [dragging, clamp, mobile]);
+  }, [dragging, clamp]);
 
   const outerStyle: React.CSSProperties = mobile
     ? {
-        position: "relative",
-        width: "calc(100vw - 32px)",
-        margin: "0 auto",
-        height: "auto",
+        position: "absolute",
+        left: pos.x,
+        top: pos.y,
+        width: Math.min(width, window.innerWidth - 32),
+        height: Math.min(height, window.innerHeight - 120),
         background: COLORS.surface,
         border: BORDER.standard,
         borderRadius: RADIUS.md,
         padding: SPACE[5],
-        boxShadow: SHADOW.windowFocused,
+        boxShadow: focused ? SHADOW.windowFocused : SHADOW.windowUnfocused,
         zIndex,
         display: "flex",
         flexDirection: "column",
         gap: SPACE[5],
-        maxHeight: "calc(100dvh - 80px)",
         overflow: "auto",
+        userSelect: dragging ? "none" : undefined,
       }
     : {
         position: "absolute",
@@ -124,7 +125,7 @@ const Window: React.FC<WindowProps> = ({
           display: "flex",
           alignItems: "center",
           padding: mobile ? 0 : `0 ${SPACE[2]}px`,
-          cursor: mobile ? "default" : dragging ? "grabbing" : "grab",
+          cursor: dragging ? "grabbing" : "grab",
           flexShrink: 0,
         }}
         onDoubleClick={(e) => e.preventDefault()}
