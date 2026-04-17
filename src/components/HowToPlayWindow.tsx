@@ -254,7 +254,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           fullWidth
           disabled={slide === 0}
           onClick={() => setSlide((s) => s - 1)}
-          style={{ flex: 1, fontSize: TYPE.ui, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
         >
           Back
         </AppButton>
@@ -270,7 +270,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               setSlide((s) => s + 1);
             }
           }}
-          style={{ flex: 1, fontSize: TYPE.ui, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
         >
           {slide === 2 ? "Got it!" : "Next"}
         </AppButton>
