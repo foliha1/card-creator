@@ -119,6 +119,10 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     font-family: "Friend", Georgia, "Times New Roman", serif;
   }
+
+  html, body {
+    overscroll-behavior: none;
+  }
 }
 
 /* ── Global keyframes ── */
