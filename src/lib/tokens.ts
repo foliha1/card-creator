@@ -61,7 +61,7 @@ export const THEME_SWATCHES = [
   { color: "wild", label: "Wild" },
 ] as const;
 
-export const FONT_FAMILY = '"Friend", sans-serif';
+export const FONT_FAMILY = '"Friend", Georgia, "Times New Roman", serif';
 
 export const TYPE = {
   caption: 16,
