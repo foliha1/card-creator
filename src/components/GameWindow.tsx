@@ -314,7 +314,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: mobile ? "hidden" : undefined }}>
 
       {/* Mute toggle — top right */}
       <div style={{ position: "absolute", top: SPACE[4], right: SPACE[4], zIndex: 10 }}>
@@ -481,8 +481,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <div
                 key={i}
                 style={{
-                  width: mobile ? 60 : 89,
-                  height: mobile ? 60 : 89,
+                  width: mobile ? 52 : 89,
+                  height: mobile ? 52 : 89,
                   background: COLORS.surface,
                   borderRadius: RADIUS.md,
                   display: "flex",
@@ -508,7 +508,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               gridTemplateColumns: "repeat(3, 1fr)",
               gap: isSmall ? SPACE[3] : SPACE[5],
               width: "100%",
-              maxWidth: mobile ? 360 : undefined,
+              maxWidth: mobile ? undefined : undefined,
+              height: mobile ? "100%" : undefined,
+              alignContent: mobile ? "center" : undefined,
               justifyContent: "center",
             }}
           >
@@ -629,9 +631,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 display: "flex",
                 flex: 1,
                 minHeight: 0,
+                overflow: "hidden",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: `0 ${SPACE[6]}px`,
+                margin: `0 ${SPACE[3]}px`,
                 padding: SPACE[6],
                 background: COLORS.panel,
                 border: BORDER.standard,
