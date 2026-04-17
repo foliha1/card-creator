@@ -127,6 +127,7 @@ const Window: React.FC<WindowProps> = ({
           padding: mobile ? 0 : `0 ${SPACE[2]}px`,
           cursor: dragging ? "grabbing" : "grab",
           flexShrink: 0,
+          touchAction: "none",
         }}
         onDoubleClick={(e) => e.preventDefault()}
         onMouseDown={(e) => {
