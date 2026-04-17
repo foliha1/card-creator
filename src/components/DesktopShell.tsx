@@ -119,15 +119,18 @@ const DesktopShell: React.FC = () => {
 
   const renderWindow = (id: WindowId) => {
     if (!openWindows.has(id)) return null;
-    if (mobile && activeWindow !== id) return null;
+    // Show all open windows on mobile — they stack and are draggable
 
     const cfg = getWindowSize(id);
+    const defaultPosition = mobile
+      ? { x: 16, y: 16 + ALL_IDS.indexOf(id) * 24 }
+      : DEFAULT_POSITIONS[id];
     return (
       <div key={id} style={{ animation: "win-open 0.2s ease-out" }}>
         <Window
           id={id}
           title={cfg.title}
-          defaultPosition={DEFAULT_POSITIONS[id]}
+          defaultPosition={defaultPosition}
           width={cfg.width}
           height={cfg.height}
           zIndex={10 + windowOrder.indexOf(id)}
