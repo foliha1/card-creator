@@ -157,12 +157,13 @@ const DesktopShell: React.FC = () => {
       style={{
         width: "100vw",
         height: "100vh",
-        overflow: mobile ? "auto" : "hidden",
+        overflow: "hidden",
         position: "relative",
         background: bgTheme === "wild" ? COLORS.ink : bgTheme,
         transition: `background ${MOTION.slow}`,
-        paddingBottom: mobile ? 100 : SPACE[0],
-        paddingTop: mobile ? SPACE[8] : SPACE[0],
+        paddingBottom: SPACE[0],
+        paddingTop: SPACE[0],
+        touchAction: "none",
       }}
     >
 

@@ -121,6 +121,10 @@ All colors MUST be HSL.
   }
 
   html, body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
     overscroll-behavior: none;
   }
 }
