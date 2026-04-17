@@ -194,13 +194,13 @@ const DesktopShell: React.FC = () => {
       />
 
       {/* Logo watermark using CSS mask */}
-      {!mobile && bgTheme === COLORS.surface && (
+      {bgTheme === COLORS.surface && (
         <img
           src="/WhoopWhoop_Dark_Logo.svg"
           alt=""
           style={{
             position: "absolute",
-            width: "55vw",
+            width: mobile ? "70vw" : "55vw",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -55%)",
@@ -211,11 +211,11 @@ const DesktopShell: React.FC = () => {
           }}
         />
       )}
-      {!mobile && bgTheme !== COLORS.surface && (
+      {bgTheme !== COLORS.surface && (
         <div
           style={{
             position: "absolute",
-            width: "55vw",
+            width: mobile ? "70vw" : "55vw",
             aspectRatio: "1 / 1",
             top: "50%",
             left: "50%",
