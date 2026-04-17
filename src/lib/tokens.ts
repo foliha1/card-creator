@@ -71,3 +71,12 @@ export const TYPE = {
   head: 28,
   display: 34,
 } as const;
+
+export const MOBILE_TYPE = {
+  caption: 13,
+  body: 15,
+  ui: 17,
+  subhead: 18,
+  head: 22,
+  display: 28,
+} as const;

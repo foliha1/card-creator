@@ -5,7 +5,7 @@ import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS } from "@/cardData";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { IconButton } from "@/components/ui/IconButton";
 
@@ -424,7 +424,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   borderRadius: RADIUS.md,
                   fontFamily: FONT_FAMILY,
                   fontStyle: "normal",
-                  fontSize: mobile ? TYPE.caption : TYPE.ui,
+                  fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
                   color: COLORS.ink,
                   whiteSpace: "nowrap",
                   textAlign: "center",
@@ -494,8 +494,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
                 }}
               >
-                <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-                <span style={{ fontSize: TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+                <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+                <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
               </div>
             ))}
           </div>
