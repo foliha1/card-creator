@@ -1,12 +1,14 @@
 import React from "react";
-import { COLORS, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
+import { COLORS, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const PreOrderWindow: React.FC = () => {
+  const mobile = useIsMobile();
   return (
     <div
       style={{
-        padding: SPACE[14],
+        padding: mobile ? SPACE[6] : SPACE[14],
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -15,21 +17,21 @@ const PreOrderWindow: React.FC = () => {
         textAlign: "center",
       }}
     >
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: TYPE.head, color: COLORS.ink }}>
+      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: mobile ? MOBILE_TYPE.head : TYPE.head, color: COLORS.ink }}>
         Get the physical game
       </div>
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: TYPE.body, color: COLORS.inkMuted, maxWidth: 280, marginTop: SPACE[5], lineHeight: 1.5 }}>
+      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: mobile ? MOBILE_TYPE.body : TYPE.body, color: COLORS.inkMuted, maxWidth: 280, marginTop: SPACE[5], lineHeight: 1.5 }}>
         48 cards, 2 match dice, and enough competition to ruin your family dinner.
       </div>
       <AppButton
         variant="primary"
         tone="red"
         size="md"
-        style={{ marginTop: SPACE[14] }}
+        style={{ marginTop: mobile ? SPACE[8] : SPACE[14] }}
       >
         Pre-Order Now
       </AppButton>
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: TYPE.caption, color: COLORS.inkMuted, marginTop: SPACE[7] }}>
+      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, color: COLORS.inkMuted, marginTop: SPACE[7] }}>
         Coming soon — Oleeha &amp; Co
       </div>
     </div>

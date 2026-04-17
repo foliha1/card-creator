@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { COLORS, RADIUS, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
+import { COLORS, RADIUS, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HowToPlayWindowProps {
   onClose: () => void;
@@ -96,12 +97,13 @@ const PeekDemo: React.FC = () => {
 
 const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
+  const mobile = useIsMobile();
 
   const headlineStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
     fontWeight: 700,
-    fontSize: TYPE.subhead,
+    fontSize: mobile ? MOBILE_TYPE.subhead : TYPE.subhead,
     color: COLORS.ink,
     marginBottom: SPACE[4],
   };
@@ -109,7 +111,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const bodyStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
-    fontSize: TYPE.body,
+    fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
     color: COLORS.inkMuted,
     maxWidth: 280,
     lineHeight: 1.5,
@@ -121,8 +123,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        padding: SPACE[12],
-        gap: SPACE[12],
+        padding: mobile ? SPACE[6] : SPACE[12],
+        gap: mobile ? SPACE[6] : SPACE[12],
       }}
     >
       {/* Slide content */}
@@ -148,8 +150,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                 <div
                   key={label}
                   style={{
-                    width: 64,
-                    height: 64,
+                    width: mobile ? 48 : 64,
+                    height: mobile ? 48 : 64,
                     borderRadius: 10,
                     border: `4px solid ${COLORS.ink}`,
                     background: COLORS.surface,
@@ -157,7 +159,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                     fontFamily: FONT_FAMILY,
                     fontStyle: "italic",
                     fontWeight: 900,
-                    fontSize: TYPE.body,
+                    fontSize: mobile ? MOBILE_TYPE.caption : TYPE.body,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -252,7 +254,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           fullWidth
           disabled={slide === 0}
           onClick={() => setSlide((s) => s - 1)}
-          style={{ flex: 1, fontSize: TYPE.ui, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
         >
           Back
         </AppButton>
@@ -268,7 +270,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               setSlide((s) => s + 1);
             }
           }}
-          style={{ flex: 1, fontSize: TYPE.ui, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
         >
           {slide === 2 ? "Got it!" : "Next"}
         </AppButton>
