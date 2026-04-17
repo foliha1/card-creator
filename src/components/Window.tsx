@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SHADOW, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { IconButton } from "@/components/ui/IconButton";
 
 interface WindowProps {
