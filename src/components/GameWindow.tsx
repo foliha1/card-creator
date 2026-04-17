@@ -383,59 +383,125 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
       {/* Claim mode instruction */}
 
-      {/* Main area */}
-      <div style={{
-        display: "flex",
-        flexDirection: mobile ? "column" : "row",
-        gap: mobile ? SPACE[4] : (typeof window !== 'undefined' && !mobile && window.innerWidth < 1100) ? SPACE[10] : 38,
-        flex: 1,
-        padding: mobile ? SPACE[6] : (typeof window !== 'undefined' && !mobile && window.innerWidth < 1100) ? "24px 16px" : "50px 40px",
-        minHeight: 0,
-        alignItems: "center",
-        justifyContent: "center",
-      }}>
-        {/* Left column: draw pile — desktop only */}
-        {!mobile && (
+      {(() => {
+        const newGameButton = (
+          <AppButton
+            variant="primary"
+            tone="blue"
+            size="md"
+            onClick={onNewGame}
+            style={{
+              fontSize: mobile ? TYPE.body : TYPE.subhead,
+              padding: `${SPACE[6]}px ${SPACE[8]}px`,
+              flexShrink: 0,
+            }}
+          >
+            New Game
+          </AppButton>
+        );
+
+        const scoreBadges = (
           <div style={{
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "row",
+            gap: SPACE[3],
+            alignItems: "stretch",
+            background: COLORS.panelMuted,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
+            padding: SPACE[3],
+            flexGrow: mobile ? 1 : undefined,
+            flexShrink: 0,
+            justifyContent: mobile ? "space-around" : undefined,
+          }}>
+            {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
+              <div
+                key={label}
+                style={{
+                  background: COLORS.surface,
+                  border: BORDER.standard,
+                  padding: `${SPACE[4]}px ${SPACE[6]}px`,
+                  borderRadius: RADIUS.md,
+                  fontFamily: FONT_FAMILY,
+                  fontStyle: "normal",
+                  fontSize: mobile ? TYPE.caption : TYPE.ui,
+                  color: COLORS.ink,
+                  whiteSpace: "nowrap",
+                  textAlign: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  ...(label.startsWith("Score") && scoreBounce
+                    ? { animation: "score-bounce 0.3s ease" }
+                    : {}),
+                }}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+        );
+
+        const whoopButton = (
+          <AppButton
+            variant="primary"
+            tone={whoopFeedback ? whoopFeedback.tone : g.claimMode ? "orange" : "red"}
+            size="lg"
+            disabled={!whoopReady && !g.claimMode && !whoopFeedback}
+            onClick={() => {
+              if (whoopReady && !g.claimMode) {
+                g.enterClaimMode();
+              }
+            }}
+            style={{
+              flex: 1,
+              fontSize: mobile ? "clamp(18px, 4vw, 24px)" : 26,
+              padding: `${SPACE[6]}px ${SPACE[4]}px`,
+              minHeight: mobile ? 48 : undefined,
+              transition: `background ${MOTION.base}, color ${MOTION.base}`,
+            }}
+          >
+            {whoopFeedback ? whoopFeedback.text : g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
+          </AppButton>
+        );
+
+        const diceTray = (
+          <div style={{
+            display: "flex",
+            flexDirection: mobile ? "row" : "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: SPACE[4],
+            gap: mobile ? SPACE[4] : SPACE[6],
             flexShrink: 0,
             background: COLORS.panelMuted,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
-            padding: SPACE[8],
+            padding: mobile ? SPACE[4] : SPACE[8],
           }}>
-            <div ref={drawPileRef} style={{ position: "relative", width: 80, height: 112 }}>
-              {g.deck.length === 0 ? (
-                <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
-              ) : (
-                [-3.81, 0, 4.63].map((rot, i) => (
-                  <img
-                    key={i}
-                    src="/cards/card-back.svg"
-                    alt="Draw pile"
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      width: 72,
-                      height: 101,
-                      borderRadius: RADIUS.md,
-                      transform: `translate(-50%, -50%) rotate(${rot}deg) translateX(${(i - 1) * 3}px)`,
-                      filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-                    }}
-                  />
-                ))
-              )}
-            </div>
+            {g.matchRule.map((attr, i) => (
+              <div
+                key={i}
+                style={{
+                  width: mobile ? 60 : 89,
+                  height: mobile ? 60 : 89,
+                  background: COLORS.surface,
+                  borderRadius: RADIUS.md,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
+                  color: COLORS.ink,
+                  filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+                }}
+              >
+                <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+                <span style={{ fontSize: TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+              </div>
+            ))}
           </div>
-        )}
+        );
 
-        {/* Center: card grid */}
-        <div style={{ flex: mobile ? undefined : 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0, width: mobile ? "100%" : undefined }}>
+        const cardGrid = (
           <div
             style={{
               display: "grid",
@@ -502,136 +568,128 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               )
             )}
           </div>
-        </div>
+        );
 
-        {/* Right column: dice / rule cards */}
-        <div style={{
-          display: "flex",
-          flexDirection: mobile ? "row" : "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: mobile ? SPACE[4] : SPACE[6],
-          flexShrink: 0,
-          ...(mobile ? {} : {
+        const drawPile = (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: SPACE[4],
+            flexShrink: 0,
             background: COLORS.panelMuted,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             padding: SPACE[8],
-          }),
-        }}>
-          {g.matchRule.map((attr, i) => (
-            <div
-              key={i}
-              style={{
-                width: mobile ? 60 : 89,
-                height: mobile ? 60 : 89,
-                background: COLORS.surface,
-                borderRadius: RADIUS.md,
+          }}>
+            <div ref={drawPileRef} style={{ position: "relative", width: 80, height: 112 }}>
+              {g.deck.length === 0 ? (
+                <div style={{ width: 72, height: 101, borderRadius: RADIUS.md, border: "2px dashed rgba(35,31,32,0.13)" }} />
+              ) : (
+                [-3.81, 0, 4.63].map((rot, i) => (
+                  <img
+                    key={i}
+                    src="/cards/card-back.svg"
+                    alt="Draw pile"
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      width: 72,
+                      height: 101,
+                      borderRadius: RADIUS.md,
+                      transform: `translate(-50%, -50%) rotate(${rot}deg) translateX(${(i - 1) * 3}px)`,
+                      filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+
+        if (mobile) {
+          return (
+            <>
+              {/* Top HUD bar */}
+              <div style={{
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
+                gap: SPACE[5],
+                padding: `${SPACE[4]}px ${SPACE[6]}px`,
+                alignItems: "stretch",
+              }}>
+                {newGameButton}
+                {scoreBadges}
+              </div>
+
+              {/* Main area: card grid in panel */}
+              <div style={{
+                display: "flex",
+                flex: 1,
+                minHeight: 0,
                 alignItems: "center",
                 justifyContent: "center",
-                transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
-                color: COLORS.ink,
-                filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-              }}
-            >
-              <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-              <span style={{ fontSize: TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom HUD bar */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: isSmall ? "column" : "row",
-          gap: SPACE[5],
-          padding: `${SPACE[4]}px ${SPACE[6]}px`,
-          alignItems: "stretch",
-        }}
-      >
-        {/* New Game button */}
-        <AppButton
-          variant="primary"
-          tone="blue"
-          size="md"
-          onClick={onNewGame}
-          style={{
-            fontSize: mobile ? TYPE.body : TYPE.subhead,
-            padding: `${SPACE[6]}px ${SPACE[8]}px`,
-            flexShrink: 0,
-            width: isSmall ? "100%" : undefined,
-          }}
-        >
-          New Game
-        </AppButton>
-
-        {/* Game info section */}
-        <div style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: SPACE[3],
-          alignItems: "stretch",
-          background: COLORS.panelMuted,
-          border: BORDER.standard,
-          borderRadius: RADIUS.md,
-          padding: SPACE[3],
-          flexShrink: 0,
-          flexWrap: isSmall ? "wrap" : undefined,
-          width: isSmall ? "100%" : undefined,
-        }}>
-          {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
-            <div
-              key={label}
-              style={{
-                background: COLORS.surface,
+                margin: `0 ${SPACE[6]}px`,
+                padding: SPACE[6],
+                background: COLORS.panel,
                 border: BORDER.standard,
-                padding: `${SPACE[4]}px ${SPACE[6]}px`,
                 borderRadius: RADIUS.md,
-                fontFamily: FONT_FAMILY,
-                fontStyle: "normal",
-                fontSize: mobile ? TYPE.caption : TYPE.ui,
-                color: COLORS.ink,
-                whiteSpace: "nowrap",
-                textAlign: "center",
-                display: "flex",
-                alignItems: "center",
-                ...(label.startsWith("Score") && scoreBounce
-                  ? { animation: "score-bounce 0.3s ease" }
-                  : {}),
-              }}
-            >
-              {label}
-            </div>
-          ))}
-        </div>
+              }}>
+                {cardGrid}
+              </div>
 
-        {/* WHOOP button */}
-        <AppButton
-          variant="primary"
-          tone={whoopFeedback ? whoopFeedback.tone : g.claimMode ? "orange" : "red"}
-          size="lg"
-          disabled={!whoopReady && !g.claimMode && !whoopFeedback}
-          onClick={() => {
-            if (whoopReady && !g.claimMode) {
-              g.enterClaimMode();
-            }
-          }}
-          style={{
-            flex: isSmall ? undefined : 1,
-            width: isSmall ? "100%" : undefined,
-            fontSize: isSmall ? "clamp(18px, 4vw, 24px)" : 26,
-            padding: `${SPACE[6]}px ${SPACE[4]}px`,
-            minHeight: mobile ? 48 : undefined,
-            transition: `background ${MOTION.base}, color ${MOTION.base}`,
-          }}
-        >
-          {whoopFeedback ? whoopFeedback.text : g.claimMode ? "Select the Match" : "WHOOP! WHOOP!"}
-        </AppButton>
-      </div>
+              {/* Bottom bar: dice + WHOOP */}
+              <div style={{
+                display: "flex",
+                flexDirection: "row",
+                gap: SPACE[5],
+                padding: `${SPACE[4]}px ${SPACE[6]}px`,
+                alignItems: "stretch",
+              }}>
+                {diceTray}
+                {whoopButton}
+              </div>
+            </>
+          );
+        }
+
+        return (
+          <>
+            {/* Main area */}
+            <div style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: (typeof window !== 'undefined' && window.innerWidth < 1100) ? SPACE[10] : 38,
+              flex: 1,
+              padding: (typeof window !== 'undefined' && window.innerWidth < 1100) ? "24px 16px" : "50px 40px",
+              minHeight: 0,
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              {drawPile}
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
+                {cardGrid}
+              </div>
+              {diceTray}
+            </div>
+
+            {/* Bottom HUD bar */}
+            <div style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: SPACE[5],
+              padding: `${SPACE[4]}px ${SPACE[6]}px`,
+              alignItems: "stretch",
+            }}>
+              {newGameButton}
+              {scoreBadges}
+              {whoopButton}
+            </div>
+          </>
+        );
+      })()}
 
       {/* Flying card overlays (mid-round refills) */}
       {flyingCards.map((fc) => (
