@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { COLORS, RADIUS, FONT_FAMILY, SPACE, TYPE } from "@/lib/tokens";
+import { COLORS, RADIUS, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HowToPlayWindowProps {
   onClose: () => void;
