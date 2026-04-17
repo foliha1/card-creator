@@ -508,7 +508,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               gridTemplateColumns: "repeat(3, 1fr)",
               gap: isSmall ? SPACE[3] : SPACE[5],
               width: "100%",
-              maxWidth: mobile ? 360 : undefined,
+              maxWidth: mobile ? undefined : undefined,
+              height: mobile ? "100%" : undefined,
+              alignContent: mobile ? "center" : undefined,
               justifyContent: "center",
             }}
           >
