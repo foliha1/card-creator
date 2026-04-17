@@ -79,7 +79,7 @@ const Window: React.FC<WindowProps> = ({
         left: pos.x,
         top: pos.y,
         width: Math.min(width, window.innerWidth - 32),
-        height: Math.min(height, window.innerHeight - 120),
+        maxHeight: window.innerHeight - 120,
         background: COLORS.surface,
         border: BORDER.standard,
         borderRadius: RADIUS.md,
