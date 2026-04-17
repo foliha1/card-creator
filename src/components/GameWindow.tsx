@@ -481,8 +481,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <div
                 key={i}
                 style={{
-                  width: mobile ? 60 : 89,
-                  height: mobile ? 60 : 89,
+                  width: mobile ? 52 : 89,
+                  height: mobile ? 52 : 89,
                   background: COLORS.surface,
                   borderRadius: RADIUS.md,
                   display: "flex",
