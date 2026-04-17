@@ -34,11 +34,14 @@ const Window: React.FC<WindowProps> = ({
   const offsetRef = useRef({ x: 0, y: 0 });
 
   const clamp = useCallback(
-    (x: number, y: number) => ({
-      x: Math.max(0, Math.min(x, Math.max(0, window.innerWidth - width))),
-      y: Math.max(0, Math.min(y, Math.max(0, window.innerHeight - height))),
-    }),
-    [width, height]
+    (x: number, y: number) => {
+      const minVisible = mobile ? 80 : 100;
+      return {
+        x: Math.max(-(width - minVisible), Math.min(x, window.innerWidth - minVisible)),
+        y: Math.max(0, Math.min(y, window.innerHeight - minVisible)),
+      };
+    },
+    [width, height, mobile]
   );
 
   const onDragStart = useCallback(
@@ -54,6 +57,7 @@ const Window: React.FC<WindowProps> = ({
     if (!dragging) return;
 
     const onMove = (e: MouseEvent | TouchEvent) => {
+      if ("touches" in e) e.preventDefault();
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
       setPos(clamp(clientX - offsetRef.current.x, clientY - offsetRef.current.y));
@@ -63,7 +67,7 @@ const Window: React.FC<WindowProps> = ({
 
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchmove", onMove);
+    window.addEventListener("touchmove", onMove, { passive: false });
     window.addEventListener("touchend", onUp);
     return () => {
       window.removeEventListener("mousemove", onMove);
@@ -76,8 +80,10 @@ const Window: React.FC<WindowProps> = ({
   const outerStyle: React.CSSProperties = mobile
     ? {
         position: "absolute",
-        left: pos.x,
-        top: pos.y,
+        left: 0,
+        top: 0,
+        transform: `translate(${pos.x}px, ${pos.y}px)`,
+        willChange: dragging ? "transform" : undefined,
         width: Math.min(width, window.innerWidth - 32),
         maxHeight: window.innerHeight - 120,
         background: COLORS.surface,
@@ -94,8 +100,10 @@ const Window: React.FC<WindowProps> = ({
       }
     : {
         position: "absolute",
-        left: pos.x,
-        top: pos.y,
+        left: 0,
+        top: 0,
+        transform: `translate(${pos.x}px, ${pos.y}px)`,
+        willChange: dragging ? "transform" : undefined,
         width,
         height,
         background: COLORS.surface,
