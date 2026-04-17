@@ -267,7 +267,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     [g, peekLocked, doublePhase]
   );
 
+  const whoopEverReady = useRef(false);
   const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
+  if (whoopReady) whoopEverReady.current = true;
+  const whoopEnabled = (whoopEverReady.current || whoopReady) && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
   const isSmall = mobile && window.innerWidth < 480;
   const cardW = isSmall ? 48 : 72;
@@ -452,9 +455,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             variant="primary"
             tone={whoopFeedback ? whoopFeedback.tone : g.claimMode ? "orange" : "red"}
             size="lg"
-            disabled={!whoopReady && !g.claimMode && !whoopFeedback}
+            disabled={!whoopEnabled && !g.claimMode && !whoopFeedback}
             onClick={() => {
-              if (whoopReady && !g.claimMode) {
+              if (whoopEnabled && !g.claimMode) {
                 g.enterClaimMode();
               }
             }}
