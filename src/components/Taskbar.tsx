@@ -13,8 +13,8 @@ interface TaskbarProps {
   mobile?: boolean;
 }
 
-const BUTTONS: { label: string; id: WindowId; icon?: React.ReactNode; tone?: "ink" | "muted" | "orange" | "blue" }[] = [
-  { label: "Play Whoop! Whoop!", id: "game", tone: "ink" },
+const BUTTONS: { label: string; id: WindowId; icon?: React.ReactNode; tone?: "ink" | "muted" | "orange" | "blue" | "red" }[] = [
+  { label: "Play Whoop! Whoop!", id: "game", tone: "red" },
   { label: "How to Play", id: "howtoplay", tone: "muted" },
   { label: "Pre-Order", id: "preorder", tone: "muted" },
   { label: "About", id: "about", tone: "muted" },

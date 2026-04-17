@@ -515,8 +515,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               gap: isSmall ? SPACE[3] : SPACE[5],
               width: "100%",
               maxWidth: mobile ? undefined : undefined,
-              height: mobile ? "100%" : undefined,
-              alignContent: mobile ? "center" : undefined,
               justifyContent: "center",
             }}
           >
@@ -635,8 +633,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               {/* Main area: card grid in panel */}
               <div style={{
                 display: "flex",
-                flex: 1,
-                minHeight: 0,
                 overflow: "hidden",
                 alignItems: "center",
                 justifyContent: "center",
