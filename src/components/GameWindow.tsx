@@ -314,7 +314,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: mobile ? "hidden" : undefined }}>
 
       {/* Mute toggle — top right */}
       <div style={{ position: "absolute", top: SPACE[4], right: SPACE[4], zIndex: 10 }}>
