@@ -494,8 +494,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
                 }}
               >
-                <span style={{ fontSize: TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-                <span style={{ fontSize: TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+                <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+                <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
               </div>
             ))}
           </div>
