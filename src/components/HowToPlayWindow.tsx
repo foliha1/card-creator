@@ -150,8 +150,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                 <div
                   key={label}
                   style={{
-                    width: 64,
-                    height: 64,
+                    width: mobile ? 48 : 64,
+                    height: mobile ? 48 : 64,
                     borderRadius: 10,
                     border: `4px solid ${COLORS.ink}`,
                     background: COLORS.surface,
@@ -159,7 +159,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                     fontFamily: FONT_FAMILY,
                     fontStyle: "italic",
                     fontWeight: 900,
-                    fontSize: TYPE.body,
+                    fontSize: mobile ? MOBILE_TYPE.caption : TYPE.body,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
