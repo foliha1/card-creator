@@ -97,12 +97,13 @@ const PeekDemo: React.FC = () => {
 
 const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
+  const mobile = useIsMobile();
 
   const headlineStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
     fontWeight: 700,
-    fontSize: TYPE.subhead,
+    fontSize: mobile ? MOBILE_TYPE.subhead : TYPE.subhead,
     color: COLORS.ink,
     marginBottom: SPACE[4],
   };
@@ -110,7 +111,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const bodyStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontStyle: "normal",
-    fontSize: TYPE.body,
+    fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
     color: COLORS.inkMuted,
     maxWidth: 280,
     lineHeight: 1.5,
@@ -122,8 +123,8 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        padding: SPACE[12],
-        gap: SPACE[12],
+        padding: mobile ? SPACE[6] : SPACE[12],
+        gap: mobile ? SPACE[6] : SPACE[12],
       }}
     >
       {/* Slide content */}
