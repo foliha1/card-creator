@@ -172,12 +172,11 @@ const Window: React.FC<WindowProps> = ({
       {/* Content */}
       <div
         style={{
-          flex: 1,
+          flex: mobile ? undefined : 1,
           overflow: "auto",
           background: COLORS.panel,
           border: BORDER.standard,
           borderRadius: RADIUS.md,
-          minHeight: mobile ? 260 : undefined,
           display: "flex",
           flexDirection: "column",
         }}
