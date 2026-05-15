@@ -200,9 +200,14 @@ const DesktopShell: React.FC = () => {
         <img
           src="/WhoopWhoop_Dark_Logo.svg"
           alt=""
+          width={1200}
+          height={1200}
+          fetchPriority="high"
+          decoding="async"
           style={{
             position: "absolute",
             width: mobile ? "84vw" : "55vw",
+            height: "auto",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -55%)",
