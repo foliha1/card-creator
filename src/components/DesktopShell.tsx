@@ -166,6 +166,7 @@ const DesktopShell: React.FC = () => {
         touchAction: "none",
       }}
     >
+      <h1 className="sr-only">WHOOP! WHOOP! — A Competitive Memory Card Game by Oleeha &amp; Co</h1>
 
       {/* Wallpaper overlay */}
       <div
