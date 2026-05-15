@@ -153,6 +153,7 @@ const Window: React.FC<WindowProps> = ({
           size={mobile ? 44 : 24}
           data-close-btn
           onClick={onClose}
+          aria-label={`Close ${title} window`}
           style={{ flexShrink: 0 }}
         >
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

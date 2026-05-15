@@ -33,7 +33,7 @@ const AboutWindow: React.FC = () => {
           textDecoration: "underline",
         }}
       >
-        Learn more →
+        Learn more about Oleeha &amp; Co →
       </a>
     </div>
   );

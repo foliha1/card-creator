@@ -315,6 +315,7 @@ const MusicWindow: React.FC = () => {
       <div style={{ display: "flex", gap: SPACE[2], width: "100%", ...disabledStyle }}>
         <button
           onClick={() => widgetRef.current?.play()}
+          aria-label="Play"
           onMouseEnter={() => setPlayHover(true)}
           onMouseLeave={() => setPlayHover(false)}
           style={{
@@ -341,6 +342,7 @@ const MusicWindow: React.FC = () => {
 
         <button
           onClick={() => widgetRef.current?.pause()}
+          aria-label="Pause"
           onMouseEnter={() => setPauseHover(true)}
           onMouseLeave={() => setPauseHover(false)}
           style={{
@@ -364,6 +366,7 @@ const MusicWindow: React.FC = () => {
 
         <button
           onClick={() => widgetRef.current?.prev()}
+          aria-label="Previous track"
           onMouseEnter={() => setPrevHover(true)}
           onMouseLeave={() => setPrevHover(false)}
           style={{
@@ -380,6 +383,7 @@ const MusicWindow: React.FC = () => {
 
         <button
           onClick={() => widgetRef.current?.next()}
+          aria-label="Next track"
           onMouseEnter={() => setNextHover(true)}
           onMouseLeave={() => setNextHover(false)}
           style={{
