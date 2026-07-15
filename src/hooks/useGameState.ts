@@ -169,6 +169,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setGrid(newGrid);
     setScore(0);
     setRoundNum(1);
+    setPeeksLeft(peekBudget);
     setGameOver(false);
     setClaimMode(false);
     setSelectedCards([]);
