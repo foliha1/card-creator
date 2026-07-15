@@ -372,8 +372,22 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           You collected {collected} of {totalCards} cards
         </div>
         <div style={{ fontSize: TYPE.head, fontWeight: 700, fontFamily: FONT_FAMILY }}>
-          Score: {g.scores[0]}
+          You {g.scores[0]} — {OPPONENT_NAME} {g.scores[1]}
         </div>
+        {gameOverLine && (
+          <div style={{
+            fontSize: TYPE.body,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            color: COLORS.ink,
+            background: COLORS.surface,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[4]}px ${SPACE[8]}px`,
+          }}>
+            {OPPONENT_NAME} “{gameOverLine}”
+          </div>
+        )}
         <AppButton
           variant="primary"
           tone="blue"
