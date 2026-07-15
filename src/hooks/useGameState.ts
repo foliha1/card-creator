@@ -309,7 +309,9 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         passFlipper();
         return;
       }
-      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      const unknown = candidates.filter((i) => memoryRef.current.recall(i) === null);
+      const pool = unknown.length > 0 ? unknown : candidates;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
       setPeekingCard(pick);
       if (oppRevealRef.current) clearTimeout(oppRevealRef.current);
       oppRevealRef.current = setTimeout(() => {
