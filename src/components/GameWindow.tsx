@@ -584,6 +584,64 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
+        const opponentChip = (
+          <div style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            gap: SPACE[3],
+            background: COLORS.surface,
+            border: g.flipperIndex === 1 ? `2px solid ${COLORS.blue}` : BORDER.standard,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[3]}px ${SPACE[5]}px`,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
+            color: COLORS.ink,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            alignSelf: mobile ? "stretch" : "center",
+          }}>
+            <span>{OPPONENT_NAME}</span>
+            <span style={{ fontStyle: "normal", fontWeight: 700 }}>{g.scores[1]}</span>
+            {bubble && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: COLORS.surface,
+                border: BORDER.standard,
+                borderRadius: RADIUS.md,
+                padding: `${SPACE[3]}px ${SPACE[5]}px`,
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+                color: bubble.red ? COLORS.red : COLORS.ink,
+                fontWeight: bubble.red ? 700 : 400,
+                whiteSpace: "nowrap",
+                zIndex: 30,
+                pointerEvents: "none",
+              }}>
+                <div style={{
+                  position: "absolute",
+                  top: -6,
+                  left: "50%",
+                  width: 10,
+                  height: 10,
+                  transform: "translateX(-50%) rotate(45deg)",
+                  background: COLORS.surface,
+                  borderLeft: BORDER.standard,
+                  borderTop: BORDER.standard,
+                }} />
+                {bubble.text}
+              </div>
+            )}
+          </div>
+        );
+
+
+
 
 
 
