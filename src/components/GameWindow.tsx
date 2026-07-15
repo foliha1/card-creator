@@ -195,7 +195,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         setDoublePhase("pick");
         const available = new Set<number>();
         g.grid.forEach((c, i) => {
-          if (c && !g.matchedCards.has(i)) available.add(i);
+          if (c && !g.matchedCards.has(i) && !g.wrongCards.has(i)) available.add(i);
         });
         setOrangePulseCards(available);
       }, 1400);
