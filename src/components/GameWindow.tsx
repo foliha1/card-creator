@@ -824,6 +824,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4], flexShrink: 0 }}>
+                {opponentChip}
                 {diceTray}
               </div>
             </div>
