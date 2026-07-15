@@ -683,6 +683,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     ...(bonusHighlighted.has(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.orange}, 0 0 16px rgba(231,144,36,0.6)` }
                       : {}),
+                    ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
+                      ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
+                      : {}),
                   }}
                 >
                   <GameCard
@@ -690,13 +693,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     faceUp={
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
+                      (g.opponentClaiming?.indices.includes(i) ?? false) ||
                       (doublePhase === "reveal" && g.bonusPicks.includes(i)) ||
                       doublePhase === "shrink" ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
                     }
                     onClick={() => handleCardClick(i)}
-                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
+                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false)}
                     matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
                     wrong={wrongFlashCards.has(i)}
                     wrongWash={wrongWashCards.has(i)}
