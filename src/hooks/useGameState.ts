@@ -210,6 +210,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     pendingOppPicksRef.current = null;
     if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
     setMessage("");
+    setRollPhase(true);
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
     const { rule, isDoubleMatch: dm } = computeRule(values);
