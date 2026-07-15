@@ -144,6 +144,56 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     whoopFeedbackTimer.current = setTimeout(() => setWhoopFeedback(null), 1800);
   }, []);
 
+  // Auntie O. bubble drivers
+  const oppClaimStateRef = useRef(g.opponentClaiming);
+  const prevOppScoreRef = useRef(g.scores[1]);
+  const prevPlayerScoreForBubbleRef = useRef(g.scores[0]);
+  const prevSkipFlipRef = useRef(g.skipNextFlip);
+  const gameStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (gameStartedRef.current) return;
+    gameStartedRef.current = true;
+    showBubble(pickLine("gameStart"));
+  }, [showBubble]);
+
+  useEffect(() => {
+    const wasClaiming = oppClaimStateRef.current !== null;
+    const isClaiming = g.opponentClaiming !== null;
+    if (!wasClaiming && isClaiming) {
+      showBubble("WHOOP! WHOOP!", { red: true, sticky: true });
+    } else if (wasClaiming && !isClaiming) {
+      if (g.scores[1] > prevOppScoreRef.current) showBubble(pickLine("oppCorrect"));
+      else showBubble(pickLine("oppWrong"));
+    }
+    oppClaimStateRef.current = g.opponentClaiming;
+    prevOppScoreRef.current = g.scores[1];
+  }, [g.opponentClaiming, g.scores[1], showBubble]);
+
+  useEffect(() => {
+    if (g.scores[0] > prevPlayerScoreForBubbleRef.current) {
+      showBubble(pickLine("playerCorrect"));
+    }
+    prevPlayerScoreForBubbleRef.current = g.scores[0];
+  }, [g.scores[0], showBubble]);
+
+  useEffect(() => {
+    if (!prevSkipFlipRef.current[0] && g.skipNextFlip[0]) {
+      showBubble(pickLine("playerWrong"));
+    }
+    prevSkipFlipRef.current = g.skipNextFlip;
+  }, [g.skipNextFlip, showBubble]);
+
+  useEffect(() => {
+    if (g.gameOver && !gameOverLine) {
+      const line = pickLine(g.scores[1] > g.scores[0] ? "win" : "lose");
+      setGameOverLine(line);
+      showBubble(line, { sticky: true });
+    }
+  }, [g.gameOver, g.scores, gameOverLine, showBubble]);
+
+
+
   useEffect(() => {
     if (g.scores[0] !== prevScoreRef.current) {
       if (g.scores[0] > prevScoreRef.current) {
