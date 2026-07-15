@@ -578,12 +578,13 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     memoryRef.current.decayAll();
     if (card) memoryRef.current.observe(prev, card);
 
-    if (claimMode || opponentClaiming || bonusPicking || bonusRevealing || gameOver) return;
+    if (claimMode || opponentClaiming || bonusPicking || bonusRevealing || gameOver || rollPhase) return;
     const excluded = new Set<number>(wrongCards);
     grid.forEach((c, i) => { if (c === null) excluded.add(i); });
     const best = memoryRef.current.bestPair(matchRule, excluded);
-    if (!best || best.confidence < 0.55) return;
-    const delay = 1800 + Math.floor(Math.random() * 2400);
+    if (!best || best.confidence < OPPONENT_TUNING.confidenceThreshold) return;
+    const span = OPPONENT_TUNING.reactionMaxMs - OPPONENT_TUNING.reactionMinMs;
+    const delay = OPPONENT_TUNING.reactionMinMs + Math.floor(Math.random() * span);
     if (oppClaimTimerRef.current) clearTimeout(oppClaimTimerRef.current);
     oppClaimTimerRef.current = setTimeout(() => {
       oppClaimTimerRef.current = null;
@@ -593,7 +594,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       pendingOppPicksRef.current = memoryRef.current.bestBlindPicks(2, picksExcluded);
       opponentClaim(best.a, best.b);
     }, delay);
-  }, [peekingCard, grid, claimMode, opponentClaiming, bonusPicking, bonusRevealing, gameOver, wrongCards, matchRule, opponentClaim]);
+  }, [peekingCard, grid, claimMode, opponentClaiming, bonusPicking, bonusRevealing, gameOver, rollPhase, wrongCards, matchRule, opponentClaim]);
 
   // Cancel pending opponent claim if human claims, round advances, or a claim resolves
   useEffect(() => {
