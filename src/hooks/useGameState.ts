@@ -81,6 +81,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [roundNum, setRoundNum] = useState(1);
   const [rollerIndex, setRollerIndex] = useState(0);
   const [flipperIndex, setFlipperIndex] = useState(0);
+  const [skipNextFlip, setSkipNextFlip] = useState<boolean[]>([false, false]);
   const [peekingCard, setPeekingCard] = useState<number | null>(null);
   const [claimMode, setClaimMode] = useState(false);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
