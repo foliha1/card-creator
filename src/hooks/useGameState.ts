@@ -328,7 +328,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const b = grid[selectedCards[1]];
 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
-      rerollAttemptsRef.current = 0;
       setMatchedCards(new Set(selectedCards));
       setScores((s) => {
         const next = [...s];
@@ -353,10 +352,16 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         checkGameOver(newDeck, newGrid, matchRule);
       }
     } else {
+      // Wrong claim → claimant (human = 0) loses their next flip
       setWrongCards(new Set(selectedCards));
+      setSkipNextFlip((s) => {
+        const n = [...s];
+        n[0] = true;
+        return n;
+      });
       setSelectedCards([]);
       setClaimMode(false);
-      setMessage("No match! Try again.");
+      setMessage("No match! You lose your next flip.");
       setMessageType("error");
     }
   }, [selectedCards, grid, matchRule, isDoubleMatch, deck, refillGrid, checkGameOver]);
