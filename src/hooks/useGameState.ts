@@ -101,6 +101,11 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const oppDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const oppRevealRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const memoryRef = useRef(createOpponentMemory());
+  const prevPeekingRef = useRef<number | null>(null);
+  const prevGridRef = useRef<(Card | null)[]>([]);
+  const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingOppPicksRef = useRef<number[] | null>(null);
 
   const doRollDice = useCallback(
     (currentRound: number): Promise<string[]> => {
