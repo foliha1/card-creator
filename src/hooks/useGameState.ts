@@ -317,13 +317,14 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const selectCard = useCallback(
     (index: number) => {
       if (!claimMode || bonusPicking) return;
+      if (wrongCards.has(index)) return;
       if (selectedCards.includes(index)) return;
       if (grid[index] === null) return;
       if (selectedCards.length >= 2) return;
 
       setSelectedCards([...selectedCards, index]);
     },
-    [claimMode, bonusPicking, selectedCards, grid]
+    [claimMode, bonusPicking, selectedCards, grid, wrongCards]
   );
 
   const resolveMatch = useCallback(() => {
