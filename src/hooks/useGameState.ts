@@ -82,6 +82,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [isDoubleMatch, setIsDoubleMatch] = useState(false);
   const [score, setScore] = useState(0);
   const [roundNum, setRoundNum] = useState(1);
+  const [peeksLeft, setPeeksLeft] = useState(peekBudget);
   const [peekingCard, setPeekingCard] = useState<number | null>(null);
   const [claimMode, setClaimMode] = useState(false);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
