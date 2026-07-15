@@ -619,6 +619,19 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     return () => clearTimeout(t);
   }, [opponentClaiming, resolveOpponentClaim]);
 
+  // Auto-roll for opponent roller during rollPhase
+  useEffect(() => {
+    if (!rollPhase) return;
+    if (rollerIndex !== 1) return;
+    if (rolling || gameOver) return;
+    const t = setTimeout(() => {
+      doRollDice(roundNum).then(() => setRollPhase(false));
+    }, OPPONENT_TUNING.thinkDelayMs);
+    return () => clearTimeout(t);
+  }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice, roundNum]);
+
+
+
 
 
   return {
