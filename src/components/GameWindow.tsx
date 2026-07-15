@@ -865,6 +865,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
 
+
+              {statusStrip}
+
               {/* Bottom bar: dice + peek pips + WHOOP */}
               <div style={{
                 display: "flex",
