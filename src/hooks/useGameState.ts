@@ -90,6 +90,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [matchedCards, setMatchedCards] = useState<Set<number>>(new Set());
   const [bonusPicking, setBonusPicking] = useState(false);
   const [bonusPicks, setBonusPicks] = useState<number[]>([]);
+  const [bonusRevealing, setBonusRevealing] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<MessageType>("info");
