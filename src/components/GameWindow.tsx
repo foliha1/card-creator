@@ -268,7 +268,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
       if (g.wrongCards.has(index)) return;
-      if (g.peeksLeft <= 0) return;
       setPeekLocked(true);
       playFlip();
       g.peekCard(index);
@@ -518,53 +517,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
-        const pipSize = mobile ? 8 : 10;
-        const peekPips = (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: SPACE[3],
-          }}>
-            <div style={{ display: "flex", gap: SPACE[3], alignItems: "center" }}>
-              {Array.from({ length: g.peekBudget }).map((_, i) => {
-                const filled = i < g.peeksLeft;
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      width: pipSize,
-                      height: pipSize,
-                      borderRadius: "50%",
-                      background: filled ? COLORS.ink : "transparent",
-                      border: filled ? "none" : `1.5px solid ${COLORS.ink}`,
-                      boxSizing: "border-box",
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <span style={{
-              fontFamily: FONT_FAMILY,
-              fontStyle: "italic",
-              fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
-              color: COLORS.ink,
-            }}>
-              Peeks
-            </span>
-          </div>
-        );
 
-        const showNewRoll = g.peeksLeft <= 0 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
-        const newRollButton = showNewRoll ? (
-          <AppButton
-            variant="primary"
-            tone="orange"
-            size="sm"
-            onClick={() => g.newRoll()}
-          >
-            New Roll
-          </AppButton>
-        ) : null;
+
 
         const cardGrid = (
           <div
@@ -716,10 +670,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 alignItems: "stretch",
               }}>
                 {diceTray}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: SPACE[3] }}>
-                  {peekPips}
-                  {newRollButton}
-                </div>
                 {whoopButton}
               </div>
             </>
@@ -744,10 +694,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4], flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: SPACE[4] }}>
-                  {peekPips}
-                  {newRollButton}
-                </div>
                 {diceTray}
               </div>
             </div>

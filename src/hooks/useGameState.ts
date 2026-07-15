@@ -4,8 +4,6 @@ import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 type MessageType = "info" | "success" | "error" | "warning";
 type Tier = "easy" | "standard";
 
-const PEEK_BUDGETS: Record<number, number> = { 6: 3, 9: 4, 12: 5 };
-
 function rollRandomAttributes(count: number): string[] {
   const result: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -74,7 +72,6 @@ function computeRule(values: string[]): { rule: string[]; isDoubleMatch: boolean
 
 export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = "3x2") {
   const slotCount = gridSize === "3x3" ? 9 : 6;
-  const peekBudget = PEEK_BUDGETS[slotCount] ?? 3;
   const [deck, setDeck] = useState<Card[]>([]);
   const [grid, setGrid] = useState<(Card | null)[]>(Array(slotCount).fill(null));
   const [matchRule, setMatchRule] = useState<string[]>([]);
@@ -82,7 +79,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [isDoubleMatch, setIsDoubleMatch] = useState(false);
   const [score, setScore] = useState(0);
   const [roundNum, setRoundNum] = useState(1);
-  const [peeksLeft, setPeeksLeft] = useState(peekBudget);
   const [peekingCard, setPeekingCard] = useState<number | null>(null);
   const [claimMode, setClaimMode] = useState(false);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
@@ -170,7 +166,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setGrid(newGrid);
     setScore(0);
     setRoundNum(1);
-    setPeeksLeft(peekBudget);
     setGameOver(false);
     setClaimMode(false);
     setSelectedCards([]);
@@ -201,7 +196,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       rerollAttemptsRef.current = 0;
       return;
     }
-    // No valid pairs — flag for auto-reroll
     setNeedsAutoReroll(true);
   }, [grid, matchRule, gameOver, rolling, claimMode, bonusPicking]);
 
@@ -215,15 +209,11 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       setNeedsAutoReroll(false);
       rerollAttemptsRef.current += 1;
 
-      // Dead grid safety valve: after 10 failed re-rolls, check all possible rules
       if (rerollAttemptsRef.current >= 10) {
-        // Check if ANY rule works with current grid
         setGrid((prevGrid) => {
           if (hasAnyValidPair(prevGrid)) {
-            // Some rule works — just keep re-rolling normally
             return prevGrid;
           }
-          // Dead grid — swap 2 random grid cards back into deck and re-deal
           setDeck((prevDeck) => {
             const filledIndices = prevGrid
               .map((c, i) => (c !== null ? i : -1))
@@ -246,7 +236,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
             setMessageType("warning");
             return newDeck;
           });
-          return prevGrid; // grid is set inside setDeck
+          return prevGrid;
         });
       }
 
@@ -265,7 +255,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setBonusPicking(false);
         setBonusPicks([]);
         setBonusRevealing(false);
-        setPeeksLeft(peekBudget);
         return nextRound;
       });
     }, 1500);
@@ -275,19 +264,16 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         autoRerollRef.current = null;
       }
     };
-  }, [needsAutoReroll, gameOver, tier, peekBudget]);
+  }, [needsAutoReroll, gameOver, tier]);
 
   const peekCard = useCallback((index: number) => {
     if (wrongCards.has(index)) return;
-    if (peeksLeft <= 0) return;
-    setPeeksLeft((p) => Math.max(0, p - 1));
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     setPeekingCard(index);
     peekTimerRef.current = setTimeout(() => {
       setPeekingCard(null);
-      // Auto-reroll is now handled by the useEffect that watches grid/matchRule
     }, 1000);
-  }, [wrongCards, peeksLeft]);
+  }, [wrongCards]);
 
   const enterClaimMode = useCallback(() => {
     setClaimMode(true);
@@ -348,7 +334,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       } else {
         const nextRound = roundNum + 1;
         setRoundNum(nextRound);
-        setPeeksLeft(peekBudget);
         setWrongCards(new Set());
 
         const { newGrid, newDeck } = refillGrid(grid, deck, selectedCards);
@@ -366,13 +351,12 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       }
     } else {
       setWrongCards(new Set(selectedCards));
-      setPeeksLeft((p) => Math.max(0, p - 2));
       setSelectedCards([]);
       setClaimMode(false);
       setMessage("No match! Try again.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, isDoubleMatch, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver, peekBudget]);
+  }, [selectedCards, grid, matchRule, isDoubleMatch, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
 
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
@@ -386,7 +370,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setScore((s) => s + 2);
     const nextRound = roundNum + 1;
     setRoundNum(nextRound);
-    setPeeksLeft(peekBudget);
     setWrongCards(new Set());
 
     const allSlots = [...Array.from(matchedCards), ...bonusPicks];
@@ -405,7 +388,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setMessageType("success");
 
     checkGameOver(newDeck, newGrid, rule);
-  }, [roundNum, peekBudget, matchedCards, bonusPicks, grid, deck, refillGrid, doRollDiceSync, checkGameOver]);
+  }, [roundNum, matchedCards, bonusPicks, grid, deck, refillGrid, doRollDiceSync, checkGameOver]);
 
   const pickBonus = useCallback(
     (index: number) => {
@@ -435,21 +418,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     [bonusPicking, bonusRevealing, bonusPicks, grid, matchedCards, wrongCards, finalizeBonus]
   );
 
-
-  const newRoll = useCallback(() => {
-    const nextRound = roundNum + 1;
-    setRoundNum(nextRound);
-    setPeeksLeft(peekBudget);
-    setWrongCards(new Set());
-    setClaimMode(false);
-    setSelectedCards([]);
-    setMatchedCards(new Set());
-    setBonusPicking(false);
-    setBonusPicks([]);
-    setBonusRevealing(false);
-    doRollDiceSync(nextRound);
-  }, [roundNum, peekBudget, doRollDiceSync]);
-
   return {
     deck,
     grid,
@@ -477,9 +445,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     removeMatchedFromGrid,
     resolveMatch,
     doRollDice,
-    peeksLeft,
-    peekBudget,
-    newRoll,
     finalizeBonus,
   };
 }
