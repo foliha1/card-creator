@@ -341,12 +341,13 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
 
   const enterClaimMode = useCallback(() => {
     if (opponentClaiming) return;
+    if (rollPhase) return;
     setClaimMode(true);
     setSelectedCards([]);
     setMatchedCards(new Set());
     setMessage("Select 2 cards that match the rule.");
     setMessageType("info");
-  }, [opponentClaiming]);
+  }, [opponentClaiming, rollPhase]);
 
 
   const refillGrid = useCallback(
@@ -371,12 +372,22 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
 
   const opponentClaim = useCallback((a: number, b: number) => {
     if (claimMode || bonusPicking || bonusRevealing || rolling || gameOver) return;
+    if (rollPhase) return;
     if (opponentClaiming) return;
     if (a === b) return;
     if (grid[a] === null || grid[b] === null) return;
     if (wrongCards.has(a) || wrongCards.has(b)) return;
     setOpponentClaiming({ indices: [a, b] });
-  }, [claimMode, bonusPicking, bonusRevealing, rolling, gameOver, opponentClaiming, grid, wrongCards]);
+  }, [claimMode, bonusPicking, bonusRevealing, rolling, gameOver, rollPhase, opponentClaiming, grid, wrongCards]);
+
+  const rollDice = useCallback(async () => {
+    if (!rollPhase) return;
+    if (rollerIndex !== 0) return;
+    if (rolling || gameOver) return;
+    await doRollDice(roundNum);
+    setRollPhase(false);
+  }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice, roundNum]);
+
 
   const resolveOpponentClaim = useCallback((picks?: number[]) => {
     if (!opponentClaiming) return;
