@@ -730,7 +730,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
                 {cardGrid}
               </div>
-              {diceTray}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4], flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: SPACE[4] }}>
+                  {peekPips}
+                  {newRollButton}
+                </div>
+                {diceTray}
+              </div>
             </div>
 
             {/* Bottom HUD bar */}
