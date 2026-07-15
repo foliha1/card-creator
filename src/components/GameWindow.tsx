@@ -670,10 +670,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 alignItems: "stretch",
               }}>
                 {diceTray}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: SPACE[3] }}>
-                  {peekPips}
-                  {newRollButton}
-                </div>
                 {whoopButton}
               </div>
             </>
