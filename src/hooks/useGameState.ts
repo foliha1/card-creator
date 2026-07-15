@@ -6,7 +6,12 @@ type MessageType = "info" | "success" | "error" | "warning";
 type Tier = "easy" | "standard";
 
 const PLAYERS = ["you", "opponent"] as const;
-const OPPONENT_DELAY_MS = 1400;
+export const OPPONENT_TUNING = {
+  reactionMinMs: 3000,
+  reactionMaxMs: 6500,
+  confidenceThreshold: 0.55,
+  thinkDelayMs: 1400,
+} as const;
 const REVEAL_MS = 2000;
 
 function rollRandomAttributes(count: number): string[] {
@@ -96,6 +101,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<MessageType>("info");
   const [rolling, setRolling] = useState(false);
+  const [rollPhase, setRollPhase] = useState(true);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -204,6 +210,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     pendingOppPicksRef.current = null;
     if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
     setMessage("");
+    setRollPhase(true);
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
     const { rule, isDoubleMatch: dm } = computeRule(values);
@@ -250,6 +257,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setRollerIndex(newRoller);
         setRoundNum((r) => r + 1);
         setWrongCards(new Set());
+        setRollPhase(true);
         return newRoller;
       }
       return next;
@@ -280,6 +288,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
 
   const peekCard = useCallback((index: number) => {
     if (flipperIndex !== 0) return;
+    if (rollPhase) return;
     if (claimMode || bonusPicking || bonusRevealing || rolling || gameOver) return;
     if (opponentClaiming) return;
     if (wrongCards.has(index)) return;
@@ -291,11 +300,12 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       setPeekingCard(null);
       passFlipper();
     }, REVEAL_MS);
-  }, [flipperIndex, claimMode, bonusPicking, bonusRevealing, rolling, gameOver, opponentClaiming, wrongCards, grid, peekingCard, passFlipper]);
+  }, [flipperIndex, rollPhase, claimMode, bonusPicking, bonusRevealing, rolling, gameOver, opponentClaiming, wrongCards, grid, peekingCard, passFlipper]);
 
   // Opponent auto-flip when it's their turn
   useEffect(() => {
     if (flipperIndex !== 1) return;
+    if (rollPhase) return;
     if (gameOver || rolling || claimMode || bonusPicking || bonusRevealing) return;
     if (peekingCard !== null) return;
 
@@ -319,7 +329,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setPeekingCard(null);
         passFlipper();
       }, REVEAL_MS);
-    }, OPPONENT_DELAY_MS);
+    }, OPPONENT_TUNING.thinkDelayMs);
 
     return () => {
       if (oppDelayRef.current) {
@@ -327,16 +337,17 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         oppDelayRef.current = null;
       }
     };
-  }, [flipperIndex, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, grid, wrongCards, passFlipper]);
+  }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, grid, wrongCards, passFlipper]);
 
   const enterClaimMode = useCallback(() => {
     if (opponentClaiming) return;
+    if (rollPhase) return;
     setClaimMode(true);
     setSelectedCards([]);
     setMatchedCards(new Set());
     setMessage("Select 2 cards that match the rule.");
     setMessageType("info");
-  }, [opponentClaiming]);
+  }, [opponentClaiming, rollPhase]);
 
 
   const refillGrid = useCallback(
@@ -361,12 +372,22 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
 
   const opponentClaim = useCallback((a: number, b: number) => {
     if (claimMode || bonusPicking || bonusRevealing || rolling || gameOver) return;
+    if (rollPhase) return;
     if (opponentClaiming) return;
     if (a === b) return;
     if (grid[a] === null || grid[b] === null) return;
     if (wrongCards.has(a) || wrongCards.has(b)) return;
     setOpponentClaiming({ indices: [a, b] });
-  }, [claimMode, bonusPicking, bonusRevealing, rolling, gameOver, opponentClaiming, grid, wrongCards]);
+  }, [claimMode, bonusPicking, bonusRevealing, rolling, gameOver, rollPhase, opponentClaiming, grid, wrongCards]);
+
+  const rollDice = useCallback(async () => {
+    if (!rollPhase) return;
+    if (rollerIndex !== 0) return;
+    if (rolling || gameOver) return;
+    await doRollDice(roundNum);
+    setRollPhase(false);
+  }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice, roundNum]);
+
 
   const resolveOpponentClaim = useCallback((picks?: number[]) => {
     if (!opponentClaiming) return;
@@ -557,12 +578,13 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     memoryRef.current.decayAll();
     if (card) memoryRef.current.observe(prev, card);
 
-    if (claimMode || opponentClaiming || bonusPicking || bonusRevealing || gameOver) return;
+    if (claimMode || opponentClaiming || bonusPicking || bonusRevealing || gameOver || rollPhase) return;
     const excluded = new Set<number>(wrongCards);
     grid.forEach((c, i) => { if (c === null) excluded.add(i); });
     const best = memoryRef.current.bestPair(matchRule, excluded);
-    if (!best || best.confidence < 0.55) return;
-    const delay = 1800 + Math.floor(Math.random() * 2400);
+    if (!best || best.confidence < OPPONENT_TUNING.confidenceThreshold) return;
+    const span = OPPONENT_TUNING.reactionMaxMs - OPPONENT_TUNING.reactionMinMs;
+    const delay = OPPONENT_TUNING.reactionMinMs + Math.floor(Math.random() * span);
     if (oppClaimTimerRef.current) clearTimeout(oppClaimTimerRef.current);
     oppClaimTimerRef.current = setTimeout(() => {
       oppClaimTimerRef.current = null;
@@ -572,7 +594,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       pendingOppPicksRef.current = memoryRef.current.bestBlindPicks(2, picksExcluded);
       opponentClaim(best.a, best.b);
     }, delay);
-  }, [peekingCard, grid, claimMode, opponentClaiming, bonusPicking, bonusRevealing, gameOver, wrongCards, matchRule, opponentClaim]);
+  }, [peekingCard, grid, claimMode, opponentClaiming, bonusPicking, bonusRevealing, gameOver, rollPhase, wrongCards, matchRule, opponentClaim]);
 
   // Cancel pending opponent claim if human claims, round advances, or a claim resolves
   useEffect(() => {
@@ -596,6 +618,19 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     }, 1600);
     return () => clearTimeout(t);
   }, [opponentClaiming, resolveOpponentClaim]);
+
+  // Auto-roll for opponent roller during rollPhase
+  useEffect(() => {
+    if (!rollPhase) return;
+    if (rollerIndex !== 1) return;
+    if (rolling || gameOver) return;
+    const t = setTimeout(() => {
+      doRollDice(roundNum).then(() => setRollPhase(false));
+    }, OPPONENT_TUNING.thinkDelayMs);
+    return () => clearTimeout(t);
+  }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice, roundNum]);
+
+
 
 
 
@@ -634,5 +669,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     opponentClaiming,
     opponentClaim,
     resolveOpponentClaim,
+    rollPhase,
+    rollDice,
   };
 }
