@@ -254,8 +254,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (g.bonusPicking) return;
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
+      if (g.wrongCards.has(index)) return;
+      if (g.peeksLeft <= 0) return;
       setPeekLocked(true);
-      setPeekedCount((c) => c + 1);
       playFlip();
       g.peekCard(index);
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
@@ -264,10 +265,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     [g, peekLocked, doublePhase]
   );
 
-  const whoopEverReady = useRef(false);
-  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
-  if (whoopReady) whoopEverReady.current = true;
-  const whoopEnabled = (whoopEverReady.current || whoopReady) && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
+  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
   const isSmall = mobile && window.innerWidth < 480;
   const cardW = isSmall ? 48 : 72;
