@@ -6,7 +6,12 @@ type MessageType = "info" | "success" | "error" | "warning";
 type Tier = "easy" | "standard";
 
 const PLAYERS = ["you", "opponent"] as const;
-const OPPONENT_DELAY_MS = 1400;
+export const OPPONENT_TUNING = {
+  reactionMinMs: 3000,
+  reactionMaxMs: 6500,
+  confidenceThreshold: 0.55,
+  thinkDelayMs: 1400,
+} as const;
 const REVEAL_MS = 2000;
 
 function rollRandomAttributes(count: number): string[] {
