@@ -81,6 +81,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [roundNum, setRoundNum] = useState(1);
   const [rollerIndex, setRollerIndex] = useState(0);
   const [flipperIndex, setFlipperIndex] = useState(0);
+  const [skipNextFlip, setSkipNextFlip] = useState<boolean[]>([false, false]);
   const [peekingCard, setPeekingCard] = useState<number | null>(null);
   const [claimMode, setClaimMode] = useState(false);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
@@ -142,24 +143,32 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   );
 
   const checkGameOver = useCallback(
-    (currentDeck: Card[], currentGrid: (Card | null)[], rule: string[]) => {
+    (currentDeck: Card[], currentGrid: (Card | null)[], _rule: string[]) => {
       const hasCards = currentGrid.some((c) => c !== null);
       if (!hasCards && currentDeck.length === 0) {
         setGameOver(true);
-        setMessage("Game over! No cards remaining.");
-        setMessageType("info");
         return true;
       }
       if (hasCards && currentDeck.length === 0 && !hasAnyValidPair(currentGrid)) {
         setGameOver(true);
-        setMessage("Game over! No valid pairs left.");
-        setMessageType("info");
         return true;
       }
       return false;
     },
     []
   );
+
+  // Announce winner when game ends (reads latest scores)
+  useEffect(() => {
+    if (!gameOver) return;
+    const [you, opp] = scores;
+    const outcome =
+      you > opp ? `You win! ${you}–${opp}`
+      : opp > you ? `Opponent wins! ${opp}–${you}`
+      : `Tie ${you}–${opp}`;
+    setMessage(`Game over — ${outcome}`);
+    setMessageType("info");
+  }, [gameOver, scores]);
 
   // Init
   useEffect(() => {
@@ -172,6 +181,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setRoundNum(1);
     setRollerIndex(0);
     setFlipperIndex(0);
+    setSkipNextFlip([false, false]);
     setGameOver(false);
     setClaimMode(false);
     setSelectedCards([]);
@@ -190,89 +200,32 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier, slotCount]);
 
-  const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rerollAttemptsRef = useRef(0);
-  const [needsAutoReroll, setNeedsAutoReroll] = useState(false);
-
+  // Dead-grid safety valve: if NO possible pair exists for any rule, swap 2 cards from deck.
   useEffect(() => {
-    if (gameOver || rolling || claimMode || bonusPicking) return;
+    if (gameOver || rolling || claimMode || bonusPicking || bonusRevealing) return;
     if (!grid.some((c) => c !== null)) return;
-    if (hasValidPair(grid, matchRule)) {
-      rerollAttemptsRef.current = 0;
-      return;
+    if (deck.length === 0) return;
+    if (hasAnyValidPair(grid)) return;
+    const filledIndices = grid
+      .map((c, i) => (c !== null ? i : -1))
+      .filter((i) => i !== -1);
+    if (filledIndices.length < 2 || deck.length < 2) return;
+    const swapIndices = shuffleArray([...filledIndices]).slice(0, 2);
+    const newDeck = [...deck];
+    const newGrid = [...grid];
+    for (const idx of swapIndices) {
+      if (newGrid[idx]) newDeck.push(newGrid[idx]!);
     }
-    setNeedsAutoReroll(true);
-  }, [grid, matchRule, gameOver, rolling, claimMode, bonusPicking]);
-
-  useEffect(() => {
-    if (!needsAutoReroll || gameOver) return;
-    if (autoRerollRef.current) return;
-    setMessage("No matches available — re-rolling!");
+    shuffleArray(newDeck);
+    for (const idx of swapIndices) {
+      newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
+    }
+    setGrid(newGrid);
+    setDeck(newDeck);
+    setMessage("Refreshing grid — no possible matches!");
     setMessageType("warning");
-    autoRerollRef.current = setTimeout(() => {
-      autoRerollRef.current = null;
-      setNeedsAutoReroll(false);
-      rerollAttemptsRef.current += 1;
+  }, [grid, deck, gameOver, rolling, claimMode, bonusPicking, bonusRevealing]);
 
-      if (rerollAttemptsRef.current >= 10) {
-        setGrid((prevGrid) => {
-          if (hasAnyValidPair(prevGrid)) return prevGrid;
-          setDeck((prevDeck) => {
-            const filledIndices = prevGrid
-              .map((c, i) => (c !== null ? i : -1))
-              .filter((i) => i !== -1);
-            if (filledIndices.length < 2 || prevDeck.length < 2) return prevDeck;
-            const swapIndices = shuffleArray([...filledIndices]).slice(0, 2);
-            const newDeck = [...prevDeck];
-            const newGrid = [...prevGrid];
-            for (const idx of swapIndices) {
-              if (newGrid[idx]) newDeck.push(newGrid[idx]!);
-            }
-            shuffleArray(newDeck);
-            for (const idx of swapIndices) {
-              newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
-            }
-            setGrid(newGrid);
-            rerollAttemptsRef.current = 0;
-            setMessage("Refreshing grid — no possible matches!");
-            setMessageType("warning");
-            return newDeck;
-          });
-          return prevGrid;
-        });
-      }
-
-      setRoundNum((prev) => {
-        const nextRound = prev + 1;
-        const count = getDieCount(tier, nextRound);
-        const values = rollRandomAttributes(count);
-        const { rule, isDoubleMatch: dm } = computeRule(values);
-        setDieValues(values);
-        setMatchRule(rule);
-        setIsDoubleMatch(dm);
-        setClaimMode(false);
-        setSelectedCards([]);
-        setWrongCards(new Set());
-        setMatchedCards(new Set());
-        setBonusPicking(false);
-        setBonusPicks([]);
-        setBonusRevealing(false);
-        // Pass rollerIndex + reset flipper on auto-reroll (round advance)
-        setRollerIndex((r) => {
-          const nr = (r + 1) % PLAYERS.length;
-          setFlipperIndex(nr);
-          return nr;
-        });
-        return nextRound;
-      });
-    }, 1500);
-    return () => {
-      if (autoRerollRef.current) {
-        clearTimeout(autoRerollRef.current);
-        autoRerollRef.current = null;
-      }
-    };
-  }, [needsAutoReroll, gameOver, tier]);
 
   // Pass the flipper turn; if rotation completes, advance round + rotate roller
   const passFlipper = useCallback(() => {
@@ -289,6 +242,28 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       return next;
     });
   }, [rollerIndex]);
+
+  // Forfeit-flip effect: when the rotation reaches a player with skipNextFlip true,
+  // clear their flag and pass immediately. Depends only on flipperIndex so setting
+  // the flag mid-turn does NOT retroactively skip the current player.
+  const skipRef = useRef(skipNextFlip);
+  useEffect(() => { skipRef.current = skipNextFlip; }, [skipNextFlip]);
+  const prevFlipperRef = useRef(flipperIndex);
+  useEffect(() => {
+    if (prevFlipperRef.current === flipperIndex) return;
+    prevFlipperRef.current = flipperIndex;
+    if (gameOver || rolling || claimMode || bonusPicking || bonusRevealing) return;
+    if (peekingCard !== null) return;
+    if (!skipRef.current[flipperIndex]) return;
+    const idx = flipperIndex;
+    setSkipNextFlip((s) => {
+      const n = [...s];
+      n[idx] = false;
+      return n;
+    });
+    skipRef.current = skipRef.current.map((v, i) => (i === idx ? false : v));
+    passFlipper();
+  }, [flipperIndex, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, passFlipper]);
 
   const peekCard = useCallback((index: number) => {
     if (flipperIndex !== 0) return;
@@ -385,7 +360,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const b = grid[selectedCards[1]];
 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
-      rerollAttemptsRef.current = 0;
       setMatchedCards(new Set(selectedCards));
       setScores((s) => {
         const next = [...s];
@@ -410,10 +384,16 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         checkGameOver(newDeck, newGrid, matchRule);
       }
     } else {
+      // Wrong claim → claimant (human = 0) loses their next flip
       setWrongCards(new Set(selectedCards));
+      setSkipNextFlip((s) => {
+        const n = [...s];
+        n[0] = true;
+        return n;
+      });
       setSelectedCards([]);
       setClaimMode(false);
-      setMessage("No match! Try again.");
+      setMessage("No match! You lose your next flip.");
       setMessageType("error");
     }
   }, [selectedCards, grid, matchRule, isDoubleMatch, deck, refillGrid, checkGameOver]);
@@ -486,6 +466,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     players: PLAYERS as unknown as string[],
     rollerIndex,
     flipperIndex,
+    skipNextFlip,
     peekingCard,
     claimMode,
     selectedCards,
