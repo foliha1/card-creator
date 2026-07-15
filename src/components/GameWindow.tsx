@@ -582,6 +582,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       ? "card-shake 0.2s ease"
                       : undefined,
                     borderRadius: RADIUS.md,
+                    ...(g.wrongCards.has(i)
+                      ? { opacity: 0.55, cursor: "default" }
+                      : {}),
                     ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
                       ? { animation: "orange-pulse-border 1.5s infinite" }
                       : {}),
