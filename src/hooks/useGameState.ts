@@ -190,89 +190,32 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tier, slotCount]);
 
-  const autoRerollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rerollAttemptsRef = useRef(0);
-  const [needsAutoReroll, setNeedsAutoReroll] = useState(false);
-
+  // Dead-grid safety valve: if NO possible pair exists for any rule, swap 2 cards from deck.
   useEffect(() => {
-    if (gameOver || rolling || claimMode || bonusPicking) return;
+    if (gameOver || rolling || claimMode || bonusPicking || bonusRevealing) return;
     if (!grid.some((c) => c !== null)) return;
-    if (hasValidPair(grid, matchRule)) {
-      rerollAttemptsRef.current = 0;
-      return;
+    if (deck.length === 0) return;
+    if (hasAnyValidPair(grid)) return;
+    const filledIndices = grid
+      .map((c, i) => (c !== null ? i : -1))
+      .filter((i) => i !== -1);
+    if (filledIndices.length < 2 || deck.length < 2) return;
+    const swapIndices = shuffleArray([...filledIndices]).slice(0, 2);
+    const newDeck = [...deck];
+    const newGrid = [...grid];
+    for (const idx of swapIndices) {
+      if (newGrid[idx]) newDeck.push(newGrid[idx]!);
     }
-    setNeedsAutoReroll(true);
-  }, [grid, matchRule, gameOver, rolling, claimMode, bonusPicking]);
-
-  useEffect(() => {
-    if (!needsAutoReroll || gameOver) return;
-    if (autoRerollRef.current) return;
-    setMessage("No matches available — re-rolling!");
+    shuffleArray(newDeck);
+    for (const idx of swapIndices) {
+      newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
+    }
+    setGrid(newGrid);
+    setDeck(newDeck);
+    setMessage("Refreshing grid — no possible matches!");
     setMessageType("warning");
-    autoRerollRef.current = setTimeout(() => {
-      autoRerollRef.current = null;
-      setNeedsAutoReroll(false);
-      rerollAttemptsRef.current += 1;
+  }, [grid, deck, gameOver, rolling, claimMode, bonusPicking, bonusRevealing]);
 
-      if (rerollAttemptsRef.current >= 10) {
-        setGrid((prevGrid) => {
-          if (hasAnyValidPair(prevGrid)) return prevGrid;
-          setDeck((prevDeck) => {
-            const filledIndices = prevGrid
-              .map((c, i) => (c !== null ? i : -1))
-              .filter((i) => i !== -1);
-            if (filledIndices.length < 2 || prevDeck.length < 2) return prevDeck;
-            const swapIndices = shuffleArray([...filledIndices]).slice(0, 2);
-            const newDeck = [...prevDeck];
-            const newGrid = [...prevGrid];
-            for (const idx of swapIndices) {
-              if (newGrid[idx]) newDeck.push(newGrid[idx]!);
-            }
-            shuffleArray(newDeck);
-            for (const idx of swapIndices) {
-              newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
-            }
-            setGrid(newGrid);
-            rerollAttemptsRef.current = 0;
-            setMessage("Refreshing grid — no possible matches!");
-            setMessageType("warning");
-            return newDeck;
-          });
-          return prevGrid;
-        });
-      }
-
-      setRoundNum((prev) => {
-        const nextRound = prev + 1;
-        const count = getDieCount(tier, nextRound);
-        const values = rollRandomAttributes(count);
-        const { rule, isDoubleMatch: dm } = computeRule(values);
-        setDieValues(values);
-        setMatchRule(rule);
-        setIsDoubleMatch(dm);
-        setClaimMode(false);
-        setSelectedCards([]);
-        setWrongCards(new Set());
-        setMatchedCards(new Set());
-        setBonusPicking(false);
-        setBonusPicks([]);
-        setBonusRevealing(false);
-        // Pass rollerIndex + reset flipper on auto-reroll (round advance)
-        setRollerIndex((r) => {
-          const nr = (r + 1) % PLAYERS.length;
-          setFlipperIndex(nr);
-          return nr;
-        });
-        return nextRound;
-      });
-    }, 1500);
-    return () => {
-      if (autoRerollRef.current) {
-        clearTimeout(autoRerollRef.current);
-        autoRerollRef.current = null;
-      }
-    };
-  }, [needsAutoReroll, gameOver, tier]);
 
   // Pass the flipper turn; if rotation completes, advance round + rotate roller
   const passFlipper = useCallback(() => {
