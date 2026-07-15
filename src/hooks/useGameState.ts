@@ -324,67 +324,6 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setMessageType("info");
   }, [opponentClaiming]);
 
-  const opponentClaim = useCallback((a: number, b: number) => {
-    if (claimMode || bonusPicking || bonusRevealing || rolling || gameOver) return;
-    if (opponentClaiming) return;
-    if (a === b) return;
-    if (grid[a] === null || grid[b] === null) return;
-    if (wrongCards.has(a) || wrongCards.has(b)) return;
-    setOpponentClaiming({ indices: [a, b] });
-  }, [claimMode, bonusPicking, bonusRevealing, rolling, gameOver, opponentClaiming, grid, wrongCards]);
-
-  const resolveOpponentClaim = useCallback((picks?: number[]) => {
-    if (!opponentClaiming) return;
-    const [a, b] = opponentClaiming.indices;
-    const cardA = grid[a];
-    const cardB = grid[b];
-    if (cardA && cardB && cardsMatchRule(cardA, cardB, matchRule)) {
-      if (isDoubleMatch) {
-        const extra = (picks ?? [])
-          .filter((i) => i !== a && i !== b && grid[i] !== null && !wrongCards.has(i))
-          .slice(0, 2);
-        const allSlots = [a, b, ...extra];
-        const { newGrid, newDeck } = refillGrid(grid, deck, allSlots);
-        setGrid(newGrid);
-        setDeck(newDeck);
-        setScores((s) => {
-          const next = [...s];
-          next[1] += 4;
-          return next;
-        });
-        setMessage("Opponent claim — DOUBLE MATCH! +4");
-        setMessageType("warning");
-        checkGameOver(newDeck, newGrid, matchRule);
-      } else {
-        const { newGrid, newDeck } = refillGrid(grid, deck, [a, b]);
-        setGrid(newGrid);
-        setDeck(newDeck);
-        setScores((s) => {
-          const next = [...s];
-          next[1] += 2;
-          return next;
-        });
-        setMessage("Opponent claim — correct! +2");
-        setMessageType("warning");
-        checkGameOver(newDeck, newGrid, matchRule);
-      }
-    } else {
-      setWrongCards((prev) => {
-        const n = new Set(prev);
-        n.add(a);
-        n.add(b);
-        return n;
-      });
-      setSkipNextFlip((s) => {
-        const n = [...s];
-        n[1] = true;
-        return n;
-      });
-      setMessage("Opponent claim — wrong! They lose their next flip.");
-      setMessageType("info");
-    }
-    setOpponentClaiming(null);
-  }, [opponentClaiming, grid, matchRule, isDoubleMatch, deck, refillGrid, checkGameOver, wrongCards]);
 
   const refillGrid = useCallback(
     (
