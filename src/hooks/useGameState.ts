@@ -345,6 +345,8 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       } else {
         const nextRound = roundNum + 1;
         setRoundNum(nextRound);
+        setPeeksLeft(peekBudget);
+        setWrongCards(new Set());
 
         const { newGrid, newDeck } = refillGrid(grid, deck, selectedCards);
         setGrid(newGrid);
@@ -361,12 +363,13 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       }
     } else {
       setWrongCards(new Set(selectedCards));
+      setPeeksLeft((p) => Math.max(0, p - 2));
       setSelectedCards([]);
       setClaimMode(false);
       setMessage("No match! Try again.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, isDoubleMatch, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]);
+  }, [selectedCards, grid, matchRule, isDoubleMatch, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver, peekBudget]);
 
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
