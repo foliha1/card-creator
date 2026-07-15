@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
+import { createOpponentMemory } from "@/lib/opponentMemory";
 
 type MessageType = "info" | "success" | "error" | "warning";
 type Tier = "easy" | "standard";
