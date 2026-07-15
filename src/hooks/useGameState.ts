@@ -264,6 +264,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setMatchedCards(new Set());
         setBonusPicking(false);
         setBonusPicks([]);
+        setBonusRevealing(false);
         setPeeksLeft(peekBudget);
         return nextRound;
       });
