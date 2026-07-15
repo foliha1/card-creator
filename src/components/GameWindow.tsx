@@ -52,7 +52,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   };
 
   // --- Animation state ---
-  const [peekedCount, setPeekedCount] = useState(0);
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shrinkingCards, setShrinkingCards] = useState<Set<number>>(new Set());
@@ -146,7 +145,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   useEffect(() => {
     if (g.roundNum !== prevRoundRef.current) {
       prevRoundRef.current = g.roundNum;
-      setPeekedCount(0);
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
@@ -158,7 +156,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, [g.roundNum]);
 
   useEffect(() => {
-    if (prevClaimRef.current && !g.claimMode) setPeekedCount(0);
     prevClaimRef.current = g.claimMode;
   }, [g.claimMode]);
 
@@ -257,8 +254,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (g.bonusPicking) return;
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
+      if (g.wrongCards.has(index)) return;
+      if (g.peeksLeft <= 0) return;
       setPeekLocked(true);
-      setPeekedCount((c) => c + 1);
       playFlip();
       g.peekCard(index);
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
@@ -267,10 +265,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     [g, peekLocked, doublePhase]
   );
 
-  const whoopEverReady = useRef(false);
-  const whoopReady = peekedCount >= 2 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
-  if (whoopReady) whoopEverReady.current = true;
-  const whoopEnabled = (whoopEverReady.current || whoopReady) && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
+  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
 
   const isSmall = mobile && window.innerWidth < 480;
   const cardW = isSmall ? 48 : 72;
@@ -510,6 +505,54 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
+        const pipSize = mobile ? 8 : 10;
+        const peekPips = (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: SPACE[3],
+          }}>
+            <div style={{ display: "flex", gap: SPACE[3], alignItems: "center" }}>
+              {Array.from({ length: g.peekBudget }).map((_, i) => {
+                const filled = i < g.peeksLeft;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: pipSize,
+                      height: pipSize,
+                      borderRadius: "50%",
+                      background: filled ? COLORS.ink : "transparent",
+                      border: filled ? "none" : `1.5px solid ${COLORS.ink}`,
+                      boxSizing: "border-box",
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <span style={{
+              fontFamily: FONT_FAMILY,
+              fontStyle: "italic",
+              fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+              color: COLORS.ink,
+            }}>
+              Peeks
+            </span>
+          </div>
+        );
+
+        const showNewRoll = g.peeksLeft <= 0 && !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
+        const newRollButton = showNewRoll ? (
+          <AppButton
+            variant="primary"
+            tone="orange"
+            size="sm"
+            onClick={() => g.newRoll()}
+          >
+            New Roll
+          </AppButton>
+        ) : null;
+
         const cardGrid = (
           <div
             style={{
@@ -539,6 +582,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       ? "card-shake 0.2s ease"
                       : undefined,
                     borderRadius: RADIUS.md,
+                    ...(g.wrongCards.has(i)
+                      ? { opacity: 0.55, cursor: "default" }
+                      : {}),
                     ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
                       ? { animation: "orange-pulse-border 1.5s infinite" }
                       : {}),
@@ -648,7 +694,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
 
-              {/* Bottom bar: dice + WHOOP */}
+              {/* Bottom bar: dice + peek pips + WHOOP */}
               <div style={{
                 display: "flex",
                 flexDirection: "row",
@@ -657,6 +703,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 alignItems: "stretch",
               }}>
                 {diceTray}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: SPACE[3] }}>
+                  {peekPips}
+                  {newRollButton}
+                </div>
                 {whoopButton}
               </div>
             </>
@@ -680,7 +730,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
                 {cardGrid}
               </div>
-              {diceTray}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4], flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: SPACE[4] }}>
+                  {peekPips}
+                  {newRollButton}
+                </div>
+                {diceTray}
+              </div>
             </div>
 
             {/* Bottom HUD bar */}
