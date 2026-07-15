@@ -272,7 +272,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         autoRerollRef.current = null;
       }
     };
-  }, [needsAutoReroll, gameOver, tier]);
+  }, [needsAutoReroll, gameOver, tier, peekBudget]);
 
   const peekCard = useCallback((index: number) => {
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
