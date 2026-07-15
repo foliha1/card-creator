@@ -178,6 +178,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setMatchedCards(new Set());
     setBonusPicking(false);
     setBonusPicks([]);
+    setBonusRevealing(false);
     setMessage("");
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
