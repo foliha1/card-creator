@@ -181,6 +181,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setRoundNum(1);
     setRollerIndex(0);
     setFlipperIndex(0);
+    setSkipNextFlip([false, false]);
     setGameOver(false);
     setClaimMode(false);
     setSelectedCards([]);
