@@ -593,7 +593,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const t = setTimeout(() => {
       pendingOppPicksRef.current = null;
       resolveOpponentClaim(picks);
-    }, 900);
+    }, 1600);
     return () => clearTimeout(t);
   }, [opponentClaiming, resolveOpponentClaim]);
 
