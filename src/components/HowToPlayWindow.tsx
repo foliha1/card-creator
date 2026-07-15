@@ -133,7 +133,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Peek & Memorize</div>
             <div style={bodyStyle}>
-              Tap a card to peek at it. Remember its shape, number, and color — you'll need it later.
+              Tap a card to peek — but peeks are limited. You get 3 per roll, so make every one count. What you remember carries over to the next roll.
             </div>
             <PeekDemo />
           </>
