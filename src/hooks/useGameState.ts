@@ -257,6 +257,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setRollerIndex(newRoller);
         setRoundNum((r) => r + 1);
         setWrongCards(new Set());
+        setRollPhase(true);
         return newRoller;
       }
       return next;
