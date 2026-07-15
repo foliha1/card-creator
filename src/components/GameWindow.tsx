@@ -136,7 +136,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
   const prevBonusRef = useRef(g.bonusPicking);
-  const prevRoundForDice = useRef(g.roundNum);
+  
 
   const showWhoopFeedback = useCallback((text: string, tone: "success" | "red") => {
     setWhoopFeedback({ text, tone });
@@ -312,17 +312,29 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
+  // Detect rolling transitions to animate dice landing + opponent's rolling bubble
+  const prevRollingRef = useRef(g.rolling);
   useEffect(() => {
-    if (g.roundNum !== prevRoundForDice.current) {
-      prevRoundForDice.current = g.roundNum;
+    if (g.rolling && !prevRollingRef.current) {
       playDiceRoll();
       setDiceLanded(false);
-      g.doRollDice(g.roundNum).then(() => {
-        setDiceLanded(true);
-        setTimeout(() => setDiceLanded(false), 400);
-      });
+    } else if (!g.rolling && prevRollingRef.current) {
+      setDiceLanded(true);
+      setTimeout(() => setDiceLanded(false), 400);
     }
-  }, [g.roundNum]);
+    prevRollingRef.current = g.rolling;
+  }, [g.rolling]);
+
+  // Opponent's roll phase → speech bubble
+  const prevOppRollPhaseRef = useRef(false);
+  useEffect(() => {
+    const oppRolling = g.rollPhase && g.rollerIndex === 1;
+    if (oppRolling && !prevOppRollPhaseRef.current) {
+      showBubble(pickLine("oppRoll"));
+    }
+    prevOppRollPhaseRef.current = oppRolling;
+  }, [g.rollPhase, g.rollerIndex, showBubble]);
+
 
   const handleCardClick = useCallback(
     (index: number) => {
@@ -527,9 +539,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   ...(label.startsWith("Score") && scoreBounce
                     ? { animation: "score-bounce 0.3s ease" }
                     : {}),
-                  ...(label.startsWith("Score") && g.flipperIndex === 0
-                    ? { outline: `2px solid ${COLORS.blue}`, outlineOffset: -1 }
-                    : {}),
                 }}
               >
                 {label}
@@ -561,8 +570,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </AppButton>
         );
 
+        const showRollButton = g.rollPhase && g.rollerIndex === 0 && !g.rolling;
+        const dimDice = g.rollPhase;
         const diceTray = (
           <div style={{
+            position: "relative",
             display: "flex",
             flexDirection: mobile ? "row" : "column",
             alignItems: "center",
@@ -574,29 +586,59 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             borderRadius: RADIUS.md,
             padding: mobile ? SPACE[4] : SPACE[8],
           }}>
-            {g.matchRule.map((attr, i) => (
-              <div
-                key={i}
-                style={{
-                  width: mobile ? 52 : 89,
-                  height: mobile ? 52 : 89,
-                  background: COLORS.surface,
-                  borderRadius: RADIUS.md,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
-                  color: COLORS.ink,
-                  filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-                }}
-              >
-                <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-                <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+            <div style={{
+              display: "flex",
+              flexDirection: mobile ? "row" : "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: mobile ? SPACE[4] : SPACE[6],
+              opacity: dimDice ? 0.4 : 1,
+              transition: "opacity 200ms ease",
+            }}>
+              {g.matchRule.map((attr, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: mobile ? 52 : 89,
+                    height: mobile ? 52 : 89,
+                    background: COLORS.surface,
+                    borderRadius: RADIUS.md,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
+                    color: COLORS.ink,
+                    filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+                  }}
+                >
+                  <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+                  <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+                </div>
+              ))}
+            </div>
+            {showRollButton && (
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2,
+              }}>
+                <AppButton
+                  variant="primary"
+                  tone="red"
+                  size={mobile ? "md" : "lg"}
+                  onClick={() => { playDiceRoll(); g.rollDice(); }}
+                >
+                  ROLL
+                </AppButton>
               </div>
-            ))}
+            )}
           </div>
         );
+
 
         const opponentChip = (
           <div style={{
@@ -605,7 +647,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             alignItems: "center",
             gap: SPACE[3],
             background: COLORS.surface,
-            border: g.flipperIndex === 1 ? `2px solid ${COLORS.blue}` : BORDER.standard,
+            border: BORDER.standard,
             borderRadius: RADIUS.md,
             padding: `${SPACE[3]}px ${SPACE[5]}px`,
             fontFamily: FONT_FAMILY,
@@ -654,9 +696,27 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
-
-
-
+        const statusText = g.opponentClaiming
+          ? "Auntie O. is claiming!"
+          : g.rollPhase && g.rollerIndex === 0
+            ? "Your roll — tap the dice"
+            : g.rollPhase && g.rollerIndex === 1
+              ? "Auntie O. is rolling…"
+              : g.flipperIndex === 0
+                ? "Your flip — tap a card"
+                : "Auntie O. is thinking…";
+        const statusStrip = (
+          <div style={{
+            padding: `${SPACE[3]}px ${SPACE[6]}px`,
+            textAlign: "center",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+            color: COLORS.ink,
+          }}>
+            {statusText}
+          </div>
+        );
 
 
         const cardGrid = (
@@ -805,6 +865,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
 
+
+              {statusStrip}
+
               {/* Bottom bar: dice + peek pips + WHOOP */}
               <div style={{
                 display: "flex",
@@ -842,6 +905,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {diceTray}
               </div>
             </div>
+
+
+            {statusStrip}
 
             {/* Bottom HUD bar */}
             <div style={{
