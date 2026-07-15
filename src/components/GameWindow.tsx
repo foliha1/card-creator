@@ -694,7 +694,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
 
-              {/* Bottom bar: dice + WHOOP */}
+              {/* Bottom bar: dice + peek pips + WHOOP */}
               <div style={{
                 display: "flex",
                 flexDirection: "row",
@@ -703,6 +703,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 alignItems: "stretch",
               }}>
                 {diceTray}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: SPACE[3] }}>
+                  {peekPips}
+                  {newRollButton}
+                </div>
                 {whoopButton}
               </div>
             </>
