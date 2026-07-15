@@ -696,9 +696,27 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
-
-
-
+        const statusText = g.opponentClaiming
+          ? "Auntie O. is claiming!"
+          : g.rollPhase && g.rollerIndex === 0
+            ? "Your roll — tap the dice"
+            : g.rollPhase && g.rollerIndex === 1
+              ? "Auntie O. is rolling…"
+              : g.flipperIndex === 0
+                ? "Your flip — tap a card"
+                : "Auntie O. is thinking…";
+        const statusStrip = (
+          <div style={{
+            padding: `${SPACE[3]}px ${SPACE[6]}px`,
+            textAlign: "center",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+            color: COLORS.ink,
+          }}>
+            {statusText}
+          </div>
+        );
 
 
         const cardGrid = (
