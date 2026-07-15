@@ -143,24 +143,32 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   );
 
   const checkGameOver = useCallback(
-    (currentDeck: Card[], currentGrid: (Card | null)[], rule: string[]) => {
+    (currentDeck: Card[], currentGrid: (Card | null)[], _rule: string[]) => {
       const hasCards = currentGrid.some((c) => c !== null);
       if (!hasCards && currentDeck.length === 0) {
         setGameOver(true);
-        setMessage("Game over! No cards remaining.");
-        setMessageType("info");
         return true;
       }
       if (hasCards && currentDeck.length === 0 && !hasAnyValidPair(currentGrid)) {
         setGameOver(true);
-        setMessage("Game over! No valid pairs left.");
-        setMessageType("info");
         return true;
       }
       return false;
     },
     []
   );
+
+  // Announce winner when game ends (reads latest scores)
+  useEffect(() => {
+    if (!gameOver) return;
+    const [you, opp] = scores;
+    const outcome =
+      you > opp ? `You win! ${you}–${opp}`
+      : opp > you ? `Opponent wins! ${opp}–${you}`
+      : `Tie ${you}–${opp}`;
+    setMessage(`Game over — ${outcome}`);
+    setMessageType("info");
+  }, [gameOver, scores]);
 
   // Init
   useEffect(() => {
