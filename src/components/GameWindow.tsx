@@ -312,17 +312,29 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
+  // Detect rolling transitions to animate dice landing + opponent's rolling bubble
+  const prevRollingRef = useRef(g.rolling);
   useEffect(() => {
-    if (g.roundNum !== prevRoundForDice.current) {
-      prevRoundForDice.current = g.roundNum;
+    if (g.rolling && !prevRollingRef.current) {
       playDiceRoll();
       setDiceLanded(false);
-      g.doRollDice(g.roundNum).then(() => {
-        setDiceLanded(true);
-        setTimeout(() => setDiceLanded(false), 400);
-      });
+    } else if (!g.rolling && prevRollingRef.current) {
+      setDiceLanded(true);
+      setTimeout(() => setDiceLanded(false), 400);
     }
-  }, [g.roundNum]);
+    prevRollingRef.current = g.rolling;
+  }, [g.rolling]);
+
+  // Opponent's roll phase → speech bubble
+  const prevOppRollPhaseRef = useRef(false);
+  useEffect(() => {
+    const oppRolling = g.rollPhase && g.rollerIndex === 1;
+    if (oppRolling && !prevOppRollPhaseRef.current) {
+      showBubble(pickLine("oppRoll"));
+    }
+    prevOppRollPhaseRef.current = oppRolling;
+  }, [g.rollPhase, g.rollerIndex, showBubble]);
+
 
   const handleCardClick = useCallback(
     (index: number) => {
