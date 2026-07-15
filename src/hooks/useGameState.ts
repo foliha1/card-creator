@@ -198,6 +198,11 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setBonusPicks([]);
     setBonusRevealing(false);
     setOpponentClaiming(null);
+    memoryRef.current.reset();
+    prevPeekingRef.current = null;
+    prevGridRef.current = newGrid;
+    pendingOppPicksRef.current = null;
+    if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
     setMessage("");
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
