@@ -535,6 +535,70 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     [bonusPicking, bonusRevealing, bonusPicks, grid, matchedCards, wrongCards, finalizeBonus]
   );
 
+  // Memory: forget slots whose card changed or emptied
+  useEffect(() => {
+    const prev = prevGridRef.current;
+    for (let i = 0; i < grid.length; i++) {
+      const pc = prev[i] ?? null;
+      const cc = grid[i] ?? null;
+      if ((pc?.id ?? null) !== (cc?.id ?? null)) {
+        memoryRef.current.forget(i);
+      }
+    }
+    prevGridRef.current = grid;
+  }, [grid]);
+
+  // Memory: observe on completed reveal + schedule opponent claim check
+  useEffect(() => {
+    const prev = prevPeekingRef.current;
+    prevPeekingRef.current = peekingCard;
+    if (prev === null || peekingCard !== null) return;
+    const card = grid[prev];
+    memoryRef.current.decayAll();
+    if (card) memoryRef.current.observe(prev, card);
+
+    if (claimMode || opponentClaiming || bonusPicking || bonusRevealing || gameOver) return;
+    const excluded = new Set<number>(wrongCards);
+    grid.forEach((c, i) => { if (c === null) excluded.add(i); });
+    const best = memoryRef.current.bestPair(matchRule, excluded);
+    if (!best || best.confidence < 0.55) return;
+    const delay = 1800 + Math.floor(Math.random() * 2400);
+    if (oppClaimTimerRef.current) clearTimeout(oppClaimTimerRef.current);
+    oppClaimTimerRef.current = setTimeout(() => {
+      oppClaimTimerRef.current = null;
+      const picksExcluded = new Set<number>(excluded);
+      picksExcluded.add(best.a);
+      picksExcluded.add(best.b);
+      pendingOppPicksRef.current = memoryRef.current.bestBlindPicks(2, picksExcluded);
+      opponentClaim(best.a, best.b);
+    }, delay);
+  }, [peekingCard, grid, claimMode, opponentClaiming, bonusPicking, bonusRevealing, gameOver, wrongCards, matchRule, opponentClaim]);
+
+  // Cancel pending opponent claim if human claims, round advances, or a claim resolves
+  useEffect(() => {
+    if (oppClaimTimerRef.current) {
+      clearTimeout(oppClaimTimerRef.current);
+      oppClaimTimerRef.current = null;
+    }
+  }, [claimMode, roundNum]);
+
+  // Auto-resolve opponent claim when it was scheduled by the memory system
+  useEffect(() => {
+    if (!opponentClaiming) {
+      pendingOppPicksRef.current = null;
+      return;
+    }
+    if (pendingOppPicksRef.current === null) return;
+    const picks = pendingOppPicksRef.current;
+    const t = setTimeout(() => {
+      pendingOppPicksRef.current = null;
+      resolveOpponentClaim(picks);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [opponentClaiming, resolveOpponentClaim]);
+
+
+
   return {
     deck,
     grid,
