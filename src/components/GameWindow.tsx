@@ -773,6 +773,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               }}>
                 {newGameButton}
                 {scoreBadges}
+                {opponentChip}
               </div>
 
               {/* Main area: card grid in panel */}
