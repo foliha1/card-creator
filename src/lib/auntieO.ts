@@ -38,6 +38,11 @@ export const LINES: Record<string, string[]> = {
     "I let you win. Tell everyone.",
     "Rematch. Now.",
   ],
+  oppRoll: [
+    "My roll.",
+    "Let's see here…",
+    "Dice, be nice.",
+  ],
 };
 
 const lastIndexByEvent: Record<string, number> = {};
