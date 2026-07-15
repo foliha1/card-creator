@@ -61,7 +61,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
   const [scoreBounce, setScoreBounce] = useState(false);
   const [showDoubleTitle, setShowDoubleTitle] = useState(false);
-  const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "bonusShrink">("idle");
+  const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "reveal" | "bonusShrink">("idle");
   const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
   const [bonusHighlighted, setBonusHighlighted] = useState<Set<number>>(new Set());
   const [diceLanded, setDiceLanded] = useState(false);
@@ -195,7 +195,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         setDoublePhase("pick");
         const available = new Set<number>();
         g.grid.forEach((c, i) => {
-          if (c && !g.matchedCards.has(i)) available.add(i);
+          if (c && !g.matchedCards.has(i) && !g.wrongCards.has(i)) available.add(i);
         });
         setOrangePulseCards(available);
       }, 1400);
@@ -206,6 +206,19 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   useEffect(() => {
     if (g.bonusPicks.length > 0) setBonusHighlighted(new Set(g.bonusPicks));
   }, [g.bonusPicks]);
+
+  useEffect(() => {
+    if (g.bonusRevealing) {
+      setDoublePhase("reveal");
+      setOrangePulseCards(new Set());
+      playCorrect();
+      const t = setTimeout(() => {
+        g.finalizeBonus();
+        setDoublePhase("idle");
+      }, 1400);
+      return () => clearTimeout(t);
+    }
+  }, [g.bonusRevealing, g]);
 
   // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
@@ -352,7 +365,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
 
       {/* Bonus pick pill */}
-      {doublePhase === "pick" && (
+      {(doublePhase === "pick" || doublePhase === "reveal") && (
         <div style={{
           position: "absolute",
           top: SPACE[6],
@@ -376,7 +389,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             animation: "pill-pulse 1.5s infinite",
             pointerEvents: "auto",
           }}>
-            Choose 2 bonus cards!
+            {doublePhase === "reveal" ? "Nice haul!" : "Choose 2 bonus cards!"}
           </span>
         </div>
       )}
@@ -598,7 +611,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     faceUp={
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
-                      doublePhase === "pick" ||
+                      (doublePhase === "reveal" && g.bonusPicks.includes(i)) ||
                       doublePhase === "shrink" ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
