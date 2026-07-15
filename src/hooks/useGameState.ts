@@ -243,6 +243,28 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     });
   }, [rollerIndex]);
 
+  // Forfeit-flip effect: when the rotation reaches a player with skipNextFlip true,
+  // clear their flag and pass immediately. Depends only on flipperIndex so setting
+  // the flag mid-turn does NOT retroactively skip the current player.
+  const skipRef = useRef(skipNextFlip);
+  useEffect(() => { skipRef.current = skipNextFlip; }, [skipNextFlip]);
+  const prevFlipperRef = useRef(flipperIndex);
+  useEffect(() => {
+    if (prevFlipperRef.current === flipperIndex) return;
+    prevFlipperRef.current = flipperIndex;
+    if (gameOver || rolling || claimMode || bonusPicking || bonusRevealing) return;
+    if (peekingCard !== null) return;
+    if (!skipRef.current[flipperIndex]) return;
+    const idx = flipperIndex;
+    setSkipNextFlip((s) => {
+      const n = [...s];
+      n[idx] = false;
+      return n;
+    });
+    skipRef.current = skipRef.current.map((v, i) => (i === idx ? false : v));
+    passFlipper();
+  }, [flipperIndex, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, passFlipper]);
+
   const peekCard = useCallback((index: number) => {
     if (flipperIndex !== 0) return;
     if (claimMode || bonusPicking || bonusRevealing || rolling || gameOver) return;
