@@ -74,6 +74,7 @@ function computeRule(values: string[]): { rule: string[]; isDoubleMatch: boolean
 
 export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = "3x2") {
   const slotCount = gridSize === "3x3" ? 9 : 6;
+  const peekBudget = PEEK_BUDGETS[slotCount] ?? 3;
   const [deck, setDeck] = useState<Card[]>([]);
   const [grid, setGrid] = useState<(Card | null)[]>(Array(slotCount).fill(null));
   const [matchRule, setMatchRule] = useState<string[]>([]);
