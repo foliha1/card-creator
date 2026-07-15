@@ -133,7 +133,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Peek & Memorize</div>
             <div style={bodyStyle}>
-              Tap a card to peek at it. Remember its shape, number, and color — you'll need it later.
+              Tap a card to peek — but peeks are limited. You get 3 per roll, so make every one count. What you remember carries over to the next roll.
             </div>
             <PeekDemo />
           </>
@@ -143,7 +143,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Roll the Dice</div>
             <div style={bodyStyle}>
-              Each round, the match dice roll to decide what counts as a pair. Match by SHAPE, NUMBER, or COLOR — or two at once for a Double Match!
+              Each round, the match dice roll to decide what counts as a pair. Match by SHAPE, NUMBER, or COLOR — or two at once for a Double Match! Out of peeks? Tap New Roll for fresh dice and a fresh budget.
             </div>
             <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center", alignItems: "center" }}>
               {["SHAPE", "COLOR"].map((label, i) => (
@@ -189,7 +189,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Claim Your Match</div>
             <div style={bodyStyle}>
-              Spot a pair? Hit WHOOP! WHOOP!, then tap the two matching cards. Get it right and they're yours!
+              Think you know a pair? Hit WHOOP! WHOOP! and tap two cards — anytime, even without peeking. Right: they're yours. Wrong: those cards freeze face-up, off-limits, and it costs you 2 peeks.
             </div>
             <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
               <img
