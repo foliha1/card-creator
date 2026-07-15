@@ -305,6 +305,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   // Opponent auto-flip when it's their turn
   useEffect(() => {
     if (flipperIndex !== 1) return;
+    if (rollPhase) return;
     if (gameOver || rolling || claimMode || bonusPicking || bonusRevealing) return;
     if (peekingCard !== null) return;
 
@@ -328,7 +329,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setPeekingCard(null);
         passFlipper();
       }, REVEAL_MS);
-    }, OPPONENT_DELAY_MS);
+    }, OPPONENT_TUNING.thinkDelayMs);
 
     return () => {
       if (oppDelayRef.current) {
@@ -336,7 +337,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         oppDelayRef.current = null;
       }
     };
-  }, [flipperIndex, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, grid, wrongCards, passFlipper]);
+  }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, grid, wrongCards, passFlipper]);
 
   const enterClaimMode = useCallback(() => {
     if (opponentClaiming) return;
