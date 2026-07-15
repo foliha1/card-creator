@@ -275,13 +275,16 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   }, [needsAutoReroll, gameOver, tier, peekBudget]);
 
   const peekCard = useCallback((index: number) => {
+    if (wrongCards.has(index)) return;
+    if (peeksLeft <= 0) return;
+    setPeeksLeft((p) => Math.max(0, p - 1));
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     setPeekingCard(index);
     peekTimerRef.current = setTimeout(() => {
       setPeekingCard(null);
       // Auto-reroll is now handled by the useEffect that watches grid/matchRule
     }, 1000);
-  }, []);
+  }, [wrongCards, peeksLeft]);
 
   const enterClaimMode = useCallback(() => {
     setClaimMode(true);
