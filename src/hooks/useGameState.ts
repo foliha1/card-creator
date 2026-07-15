@@ -382,6 +382,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const pickBonus = useCallback(
     (index: number) => {
       if (!bonusPicking) return;
+      if (wrongCards.has(index)) return;
       if (bonusPicks.includes(index)) return;
       if (grid[index] === null) return;
       if (matchedCards.has(index)) return;
@@ -395,6 +396,8 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setScore((s) => s + 2);
         const nextRound = roundNum + 1;
         setRoundNum(nextRound);
+        setPeeksLeft(peekBudget);
+        setWrongCards(new Set());
 
         const allSlots = [...Array.from(matchedCards), ...next];
         const { newGrid, newDeck } = refillGrid(grid, deck, allSlots);
@@ -413,8 +416,21 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         checkGameOver(newDeck, newGrid, rule);
       }
     },
-    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver]
+    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver, peekBudget, wrongCards]
   );
+
+  const newRoll = useCallback(() => {
+    const nextRound = roundNum + 1;
+    setRoundNum(nextRound);
+    setPeeksLeft(peekBudget);
+    setWrongCards(new Set());
+    setClaimMode(false);
+    setSelectedCards([]);
+    setMatchedCards(new Set());
+    setBonusPicking(false);
+    setBonusPicks([]);
+    doRollDiceSync(nextRound);
+  }, [roundNum, peekBudget, doRollDiceSync]);
 
   return {
     deck,
