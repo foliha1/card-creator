@@ -8,6 +8,7 @@ import { ALL_CARDS } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { IconButton } from "@/components/ui/IconButton";
+import { pickLine, OPPONENT_NAME } from "@/lib/auntieO";
 
 interface GameWindowProps {
   mobile?: boolean;
