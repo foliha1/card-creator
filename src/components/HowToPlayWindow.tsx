@@ -143,7 +143,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Roll the Dice</div>
             <div style={bodyStyle}>
-              Each round, the match dice roll to decide what counts as a pair. Match by SHAPE, NUMBER, or COLOR — or two at once for a Double Match!
+              Each round, the match dice roll to decide what counts as a pair. Match by SHAPE, NUMBER, or COLOR — or two at once for a Double Match! Out of peeks? Tap New Roll for fresh dice and a fresh budget.
             </div>
             <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center", alignItems: "center" }}>
               {["SHAPE", "COLOR"].map((label, i) => (
