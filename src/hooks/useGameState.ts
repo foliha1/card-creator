@@ -269,6 +269,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const peekCard = useCallback((index: number) => {
     if (flipperIndex !== 0) return;
     if (claimMode || bonusPicking || bonusRevealing || rolling || gameOver) return;
+    if (opponentClaiming) return;
     if (wrongCards.has(index)) return;
     if (grid[index] === null) return;
     if (peekingCard !== null) return;
@@ -278,7 +279,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       setPeekingCard(null);
       passFlipper();
     }, REVEAL_MS);
-  }, [flipperIndex, claimMode, bonusPicking, bonusRevealing, rolling, gameOver, wrongCards, grid, peekingCard, passFlipper]);
+  }, [flipperIndex, claimMode, bonusPicking, bonusRevealing, rolling, gameOver, opponentClaiming, wrongCards, grid, peekingCard, passFlipper]);
 
   // Opponent auto-flip when it's their turn
   useEffect(() => {
