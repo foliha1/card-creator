@@ -69,6 +69,19 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [whoopFeedback, setWhoopFeedback] = useState<{ text: string; tone: "success" | "red" } | null>(null);
   const whoopFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Auntie O. speech bubble
+  const [bubble, setBubble] = useState<{ text: string; red: boolean } | null>(null);
+  const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showBubble = useCallback((text: string, opts: { red?: boolean; sticky?: boolean } = {}) => {
+    if (bubbleTimerRef.current) { clearTimeout(bubbleTimerRef.current); bubbleTimerRef.current = null; }
+    setBubble({ text, red: !!opts.red });
+    if (!opts.sticky) {
+      bubbleTimerRef.current = setTimeout(() => setBubble(null), 2500);
+    }
+  }, []);
+  const [gameOverLine, setGameOverLine] = useState<string>("");
+
+
   const drawPileRef = useRef<HTMLDivElement | null>(null);
   const gridCellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
