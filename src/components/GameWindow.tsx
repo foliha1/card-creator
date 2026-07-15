@@ -118,7 +118,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }, 400 + targetIndices.length * 100);
   }, []);
 
-  const prevScoreRef = useRef(g.score);
+  const prevScoreRef = useRef(g.scores[0]);
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
   const prevBonusRef = useRef(g.bonusPicking);
@@ -131,16 +131,16 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, []);
 
   useEffect(() => {
-    if (g.score !== prevScoreRef.current) {
-      if (g.score > prevScoreRef.current) {
+    if (g.scores[0] !== prevScoreRef.current) {
+      if (g.scores[0] > prevScoreRef.current) {
         playCorrect();
         showWhoopFeedback("Good Match!", "success");
       }
-      prevScoreRef.current = g.score;
+      prevScoreRef.current = g.scores[0];
       setScoreBounce(true);
       setTimeout(() => setScoreBounce(false), 300);
     }
-  }, [g.score, showWhoopFeedback]);
+  }, [g.scores[0], showWhoopFeedback]);
 
   useEffect(() => {
     if (g.roundNum !== prevRoundRef.current) {
@@ -163,7 +163,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     if (g.message) {
       // no-op: toast removed, feedback handled by WHOOP button
     }
-  }, [g.message, g.messageType, g.roundNum, g.score]);
+  }, [g.message, g.messageType, g.roundNum, g.scores[0]]);
 
   useEffect(() => {
     if (g.wrongCards.size === 2) {
@@ -308,7 +308,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           You collected {collected} of {totalCards} cards
         </div>
         <div style={{ fontSize: TYPE.head, fontWeight: 700, fontFamily: FONT_FAMILY }}>
-          Score: {g.score}
+          Score: {g.scores[0]}
         </div>
         <AppButton
           variant="primary"
@@ -430,7 +430,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             flexShrink: 0,
             justifyContent: mobile ? "space-around" : undefined,
           }}>
-            {[`Score: ${g.score}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
+            {[`Score: ${g.scores[0]}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
               <div
                 key={label}
                 style={{
