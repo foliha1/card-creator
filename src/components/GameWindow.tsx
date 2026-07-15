@@ -906,6 +906,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               </div>
             </div>
 
+
+            {statusStrip}
+
             {/* Bottom HUD bar */}
             <div style={{
               display: "flex",
