@@ -268,7 +268,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
       if (g.wrongCards.has(index)) return;
-      if (g.peeksLeft <= 0) return;
       setPeekLocked(true);
       playFlip();
       g.peekCard(index);
