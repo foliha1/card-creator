@@ -380,45 +380,59 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     });
   }, [matchedCards]);
 
+  const finalizeBonus = useCallback(() => {
+    setScore((s) => s + 2);
+    const nextRound = roundNum + 1;
+    setRoundNum(nextRound);
+    setPeeksLeft(peekBudget);
+    setWrongCards(new Set());
+
+    const allSlots = [...Array.from(matchedCards), ...bonusPicks];
+    const { newGrid, newDeck } = refillGrid(grid, deck, allSlots);
+    setGrid(newGrid);
+    setDeck(newDeck);
+
+    const rule = doRollDiceSync(nextRound);
+    setBonusPicking(false);
+    setBonusPicks([]);
+    setBonusRevealing(false);
+    setClaimMode(false);
+    setSelectedCards([]);
+    setMatchedCards(new Set());
+    setMessage("Bonus! +4 points total.");
+    setMessageType("success");
+
+    checkGameOver(newDeck, newGrid, rule);
+  }, [roundNum, peekBudget, matchedCards, bonusPicks, grid, deck, refillGrid, doRollDiceSync, checkGameOver]);
+
   const pickBonus = useCallback(
     (index: number) => {
-      if (!bonusPicking) return;
+      if (!bonusPicking || bonusRevealing) return;
       if (wrongCards.has(index)) return;
       if (bonusPicks.includes(index)) return;
       if (grid[index] === null) return;
       if (matchedCards.has(index)) return;
 
+      const maxPicks = Math.min(
+        2,
+        grid.filter((c, i) => c !== null && !matchedCards.has(i) && !wrongCards.has(i)).length
+      );
+
+      if (maxPicks === 0) {
+        finalizeBonus();
+        return;
+      }
+
       const next = [...bonusPicks, index];
       setBonusPicks(next);
 
-      const maxPicks = Math.min(2, grid.filter((c, i) => c !== null && !matchedCards.has(i)).length);
-
       if (next.length >= maxPicks) {
-        setScore((s) => s + 2);
-        const nextRound = roundNum + 1;
-        setRoundNum(nextRound);
-        setPeeksLeft(peekBudget);
-        setWrongCards(new Set());
-
-        const allSlots = [...Array.from(matchedCards), ...next];
-        const { newGrid, newDeck } = refillGrid(grid, deck, allSlots);
-        setGrid(newGrid);
-        setDeck(newDeck);
-
-        const rule = doRollDiceSync(nextRound);
-        setBonusPicking(false);
-        setBonusPicks([]);
-        setClaimMode(false);
-        setSelectedCards([]);
-        setMatchedCards(new Set());
-        setMessage("Bonus! +4 points total.");
-        setMessageType("success");
-
-        checkGameOver(newDeck, newGrid, rule);
+        setBonusRevealing(true);
       }
     },
-    [bonusPicking, bonusPicks, grid, matchedCards, roundNum, deck, refillGrid, doRollDiceSync, checkGameOver, peekBudget, wrongCards]
+    [bonusPicking, bonusRevealing, bonusPicks, grid, matchedCards, wrongCards, finalizeBonus]
   );
+
 
   const newRoll = useCallback(() => {
     const nextRound = roundNum + 1;
