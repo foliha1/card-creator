@@ -4,6 +4,8 @@ import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 type MessageType = "info" | "success" | "error" | "warning";
 type Tier = "easy" | "standard";
 
+const PEEK_BUDGETS: Record<number, number> = { 6: 3, 9: 4, 12: 5 };
+
 function rollRandomAttributes(count: number): string[] {
   const result: string[] = [];
   for (let i = 0; i < count; i++) {
