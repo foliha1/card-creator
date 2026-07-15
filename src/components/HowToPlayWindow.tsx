@@ -189,7 +189,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Claim Your Match</div>
             <div style={bodyStyle}>
-              Spot a pair? Hit WHOOP! WHOOP!, then tap the two matching cards. Get it right and they're yours!
+              Think you know a pair? Hit WHOOP! WHOOP! and tap two cards — anytime, even without peeking. Right: they're yours. Wrong: those cards freeze face-up, off-limits, and it costs you 2 peeks.
             </div>
             <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
               <img
