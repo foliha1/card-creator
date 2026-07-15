@@ -573,8 +573,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </AppButton>
         );
 
+        const showRollButton = g.rollPhase && g.rollerIndex === 0 && !g.rolling;
+        const dimDice = g.rollPhase;
         const diceTray = (
           <div style={{
+            position: "relative",
             display: "flex",
             flexDirection: mobile ? "row" : "column",
             alignItems: "center",
@@ -586,29 +589,59 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             borderRadius: RADIUS.md,
             padding: mobile ? SPACE[4] : SPACE[8],
           }}>
-            {g.matchRule.map((attr, i) => (
-              <div
-                key={i}
-                style={{
-                  width: mobile ? 52 : 89,
-                  height: mobile ? 52 : 89,
-                  background: COLORS.surface,
-                  borderRadius: RADIUS.md,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
-                  color: COLORS.ink,
-                  filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-                }}
-              >
-                <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-                <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+            <div style={{
+              display: "flex",
+              flexDirection: mobile ? "row" : "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: mobile ? SPACE[4] : SPACE[6],
+              opacity: dimDice ? 0.4 : 1,
+              transition: "opacity 200ms ease",
+            }}>
+              {g.matchRule.map((attr, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: mobile ? 52 : 89,
+                    height: mobile ? 52 : 89,
+                    background: COLORS.surface,
+                    borderRadius: RADIUS.md,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
+                    color: COLORS.ink,
+                    filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+                  }}
+                >
+                  <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+                  <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+                </div>
+              ))}
+            </div>
+            {showRollButton && (
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2,
+              }}>
+                <AppButton
+                  variant="primary"
+                  tone="red"
+                  size={mobile ? "md" : "lg"}
+                  onClick={() => { playDiceRoll(); g.rollDice(); }}
+                >
+                  ROLL
+                </AppButton>
               </div>
-            ))}
+            )}
           </div>
         );
+
 
         const opponentChip = (
           <div style={{
