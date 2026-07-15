@@ -52,7 +52,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   };
 
   // --- Animation state ---
-  const [peekedCount, setPeekedCount] = useState(0);
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shrinkingCards, setShrinkingCards] = useState<Set<number>>(new Set());
