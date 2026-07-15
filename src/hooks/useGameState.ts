@@ -191,6 +191,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     setBonusPicking(false);
     setBonusPicks([]);
     setBonusRevealing(false);
+    setOpponentClaiming(null);
     setMessage("");
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
