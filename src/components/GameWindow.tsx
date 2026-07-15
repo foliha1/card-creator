@@ -513,6 +513,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   ...(label.startsWith("Score") && scoreBounce
                     ? { animation: "score-bounce 0.3s ease" }
                     : {}),
+                  ...(label.startsWith("Score") && g.flipperIndex === 0
+                    ? { outline: `2px solid ${COLORS.blue}`, outlineOffset: -1 }
+                    : {}),
                 }}
               >
                 {label}
