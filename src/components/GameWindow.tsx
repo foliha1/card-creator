@@ -8,6 +8,7 @@ import { ALL_CARDS } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { IconButton } from "@/components/ui/IconButton";
+import { pickLine, OPPONENT_NAME } from "@/lib/auntieO";
 
 interface GameWindowProps {
   mobile?: boolean;
@@ -67,6 +68,19 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [diceLanded, setDiceLanded] = useState(false);
   const [whoopFeedback, setWhoopFeedback] = useState<{ text: string; tone: "success" | "red" } | null>(null);
   const whoopFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auntie O. speech bubble
+  const [bubble, setBubble] = useState<{ text: string; red: boolean } | null>(null);
+  const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showBubble = useCallback((text: string, opts: { red?: boolean; sticky?: boolean } = {}) => {
+    if (bubbleTimerRef.current) { clearTimeout(bubbleTimerRef.current); bubbleTimerRef.current = null; }
+    setBubble({ text, red: !!opts.red });
+    if (!opts.sticky) {
+      bubbleTimerRef.current = setTimeout(() => setBubble(null), 2500);
+    }
+  }, []);
+  const [gameOverLine, setGameOverLine] = useState<string>("");
+
 
   const drawPileRef = useRef<HTMLDivElement | null>(null);
   const gridCellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -129,6 +143,56 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     if (whoopFeedbackTimer.current) clearTimeout(whoopFeedbackTimer.current);
     whoopFeedbackTimer.current = setTimeout(() => setWhoopFeedback(null), 1800);
   }, []);
+
+  // Auntie O. bubble drivers
+  const oppClaimStateRef = useRef(g.opponentClaiming);
+  const prevOppScoreRef = useRef(g.scores[1]);
+  const prevPlayerScoreForBubbleRef = useRef(g.scores[0]);
+  const prevSkipFlipRef = useRef(g.skipNextFlip);
+  const gameStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (gameStartedRef.current) return;
+    gameStartedRef.current = true;
+    showBubble(pickLine("gameStart"));
+  }, [showBubble]);
+
+  useEffect(() => {
+    const wasClaiming = oppClaimStateRef.current !== null;
+    const isClaiming = g.opponentClaiming !== null;
+    if (!wasClaiming && isClaiming) {
+      showBubble("WHOOP! WHOOP!", { red: true, sticky: true });
+    } else if (wasClaiming && !isClaiming) {
+      if (g.scores[1] > prevOppScoreRef.current) showBubble(pickLine("oppCorrect"));
+      else showBubble(pickLine("oppWrong"));
+    }
+    oppClaimStateRef.current = g.opponentClaiming;
+    prevOppScoreRef.current = g.scores[1];
+  }, [g.opponentClaiming, g.scores[1], showBubble]);
+
+  useEffect(() => {
+    if (g.scores[0] > prevPlayerScoreForBubbleRef.current) {
+      showBubble(pickLine("playerCorrect"));
+    }
+    prevPlayerScoreForBubbleRef.current = g.scores[0];
+  }, [g.scores[0], showBubble]);
+
+  useEffect(() => {
+    if (!prevSkipFlipRef.current[0] && g.skipNextFlip[0]) {
+      showBubble(pickLine("playerWrong"));
+    }
+    prevSkipFlipRef.current = g.skipNextFlip;
+  }, [g.skipNextFlip, showBubble]);
+
+  useEffect(() => {
+    if (g.gameOver && !gameOverLine) {
+      const line = pickLine(g.scores[1] > g.scores[0] ? "win" : "lose");
+      setGameOverLine(line);
+      showBubble(line, { sticky: true });
+    }
+  }, [g.gameOver, g.scores, gameOverLine, showBubble]);
+
+
 
   useEffect(() => {
     if (g.scores[0] !== prevScoreRef.current) {
@@ -308,8 +372,22 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           You collected {collected} of {totalCards} cards
         </div>
         <div style={{ fontSize: TYPE.head, fontWeight: 700, fontFamily: FONT_FAMILY }}>
-          Score: {g.scores[0]}
+          You {g.scores[0]} — {OPPONENT_NAME} {g.scores[1]}
         </div>
+        {gameOverLine && (
+          <div style={{
+            fontSize: TYPE.body,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            color: COLORS.ink,
+            background: COLORS.surface,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[4]}px ${SPACE[8]}px`,
+          }}>
+            {OPPONENT_NAME} “{gameOverLine}”
+          </div>
+        )}
         <AppButton
           variant="primary"
           tone="blue"
@@ -449,6 +527,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   ...(label.startsWith("Score") && scoreBounce
                     ? { animation: "score-bounce 0.3s ease" }
                     : {}),
+                  ...(label.startsWith("Score") && g.flipperIndex === 0
+                    ? { outline: `2px solid ${COLORS.blue}`, outlineOffset: -1 }
+                    : {}),
                 }}
               >
                 {label}
@@ -517,6 +598,64 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
+        const opponentChip = (
+          <div style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            gap: SPACE[3],
+            background: COLORS.surface,
+            border: g.flipperIndex === 1 ? `2px solid ${COLORS.blue}` : BORDER.standard,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[3]}px ${SPACE[5]}px`,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
+            color: COLORS.ink,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            alignSelf: mobile ? "stretch" : "center",
+          }}>
+            <span>{OPPONENT_NAME}</span>
+            <span style={{ fontStyle: "normal", fontWeight: 700 }}>{g.scores[1]}</span>
+            {bubble && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: COLORS.surface,
+                border: BORDER.standard,
+                borderRadius: RADIUS.md,
+                padding: `${SPACE[3]}px ${SPACE[5]}px`,
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+                color: bubble.red ? COLORS.red : COLORS.ink,
+                fontWeight: bubble.red ? 700 : 400,
+                whiteSpace: "nowrap",
+                zIndex: 30,
+                pointerEvents: "none",
+              }}>
+                <div style={{
+                  position: "absolute",
+                  top: -6,
+                  left: "50%",
+                  width: 10,
+                  height: 10,
+                  transform: "translateX(-50%) rotate(45deg)",
+                  background: COLORS.surface,
+                  borderLeft: BORDER.standard,
+                  borderTop: BORDER.standard,
+                }} />
+                {bubble.text}
+              </div>
+            )}
+          </div>
+        );
+
+
+
 
 
 
@@ -558,6 +697,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     ...(bonusHighlighted.has(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.orange}, 0 0 16px rgba(231,144,36,0.6)` }
                       : {}),
+                    ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
+                      ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
+                      : {}),
                   }}
                 >
                   <GameCard
@@ -565,13 +707,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     faceUp={
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
+                      (g.opponentClaiming?.indices.includes(i) ?? false) ||
                       (doublePhase === "reveal" && g.bonusPicks.includes(i)) ||
                       doublePhase === "shrink" ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
                     }
                     onClick={() => handleCardClick(i)}
-                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i)}
+                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false)}
                     matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
                     wrong={wrongFlashCards.has(i)}
                     wrongWash={wrongWashCards.has(i)}
@@ -644,6 +787,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               }}>
                 {newGameButton}
                 {scoreBadges}
+                {opponentChip}
               </div>
 
               {/* Main area: card grid in panel */}
@@ -694,6 +838,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {cardGrid}
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4], flexShrink: 0 }}>
+                {opponentChip}
                 {diceTray}
               </div>
             </div>
