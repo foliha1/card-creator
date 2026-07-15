@@ -145,7 +145,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   useEffect(() => {
     if (g.roundNum !== prevRoundRef.current) {
       prevRoundRef.current = g.roundNum;
-      setPeekedCount(0);
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
@@ -157,7 +156,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, [g.roundNum]);
 
   useEffect(() => {
-    if (prevClaimRef.current && !g.claimMode) setPeekedCount(0);
     prevClaimRef.current = g.claimMode;
   }, [g.claimMode]);
 
