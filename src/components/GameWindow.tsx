@@ -365,7 +365,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
 
       {/* Bonus pick pill */}
-      {doublePhase === "pick" && (
+      {(doublePhase === "pick" || doublePhase === "reveal") && (
         <div style={{
           position: "absolute",
           top: SPACE[6],
@@ -389,7 +389,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             animation: "pill-pulse 1.5s infinite",
             pointerEvents: "auto",
           }}>
-            Choose 2 bonus cards!
+            {doublePhase === "reveal" ? "Nice haul!" : "Choose 2 bonus cards!"}
           </span>
         </div>
       )}
