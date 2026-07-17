@@ -201,6 +201,26 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.gameOver, g.scores, gameOverLine, showBubble]);
 
+  // Last Call opening
+  const prevLastCallRef = useRef(false);
+  useEffect(() => {
+    if (g.lastCall && !prevLastCallRef.current) {
+      showBubble(pickLine("lastCallStart"), { red: true });
+    }
+    prevLastCallRef.current = g.lastCall;
+  }, [g.lastCall, showBubble]);
+
+  // Opponent grabs during Last Call (opponentClaiming isn't used in Last Call)
+  const prevLastCallOppScoreRef = useRef(g.scores[1]);
+  useEffect(() => {
+    if (g.lastCall && g.scores[1] > prevLastCallOppScoreRef.current) {
+      showBubble(pickLine("lastCallGrab"), { red: true });
+      playWrong();
+    }
+    prevLastCallOppScoreRef.current = g.scores[1];
+  }, [g.scores, g.lastCall, showBubble]);
+
+
 
 
   useEffect(() => {
