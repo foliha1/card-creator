@@ -312,18 +312,23 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
-  // Detect rolling transitions to animate dice landing + opponent's rolling bubble
+  // Detect rolling transitions to animate dice landing + play dice sound once per roll cycle
   const prevRollingRef = useRef(g.rolling);
+  const rollSoundCycleRef = useRef<number | null>(null);
   useEffect(() => {
     if (g.rolling && !prevRollingRef.current) {
-      playDiceRoll();
+      // Guard: play at most once per round's roll cycle, regardless of who triggered it
+      if (rollSoundCycleRef.current !== g.roundNum) {
+        rollSoundCycleRef.current = g.roundNum;
+        playDiceRoll();
+      }
       setDiceLanded(false);
     } else if (!g.rolling && prevRollingRef.current) {
       setDiceLanded(true);
       setTimeout(() => setDiceLanded(false), 400);
     }
     prevRollingRef.current = g.rolling;
-  }, [g.rolling]);
+  }, [g.rolling, g.roundNum]);
 
   // Opponent's roll phase → speech bubble
   const prevOppRollPhaseRef = useRef(false);
