@@ -106,65 +106,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     delay: number;
     card?: Card;
   }
-  const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
   const [lastCallFlyers, setLastCallFlyers] = useState<FlyingCard[]>([]);
   const prevGridRef = useRef(g.grid);
-  const initialDealDone = useRef(false);
-  const flyerRetryCount = useRef(0);
 
-
-  const launchFlyers = useCallback((targetIndices: number[]) => {
-    if (!drawPileRef.current || targetIndices.length === 0) {
-      setEnteringCards(new Set(targetIndices));
-      setTimeout(() => setEnteringCards(new Set()), 800);
-      return;
-    }
-    const pileRect = drawPileRef.current.getBoundingClientRect();
-    const flyers: FlyingCard[] = [];
-    let anyUnmeasured = false;
-    targetIndices.forEach((idx, i) => {
-      const cellEl = gridCellRefs.current.get(idx);
-      if (!cellEl) return;
-      const cellRect = cellEl.getBoundingClientRect();
-      const toW = cellRect.width;
-      const toH = cellRect.height;
-      if (toW === 0 || toH === 0) {
-        anyUnmeasured = true;
-        return;
-      }
-      flyers.push({
-        id: `fly-${idx}-${Date.now()}`,
-        index: idx,
-        fromX: pileRect.left + pileRect.width / 2 - toW / 2,
-        fromY: pileRect.top + pileRect.height / 2 - toH / 2,
-        toX: cellRect.left,
-        toY: cellRect.top,
-        fromW: toW,
-        fromH: toH,
-        toW,
-        toH,
-        delay: i * 100,
-      });
-    });
-    if (anyUnmeasured) {
-      flyerRetryCount.current += 1;
-      if (flyerRetryCount.current <= 5) {
-        requestAnimationFrame(() => launchFlyers(targetIndices));
-      } else {
-        flyerRetryCount.current = 0;
-        setEnteringCards(new Set(targetIndices));
-        setTimeout(() => setEnteringCards(new Set()), 800);
-      }
-      return;
-    }
-    flyerRetryCount.current = 0;
-    setFlyingCards(flyers);
-    setTimeout(() => {
-      setFlyingCards([]);
-      setEnteringCards(new Set(targetIndices));
-      setTimeout(() => setEnteringCards(new Set()), 400);
-    }, 400 + targetIndices.length * 100);
-  }, []);
 
   const prevScoreRef = useRef(g.scores[0]);
   const prevRoundRef = useRef(g.roundNum);
