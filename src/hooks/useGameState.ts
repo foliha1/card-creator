@@ -164,13 +164,13 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   );
 
   const checkGameOver = useCallback(
-    (currentDeck: Card[], currentGrid: (Card | null)[], _rule: string[]) => {
+    (currentDeck: Card[], currentGrid: (Card | null)[], rule: string[]) => {
       const hasCards = currentGrid.some((c) => c !== null);
       if (!hasCards && currentDeck.length === 0) {
         setGameOver(true);
         return true;
       }
-      if (hasCards && currentDeck.length === 0 && !hasAnyValidPair(currentGrid)) {
+      if (lastCallRef.current && hasCards && !hasValidPair(currentGrid, rule)) {
         setGameOver(true);
         return true;
       }
@@ -178,6 +178,15 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     },
     []
   );
+
+  // Track draw pile empty
+  useEffect(() => {
+    if (deck.length === 0 && !drawEmptyRef.current) {
+      drawEmptyRef.current = true;
+      setDrawEmpty(true);
+    }
+  }, [deck.length]);
+
 
   // Announce winner when game ends (reads latest scores)
   useEffect(() => {
