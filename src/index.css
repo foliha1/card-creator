@@ -184,6 +184,14 @@ All colors MUST be HSL.
   50% { opacity: 0.7; }
 }
 
+@keyframes dice-tumble {
+  0%   { transform: translateY(0)   rotate(-8deg); }
+  25%  { transform: translateY(-6px) rotate(6deg); }
+  50%  { transform: translateY(2px)  rotate(-10deg); }
+  75%  { transform: translateY(-4px) rotate(9deg); }
+  100% { transform: translateY(0)   rotate(-8deg); }
+}
+
 @keyframes fly-to-grid {
   0% {
     transform: translate(0, 0) scale(1);
