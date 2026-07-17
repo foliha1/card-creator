@@ -22,7 +22,7 @@ const AboutWindow: React.FC = () => {
     fontStyle: "normal",
     fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
     color: COLORS.inkSubtle,
-    lineHeight: 1.45,
+    lineHeight: 1.42,
     margin: 0,
     maxWidth: 440,
   };
