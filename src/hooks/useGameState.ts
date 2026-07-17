@@ -106,6 +106,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [roundsSinceClaim, setRoundsSinceClaim] = useState(0);
   const [lastCall, setLastCall] = useState(false);
   const [allFaceUp, setAllFaceUp] = useState(false);
+  const [claimPending, setClaimPending] = useState(false);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
