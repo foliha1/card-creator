@@ -616,7 +616,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
                     color: COLORS.ink,
                     filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-                    animation: g.rolling ? `dice-tumble 260ms ease-in-out ${i * 80}ms infinite` : undefined,
+                    transformStyle: "preserve-3d",
+                    animation: g.rolling
+                      ? `dice-tumble 260ms ease-in-out ${i * 80}ms infinite`
+                      : diceLanded
+                      ? `dice-land-flip 400ms cubic-bezier(0.34,1.56,0.64,1) ${i * 60}ms both`
+                      : undefined,
                   }}
                 >
                   <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
