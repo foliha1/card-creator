@@ -632,7 +632,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   variant="primary"
                   tone="red"
                   size={mobile ? "md" : "lg"}
-                  onClick={() => { playDiceRoll(); g.rollDice(); }}
+                  onClick={() => { g.rollDice(); }}
                 >
                   ROLL
                 </AppButton>
