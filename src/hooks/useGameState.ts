@@ -828,6 +828,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     drawEmpty,
     roundsSinceClaim,
     claimLastCall,
+    claimPending,
 
 
   };
