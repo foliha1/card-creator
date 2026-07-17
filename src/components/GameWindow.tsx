@@ -312,18 +312,23 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.selectedCards.length, g.claimMode, g.resolveMatch]);
 
-  // Detect rolling transitions to animate dice landing + opponent's rolling bubble
+  // Detect rolling transitions to animate dice landing + play dice sound once per roll cycle
   const prevRollingRef = useRef(g.rolling);
+  const rollSoundCycleRef = useRef<number | null>(null);
   useEffect(() => {
     if (g.rolling && !prevRollingRef.current) {
-      playDiceRoll();
+      // Guard: play at most once per round's roll cycle, regardless of who triggered it
+      if (rollSoundCycleRef.current !== g.roundNum) {
+        rollSoundCycleRef.current = g.roundNum;
+        playDiceRoll();
+      }
       setDiceLanded(false);
     } else if (!g.rolling && prevRollingRef.current) {
       setDiceLanded(true);
       setTimeout(() => setDiceLanded(false), 400);
     }
     prevRollingRef.current = g.rolling;
-  }, [g.rolling]);
+  }, [g.rolling, g.roundNum]);
 
   // Opponent's roll phase → speech bubble
   const prevOppRollPhaseRef = useRef(false);
@@ -611,7 +616,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
                     color: COLORS.ink,
                     filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
-                    animation: g.rolling ? `dice-tumble 260ms ease-in-out ${i * 80}ms infinite` : undefined,
+                    transformStyle: "preserve-3d",
+                    animation: g.rolling
+                      ? `dice-tumble 260ms ease-in-out ${i * 80}ms infinite`
+                      : diceLanded
+                      ? `dice-land-flip 400ms cubic-bezier(0.34,1.56,0.64,1) ${i * 60}ms both`
+                      : undefined,
                   }}
                 >
                   <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>

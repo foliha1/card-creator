@@ -192,6 +192,12 @@ All colors MUST be HSL.
   100% { transform: translateY(0)   rotate(-8deg); }
 }
 
+@keyframes dice-land-flip {
+  0%   { transform: rotateX(-90deg) scale(0.9); opacity: 0; }
+  60%  { transform: rotateX(10deg)  scale(1.05); opacity: 1; }
+  100% { transform: rotateX(0deg)   scale(1);    opacity: 1; }
+}
+
 @keyframes fly-to-grid {
   0% {
     transform: translate(0, 0) scale(1);
