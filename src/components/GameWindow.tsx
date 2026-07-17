@@ -980,6 +980,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {opponentChip}
               </div>
 
+              {lastCallBanner}
+
+
               {/* Main area: card grid in panel */}
               <div style={{
                 display: "flex",
