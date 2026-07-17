@@ -12,6 +12,17 @@ const MIN_DURATION = 1800;
 const SETTLE_HOLD = 250;
 const FADE_MS = 400;
 
+const FACES = [
+  "/cards/3-star-red.svg",
+  "/cards/2-circle-blue.svg",
+  "/cards/1-square-yellow.svg",
+  "/cards/4-tri-red.svg",
+  "/cards/2-star-yellow.svg",
+  "/cards/3-circle-blue.svg",
+  "/cards/1-tri-blue.svg",
+  "/cards/4-square-yellow.svg",
+];
+
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -19,6 +30,7 @@ const prefersReducedMotion = () =>
 const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
   const reduced = useMemo(prefersReducedMotion, []);
   const [flipped, setFlipped] = useState(false);
+  const [faceIndex, setFaceIndex] = useState(0);
   const [exiting, setExiting] = useState(false);
   const startRef = useRef<number>(Date.now());
 
@@ -38,6 +50,10 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
     const interval = window.setInterval(() => {
       setFlipped((f) => {
         const next = !f;
+        // When returning to the back, swap the face for the next reveal.
+        if (!next) {
+          setFaceIndex((i) => (i + 1) % FACES.length);
+        }
         // If we've passed min duration and next state is face-up, settle.
         if (next && Date.now() - startRef.current >= MIN_DURATION) {
           window.clearInterval(interval);
@@ -104,7 +120,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
             }}
           />
           <img
-            src="/cards/3-star-red.svg"
+            src={FACES[faceIndex]}
             alt=""
             style={{
               position: "absolute",
@@ -118,17 +134,6 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
           />
         </div>
       </div>
-
-      {/* Logo below */}
-      <img
-        src="/WhoopWhoop_Stacked_Logo.svg"
-        alt="Whoop Whoop"
-        style={{
-          width: 160,
-          filter: "brightness(10)",
-          opacity: 0.9,
-        }}
-      />
 
       {/* Caption */}
       <div
