@@ -486,8 +486,17 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     );
   }
 
+  // Design-system audit: mobile and desktop share the same COLORS/BORDER/RADIUS tokens.
+  // Only dimensions (font-size, padding, min-height, gap) vary by device.
+  // Intentional non-token exceptions kept below (all decorative, not surface theming):
+  //   - lastCallBanner border: 1.5px solid COLORS.red (red variant of BORDER.standard weight)
+  //   - empty grid slot + empty draw-pile slot: `2px dashed rgba(35,31,32,0.13)` — ghost placeholder,
+  //     ink at 13% for a subtle dashed outline; no equivalent token exists.
+  //   - highlight halos: boxShadow using COLORS.orange/blue plus an rgba glow at ~60% — decorative.
+  //   - dice + draw-pile drop-shadows and DOUBLE MATCH text-shadow — decorative shadows.
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: mobile ? "hidden" : undefined }}>
+
 
       {/* Mute toggle — desktop only */}
       {!mobile && (
@@ -635,12 +644,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               }
             }}
             style={{
+              // Only dimensions (font-size, padding, min-height) differ by device.
+              // Border, radius, and colors come from AppButton tokens on both.
               flex: 1,
               fontSize: mobile ? "clamp(20px, 5vw, 26px)" : 26,
               padding: `${SPACE[6]}px ${SPACE[4]}px`,
               minHeight: mobile ? 64 : undefined,
-              border: mobile ? BORDER.heavy : undefined,
-              boxShadow: mobile ? "0 4px 0 rgba(0,0,0,0.25)" : undefined,
               transition: `background ${MOTION.base}, color ${MOTION.base}`,
             }}
           >
@@ -1037,7 +1046,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 justifyContent: "center",
                 margin: `0 ${isSmall ? SPACE[4] : SPACE[6]}px`,
                 padding: isSmall ? SPACE[4] : SPACE[5],
-                background: COLORS.panel,
+                background: COLORS.panelMuted,
                 border: BORDER.standard,
                 borderRadius: RADIUS.md,
               }}>
