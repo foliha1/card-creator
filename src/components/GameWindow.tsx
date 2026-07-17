@@ -98,6 +98,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     fromY: number;
     toX: number;
     toY: number;
+    fromW: number;
+    fromH: number;
     toW: number;
     toH: number;
     delay: number;
