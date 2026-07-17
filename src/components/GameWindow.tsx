@@ -82,8 +82,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, []);
   const [gameOverLine, setGameOverLine] = useState<string>("");
 
+  // Last Call local state
+  const [lastCallSel, setLastCallSel] = useState<number[]>([]);
+  const [lastCallShake, setLastCallShake] = useState<Set<number>>(new Set());
+
 
   const drawPileRef = useRef<HTMLDivElement | null>(null);
+  const scorePileRef = useRef<HTMLDivElement | null>(null);
   const gridCellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   interface FlyingCard {
@@ -96,10 +101,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     toW: number;
     toH: number;
     delay: number;
+    card?: Card;
   }
   const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
+  const [lastCallFlyers, setLastCallFlyers] = useState<FlyingCard[]>([]);
   const prevGridRef = useRef(g.grid);
   const initialDealDone = useRef(false);
+
 
   const launchFlyers = useCallback((targetIndices: number[]) => {
     if (!drawPileRef.current || targetIndices.length === 0) {
