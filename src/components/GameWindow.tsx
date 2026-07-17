@@ -348,7 +348,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (newSlots.length > 0) {
         if (!initialDealDone.current) {
           initialDealDone.current = true;
-          launchFlyers(newSlots);
+          // Wait for the grid layout to paint before measuring cells
+          requestAnimationFrame(() => requestAnimationFrame(() => launchFlyers(newSlots)));
         } else {
           setEnteringCards(new Set(newSlots));
           setTimeout(() => setEnteringCards(new Set()), 800);
