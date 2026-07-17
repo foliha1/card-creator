@@ -103,7 +103,7 @@ const DesktopShell: React.FC = () => {
 
   const renderWindowContent = (id: WindowId) => {
     switch (id) {
-      case "game": return <GameWindow mobile={mobile} />;
+      case "game": return <GameWindow mobile={mobile} viewW={viewW} />;
       case "howtoplay": return <Suspense fallback={<WindowLoader />}><HowToPlayWindow onClose={() => closeWindow("howtoplay")} /></Suspense>;
       case "preorder": return <Suspense fallback={<WindowLoader />}><PreOrderWindow /></Suspense>;
       case "about": return <Suspense fallback={<WindowLoader />}><AboutWindow /></Suspense>;
