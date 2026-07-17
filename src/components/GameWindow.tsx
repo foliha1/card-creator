@@ -635,9 +635,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             }}
             style={{
               flex: 1,
-              fontSize: mobile ? "clamp(18px, 4vw, 24px)" : 26,
+              fontSize: mobile ? "clamp(20px, 5vw, 26px)" : 26,
               padding: `${SPACE[6]}px ${SPACE[4]}px`,
-              minHeight: mobile ? 48 : undefined,
+              minHeight: mobile ? 64 : undefined,
+              border: mobile ? BORDER.heavy : undefined,
+              boxShadow: mobile ? "0 4px 0 rgba(0,0,0,0.25)" : undefined,
               transition: `background ${MOTION.base}, color ${MOTION.base}`,
             }}
           >
