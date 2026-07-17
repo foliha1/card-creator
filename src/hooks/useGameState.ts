@@ -408,14 +408,20 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
       if (claimPending) return;
       setClaimPending(true);
       (async () => {
-        await doRollDice(roundNum);
-        setRollPhase(false);
-        setClaimPending(false);
-        setClaimMode(true);
-        setSelectedCards([]);
-        setMatchedCards(new Set());
-        setMessage("Select 2 cards that match the rule.");
-        setMessageType("info");
+        try {
+          await doRollDice(roundNum);
+          setRollPhase(false);
+          setClaimMode(true);
+          setSelectedCards([]);
+          setMatchedCards(new Set());
+          setMessage("Select 2 cards that match the rule.");
+          setMessageType("info");
+        } catch {
+          // Roll failed: leave claimMode false so the player can retry.
+          setRollPhase(false);
+        } finally {
+          setClaimPending(false);
+        }
       })();
       return;
     }
