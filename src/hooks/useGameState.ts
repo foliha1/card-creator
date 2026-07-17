@@ -523,7 +523,9 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const b = grid[selectedCards[1]];
 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
+      claimedThisRoundRef.current = true;
       setMatchedCards(new Set(selectedCards));
+
       setScores((s) => {
         const next = [...s];
         next[0] += 2;
