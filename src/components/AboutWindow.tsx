@@ -32,7 +32,6 @@ const AboutWindow: React.FC = () => {
       style={{
         padding: mobile ? SPACE[6] : SPACE[12],
         textAlign: "left",
-        overflowY: "auto",
         height: "100%",
       }}
     >
