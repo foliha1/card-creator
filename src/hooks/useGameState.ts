@@ -102,6 +102,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [messageType, setMessageType] = useState<MessageType>("info");
   const [rolling, setRolling] = useState(false);
   const [rollPhase, setRollPhase] = useState(true);
+  const [drawEmpty, setDrawEmpty] = useState(false);
+  const [roundsSinceClaim, setRoundsSinceClaim] = useState(0);
+  const [lastCall, setLastCall] = useState(false);
+  const [allFaceUp, setAllFaceUp] = useState(false);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -112,6 +116,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const prevGridRef = useRef<(Card | null)[]>([]);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingOppPicksRef = useRef<number[] | null>(null);
+  const claimedThisRoundRef = useRef(false);
+  const drawEmptyRef = useRef(false);
+  const lastCallRef = useRef(false);
+
 
   const doRollDice = useCallback(
     (currentRound: number): Promise<string[]> => {
