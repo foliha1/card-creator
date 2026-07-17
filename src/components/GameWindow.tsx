@@ -1119,6 +1119,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           }}
         />
       ))}
+
+      <FlyerDebugOverlay
+        gridCellRefs={gridCellRefs}
+        drawPileRef={drawPileRef}
+        scorePileRef={scorePileRef}
+        flyingCards={flyingCards}
+        lastCallFlyers={lastCallFlyers}
+      />
     </div>
 
   );
