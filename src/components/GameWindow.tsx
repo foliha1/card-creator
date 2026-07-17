@@ -1085,7 +1085,34 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           }}
         />
       ))}
+
+      {/* Last Call flyers — face-up cards flying to the score pile */}
+      {lastCallFlyers.map((fc) => (
+        <img
+          key={fc.id}
+          src={fc.card?.svgPath ?? "/cards/card-back.svg"}
+          alt=""
+          style={{
+            position: "fixed",
+            left: fc.fromX,
+            top: fc.fromY,
+            width: 72,
+            height: 101,
+            borderRadius: RADIUS.md,
+            pointerEvents: "none",
+            zIndex: 50,
+            filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.3))",
+            transformOrigin: "top left",
+            ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
+            ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
+            ["--fly-scale-x" as any]: `${fc.toW / 72}`,
+            ["--fly-scale-y" as any]: `${fc.toH / 101}`,
+            animation: `fly-to-grid 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${fc.delay}ms both`,
+          }}
+        />
+      ))}
     </div>
+
   );
 };
 
