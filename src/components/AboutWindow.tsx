@@ -30,7 +30,7 @@ const AboutWindow: React.FC = () => {
   const sectionStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
-    gap: SPACE[3],
+    gap: SPACE[2],
   };
 
   return (
@@ -74,7 +74,7 @@ const AboutWindow: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ ...sectionStyle, gap: SPACE[4] }}>
+      <div style={sectionStyle}>
         <div
           style={{
             display: "flex",
