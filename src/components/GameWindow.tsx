@@ -780,7 +780,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           : g.opponentClaiming
           ? "Auntie O. is claiming!"
           : g.claimPending
-            ? "Rolling… then tap two cards to claim"
+            ? "Rolling — get ready to claim!"
             : g.claimMode
               ? "Tap two cards to claim"
               : g.rollPhase && g.rollerIndex === 0
