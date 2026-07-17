@@ -4,7 +4,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, isMuted, setMuted } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, playDeal, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS, Card } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
@@ -292,11 +292,21 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       });
       if (newSlots.length > 0) {
         setEnteringCards(new Set(newSlots));
+        playDeal(newSlots.length);
         setTimeout(() => setEnteringCards(new Set()), 800);
       }
     }
     prevGridRef.current = g.grid;
   }, [g.grid]);
+
+  // Play flip sound for opponent auto-flips (human flips already play on click)
+  const prevPeekRef = useRef<number | null>(g.peekingCard);
+  useEffect(() => {
+    if (g.peekingCard !== null && prevPeekRef.current === null && g.flipperIndex === 1) {
+      playFlip();
+    }
+    prevPeekRef.current = g.peekingCard;
+  }, [g.peekingCard, g.flipperIndex]);
 
 
   useEffect(() => {
