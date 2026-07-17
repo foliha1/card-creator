@@ -762,9 +762,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
             color: COLORS.ink,
             whiteSpace: "nowrap",
-            flexShrink: 1,
-            minWidth: 0,
+            flexShrink: mobile ? 0 : 1,
+            minWidth: mobile ? undefined : 0,
             alignSelf: mobile ? "stretch" : "center",
+            width: mobile ? "100%" : undefined,
+            boxSizing: mobile ? "border-box" : undefined,
+            justifyContent: mobile ? "space-between" : undefined,
           }}>
             <span style={{
               overflow: "hidden",
@@ -1021,16 +1024,22 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         if (mobile) {
           return (
             <>
-              {/* Top HUD bar */}
+              {/* Top HUD: two rows */}
               <div style={{
                 display: "flex",
-                flexDirection: "row",
-                gap: isSmall ? SPACE[4] : SPACE[5],
+                flexDirection: "column",
+                gap: SPACE[3],
                 padding: `${SPACE[4]}px ${isSmall ? SPACE[4] : SPACE[6]}px`,
-                alignItems: "stretch",
               }}>
-                {newGameButton}
-                {scoreBadges}
+                <div style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: isSmall ? SPACE[4] : SPACE[5],
+                  alignItems: "stretch",
+                }}>
+                  {newGameButton}
+                  {scoreBadges}
+                </div>
                 {opponentChip}
               </div>
               {mobileBubblePortal}
@@ -1056,7 +1065,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
               {statusStrip}
 
-              {/* Bottom bar: dice + peek pips + WHOOP */}
+              {/* Bottom bar: dice + WHOOP */}
               <div style={{
                 display: "flex",
                 flexDirection: "row",
