@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Volume2, VolumeX } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
@@ -85,6 +85,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, []);
   const [gameOverLine, setGameOverLine] = useState<string>("");
+  const chipRefCurrent = useRef<HTMLDivElement>(null);
 
   // Last Call local state
   const [lastCallSel, setLastCallSel] = useState<number[]>([]);
@@ -724,8 +725,21 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         );
 
 
+        const chipMaxBubbleW = Math.min(220, Math.max(160, (viewW ?? 360) - 32));
+        const chipRect = mobile && bubble ? chipRefCurrent.current?.getBoundingClientRect() : null;
+        let mobileBubbleLeft = 0;
+        let mobileBubbleTop = 0;
+        let mobileArrowLeft = chipMaxBubbleW / 2;
+        if (chipRect) {
+          const vw = viewW ?? window.innerWidth;
+          const chipCenter = chipRect.left + chipRect.width / 2;
+          mobileBubbleLeft = Math.max(16, Math.min(chipCenter - chipMaxBubbleW / 2, vw - chipMaxBubbleW - 16));
+          mobileBubbleTop = chipRect.bottom + 8;
+          mobileArrowLeft = chipCenter - mobileBubbleLeft;
+        }
+
         const opponentChip = (
-          <div style={{
+          <div ref={chipRefCurrent} style={{
             position: "relative",
             display: "flex",
             alignItems: "center",
@@ -733,18 +747,23 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             background: COLORS.surface,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
-            padding: `${SPACE[3]}px ${SPACE[5]}px`,
+            padding: `${SPACE[3]}px ${mobile ? SPACE[4] : SPACE[5]}px`,
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
             color: COLORS.ink,
             whiteSpace: "nowrap",
-            flexShrink: 0,
+            flexShrink: 1,
+            minWidth: 0,
             alignSelf: mobile ? "stretch" : "center",
           }}>
-            <span>{OPPONENT_NAME}</span>
-            <span style={{ fontStyle: "normal", fontWeight: 700 }}>{g.scores[1]}</span>
-            {bubble && (
+            <span style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minWidth: 0,
+            }}>{OPPONENT_NAME}</span>
+            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0 }}>{g.scores[1]}</span>
+            {bubble && !mobile && (
               <div style={{
                 position: "absolute",
                 top: "calc(100% + 8px)",
@@ -756,7 +775,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 padding: `${SPACE[3]}px ${SPACE[5]}px`,
                 fontFamily: FONT_FAMILY,
                 fontStyle: "italic",
-                fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+                fontSize: TYPE.caption,
                 color: bubble.red ? COLORS.red : COLORS.ink,
                 fontWeight: bubble.red ? 700 : 400,
                 whiteSpace: "nowrap",
@@ -779,6 +798,45 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             )}
           </div>
         );
+
+        const mobileBubblePortal = mobile && bubble && chipRect ? createPortal(
+          <div style={{
+            position: "fixed",
+            top: mobileBubbleTop,
+            left: mobileBubbleLeft,
+            width: chipMaxBubbleW,
+            maxWidth: chipMaxBubbleW,
+            background: COLORS.surface,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[3]}px ${SPACE[4]}px`,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: MOBILE_TYPE.caption,
+            color: bubble.red ? COLORS.red : COLORS.ink,
+            fontWeight: bubble.red ? 700 : 400,
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            zIndex: 9999,
+            pointerEvents: "none",
+            textAlign: "center",
+          }}>
+            <div style={{
+              position: "absolute",
+              top: -6,
+              left: Math.max(10, Math.min(mobileArrowLeft - 5, chipMaxBubbleW - 20)),
+              width: 10,
+              height: 10,
+              transform: "rotate(45deg)",
+              background: COLORS.surface,
+              borderLeft: BORDER.standard,
+              borderTop: BORDER.standard,
+            }} />
+            {bubble.text}
+          </div>,
+          document.body
+        ) : null;
+
 
         const statusText = g.lastCall
           ? "LAST CALL — tap any matching pair!"
@@ -966,6 +1024,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {scoreBadges}
                 {opponentChip}
               </div>
+              {mobileBubblePortal}
 
               {lastCallBanner}
 
