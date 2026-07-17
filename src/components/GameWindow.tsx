@@ -768,13 +768,17 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           ? "LAST CALL — tap any matching pair!"
           : g.opponentClaiming
           ? "Auntie O. is claiming!"
-          : g.rollPhase && g.rollerIndex === 0
-            ? "Your roll — tap the dice"
-            : g.rollPhase && g.rollerIndex === 1
-              ? "Auntie O. is rolling…"
-              : g.flipperIndex === 0
-                ? "Your flip — tap a card"
-                : "Auntie O. is thinking…";
+          : g.claimPending
+            ? "Rolling… then tap two cards to claim"
+            : g.claimMode
+              ? "Tap two cards to claim"
+              : g.rollPhase && g.rollerIndex === 0
+                ? "Your roll — tap the dice"
+                : g.rollPhase && g.rollerIndex === 1
+                  ? "Auntie O. is rolling…"
+                  : g.flipperIndex === 0
+                    ? "Your flip — tap a card"
+                    : "Auntie O. is thinking…";
         const statusStrip = (
           <div style={{
             padding: `${SPACE[3]}px ${SPACE[6]}px`,
