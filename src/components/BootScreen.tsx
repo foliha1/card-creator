@@ -23,6 +23,15 @@ const FACES = [
   "/cards/4-square-yellow.svg",
 ];
 
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -33,6 +42,26 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
   const [faceIndex, setFaceIndex] = useState(0);
   const [exiting, setExiting] = useState(false);
   const startRef = useRef<number>(Date.now());
+  const poolRef = useRef<number[]>([]);
+  const lastUsedRef = useRef<number | null>(null);
+
+  const pickNextFace = () => {
+    if (poolRef.current.length === 0) {
+      const all = FACES.map((_, i) => i);
+      // Avoid starting the new cycle with the same card that ended the last one.
+      if (lastUsedRef.current !== null && all.length > 1) {
+        const withoutLast = all.filter((i) => i !== lastUsedRef.current);
+        poolRef.current = shuffle(withoutLast);
+        const remaining = [lastUsedRef.current];
+        poolRef.current.push(remaining[0]);
+      } else {
+        poolRef.current = shuffle(all);
+      }
+    }
+    const next = poolRef.current.pop()!;
+    lastUsedRef.current = next;
+    return next;
+  };
 
   useEffect(() => {
     const timers: number[] = [];
@@ -52,7 +81,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
         const next = !f;
         // When returning to the back, swap the face for the next reveal.
         if (!next) {
-          setFaceIndex((i) => (i + 1) % FACES.length);
+          setFaceIndex(pickNextFace());
         }
         // If we've passed min duration and next state is face-up, settle.
         if (next && Date.now() - startRef.current >= MIN_DURATION) {
