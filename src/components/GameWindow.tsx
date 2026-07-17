@@ -273,18 +273,27 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     if (g.bonusPicks.length > 0) setBonusHighlighted(new Set(g.bonusPicks));
   }, [g.bonusPicks]);
 
+  const finalizeBonusRef = useRef(g.finalizeBonus);
+  useEffect(() => {
+    finalizeBonusRef.current = g.finalizeBonus;
+  }, [g.finalizeBonus]);
+  const bonusRevealFiredRef = useRef(false);
   useEffect(() => {
     if (g.bonusRevealing) {
+      if (bonusRevealFiredRef.current) return;
+      bonusRevealFiredRef.current = true;
       setDoublePhase("reveal");
       setOrangePulseCards(new Set());
       playCorrect();
       const t = setTimeout(() => {
-        g.finalizeBonus();
+        finalizeBonusRef.current();
         setDoublePhase("idle");
       }, 1400);
       return () => clearTimeout(t);
+    } else {
+      bonusRevealFiredRef.current = false;
     }
-  }, [g.bonusRevealing, g]);
+  }, [g.bonusRevealing]);
 
   // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
