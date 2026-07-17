@@ -1018,8 +1018,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
         return (
           <>
+            {lastCallBanner}
             {/* Main area */}
             <div style={{
+
               display: "flex",
               flexDirection: "row",
               gap: (typeof window !== 'undefined' && window.innerWidth < 1100) ? SPACE[10] : 38,
