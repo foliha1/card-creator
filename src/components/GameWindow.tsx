@@ -829,7 +829,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     else gridCellRefs.current.delete(i);
                   }}
                   style={{
-                    visibility: flyingCards.some((f) => f.index === i) || lastCallFlyers.some((f) => f.index === i) ? "hidden" : "visible",
+                    visibility: lastCallFlyers.some((f) => f.index === i) ? "hidden" : "visible",
                     animation: shrinkingCards.has(i)
                       ? "card-shrink 0.4s ease forwards"
                       : enteringCards.has(i)
