@@ -102,6 +102,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const [messageType, setMessageType] = useState<MessageType>("info");
   const [rolling, setRolling] = useState(false);
   const [rollPhase, setRollPhase] = useState(true);
+  const [drawEmpty, setDrawEmpty] = useState(false);
+  const [roundsSinceClaim, setRoundsSinceClaim] = useState(0);
+  const [lastCall, setLastCall] = useState(false);
+  const [allFaceUp, setAllFaceUp] = useState(false);
 
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -112,6 +116,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   const prevGridRef = useRef<(Card | null)[]>([]);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingOppPicksRef = useRef<number[] | null>(null);
+  const claimedThisRoundRef = useRef(false);
+  const drawEmptyRef = useRef(false);
+  const lastCallRef = useRef(false);
+
 
   const doRollDice = useCallback(
     (currentRound: number): Promise<string[]> => {
@@ -156,13 +164,13 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   );
 
   const checkGameOver = useCallback(
-    (currentDeck: Card[], currentGrid: (Card | null)[], _rule: string[]) => {
+    (currentDeck: Card[], currentGrid: (Card | null)[], rule: string[]) => {
       const hasCards = currentGrid.some((c) => c !== null);
       if (!hasCards && currentDeck.length === 0) {
         setGameOver(true);
         return true;
       }
-      if (hasCards && currentDeck.length === 0 && !hasAnyValidPair(currentGrid)) {
+      if (lastCallRef.current && hasCards && !hasValidPair(currentGrid, rule)) {
         setGameOver(true);
         return true;
       }
@@ -170,6 +178,15 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     },
     []
   );
+
+  // Track draw pile empty
+  useEffect(() => {
+    if (deck.length === 0 && !drawEmptyRef.current) {
+      drawEmptyRef.current = true;
+      setDrawEmpty(true);
+    }
+  }, [deck.length]);
+
 
   // Announce winner when game ends (reads latest scores)
   useEffect(() => {
@@ -209,8 +226,16 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     prevGridRef.current = newGrid;
     pendingOppPicksRef.current = null;
     if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
+    claimedThisRoundRef.current = false;
+    drawEmptyRef.current = false;
+    lastCallRef.current = false;
+    setDrawEmpty(false);
+    setRoundsSinceClaim(0);
+    setLastCall(false);
+    setAllFaceUp(false);
     setMessage("");
     setRollPhase(true);
+
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
     const { rule, isDoubleMatch: dm } = computeRule(values);
@@ -257,12 +282,47 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setRollerIndex(newRoller);
         setRoundNum((r) => r + 1);
         setWrongCards(new Set());
-        setRollPhase(true);
+
+        const wasClaim = claimedThisRoundRef.current;
+        claimedThisRoundRef.current = false;
+
+        let triggerLastCall = false;
+        if (drawEmptyRef.current) {
+          setRoundsSinceClaim((rsc) => {
+            const nextRsc = wasClaim ? 0 : rsc + 1;
+            if (!lastCallRef.current && nextRsc >= 1) triggerLastCall = true;
+            return nextRsc;
+          });
+        } else if (wasClaim) {
+          setRoundsSinceClaim(0);
+        }
+
+        if (!lastCallRef.current && drawEmptyRef.current && !wasClaim) {
+          // roundsSinceClaim was already >= 0 and just incremented (nextRsc>=1)
+          // Enter Last Call synchronously
+          lastCallRef.current = true;
+          setLastCall(true);
+          setAllFaceUp(true);
+          setWrongCards(new Set());
+          setSkipNextFlip([false, false]);
+          const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
+          setDieValues([value]);
+          setMatchRule([value]);
+          setIsDoubleMatch(false);
+          setRollPhase(false);
+        } else if (!lastCallRef.current) {
+          setRollPhase(true);
+        } else {
+          setRollPhase(false);
+        }
+        // suppress unused-var warning
+        void triggerLastCall;
         return newRoller;
       }
       return next;
     });
   }, [rollerIndex]);
+
 
   // Forfeit-flip effect: when the rotation reaches a player with skipNextFlip true,
   // clear their flag and pass immediately. Depends only on flipperIndex so setting
@@ -395,6 +455,8 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const cardA = grid[a];
     const cardB = grid[b];
     if (cardA && cardB && cardsMatchRule(cardA, cardB, matchRule)) {
+      claimedThisRoundRef.current = true;
+
       if (isDoubleMatch) {
         const extra = (picks ?? [])
           .filter((i) => i !== a && i !== b && grid[i] !== null && !wrongCards.has(i))
@@ -461,7 +523,9 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const b = grid[selectedCards[1]];
 
     if (a && b && cardsMatchRule(a, b, matchRule)) {
+      claimedThisRoundRef.current = true;
       setMatchedCards(new Set(selectedCards));
+
       setScores((s) => {
         const next = [...s];
         next[0] += 2;
@@ -679,5 +743,10 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     resolveOpponentClaim,
     rollPhase,
     rollDice,
+    lastCall,
+    allFaceUp,
+    drawEmpty,
+    roundsSinceClaim,
+
   };
 }
