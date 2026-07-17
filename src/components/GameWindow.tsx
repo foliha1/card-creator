@@ -292,6 +292,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       });
       if (newSlots.length > 0) {
         setEnteringCards(new Set(newSlots));
+        playDeal(newSlots.length);
         setTimeout(() => setEnteringCards(new Set()), 800);
       }
     }
