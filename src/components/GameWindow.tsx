@@ -1027,37 +1027,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         );
       })()}
 
-      {/* Flying card overlays (mid-round refills) */}
-      {createPortal(
-        <>
-          {flyingCards.map((fc) => (
-            <img
-              key={fc.id}
-              src="/cards/card-back.svg"
-              alt=""
-              style={{
-                position: "fixed",
-                left: fc.fromX,
-                top: fc.fromY,
-                width: fc.toW,
-                height: fc.toH,
-                borderRadius: RADIUS.md,
-                pointerEvents: "none",
-                zIndex: 50,
-                filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.3))",
-                transformOrigin: "top left",
-                ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
-                ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
-                ["--fly-scale-x" as any]: `1`,
-                ["--fly-scale-y" as any]: `1`,
-                animation: `fly-to-grid 0.4s cubic-bezier(0.22, 1, 0.36, 1) ${fc.delay}ms both`,
-              }}
-            />
-          ))}
-        </>,
-        document.body
-      )}
-
       {/* Last Call flyers — face-up cards flying to the score pile */}
       {createPortal(
         <>
@@ -1088,21 +1057,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </>,
         document.body
       )}
-
-
-      <FlyerDebugOverlay
-        gridCellRefs={gridCellRefs}
-        drawPileRef={drawPileRef}
-        scorePileRef={scorePileRef}
-        flyingCards={flyingCards}
-        lastCallFlyers={lastCallFlyers}
-      />
     </div>
 
   );
 };
 
 export default GameWindow;
+
 
 // ============================================================
 // TEMPORARY DEBUG OVERLAY — flyer/grid geometry inspector.
