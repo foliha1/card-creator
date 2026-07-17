@@ -282,12 +282,47 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
         setRollerIndex(newRoller);
         setRoundNum((r) => r + 1);
         setWrongCards(new Set());
-        setRollPhase(true);
+
+        const wasClaim = claimedThisRoundRef.current;
+        claimedThisRoundRef.current = false;
+
+        let triggerLastCall = false;
+        if (drawEmptyRef.current) {
+          setRoundsSinceClaim((rsc) => {
+            const nextRsc = wasClaim ? 0 : rsc + 1;
+            if (!lastCallRef.current && nextRsc >= 1) triggerLastCall = true;
+            return nextRsc;
+          });
+        } else if (wasClaim) {
+          setRoundsSinceClaim(0);
+        }
+
+        if (!lastCallRef.current && drawEmptyRef.current && !wasClaim) {
+          // roundsSinceClaim was already >= 0 and just incremented (nextRsc>=1)
+          // Enter Last Call synchronously
+          lastCallRef.current = true;
+          setLastCall(true);
+          setAllFaceUp(true);
+          setWrongCards(new Set());
+          setSkipNextFlip([false, false]);
+          const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
+          setDieValues([value]);
+          setMatchRule([value]);
+          setIsDoubleMatch(false);
+          setRollPhase(false);
+        } else if (!lastCallRef.current) {
+          setRollPhase(true);
+        } else {
+          setRollPhase(false);
+        }
+        // suppress unused-var warning
+        void triggerLastCall;
         return newRoller;
       }
       return next;
     });
   }, [rollerIndex]);
+
 
   // Forfeit-flip effect: when the rotation reaches a player with skipNextFlip true,
   // clear their flag and pass immediately. Depends only on flipperIndex so setting
