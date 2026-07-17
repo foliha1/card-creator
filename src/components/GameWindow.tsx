@@ -86,7 +86,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, []);
   const [gameOverLine, setGameOverLine] = useState<string>("");
   const chipRefCurrent = useRef<HTMLDivElement>(null);
-  const [chipRectVer, setChipRectVer] = useState(0);
 
   // Last Call local state
   const [lastCallSel, setLastCallSel] = useState<number[]>([]);
