@@ -14,9 +14,10 @@ import { pickLine, OPPONENT_NAME } from "@/lib/auntieO";
 
 interface GameWindowProps {
   mobile?: boolean;
+  viewW?: number;
 }
 
-const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
+const GameWindow: React.FC<GameWindowProps> = ({ mobile = false, viewW }) => {
   const [gameKey, setGameKey] = useState(0);
 
   return (
@@ -27,6 +28,7 @@ const GameWindow: React.FC<GameWindowProps> = ({ mobile = false }) => {
         gridSize="3x2"
         onNewGame={() => setGameKey((k) => k + 1)}
         mobile={mobile}
+        viewW={viewW}
       />
       {/* Preload card images */}
       <div style={{ display: "none" }}>
@@ -43,9 +45,10 @@ interface GamePlayAreaProps {
   gridSize: "3x2" | "3x3";
   onNewGame: () => void;
   mobile?: boolean;
+  viewW?: number;
 }
 
-const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false }) => {
+const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false, viewW }) => {
   const g = useGameState(tier, gridSize);
   const [muted, setMutedState] = useState(isMuted());
   const toggleMute = () => {
@@ -424,7 +427,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling && !g.lastCall;
 
 
-  const isSmall = mobile && window.innerWidth < 480;
+  const isSmall = mobile && (viewW ?? 9999) < 480;
   const cardW = isSmall ? 48 : 72;
   const cardH = isSmall ? 67 : 101;
 
@@ -1006,9 +1009,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
               display: "flex",
               flexDirection: "row",
-              gap: (typeof window !== 'undefined' && window.innerWidth < 1100) ? SPACE[10] : 38,
+              gap: (viewW ?? 1200) < 1100 ? SPACE[10] : 38,
               flex: 1,
-              padding: (typeof window !== 'undefined' && window.innerWidth < 1100) ? "24px 16px" : "50px 40px",
+              padding: (viewW ?? 1200) < 1100 ? "24px 16px" : "50px 40px",
               minHeight: 0,
               alignItems: "center",
               justifyContent: "center",
