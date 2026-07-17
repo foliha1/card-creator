@@ -35,9 +35,10 @@ export function playFlip() {
 
 export function playDiceRoll() {
   if (muted) return;
-  const freqs = [600, 533, 466, 400];
+  // Spans ~800ms to stay in sync with the dice-tumble / dieValues cycling window.
+  const freqs = [640, 580, 520, 470, 600, 540, 480, 430, 560, 500, 440];
   freqs.forEach((f, i) => {
-    setTimeout(() => playTone(f, 50, "square", 0.08), i * 60);
+    setTimeout(() => playTone(f, 60, "square", 0.07), i * 75);
   });
 }
 
