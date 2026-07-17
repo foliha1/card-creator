@@ -703,8 +703,72 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice, roundNum]);
 
 
+  const claimLastCall = useCallback(
+    (a: number, b: number) => {
+      if (!lastCallRef.current || gameOver) return;
+      if (a === b) return;
+      const cardA = grid[a];
+      const cardB = grid[b];
+      if (!cardA || !cardB) return;
+      if (!cardsMatchRule(cardA, cardB, matchRule)) return;
+      const newGrid = [...grid];
+      newGrid[a] = null;
+      newGrid[b] = null;
+      setGrid(newGrid);
+      setScores((s) => {
+        const next = [...s];
+        next[0] += 2;
+        return next;
+      });
+      setMessage("Last Call — you claimed! +2");
+      setMessageType("success");
+      const hasCards = newGrid.some((c) => c !== null);
+      if (!hasCards || !hasValidPair(newGrid, matchRule)) {
+        setGameOver(true);
+      }
+    },
+    [grid, matchRule, gameOver]
+  );
 
-
+  // Opponent Last Call scanner: repeatedly attempts to claim any valid pair.
+  useEffect(() => {
+    if (!lastCall || gameOver) return;
+    const span = OPPONENT_TUNING.reactionMaxMs - OPPONENT_TUNING.reactionMinMs;
+    const delay = OPPONENT_TUNING.reactionMinMs + Math.random() * span;
+    const t = setTimeout(() => {
+      if (!lastCallRef.current || gameOver) return;
+      const cards = grid
+        .map((c, i) => ({ c, i }))
+        .filter((x): x is { c: Card; i: number } => x.c !== null);
+      let pair: [number, number] | null = null;
+      outer: for (let i = 0; i < cards.length; i++) {
+        for (let j = i + 1; j < cards.length; j++) {
+          if (cardsMatchRule(cards[i].c, cards[j].c, matchRule)) {
+            pair = [cards[i].i, cards[j].i];
+            break outer;
+          }
+        }
+      }
+      if (!pair) return;
+      const [a, b] = pair;
+      const newGrid = [...grid];
+      newGrid[a] = null;
+      newGrid[b] = null;
+      setGrid(newGrid);
+      setScores((s) => {
+        const next = [...s];
+        next[1] += 2;
+        return next;
+      });
+      setMessage("Last Call — Auntie O. claimed! +2");
+      setMessageType("warning");
+      const hasCards = newGrid.some((c) => c !== null);
+      if (!hasCards || !hasValidPair(newGrid, matchRule)) {
+        setGameOver(true);
+      }
+    }, delay);
+    return () => clearTimeout(t);
+  }, [lastCall, gameOver, grid, matchRule, scores]);
 
   return {
     deck,
@@ -747,6 +811,8 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     allFaceUp,
     drawEmpty,
     roundsSinceClaim,
+    claimLastCall,
+
 
   };
 }
