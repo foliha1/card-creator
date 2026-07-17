@@ -401,14 +401,30 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
   }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, bonusPicking, bonusRevealing, peekingCard, grid, wrongCards, passFlipper]);
 
   const enterClaimMode = useCallback(() => {
-    if (opponentClaiming) return;
-    if (rollPhase) return;
+    if (opponentClaiming || claimMode || bonusPicking || bonusRevealing || gameOver) return;
+    if (rolling) return; // block only during dice tumble animation
+    if (rollPhase) {
+      if (rollerIndex !== 0) return; // opponent's roll — let auto-roll resolve
+      if (claimPending) return;
+      setClaimPending(true);
+      (async () => {
+        await doRollDice(roundNum);
+        setRollPhase(false);
+        setClaimPending(false);
+        setClaimMode(true);
+        setSelectedCards([]);
+        setMatchedCards(new Set());
+        setMessage("Select 2 cards that match the rule.");
+        setMessageType("info");
+      })();
+      return;
+    }
     setClaimMode(true);
     setSelectedCards([]);
     setMatchedCards(new Set());
     setMessage("Select 2 cards that match the rule.");
     setMessageType("info");
-  }, [opponentClaiming, rollPhase]);
+  }, [opponentClaiming, claimMode, bonusPicking, bonusRevealing, gameOver, rolling, rollPhase, rollerIndex, claimPending, doRollDice, roundNum]);
 
 
   const refillGrid = useCallback(
