@@ -33,6 +33,17 @@ export function playFlip() {
   playTone(800, 80, "square", 0.1);
 }
 
+export function playDeal(count: number = 1) {
+  if (muted) return;
+  // Soft "whoosh-tick" per card, slightly staggered
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      playTone(320 + Math.random() * 80, 55, "triangle", 0.06);
+      setTimeout(() => playTone(180, 35, "sine", 0.05), 30);
+    }, i * 70);
+  }
+}
+
 export function playDiceRoll() {
   if (muted) return;
   // Spans ~800ms to stay in sync with the dice-tumble / dieValues cycling window.
