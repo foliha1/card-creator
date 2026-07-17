@@ -571,7 +571,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         );
 
         const showRollButton = g.rollPhase && g.rollerIndex === 0 && !g.rolling;
-        const dimDice = g.rollPhase;
+        const dimDice = g.rollPhase || g.rolling;
+        const diceDisplay = g.rolling && g.dieValues.length ? g.dieValues : g.matchRule;
         const diceTray = (
           <div style={{
             position: "relative",
@@ -595,7 +596,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               opacity: dimDice ? 0.4 : 1,
               transition: "opacity 200ms ease",
             }}>
-              {g.matchRule.map((attr, i) => (
+              {diceDisplay.map((attr, i) => (
                 <div
                   key={i}
                   style={{
@@ -610,6 +611,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     transform: mobile ? undefined : i === 0 ? "rotate(-3.65deg)" : "rotate(8.59deg)",
                     color: COLORS.ink,
                     filter: "drop-shadow(0 3px 3px rgba(0,0,0,0.25))",
+                    animation: g.rolling ? `dice-tumble 260ms ease-in-out ${i * 80}ms infinite` : undefined,
                   }}
                 >
                   <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
