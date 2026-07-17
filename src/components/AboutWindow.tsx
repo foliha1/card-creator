@@ -22,7 +22,7 @@ const AboutWindow: React.FC = () => {
     fontStyle: "normal",
     fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
     color: COLORS.inkSubtle,
-    lineHeight: 1.6,
+    lineHeight: 1.5,
     margin: 0,
     maxWidth: 440,
   };
@@ -30,7 +30,7 @@ const AboutWindow: React.FC = () => {
   const sectionStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
-    gap: SPACE[2],
+    gap: SPACE[1],
   };
 
   return (
