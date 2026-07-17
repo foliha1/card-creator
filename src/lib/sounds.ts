@@ -70,3 +70,10 @@ export function playDoubleMatch() {
     setTimeout(() => playTone(f, 180, "sine", 0.15), i * 140);
   });
 }
+
+export function playWhoopCall() {
+  if (muted) return;
+  // Subtle "whoop-whoop" chirp when entering claim mode
+  playTone(520, 90, "sine", 0.12);
+  setTimeout(() => playTone(720, 90, "sine", 0.12), 110);
+}
