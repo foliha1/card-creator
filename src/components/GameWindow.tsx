@@ -626,6 +626,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             disabled={!whoopEnabled && !g.claimMode && !whoopFeedback}
             onClick={() => {
               if (whoopEnabled && !g.claimMode) {
+                playWhoopCall();
                 g.enterClaimMode();
               }
             }}
