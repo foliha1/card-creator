@@ -1,19 +1,20 @@
+## Plan
 
+Make two targeted tuning changes to Auntie O.'s AI behavior.
 
-## Desktop Background & Watermark Fix
+### 1. `src/hooks/useGameState.ts` — confidence-scaled claim reaction
+- Update `OPPONENT_TUNING`:
+  - `reactionMinMs: 3500`
+  - `reactionMaxMs: 7000`
+  - keep `confidenceThreshold: 0.55`
+- Replace the flat random delay in the opponent claim scheduler (currently `reactionMinMs + Math.random() * span`) with a confidence-scaled delay:
+  - `t = clamp((best.confidence - confidenceThreshold) / (2 - confidenceThreshold), 0, 1)`
+  - `delay = reactionMaxMs - t * (reactionMaxMs - reactionMinMs)`
+- Result: high-confidence pairs are claimed faster (~3.5s), shaky pairs slower (~7s), giving the human more time to beat her on uncertain memories.
 
-### Changes (single file: `src/components/DesktopShell.tsx`)
+### 2. `src/lib/opponentMemory.ts` — faster memory decay and corruption
+- Change decay multiplier from `0.88` to `0.85`.
+- Change corruption probability from `0.12` to `0.16`.
+- Result: older memories fade and corrupt faster, increasing the chance Auntie O. claims wrong — the intended "ruined dinner" behavior.
 
-1. **Background color**: Change `#2568B0` → `#0072B2`
-
-2. **Watermark logo** (lines 133-147): Replace the simple `<img>` with a tone-on-tone approach:
-   - Wrap the logo in a `<div>` with `background: #01527F`, positioned absolutely and centered like the current img
-   - Set the `<img>` to `filter: brightness(0) saturate(100%)` (renders it black) and `mix-blend-mode: screen`
-   - This makes the black logo transparent via screen blend, revealing the `#01527F` background only where the logo exists — creating a debossed dark-blue-on-blue effect
-   - Remove `opacity: 0.1`, set to `opacity: 1`
-   - Keep `pointerEvents: none` and existing size/positioning
-
-### Technical Detail
-
-The `screen` blend mode formula: lighter values show through. Black (0,0,0) screened over `#01527F` shows `#01527F`. The surrounding transparent/white areas of the SVG screened will show white — so we need the wrapper div to clip or the SVG background to be transparent. Since SVGs from this set have a cream/white background rectangle, we may need to adjust: if the SVG has a non-transparent background, the screen approach won't isolate the logo. In that case, fallback to `opacity: 0.18` with `filter: brightness(0.3) sepia(1) hue-rotate(180deg) saturate(3)` to tint toward dark blue — or simply use `opacity: 0.15` which against `#0072B2` will create a natural darkened tone. I'll try the simplest reliable approach first (opacity ~0.15-0.2 with the logo naturally darker) and adjust the filter to darken it into the `#01527F` range.
-
+No other files or game logic will be changed.

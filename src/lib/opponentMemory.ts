@@ -63,13 +63,13 @@ export function createOpponentMemory(): OpponentMemory {
     },
     decayAll() {
       for (const [idx, entry] of Array.from(store.entries())) {
-        const newStrength = entry.strength * 0.88;
+        const newStrength = entry.strength * 0.85;
         if (newStrength < 0.15) {
           store.delete(idx);
           continue;
         }
         let card = entry.card;
-        if (newStrength < 0.5 && Math.random() < 0.12) {
+        if (newStrength < 0.5 && Math.random() < 0.16) {
           card = corruptCard(card);
         }
         store.set(idx, { card, strength: newStrength });
