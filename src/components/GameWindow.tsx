@@ -958,8 +958,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <div style={{
                 display: "flex",
                 flexDirection: "row",
-                gap: SPACE[5],
-                padding: `${SPACE[4]}px ${SPACE[6]}px`,
+                gap: isSmall ? SPACE[4] : SPACE[5],
+                padding: `${SPACE[4]}px ${isSmall ? SPACE[4] : SPACE[6]}px`,
                 alignItems: "stretch",
               }}>
                 {newGameButton}
@@ -976,8 +976,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 overflow: "hidden",
                 alignItems: "center",
                 justifyContent: "center",
-                margin: `0 ${SPACE[6]}px`,
-                padding: SPACE[5],
+                margin: `0 ${isSmall ? SPACE[4] : SPACE[6]}px`,
+                padding: isSmall ? SPACE[4] : SPACE[5],
                 background: COLORS.panel,
                 border: BORDER.standard,
                 borderRadius: RADIUS.md,
@@ -992,8 +992,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               <div style={{
                 display: "flex",
                 flexDirection: "row",
-                gap: SPACE[5],
-                padding: `${SPACE[4]}px ${SPACE[6]}px`,
+                gap: isSmall ? SPACE[4] : SPACE[5],
+                padding: `${SPACE[4]}px ${isSmall ? SPACE[4] : SPACE[6]}px`,
                 alignItems: "stretch",
               }}>
                 {diceTray}
