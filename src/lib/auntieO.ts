@@ -43,7 +43,18 @@ export const LINES: Record<string, string[]> = {
     "Let's see here…",
     "Dice, be nice.",
   ],
+  lastCallStart: [
+    "Oh, NOW we're playing.",
+    "Grab what you can, baby.",
+    "Last call! Move.",
+  ],
+  lastCallGrab: [
+    "Mine.",
+    "Too slow.",
+    "Snooze, you lose.",
+  ],
 };
+
 
 const lastIndexByEvent: Record<string, number> = {};
 

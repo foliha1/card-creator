@@ -730,27 +730,25 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     [grid, matchRule, gameOver]
   );
 
-  // Opponent Last Call scanner: repeatedly attempts to claim any valid pair.
+  // Opponent Last Call scanner: repeatedly scrambles for any valid pair (random).
   useEffect(() => {
     if (!lastCall || gameOver) return;
-    const span = OPPONENT_TUNING.reactionMaxMs - OPPONENT_TUNING.reactionMinMs;
-    const delay = OPPONENT_TUNING.reactionMinMs + Math.random() * span;
+    const delay = 1200 + Math.random() * 1600;
     const t = setTimeout(() => {
       if (!lastCallRef.current || gameOver) return;
       const cards = grid
         .map((c, i) => ({ c, i }))
         .filter((x): x is { c: Card; i: number } => x.c !== null);
-      let pair: [number, number] | null = null;
-      outer: for (let i = 0; i < cards.length; i++) {
+      const pairs: Array<[number, number]> = [];
+      for (let i = 0; i < cards.length; i++) {
         for (let j = i + 1; j < cards.length; j++) {
           if (cardsMatchRule(cards[i].c, cards[j].c, matchRule)) {
-            pair = [cards[i].i, cards[j].i];
-            break outer;
+            pairs.push([cards[i].i, cards[j].i]);
           }
         }
       }
-      if (!pair) return;
-      const [a, b] = pair;
+      if (pairs.length === 0) return;
+      const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
       const newGrid = [...grid];
       newGrid[a] = null;
       newGrid[b] = null;
@@ -769,6 +767,7 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     }, delay);
     return () => clearTimeout(t);
   }, [lastCall, gameOver, grid, matchRule, scores]);
+
 
   return {
     deck,

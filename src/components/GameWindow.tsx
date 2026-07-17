@@ -4,11 +4,12 @@ import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
 import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, isMuted, setMuted } from "@/lib/sounds";
-import { ALL_CARDS } from "@/cardData";
+import { ALL_CARDS, Card } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { IconButton } from "@/components/ui/IconButton";
 import { pickLine, OPPONENT_NAME } from "@/lib/auntieO";
+
 
 interface GameWindowProps {
   mobile?: boolean;
@@ -81,8 +82,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, []);
   const [gameOverLine, setGameOverLine] = useState<string>("");
 
+  // Last Call local state
+  const [lastCallSel, setLastCallSel] = useState<number[]>([]);
+  const [lastCallShake, setLastCallShake] = useState<Set<number>>(new Set());
+
 
   const drawPileRef = useRef<HTMLDivElement | null>(null);
+  const scorePileRef = useRef<HTMLDivElement | null>(null);
   const gridCellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   interface FlyingCard {
@@ -95,10 +101,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     toW: number;
     toH: number;
     delay: number;
+    card?: Card;
   }
   const [flyingCards, setFlyingCards] = useState<FlyingCard[]>([]);
+  const [lastCallFlyers, setLastCallFlyers] = useState<FlyingCard[]>([]);
   const prevGridRef = useRef(g.grid);
   const initialDealDone = useRef(false);
+
 
   const launchFlyers = useCallback((targetIndices: number[]) => {
     if (!drawPileRef.current || targetIndices.length === 0) {
@@ -191,6 +200,26 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       showBubble(line, { sticky: true });
     }
   }, [g.gameOver, g.scores, gameOverLine, showBubble]);
+
+  // Last Call opening
+  const prevLastCallRef = useRef(false);
+  useEffect(() => {
+    if (g.lastCall && !prevLastCallRef.current) {
+      showBubble(pickLine("lastCallStart"), { red: true });
+    }
+    prevLastCallRef.current = g.lastCall;
+  }, [g.lastCall, showBubble]);
+
+  // Opponent grabs during Last Call (opponentClaiming isn't used in Last Call)
+  const prevLastCallOppScoreRef = useRef(g.scores[1]);
+  useEffect(() => {
+    if (g.lastCall && g.scores[1] > prevLastCallOppScoreRef.current) {
+      showBubble(pickLine("lastCallGrab"), { red: true });
+    }
+    prevLastCallOppScoreRef.current = g.scores[1];
+  }, [g.scores, g.lastCall, showBubble]);
+
+
 
 
 
@@ -341,9 +370,66 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, [g.rollPhase, g.rollerIndex, showBubble]);
 
 
+  const handleLastCallClick = useCallback(
+    (index: number) => {
+      if (g.grid[index] === null) return;
+      if (lastCallShake.size > 0) return;
+      setLastCallSel((prev) => {
+        if (prev.includes(index)) return prev.filter((x) => x !== index);
+        if (prev.length >= 2) return prev;
+        const next = [...prev, index];
+        if (next.length === 2) {
+          const [a, b] = next;
+          const cardA = g.grid[a];
+          const cardB = g.grid[b];
+          const isMatch =
+            !!cardA && !!cardB &&
+            g.matchRule.every((attr) => {
+              if (attr === "SHAPE") return cardA.shape === cardB.shape;
+              if (attr === "NUMBER") return cardA.number === cardB.number;
+              if (attr === "COLOR") return cardA.color === cardB.color;
+              return false;
+            });
+          if (isMatch && cardA && cardB) {
+            const scoreRect = scorePileRef.current?.getBoundingClientRect();
+            const flyers: FlyingCard[] = [];
+            [a, b].forEach((idx, k) => {
+              const cellEl = gridCellRefs.current.get(idx);
+              if (!cellEl || !scoreRect) return;
+              const cellRect = cellEl.getBoundingClientRect();
+              flyers.push({
+                id: `lc-fly-${idx}-${Date.now()}-${k}`,
+                index: idx,
+                fromX: cellRect.left,
+                fromY: cellRect.top,
+                toX: scoreRect.left + scoreRect.width / 2 - cellRect.width / 4,
+                toY: scoreRect.top + scoreRect.height / 2 - cellRect.height / 4,
+                toW: cellRect.width * 0.3,
+                toH: cellRect.height * 0.3,
+                delay: k * 80,
+                card: g.grid[idx] ?? undefined,
+              });
+            });
+            setLastCallFlyers(flyers);
+            playCorrect();
+            g.claimLastCall(a, b);
+            setTimeout(() => setLastCallFlyers([]), 700);
+          } else {
+            setLastCallShake(new Set(next));
+            setTimeout(() => setLastCallShake(new Set()), 250);
+          }
+          return [];
+        }
+        return next;
+      });
+    },
+    [g, lastCallShake]
+  );
+
   const handleCardClick = useCallback(
     (index: number) => {
       if (g.gameOver || g.rolling) return;
+      if (g.lastCall) { handleLastCallClick(index); return; }
       if (doublePhase === "pick" && g.bonusPicking) { g.pickBonus(index); return; }
       if (g.bonusPicking) return;
       if (g.claimMode) { g.selectCard(index); return; }
@@ -355,10 +441,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 1100);
     },
-    [g, peekLocked, doublePhase]
+    [g, peekLocked, doublePhase, handleLastCallClick]
   );
 
-  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
+  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling && !g.lastCall;
+
 
   const isSmall = mobile && window.innerWidth < 480;
   const cardW = isSmall ? 48 : 72;
@@ -528,6 +615,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             {[`Score: ${g.scores[0]}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
               <div
                 key={label}
+                ref={(el) => { if (label.startsWith("Score")) scorePileRef.current = el; }}
+
                 style={{
                   background: COLORS.surface,
                   border: BORDER.standard,
@@ -708,7 +797,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
-        const statusText = g.opponentClaiming
+        const statusText = g.lastCall
+          ? "LAST CALL — tap any matching pair!"
+          : g.opponentClaiming
           ? "Auntie O. is claiming!"
           : g.rollPhase && g.rollerIndex === 0
             ? "Your roll — tap the dice"
@@ -724,11 +815,31 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
-            color: COLORS.ink,
+            color: g.lastCall ? COLORS.red : COLORS.ink,
+            fontWeight: g.lastCall ? 700 : undefined,
           }}>
             {statusText}
           </div>
         );
+
+        const lastCallBanner = g.lastCall ? (
+          <div style={{
+            margin: `${SPACE[3]}px ${SPACE[6]}px 0`,
+            padding: `${SPACE[4]}px ${SPACE[6]}px`,
+            background: COLORS.surface,
+            border: `1.5px solid ${COLORS.red}`,
+            borderRadius: RADIUS.md,
+            textAlign: "center",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 700,
+            color: COLORS.red,
+            fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead,
+            letterSpacing: 0.3,
+          }}>
+            LAST CALL — grab every pair you can!
+          </div>
+        ) : null;
 
 
         const cardGrid = (
@@ -751,13 +862,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     else gridCellRefs.current.delete(i);
                   }}
                   style={{
-                    visibility: flyingCards.some((f) => f.index === i) ? "hidden" : "visible",
+                    visibility: flyingCards.some((f) => f.index === i) || lastCallFlyers.some((f) => f.index === i) ? "hidden" : "visible",
                     animation: shrinkingCards.has(i)
                       ? "card-shrink 0.4s ease forwards"
                       : enteringCards.has(i)
                       ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
-                      : shakingCards.has(i)
+                      : (shakingCards.has(i) || lastCallShake.has(i))
                       ? "card-shake 0.2s ease"
+                      : g.lastCall
+                      ? "red-pulse-border 1.6s infinite"
                       : undefined,
                     borderRadius: RADIUS.md,
                     ...(g.wrongCards.has(i)
@@ -772,11 +885,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
                       : {}),
+                    ...(g.lastCall && lastCallSel.includes(i)
+                      ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
+                      : {}),
                   }}
                 >
                   <GameCard
                     card={card}
                     faceUp={
+                      g.allFaceUp ||
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
@@ -786,11 +903,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       wrongFlashCards.has(i)
                     }
                     onClick={() => handleCardClick(i)}
-                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false)}
+                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false) || (g.lastCall && lastCallSel.includes(i))}
                     matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
                     wrong={wrongFlashCards.has(i)}
                     wrongWash={wrongWashCards.has(i)}
-                    shaking={shakingCards.has(i)}
+                    shaking={shakingCards.has(i) || lastCallShake.has(i)}
                   />
                 </div>
               ) : (
@@ -806,6 +923,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             )}
           </div>
         );
+
 
         const drawPile = (
           <div style={{
@@ -862,6 +980,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {opponentChip}
               </div>
 
+              {lastCallBanner}
+
+
               {/* Main area: card grid in panel */}
               <div style={{
                 display: "flex",
@@ -897,8 +1018,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 
         return (
           <>
+            {lastCallBanner}
             {/* Main area */}
             <div style={{
+
               display: "flex",
               flexDirection: "row",
               gap: (typeof window !== 'undefined' && window.innerWidth < 1100) ? SPACE[10] : 38,
@@ -962,7 +1085,34 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           }}
         />
       ))}
+
+      {/* Last Call flyers — face-up cards flying to the score pile */}
+      {lastCallFlyers.map((fc) => (
+        <img
+          key={fc.id}
+          src={fc.card?.svgPath ?? "/cards/card-back.svg"}
+          alt=""
+          style={{
+            position: "fixed",
+            left: fc.fromX,
+            top: fc.fromY,
+            width: 72,
+            height: 101,
+            borderRadius: RADIUS.md,
+            pointerEvents: "none",
+            zIndex: 50,
+            filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.3))",
+            transformOrigin: "top left",
+            ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
+            ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
+            ["--fly-scale-x" as any]: `${fc.toW / 72}`,
+            ["--fly-scale-y" as any]: `${fc.toH / 101}`,
+            animation: `fly-to-grid 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${fc.delay}ms both`,
+          }}
+        />
+      ))}
     </div>
+
   );
 };
 
