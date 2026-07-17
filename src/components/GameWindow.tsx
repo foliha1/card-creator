@@ -299,6 +299,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     prevGridRef.current = g.grid;
   }, [g.grid]);
 
+  // Play flip sound for opponent auto-flips (human flips already play on click)
+  const prevPeekRef = useRef<number | null>(g.peekingCard);
+  useEffect(() => {
+    if (g.peekingCard !== null && prevPeekRef.current === null && g.flipperIndex === 1) {
+      playFlip();
+    }
+    prevPeekRef.current = g.peekingCard;
+  }, [g.peekingCard, g.flipperIndex]);
+
 
   useEffect(() => {
     if (g.selectedCards.length === 2 && g.claimMode) {
