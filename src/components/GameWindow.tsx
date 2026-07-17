@@ -797,7 +797,9 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           </div>
         );
 
-        const statusText = g.opponentClaiming
+        const statusText = g.lastCall
+          ? "LAST CALL — tap any matching pair!"
+          : g.opponentClaiming
           ? "Auntie O. is claiming!"
           : g.rollPhase && g.rollerIndex === 0
             ? "Your roll — tap the dice"
@@ -813,11 +815,31 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
-            color: COLORS.ink,
+            color: g.lastCall ? COLORS.red : COLORS.ink,
+            fontWeight: g.lastCall ? 700 : undefined,
           }}>
             {statusText}
           </div>
         );
+
+        const lastCallBanner = g.lastCall ? (
+          <div style={{
+            margin: `${SPACE[3]}px ${SPACE[6]}px 0`,
+            padding: `${SPACE[4]}px ${SPACE[6]}px`,
+            background: COLORS.surface,
+            border: `1.5px solid ${COLORS.red}`,
+            borderRadius: RADIUS.md,
+            textAlign: "center",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 700,
+            color: COLORS.red,
+            fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead,
+            letterSpacing: 0.3,
+          }}>
+            LAST CALL — grab every pair you can!
+          </div>
+        ) : null;
 
 
         const cardGrid = (
@@ -840,13 +862,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     else gridCellRefs.current.delete(i);
                   }}
                   style={{
-                    visibility: flyingCards.some((f) => f.index === i) ? "hidden" : "visible",
+                    visibility: flyingCards.some((f) => f.index === i) || lastCallFlyers.some((f) => f.index === i) ? "hidden" : "visible",
                     animation: shrinkingCards.has(i)
                       ? "card-shrink 0.4s ease forwards"
                       : enteringCards.has(i)
                       ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
-                      : shakingCards.has(i)
+                      : (shakingCards.has(i) || lastCallShake.has(i))
                       ? "card-shake 0.2s ease"
+                      : g.lastCall
+                      ? "red-pulse-border 1.6s infinite"
                       : undefined,
                     borderRadius: RADIUS.md,
                     ...(g.wrongCards.has(i)
@@ -861,11 +885,15 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
                       : {}),
+                    ...(g.lastCall && lastCallSel.includes(i)
+                      ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
+                      : {}),
                   }}
                 >
                   <GameCard
                     card={card}
                     faceUp={
+                      g.allFaceUp ||
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
@@ -875,11 +903,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       wrongFlashCards.has(i)
                     }
                     onClick={() => handleCardClick(i)}
-                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false)}
+                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false) || (g.lastCall && lastCallSel.includes(i))}
                     matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
                     wrong={wrongFlashCards.has(i)}
                     wrongWash={wrongWashCards.has(i)}
-                    shaking={shakingCards.has(i)}
+                    shaking={shakingCards.has(i) || lastCallShake.has(i)}
                   />
                 </div>
               ) : (
@@ -895,6 +923,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             )}
           </div>
         );
+
 
         const drawPile = (
           <div style={{
