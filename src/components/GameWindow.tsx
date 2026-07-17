@@ -98,6 +98,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     fromY: number;
     toX: number;
     toY: number;
+    fromW: number;
+    fromH: number;
     toW: number;
     toH: number;
     delay: number;
@@ -121,15 +123,19 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       const cellEl = gridCellRefs.current.get(idx);
       if (!cellEl) return;
       const cellRect = cellEl.getBoundingClientRect();
+      const toW = cellRect.width;
+      const toH = cellRect.height;
       flyers.push({
         id: `fly-${idx}-${Date.now()}`,
         index: idx,
-      fromX: pileRect.left + pileRect.width / 2 - 36,
-        fromY: pileRect.top + pileRect.height / 2 - 50,
+        fromX: pileRect.left + pileRect.width / 2 - toW / 2,
+        fromY: pileRect.top + pileRect.height / 2 - toH / 2,
         toX: cellRect.left,
         toY: cellRect.top,
-        toW: cellRect.width,
-        toH: cellRect.height,
+        fromW: toW,
+        fromH: toH,
+        toW,
+        toH,
         delay: i * 100,
       });
     });
@@ -402,10 +408,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 index: idx,
                 fromX: cellRect.left,
                 fromY: cellRect.top,
-                toX: scoreRect.left + scoreRect.width / 2 - cellRect.width / 4,
-                toY: scoreRect.top + scoreRect.height / 2 - cellRect.height / 4,
-                toW: cellRect.width * 0.3,
-                toH: cellRect.height * 0.3,
+                toX: scoreRect.left + scoreRect.width / 2 - cellRect.width / 2,
+                toY: scoreRect.top + scoreRect.height / 2 - cellRect.height / 2,
+                fromW: cellRect.width,
+                fromH: cellRect.height,
+                toW: cellRect.width,
+                toH: cellRect.height,
                 delay: k * 80,
                 card: g.grid[idx] ?? undefined,
               });
@@ -1070,8 +1078,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             position: "fixed",
             left: fc.fromX,
             top: fc.fromY,
-            width: 72,
-            height: 101,
+            width: fc.toW,
+            height: fc.toH,
             borderRadius: RADIUS.md,
             pointerEvents: "none",
             zIndex: 50,
@@ -1079,8 +1087,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             transformOrigin: "top left",
             ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
             ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
-            ["--fly-scale-x" as any]: `${fc.toW / 72}`,
-            ["--fly-scale-y" as any]: `${fc.toH / 101}`,
+            ["--fly-scale-x" as any]: `1`,
+            ["--fly-scale-y" as any]: `1`,
             animation: `fly-to-grid 0.4s cubic-bezier(0.22, 1, 0.36, 1) ${fc.delay}ms both`,
           }}
         />
@@ -1096,8 +1104,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             position: "fixed",
             left: fc.fromX,
             top: fc.fromY,
-            width: 72,
-            height: 101,
+            width: fc.toW,
+            height: fc.toH,
             borderRadius: RADIUS.md,
             pointerEvents: "none",
             zIndex: 50,
@@ -1105,8 +1113,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             transformOrigin: "top left",
             ["--fly-to-x" as any]: `${fc.toX - fc.fromX}px`,
             ["--fly-to-y" as any]: `${fc.toY - fc.fromY}px`,
-            ["--fly-scale-x" as any]: `${fc.toW / 72}`,
-            ["--fly-scale-y" as any]: `${fc.toH / 101}`,
+            ["--fly-scale-x" as any]: `1`,
+            ["--fly-scale-y" as any]: `1`,
             animation: `fly-to-grid 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${fc.delay}ms both`,
           }}
         />
