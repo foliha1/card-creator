@@ -1133,3 +1133,167 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
 };
 
 export default GameWindow;
+
+// ============================================================
+// TEMPORARY DEBUG OVERLAY — flyer/grid geometry inspector.
+// Enable via URL ?debug=flyers or window.__debugFlyers = true.
+// Safe to delete this component + its <FlyerDebugOverlay/> usage.
+// ============================================================
+interface DebugFlyer {
+  id: string;
+  index: number;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  fromW: number;
+  fromH: number;
+  toW: number;
+  toH: number;
+}
+interface FlyerDebugOverlayProps {
+  gridCellRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
+  drawPileRef: React.MutableRefObject<HTMLDivElement | null>;
+  scorePileRef: React.MutableRefObject<HTMLDivElement | null>;
+  flyingCards: DebugFlyer[];
+  lastCallFlyers: DebugFlyer[];
+}
+const FlyerDebugOverlay: React.FC<FlyerDebugOverlayProps> = ({
+  gridCellRefs,
+  drawPileRef,
+  scorePileRef,
+  flyingCards,
+  lastCallFlyers,
+}) => {
+  const [enabled, setEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const url = new URLSearchParams(window.location.search);
+    return url.get("debug") === "flyers" || (window as any).__debugFlyers === true;
+  });
+  const [, forceTick] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    (window as any).__toggleFlyerDebug = () => setEnabled((v) => !v);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.shiftKey && (e.key === "D" || e.key === "d") && e.altKey) {
+        setEnabled((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let raf = 0;
+    const loop = () => { forceTick((n) => (n + 1) % 1000000); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [enabled]);
+
+  if (!enabled) return null;
+
+  const cells: { idx: number; r: DOMRect }[] = [];
+  gridCellRefs.current.forEach((el, idx) => {
+    if (el) cells.push({ idx, r: el.getBoundingClientRect() });
+  });
+  const pileRect = drawPileRef.current?.getBoundingClientRect() ?? null;
+  const scoreRect = scorePileRef.current?.getBoundingClientRect() ?? null;
+
+  const Box = ({
+    x, y, w, h, color, label, dashed, bg,
+  }: { x: number; y: number; w: number; h: number; color: string; label: string; dashed?: boolean; bg?: string }) => (
+    <div
+      style={{
+        position: "fixed",
+        left: x,
+        top: y,
+        width: w,
+        height: h,
+        border: `1px ${dashed ? "dashed" : "solid"} ${color}`,
+        background: bg,
+        pointerEvents: "none",
+        zIndex: 9998,
+        boxSizing: "border-box",
+        fontFamily: "monospace",
+        fontSize: 9,
+        color,
+        lineHeight: 1.1,
+      }}
+    >
+      <span style={{ position: "absolute", top: -12, left: 0, background: "rgba(255,255,255,0.85)", padding: "0 2px", whiteSpace: "nowrap" }}>
+        {label} {Math.round(w)}×{Math.round(h)}
+      </span>
+    </div>
+  );
+
+  const Dot = ({ x, y, color }: { x: number; y: number; color: string }) => (
+    <div
+      style={{
+        position: "fixed",
+        left: x - 3,
+        top: y - 3,
+        width: 6,
+        height: 6,
+        background: color,
+        borderRadius: 6,
+        pointerEvents: "none",
+        zIndex: 9999,
+        boxShadow: "0 0 0 1px white",
+      }}
+    />
+  );
+
+  return (
+    <>
+      {cells.map(({ idx, r }) => (
+        <React.Fragment key={`cell-${idx}`}>
+          <Box x={r.left} y={r.top} w={r.width} h={r.height} color="#00A3FF" label={`cell#${idx}`} />
+          <Dot x={r.left + r.width / 2} y={r.top + r.height / 2} color="#00A3FF" />
+        </React.Fragment>
+      ))}
+      {pileRect && (
+        <Box x={pileRect.left} y={pileRect.top} w={pileRect.width} h={pileRect.height} color="#8A2BE2" label="drawPile" />
+      )}
+      {scoreRect && (
+        <Box x={scoreRect.left} y={scoreRect.top} w={scoreRect.width} h={scoreRect.height} color="#8A2BE2" label="scorePile" />
+      )}
+      {flyingCards.map((f) => (
+        <React.Fragment key={`fdbg-${f.id}`}>
+          <Box x={f.fromX} y={f.fromY} w={f.fromW} h={f.fromH} color="#E7B324" label={`from#${f.index}`} dashed bg="rgba(231,179,36,0.08)" />
+          <Box x={f.toX} y={f.toY} w={f.toW} h={f.toH} color="#59CD90" label={`to#${f.index}`} bg="rgba(89,205,144,0.10)" />
+          <Dot x={f.fromX + f.fromW / 2} y={f.fromY + f.fromH / 2} color="#E7B324" />
+          <Dot x={f.toX + f.toW / 2} y={f.toY + f.toH / 2} color="#59CD90" />
+        </React.Fragment>
+      ))}
+      {lastCallFlyers.map((f) => (
+        <React.Fragment key={`lcdbg-${f.id}`}>
+          <Box x={f.fromX} y={f.fromY} w={f.fromW} h={f.fromH} color="#FF6B6B" label={`lcFrom#${f.index}`} dashed bg="rgba(255,107,107,0.08)" />
+          <Box x={f.toX} y={f.toY} w={f.toW} h={f.toH} color="#D72229" label={`lcTo#${f.index}`} bg="rgba(215,34,41,0.10)" />
+          <Dot x={f.fromX + f.fromW / 2} y={f.fromY + f.fromH / 2} color="#FF6B6B" />
+          <Dot x={f.toX + f.toW / 2} y={f.toY + f.toH / 2} color="#D72229" />
+        </React.Fragment>
+      ))}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 8,
+          right: 8,
+          zIndex: 10000,
+          background: "rgba(0,0,0,0.75)",
+          color: "white",
+          font: "11px monospace",
+          padding: "6px 8px",
+          borderRadius: 4,
+          pointerEvents: "auto",
+          cursor: "pointer",
+        }}
+        onClick={() => setEnabled(false)}
+        title="Click to hide. Toggle: Alt+Shift+D or window.__toggleFlyerDebug()"
+      >
+        flyer debug ON — click to hide
+      </div>
+    </>
+  );
+};
