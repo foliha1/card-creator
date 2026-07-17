@@ -109,6 +109,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [lastCallFlyers, setLastCallFlyers] = useState<FlyingCard[]>([]);
   const prevGridRef = useRef(g.grid);
   const initialDealDone = useRef(false);
+  const flyerRetryCount = useRef(0);
 
 
   const launchFlyers = useCallback((targetIndices: number[]) => {
@@ -119,12 +120,17 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
     const pileRect = drawPileRef.current.getBoundingClientRect();
     const flyers: FlyingCard[] = [];
+    let anyUnmeasured = false;
     targetIndices.forEach((idx, i) => {
       const cellEl = gridCellRefs.current.get(idx);
       if (!cellEl) return;
       const cellRect = cellEl.getBoundingClientRect();
       const toW = cellRect.width;
       const toH = cellRect.height;
+      if (toW === 0 || toH === 0) {
+        anyUnmeasured = true;
+        return;
+      }
       flyers.push({
         id: `fly-${idx}-${Date.now()}`,
         index: idx,
@@ -139,6 +145,18 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         delay: i * 100,
       });
     });
+    if (anyUnmeasured) {
+      flyerRetryCount.current += 1;
+      if (flyerRetryCount.current <= 5) {
+        requestAnimationFrame(() => launchFlyers(targetIndices));
+      } else {
+        flyerRetryCount.current = 0;
+        setEnteringCards(new Set(targetIndices));
+        setTimeout(() => setEnteringCards(new Set()), 800);
+      }
+      return;
+    }
+    flyerRetryCount.current = 0;
     setFlyingCards(flyers);
     setTimeout(() => {
       setFlyingCards([]);
@@ -330,7 +348,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (newSlots.length > 0) {
         if (!initialDealDone.current) {
           initialDealDone.current = true;
-          launchFlyers(newSlots);
+          // Wait for the grid layout to paint before measuring cells
+          requestAnimationFrame(() => requestAnimationFrame(() => launchFlyers(newSlots)));
         } else {
           setEnteringCards(new Set(newSlots));
           setTimeout(() => setEnteringCards(new Set()), 800);
