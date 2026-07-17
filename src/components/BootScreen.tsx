@@ -5,7 +5,7 @@ interface BootScreenProps {
   onComplete: () => void;
 }
 
-const CARD_W = 90;
+const CARD_W = 108;
 const CARD_H = Math.round(CARD_W * (7 / 5));
 const FLIP_INTERVAL = 700;
 const MIN_DURATION = 1800;
