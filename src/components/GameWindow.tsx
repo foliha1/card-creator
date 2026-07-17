@@ -109,6 +109,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const [lastCallFlyers, setLastCallFlyers] = useState<FlyingCard[]>([]);
   const prevGridRef = useRef(g.grid);
   const initialDealDone = useRef(false);
+  const flyerRetryCount = useRef(0);
 
 
   const launchFlyers = useCallback((targetIndices: number[]) => {
