@@ -766,7 +766,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             minWidth: mobile ? undefined : 0,
             alignSelf: mobile ? "stretch" : "center",
             width: mobile ? "100%" : undefined,
-            boxSizing: "border-box",
+            boxSizing: mobile ? "border-box" : undefined,
             justifyContent: mobile ? "space-between" : undefined,
           }}>
             <span style={{
