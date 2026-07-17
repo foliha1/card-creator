@@ -615,6 +615,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             {[`Score: ${g.scores[0]}`, `Round: ${g.roundNum}`, `Cards Left: ${g.deck.length}`].map((label) => (
               <div
                 key={label}
+                ref={(el) => { if (label.startsWith("Score")) scorePileRef.current = el; }}
+
                 style={{
                   background: COLORS.surface,
                   border: BORDER.standard,
