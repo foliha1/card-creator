@@ -89,7 +89,7 @@ const PeekDemo: React.FC = () => {
           color: COLORS.inkMuted,
         }}
       >
-        {flipped ? "Memorize it!" : "Tap to peek"}
+        {flipped ? "Remember it!" : "Tap to flip"}
       </span>
     </div>
   );
@@ -131,19 +131,18 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: SPACE[8] }}>
         {slide === 0 && (
           <>
-            <div style={headlineStyle}>Peek & Memorize</div>
+            <div style={headlineStyle}>Meet Auntie O.</div>
             <div style={bodyStyle}>
-              Tap a card to peek — but peeks are limited. You get 3 per roll, so make every one count. What you remember carries over to the next roll.
+              You're playing against Auntie O., the family card shark who never forgets a card… usually. Beat her to the WHOOP! and the pair is yours.
             </div>
-            <PeekDemo />
           </>
         )}
 
         {slide === 1 && (
           <>
-            <div style={headlineStyle}>Roll the Dice</div>
+            <div style={headlineStyle}>Roll · Flip · Remember</div>
             <div style={bodyStyle}>
-              Each round, the match dice roll to decide what counts as a pair. Match by SHAPE, NUMBER, or COLOR — or two at once for a Double Match! Out of peeks? Tap New Roll for fresh dice and a fresh budget.
+              Each round starts with a roll — 1 die (match one thing) or 2 dice (match both). Then you each flip one card face-up for everyone to see. Watch her flips as closely as your own — that's free information.
             </div>
             <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center", alignItems: "center" }}>
               {["SHAPE", "COLOR"].map((label, i) => (
@@ -180,16 +179,16 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                 marginTop: SPACE[2],
               }}
             >
-              These two? Match by shape AND color.
+              Two dice? Match by shape AND color.
             </div>
           </>
         )}
 
         {slide === 2 && (
           <>
-            <div style={headlineStyle}>Claim Your Match</div>
+            <div style={headlineStyle}>WHOOP! WHOOP!</div>
             <div style={bodyStyle}>
-              Think you know a pair? Hit WHOOP! WHOOP! and tap two cards — anytime, even without peeking. Right: they're yours. Wrong: those cards freeze face-up, off-limits, and it costs you 2 peeks.
+              Spot a matching pair? Hit WHOOP! WHOOP! and tap the two cards — anytime, even on her turn. Right: they're yours (and a 2-dice match grabs 2 bonus cards, blind). Wrong: the cards freeze face-up and you skip your next flip. She races you on every pair, so speak up fast.
             </div>
             <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
               <img
@@ -226,11 +225,20 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             </div>
           </>
         )}
+
+        {slide === 3 && (
+          <>
+            <div style={headlineStyle}>Last Call</div>
+            <div style={bodyStyle}>
+              When the draw pile runs dry and a round passes with no matches, everything flips face-up for Last Call — one die, no turns, grab every pair you can before she does. Most cards wins. Now go ruin a family dinner.
+            </div>
+          </>
+        )}
       </div>
 
       {/* Nav dots */}
       <div style={{ display: "flex", justifyContent: "center", gap: SPACE[3] }}>
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             style={{
@@ -264,7 +272,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           size="md"
           fullWidth
           onClick={() => {
-            if (slide === 2) {
+            if (slide === 3) {
               onClose();
             } else {
               setSlide((s) => s + 1);
@@ -272,7 +280,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           }}
           style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
         >
-          {slide === 2 ? "Got it!" : "Next"}
+          {slide === 3 ? "Got it!" : "Next"}
         </AppButton>
       </div>
     </div>
