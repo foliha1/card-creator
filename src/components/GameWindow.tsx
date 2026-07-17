@@ -291,18 +291,13 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         if (c && !prev[i]) newSlots.push(i);
       });
       if (newSlots.length > 0) {
-        if (!initialDealDone.current) {
-          initialDealDone.current = true;
-          // Wait for the grid layout to paint before measuring cells
-          requestAnimationFrame(() => requestAnimationFrame(() => launchFlyers(newSlots)));
-        } else {
-          setEnteringCards(new Set(newSlots));
-          setTimeout(() => setEnteringCards(new Set()), 800);
-        }
+        setEnteringCards(new Set(newSlots));
+        setTimeout(() => setEnteringCards(new Set()), 800);
       }
     }
     prevGridRef.current = g.grid;
-  }, [g.grid, launchFlyers]);
+  }, [g.grid]);
+
 
   useEffect(() => {
     if (g.selectedCards.length === 2 && g.claimMode) {
