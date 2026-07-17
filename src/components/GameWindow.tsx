@@ -123,15 +123,19 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       const cellEl = gridCellRefs.current.get(idx);
       if (!cellEl) return;
       const cellRect = cellEl.getBoundingClientRect();
+      const toW = cellRect.width;
+      const toH = cellRect.height;
       flyers.push({
         id: `fly-${idx}-${Date.now()}`,
         index: idx,
-      fromX: pileRect.left + pileRect.width / 2 - 36,
-        fromY: pileRect.top + pileRect.height / 2 - 50,
+        fromX: pileRect.left + pileRect.width / 2 - toW / 2,
+        fromY: pileRect.top + pileRect.height / 2 - toH / 2,
         toX: cellRect.left,
         toY: cellRect.top,
-        toW: cellRect.width,
-        toH: cellRect.height,
+        fromW: toW,
+        fromH: toH,
+        toW,
+        toH,
         delay: i * 100,
       });
     });
