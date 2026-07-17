@@ -7,8 +7,8 @@ type Tier = "easy" | "standard";
 
 const PLAYERS = ["you", "opponent"] as const;
 export const OPPONENT_TUNING = {
-  reactionMinMs: 3000,
-  reactionMaxMs: 6500,
+  reactionMinMs: 3500,
+  reactionMaxMs: 7000,
   confidenceThreshold: 0.55,
   thinkDelayMs: 1400,
 } as const;
@@ -584,7 +584,15 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const best = memoryRef.current.bestPair(matchRule, excluded);
     if (!best || best.confidence < OPPONENT_TUNING.confidenceThreshold) return;
     const span = OPPONENT_TUNING.reactionMaxMs - OPPONENT_TUNING.reactionMinMs;
-    const delay = OPPONENT_TUNING.reactionMinMs + Math.floor(Math.random() * span);
+    const t = Math.max(
+      0,
+      Math.min(
+        1,
+        (best.confidence - OPPONENT_TUNING.confidenceThreshold) /
+          (2 - OPPONENT_TUNING.confidenceThreshold)
+      )
+    );
+    const delay = OPPONENT_TUNING.reactionMaxMs - t * span;
     if (oppClaimTimerRef.current) clearTimeout(oppClaimTimerRef.current);
     oppClaimTimerRef.current = setTimeout(() => {
       oppClaimTimerRef.current = null;
