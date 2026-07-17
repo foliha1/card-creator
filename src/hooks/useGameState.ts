@@ -455,6 +455,8 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     const cardA = grid[a];
     const cardB = grid[b];
     if (cardA && cardB && cardsMatchRule(cardA, cardB, matchRule)) {
+      claimedThisRoundRef.current = true;
+
       if (isDoubleMatch) {
         const extra = (picks ?? [])
           .filter((i) => i !== a && i !== b && grid[i] !== null && !wrongCards.has(i))
