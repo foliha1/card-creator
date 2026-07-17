@@ -215,10 +215,10 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   useEffect(() => {
     if (g.lastCall && g.scores[1] > prevLastCallOppScoreRef.current) {
       showBubble(pickLine("lastCallGrab"), { red: true });
-      playWrong();
     }
     prevLastCallOppScoreRef.current = g.scores[1];
   }, [g.scores, g.lastCall, showBubble]);
+
 
 
 
