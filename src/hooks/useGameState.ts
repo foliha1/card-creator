@@ -226,8 +226,16 @@ export function useGameState(tier: Tier = "standard", gridSize: "3x2" | "3x3" = 
     prevGridRef.current = newGrid;
     pendingOppPicksRef.current = null;
     if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
+    claimedThisRoundRef.current = false;
+    drawEmptyRef.current = false;
+    lastCallRef.current = false;
+    setDrawEmpty(false);
+    setRoundsSinceClaim(0);
+    setLastCall(false);
+    setAllFaceUp(false);
     setMessage("");
     setRollPhase(true);
+
     const count = getDieCount(tier, 1);
     const values = rollRandomAttributes(count);
     const { rule, isDoubleMatch: dm } = computeRule(values);
