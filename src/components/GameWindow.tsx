@@ -370,9 +370,66 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   }, [g.rollPhase, g.rollerIndex, showBubble]);
 
 
+  const handleLastCallClick = useCallback(
+    (index: number) => {
+      if (g.grid[index] === null) return;
+      if (lastCallShake.size > 0) return;
+      setLastCallSel((prev) => {
+        if (prev.includes(index)) return prev.filter((x) => x !== index);
+        if (prev.length >= 2) return prev;
+        const next = [...prev, index];
+        if (next.length === 2) {
+          const [a, b] = next;
+          const cardA = g.grid[a];
+          const cardB = g.grid[b];
+          const isMatch =
+            !!cardA && !!cardB &&
+            g.matchRule.every((attr) => {
+              if (attr === "SHAPE") return cardA.shape === cardB.shape;
+              if (attr === "NUMBER") return cardA.number === cardB.number;
+              if (attr === "COLOR") return cardA.color === cardB.color;
+              return false;
+            });
+          if (isMatch && cardA && cardB) {
+            const scoreRect = scorePileRef.current?.getBoundingClientRect();
+            const flyers: FlyingCard[] = [];
+            [a, b].forEach((idx, k) => {
+              const cellEl = gridCellRefs.current.get(idx);
+              if (!cellEl || !scoreRect) return;
+              const cellRect = cellEl.getBoundingClientRect();
+              flyers.push({
+                id: `lc-fly-${idx}-${Date.now()}-${k}`,
+                index: idx,
+                fromX: cellRect.left,
+                fromY: cellRect.top,
+                toX: scoreRect.left + scoreRect.width / 2 - cellRect.width / 4,
+                toY: scoreRect.top + scoreRect.height / 2 - cellRect.height / 4,
+                toW: cellRect.width * 0.3,
+                toH: cellRect.height * 0.3,
+                delay: k * 80,
+                card: g.grid[idx] ?? undefined,
+              });
+            });
+            setLastCallFlyers(flyers);
+            playCorrect();
+            g.claimLastCall(a, b);
+            setTimeout(() => setLastCallFlyers([]), 700);
+          } else {
+            setLastCallShake(new Set(next));
+            setTimeout(() => setLastCallShake(new Set()), 250);
+          }
+          return [];
+        }
+        return next;
+      });
+    },
+    [g, lastCallShake]
+  );
+
   const handleCardClick = useCallback(
     (index: number) => {
       if (g.gameOver || g.rolling) return;
+      if (g.lastCall) { handleLastCallClick(index); return; }
       if (doublePhase === "pick" && g.bonusPicking) { g.pickBonus(index); return; }
       if (g.bonusPicking) return;
       if (g.claimMode) { g.selectCard(index); return; }
@@ -384,10 +441,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 1100);
     },
-    [g, peekLocked, doublePhase]
+    [g, peekLocked, doublePhase, handleLastCallClick]
   );
 
-  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling;
+  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling && !g.lastCall;
+
 
   const isSmall = mobile && window.innerWidth < 480;
   const cardW = isSmall ? 48 : 72;
