@@ -1037,7 +1037,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 justifyContent: "center",
                 margin: `0 ${isSmall ? SPACE[4] : SPACE[6]}px`,
                 padding: isSmall ? SPACE[4] : SPACE[5],
-                background: COLORS.panel,
+                background: COLORS.panelMuted,
                 border: BORDER.standard,
                 borderRadius: RADIUS.md,
               }}>
