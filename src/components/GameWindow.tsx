@@ -1025,6 +1025,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 {scoreBadges}
                 {opponentChip}
               </div>
+              {mobileBubblePortal}
 
               {lastCallBanner}
 
