@@ -47,7 +47,6 @@ export interface OpponentMemory {
     rule: string[],
     excluded: Set<number>
   ): { a: number; b: number; confidence: number } | null;
-  bestBlindPicks(n: number, excluded: Set<number>): number[];
   reset(): void;
 }
 
