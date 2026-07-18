@@ -7,93 +7,6 @@ interface HowToPlayWindowProps {
   onClose: () => void;
 }
 
-const PeekDemo: React.FC = () => {
-  const [flipped, setFlipped] = React.useState(false);
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleTap = () => {
-    if (flipped) return;
-    setFlipped(true);
-    timerRef.current = setTimeout(() => setFlipped(false), 2000);
-  };
-
-  React.useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE[4] }}>
-      <div
-        onClick={handleTap}
-        style={{
-          width: 100,
-          aspectRatio: "5/7",
-          perspective: 600,
-          cursor: "pointer",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            position: "relative",
-            transformStyle: "preserve-3d",
-            transition: "transform 0.5s cubic-bezier(0.4,0,0.2,1)",
-            transform: flipped ? "rotateY(0deg)" : "rotateY(180deg)",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backfaceVisibility: "hidden",
-              borderRadius: RADIUS.md,
-              overflow: "hidden",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.25)",
-            }}
-          >
-            <img
-              src="/cards/3-star-red.svg"
-              alt="Red Star 3"
-              style={{ width: "100%", height: "100%", display: "block" }}
-              draggable={false}
-            />
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backfaceVisibility: "hidden",
-              borderRadius: RADIUS.md,
-              overflow: "hidden",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.25)",
-              transform: "rotateY(180deg)",
-            }}
-          >
-            <img
-              src="/cards/card-back.svg"
-              alt="Card back"
-              style={{ width: "100%", height: "100%", display: "block" }}
-              draggable={false}
-            />
-          </div>
-        </div>
-      </div>
-      <span
-        style={{
-          fontFamily: FONT_FAMILY,
-          fontStyle: "italic",
-          fontSize: TYPE.caption,
-          color: COLORS.inkMuted,
-        }}
-      >
-        {flipped ? "Remember it!" : "Tap to flip"}
-      </span>
-    </div>
-  );
-};
 
 const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const [slide, setSlide] = useState(0);
@@ -188,7 +101,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>WHOOP! WHOOP!</div>
             <div style={bodyStyle}>
-              Spot a matching pair? Hit WHOOP! WHOOP! and tap the two cards — anytime, even on her turn. Right: they're yours (and a 2-dice match grabs 2 bonus cards, blind). Wrong: the cards freeze face-up and you skip your next flip. She races you on every pair, so speak up fast.
+              Spot a matching pair? Hit WHOOP! WHOOP! and tap the two cards — anytime, even on her turn. Right: they're yours. Wrong: the cards freeze face-up and you skip your next flip. She races you on every pair, so speak up fast.
             </div>
             <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
               <img

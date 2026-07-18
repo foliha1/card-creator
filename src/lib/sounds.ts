@@ -63,14 +63,6 @@ export function playWrong() {
   playTone(200, 150, "sawtooth", 0.1);
 }
 
-export function playDoubleMatch() {
-  if (muted) return;
-  const freqs = [440, 554, 659];
-  freqs.forEach((f, i) => {
-    setTimeout(() => playTone(f, 180, "sine", 0.15), i * 140);
-  });
-}
-
 export function playWhoopCall() {
   if (muted) return;
   // Subtle "whoop-whoop" chirp when entering claim mode

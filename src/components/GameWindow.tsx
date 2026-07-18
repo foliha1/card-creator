@@ -4,7 +4,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, playDeal, playWhoopCall, isMuted, setMuted } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDiceRoll, playDeal, playWhoopCall, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS, Card } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
@@ -61,16 +61,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   // --- Animation state ---
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [shrinkingCards, setShrinkingCards] = useState<Set<number>>(new Set());
   const [enteringCards, setEnteringCards] = useState<Set<number>>(new Set());
   const [shakingCards, setShakingCards] = useState<Set<number>>(new Set());
   const [wrongFlashCards, setWrongFlashCards] = useState<Set<number>>(new Set());
   const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
   const [scoreBounce, setScoreBounce] = useState(false);
-  const [showDoubleTitle, setShowDoubleTitle] = useState(false);
-  const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "reveal" | "bonusShrink">("idle");
-  const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
-  const [bonusHighlighted, setBonusHighlighted] = useState<Set<number>>(new Set());
   const [diceLanded, setDiceLanded] = useState(false);
   const [whoopFeedback, setWhoopFeedback] = useState<{ text: string; tone: "success" | "red" } | null>(null);
   const whoopFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,7 +113,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const prevScoreRef = useRef(g.scores[0]);
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
-  const prevBonusRef = useRef(false);
+  
   
 
   const showWhoopFeedback = useCallback((text: string, tone: "success" | "red") => {
@@ -215,10 +210,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
-      setShowDoubleTitle(false);
-      setDoublePhase("idle");
-      setOrangePulseCards(new Set());
-      setBonusHighlighted(new Set());
     }
   }, [g.roundNum]);
 
@@ -247,14 +238,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.wrongCards, showWhoopFeedback]);
 
-  // Double Jeopardy removed under v6.1 Single-Die Core.
-  void prevBonusRef;
-  void setShowDoubleTitle;
-  void setDoublePhase;
-  void setShrinkingCards;
-  void setOrangePulseCards;
-  void setBonusHighlighted;
-  void playDoubleMatch;
+
 
   // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
@@ -390,7 +374,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 1100);
     },
-    [g, peekLocked, doublePhase, handleLastCallClick]
+    [g, peekLocked, handleLastCallClick]
   );
 
   const whoopEnabled = !g.claimMode && !g.gameOver && !g.rolling && !g.lastCall;
@@ -461,7 +445,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   //   - empty grid slot + empty draw-pile slot: `2px dashed rgba(35,31,32,0.13)` — ghost placeholder,
   //     ink at 13% for a subtle dashed outline; no equivalent token exists.
   //   - highlight halos: boxShadow using COLORS.orange/blue plus an rgba glow at ~60% — decorative.
-  //   - dice + draw-pile drop-shadows and DOUBLE MATCH text-shadow — decorative shadows.
+  //   - dice + draw-pile drop-shadows — decorative shadows.
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: mobile ? "hidden" : undefined }}>
 
@@ -475,63 +459,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </div>
       )}
 
-      {showDoubleTitle && (
-        <div style={{
-          position: "absolute",
-          top: "40%",
-          left: 0,
-          right: 0,
-          zIndex: 20,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-          animation: doublePhase === "idle"
-            ? "double-title-out 0.3s ease forwards"
-            : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
-        }}>
-          <span style={{
-            color: COLORS.orange,
-            fontSize: TYPE.display,
-            fontWeight: 700,
-            fontStyle: "italic",
-            fontFamily: FONT_FAMILY,
-            textShadow: `0 2px 8px rgba(0,0,0,0.2)`,
-          }}>
-            DOUBLE MATCH!
-          </span>
-        </div>
-      )}
 
 
-      {/* Bonus pick pill */}
-      {(doublePhase === "pick" || doublePhase === "reveal") && (
-        <div style={{
-          position: "absolute",
-          top: SPACE[6],
-          left: 0,
-          right: 0,
-          zIndex: 20,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}>
-          <span style={{
-            display: "inline-block",
-            background: COLORS.orange,
-            color: COLORS.ink,
-            fontSize: TYPE.ui,
-            fontWeight: 700,
-            fontStyle: "italic",
-            fontFamily: FONT_FAMILY,
-            borderRadius: 999,
-            padding: `${SPACE[3]}px ${SPACE[8]}px`,
-            animation: "pill-pulse 1.5s infinite",
-            pointerEvents: "auto",
-          }}>
-            {doublePhase === "reveal" ? "Nice haul!" : "Choose 2 bonus cards!"}
-          </span>
-        </div>
-      )}
 
       {/* Claim mode instruction */}
 
@@ -888,9 +817,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   }}
                   style={{
                     visibility: lastCallFlyers.some((f) => f.index === i) ? "hidden" : "visible",
-                    animation: shrinkingCards.has(i)
-                      ? "card-shrink 0.4s ease forwards"
-                      : enteringCards.has(i)
+                    animation: enteringCards.has(i)
                       ? `card-enter 0.3s ease ${(i % 3) * 100}ms both`
                       : (shakingCards.has(i) || lastCallShake.has(i))
                       ? "card-shake 0.2s ease"
@@ -900,12 +827,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     borderRadius: RADIUS.md,
                     ...(g.wrongCards.has(i)
                       ? { opacity: 0.55, cursor: "default" }
-                      : {}),
-                    ...(orangePulseCards.has(i) && doublePhase === "pick" && !bonusHighlighted.has(i)
-                      ? { animation: "orange-pulse-border 1.5s infinite" }
-                      : {}),
-                    ...(bonusHighlighted.has(i)
-                      ? { boxShadow: `0 0 0 3px ${COLORS.orange}, 0 0 16px rgba(231,144,36,0.6)` }
                       : {}),
                     ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
@@ -922,13 +843,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
-                      doublePhase === "shrink" ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
                     }
                     onClick={() => handleCardClick(i)}
-                    highlighted={g.selectedCards.includes(i) || bonusHighlighted.has(i) || (g.opponentClaiming?.indices.includes(i) ?? false) || (g.lastCall && lastCallSel.includes(i))}
-                    matched={g.matchedCards.has(i) || shrinkingCards.has(i)}
+                    highlighted={g.selectedCards.includes(i) || (g.opponentClaiming?.indices.includes(i) ?? false) || (g.lastCall && lastCallSel.includes(i))}
+                    matched={g.matchedCards.has(i)}
                     wrong={wrongFlashCards.has(i)}
                     wrongWash={wrongWashCards.has(i)}
                     shaking={shakingCards.has(i) || lastCallShake.has(i)}
