@@ -381,8 +381,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     (index: number) => {
       if (g.gameOver || g.rolling) return;
       if (g.lastCall) { handleLastCallClick(index); return; }
-      if (doublePhase === "pick" && g.bonusPicking) { g.pickBonus(index); return; }
-      if (g.bonusPicking) return;
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
       if (g.wrongCards.has(index)) return;
@@ -395,7 +393,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     [g, peekLocked, doublePhase, handleLastCallClick]
   );
 
-  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling && !g.lastCall;
+  const whoopEnabled = !g.claimMode && !g.gameOver && !g.rolling && !g.lastCall;
 
 
   const isSmall = mobile && (viewW ?? 9999) < 480;
