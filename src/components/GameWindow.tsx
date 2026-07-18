@@ -445,7 +445,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   //   - empty grid slot + empty draw-pile slot: `2px dashed rgba(35,31,32,0.13)` — ghost placeholder,
   //     ink at 13% for a subtle dashed outline; no equivalent token exists.
   //   - highlight halos: boxShadow using COLORS.orange/blue plus an rgba glow at ~60% — decorative.
-  //   - dice + draw-pile drop-shadows and DOUBLE MATCH text-shadow — decorative shadows.
+  //   - dice + draw-pile drop-shadows — decorative shadows.
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", overflow: mobile ? "hidden" : undefined }}>
 
