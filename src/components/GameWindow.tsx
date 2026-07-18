@@ -4,7 +4,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { useGameState } from "@/hooks/useGameState";
 import GameCard from "@/components/GameCard";
 import DieDisplay from "@/components/DieDisplay";
-import { playFlip, playCorrect, playWrong, playDoubleMatch, playDiceRoll, playDeal, playWhoopCall, isMuted, setMuted } from "@/lib/sounds";
+import { playFlip, playCorrect, playWrong, playDiceRoll, playDeal, playWhoopCall, isMuted, setMuted } from "@/lib/sounds";
 import { ALL_CARDS, Card } from "@/cardData";
 import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
