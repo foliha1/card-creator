@@ -210,10 +210,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       setPeekLocked(false);
       setWrongWashCards(new Set());
       setWrongFlashCards(new Set());
-      setShowDoubleTitle(false);
-      setDoublePhase("idle");
-      setOrangePulseCards(new Set());
-      setBonusHighlighted(new Set());
     }
   }, [g.roundNum]);
 
@@ -242,14 +238,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.wrongCards, showWhoopFeedback]);
 
-  // Double Jeopardy removed under v6.1 Single-Die Core.
-  void prevBonusRef;
-  void setShowDoubleTitle;
-  void setDoublePhase;
-  void setShrinkingCards;
-  void setOrangePulseCards;
-  void setBonusHighlighted;
-  void playDoubleMatch;
+
 
   // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
