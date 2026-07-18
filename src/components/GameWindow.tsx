@@ -922,7 +922,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
-                      (doublePhase === "reveal" && g.bonusPicks.includes(i)) ||
                       doublePhase === "shrink" ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
