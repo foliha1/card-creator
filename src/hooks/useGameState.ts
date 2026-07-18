@@ -103,7 +103,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const prevPeekingRef = useRef<number | null>(null);
   const prevGridRef = useRef<(Card | null)[]>([]);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingOppPicksRef = useRef<number[] | null>(null);
+  
   const claimedThisRoundRef = useRef(false);
   const drawEmptyRef = useRef(false);
   const lastCallRef = useRef(false);
@@ -202,7 +202,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     memoryRef.current.reset();
     prevPeekingRef.current = null;
     prevGridRef.current = newGrid;
-    pendingOppPicksRef.current = null;
+    
     if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
     claimedThisRoundRef.current = false;
     drawEmptyRef.current = false;
@@ -432,8 +432,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
 
 
-  const resolveOpponentClaim = useCallback((_picks?: number[]) => {
-    void _picks;
+  const resolveOpponentClaim = useCallback(() => {
     if (!opponentClaiming) return;
     const [a, b] = opponentClaiming.indices;
     const cardA = grid[a];
@@ -567,10 +566,6 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (oppClaimTimerRef.current) clearTimeout(oppClaimTimerRef.current);
     oppClaimTimerRef.current = setTimeout(() => {
       oppClaimTimerRef.current = null;
-      const picksExcluded = new Set<number>(excluded);
-      picksExcluded.add(best.a);
-      picksExcluded.add(best.b);
-      pendingOppPicksRef.current = memoryRef.current.bestBlindPicks(2, picksExcluded);
       opponentClaim(best.a, best.b);
     }, delay);
   }, [peekingCard, grid, claimMode, opponentClaiming, gameOver, rollPhase, wrongCards, matchRule, opponentClaim]);
@@ -583,15 +578,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   }, [claimMode, roundNum]);
 
   useEffect(() => {
-    if (!opponentClaiming) {
-      pendingOppPicksRef.current = null;
-      return;
-    }
-    if (pendingOppPicksRef.current === null) return;
-    const picks = pendingOppPicksRef.current;
+    if (!opponentClaiming) return;
     const t = setTimeout(() => {
-      pendingOppPicksRef.current = null;
-      resolveOpponentClaim(picks);
+      resolveOpponentClaim();
     }, 1600);
     return () => clearTimeout(t);
   }, [opponentClaiming, resolveOpponentClaim]);

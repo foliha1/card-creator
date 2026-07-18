@@ -47,7 +47,6 @@ export interface OpponentMemory {
     rule: string[],
     excluded: Set<number>
   ): { a: number; b: number; confidence: number } | null;
-  bestBlindPicks(n: number, excluded: Set<number>): number[];
   reset(): void;
 }
 
@@ -96,15 +95,9 @@ export function createOpponentMemory(): OpponentMemory {
       }
       return best;
     },
-    bestBlindPicks(n, excluded) {
-      return Array.from(store.entries())
-        .filter(([idx]) => !excluded.has(idx))
-        .sort((a, b) => b[1].strength - a[1].strength)
-        .slice(0, n)
-        .map(([idx]) => idx);
-    },
     reset() {
       store = new Map();
     },
   };
 }
+
