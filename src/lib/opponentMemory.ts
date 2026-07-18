@@ -95,13 +95,11 @@ export function createOpponentMemory(): OpponentMemory {
       }
       return best;
     },
-    bestBlindPicks(n, excluded) {
-      return Array.from(store.entries())
-        .filter(([idx]) => !excluded.has(idx))
-        .sort((a, b) => b[1].strength - a[1].strength)
-        .slice(0, n)
-        .map(([idx]) => idx);
+    reset() {
+      store = new Map();
     },
+  };
+}
     reset() {
       store = new Map();
     },
