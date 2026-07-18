@@ -49,7 +49,8 @@ interface GamePlayAreaProps {
 }
 
 const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false, viewW }) => {
-  const g = useGameState(tier, gridSize);
+  void tier;
+  const g = useGameState(gridSize);
   const [muted, setMutedState] = useState(isMuted());
   const toggleMute = () => {
     const next = !muted;
