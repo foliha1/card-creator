@@ -118,7 +118,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const prevScoreRef = useRef(g.scores[0]);
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
-  const prevBonusRef = useRef(g.bonusPicking);
+  const prevBonusRef = useRef(false);
   
 
   const showWhoopFeedback = useCallback((text: string, tone: "success" | "red") => {
