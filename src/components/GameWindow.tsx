@@ -459,63 +459,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
         </div>
       )}
 
-      {showDoubleTitle && (
-        <div style={{
-          position: "absolute",
-          top: "40%",
-          left: 0,
-          right: 0,
-          zIndex: 20,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-          animation: doublePhase === "idle"
-            ? "double-title-out 0.3s ease forwards"
-            : "double-title-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
-        }}>
-          <span style={{
-            color: COLORS.orange,
-            fontSize: TYPE.display,
-            fontWeight: 700,
-            fontStyle: "italic",
-            fontFamily: FONT_FAMILY,
-            textShadow: `0 2px 8px rgba(0,0,0,0.2)`,
-          }}>
-            DOUBLE MATCH!
-          </span>
-        </div>
-      )}
 
 
-      {/* Bonus pick pill */}
-      {(doublePhase === "pick" || doublePhase === "reveal") && (
-        <div style={{
-          position: "absolute",
-          top: SPACE[6],
-          left: 0,
-          right: 0,
-          zIndex: 20,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}>
-          <span style={{
-            display: "inline-block",
-            background: COLORS.orange,
-            color: COLORS.ink,
-            fontSize: TYPE.ui,
-            fontWeight: 700,
-            fontStyle: "italic",
-            fontFamily: FONT_FAMILY,
-            borderRadius: 999,
-            padding: `${SPACE[3]}px ${SPACE[8]}px`,
-            animation: "pill-pulse 1.5s infinite",
-            pointerEvents: "auto",
-          }}>
-            {doublePhase === "reveal" ? "Nice haul!" : "Choose 2 bonus cards!"}
-          </span>
-        </div>
-      )}
 
       {/* Claim mode instruction */}
 
