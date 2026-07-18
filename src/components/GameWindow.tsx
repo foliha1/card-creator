@@ -61,13 +61,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   // --- Animation state ---
   const [peekLocked, setPeekLocked] = useState(false);
   const peekUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [shrinkingCards, setShrinkingCards] = useState<Set<number>>(new Set());
   const [enteringCards, setEnteringCards] = useState<Set<number>>(new Set());
   const [shakingCards, setShakingCards] = useState<Set<number>>(new Set());
   const [wrongFlashCards, setWrongFlashCards] = useState<Set<number>>(new Set());
   const [wrongWashCards, setWrongWashCards] = useState<Set<number>>(new Set());
   const [scoreBounce, setScoreBounce] = useState(false);
-  const [showDoubleTitle, setShowDoubleTitle] = useState(false);
   const [doublePhase, setDoublePhase] = useState<"idle" | "title" | "shrink" | "pick" | "reveal" | "bonusShrink">("idle");
   const [orangePulseCards, setOrangePulseCards] = useState<Set<number>>(new Set());
   const [bonusHighlighted, setBonusHighlighted] = useState<Set<number>>(new Set());
