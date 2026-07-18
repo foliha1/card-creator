@@ -188,7 +188,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>WHOOP! WHOOP!</div>
             <div style={bodyStyle}>
-              Spot a matching pair? Hit WHOOP! WHOOP! and tap the two cards — anytime, even on her turn. Right: they're yours (and a 2-dice match grabs 2 bonus cards, blind). Wrong: the cards freeze face-up and you skip your next flip. She races you on every pair, so speak up fast.
+              Spot a matching pair? Hit WHOOP! WHOOP! and tap the two cards — anytime, even on her turn. Right: they're yours. Wrong: the cards freeze face-up and you skip your next flip. She races you on every pair, so speak up fast.
             </div>
             <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
               <img
