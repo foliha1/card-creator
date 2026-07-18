@@ -247,54 +247,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.wrongCards, showWhoopFeedback]);
 
-  useEffect(() => {
-    if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
-      playDoubleMatch();
-      setDoublePhase("title");
-      setShowDoubleTitle(true);
-      setTimeout(() => {
-        setDoublePhase("shrink");
-        setShrinkingCards(new Set(g.matchedCards));
-      }, 800);
-      setTimeout(() => {
-        setShrinkingCards(new Set());
-        g.removeMatchedFromGrid();
-        setDoublePhase("pick");
-        const available = new Set<number>();
-        g.grid.forEach((c, i) => {
-          if (c && !g.matchedCards.has(i) && !g.wrongCards.has(i)) available.add(i);
-        });
-        setOrangePulseCards(available);
-      }, 1400);
-    }
-    prevBonusRef.current = g.bonusPicking;
-  }, [g.bonusPicking, g.matchedCards, g.grid, g.removeMatchedFromGrid]);
-
-  useEffect(() => {
-    if (g.bonusPicks.length > 0) setBonusHighlighted(new Set(g.bonusPicks));
-  }, [g.bonusPicks]);
-
-  const finalizeBonusRef = useRef(g.finalizeBonus);
-  useEffect(() => {
-    finalizeBonusRef.current = g.finalizeBonus;
-  }, [g.finalizeBonus]);
-  const bonusRevealFiredRef = useRef(false);
-  useEffect(() => {
-    if (g.bonusRevealing) {
-      if (bonusRevealFiredRef.current) return;
-      bonusRevealFiredRef.current = true;
-      setDoublePhase("reveal");
-      setOrangePulseCards(new Set());
-      playCorrect();
-      const t = setTimeout(() => {
-        finalizeBonusRef.current();
-        setDoublePhase("idle");
-      }, 1400);
-      return () => clearTimeout(t);
-    } else {
-      bonusRevealFiredRef.current = false;
-    }
-  }, [g.bonusRevealing]);
+  // Double Jeopardy removed under v6.1 Single-Die Core.
+  void prevBonusRef;
+  void setShowDoubleTitle;
+  void setDoublePhase;
+  void setShrinkingCards;
+  void setOrangePulseCards;
+  void setBonusHighlighted;
+  void playDoubleMatch;
 
   // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
