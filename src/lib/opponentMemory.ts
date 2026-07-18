@@ -99,3 +99,5 @@ export function createOpponentMemory(): OpponentMemory {
       store = new Map();
     },
   };
+}
+
