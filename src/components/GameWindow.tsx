@@ -49,7 +49,8 @@ interface GamePlayAreaProps {
 }
 
 const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, mobile = false, viewW }) => {
-  const g = useGameState(tier, gridSize);
+  void tier;
+  const g = useGameState(gridSize);
   const [muted, setMutedState] = useState(isMuted());
   const toggleMute = () => {
     const next = !muted;
@@ -117,7 +118,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
   const prevScoreRef = useRef(g.scores[0]);
   const prevRoundRef = useRef(g.roundNum);
   const prevClaimRef = useRef(g.claimMode);
-  const prevBonusRef = useRef(g.bonusPicking);
+  const prevBonusRef = useRef(false);
   
 
   const showWhoopFeedback = useCallback((text: string, tone: "success" | "red") => {
@@ -246,54 +247,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.wrongCards, showWhoopFeedback]);
 
-  useEffect(() => {
-    if (g.bonusPicking && !prevBonusRef.current && g.matchedCards.size === 2) {
-      playDoubleMatch();
-      setDoublePhase("title");
-      setShowDoubleTitle(true);
-      setTimeout(() => {
-        setDoublePhase("shrink");
-        setShrinkingCards(new Set(g.matchedCards));
-      }, 800);
-      setTimeout(() => {
-        setShrinkingCards(new Set());
-        g.removeMatchedFromGrid();
-        setDoublePhase("pick");
-        const available = new Set<number>();
-        g.grid.forEach((c, i) => {
-          if (c && !g.matchedCards.has(i) && !g.wrongCards.has(i)) available.add(i);
-        });
-        setOrangePulseCards(available);
-      }, 1400);
-    }
-    prevBonusRef.current = g.bonusPicking;
-  }, [g.bonusPicking, g.matchedCards, g.grid, g.removeMatchedFromGrid]);
-
-  useEffect(() => {
-    if (g.bonusPicks.length > 0) setBonusHighlighted(new Set(g.bonusPicks));
-  }, [g.bonusPicks]);
-
-  const finalizeBonusRef = useRef(g.finalizeBonus);
-  useEffect(() => {
-    finalizeBonusRef.current = g.finalizeBonus;
-  }, [g.finalizeBonus]);
-  const bonusRevealFiredRef = useRef(false);
-  useEffect(() => {
-    if (g.bonusRevealing) {
-      if (bonusRevealFiredRef.current) return;
-      bonusRevealFiredRef.current = true;
-      setDoublePhase("reveal");
-      setOrangePulseCards(new Set());
-      playCorrect();
-      const t = setTimeout(() => {
-        finalizeBonusRef.current();
-        setDoublePhase("idle");
-      }, 1400);
-      return () => clearTimeout(t);
-    } else {
-      bonusRevealFiredRef.current = false;
-    }
-  }, [g.bonusRevealing]);
+  // Double Jeopardy removed under v6.1 Single-Die Core.
+  void prevBonusRef;
+  void setShowDoubleTitle;
+  void setDoublePhase;
+  void setShrinkingCards;
+  void setOrangePulseCards;
+  void setBonusHighlighted;
+  void playDoubleMatch;
 
   // Detect newly filled slots (null -> filled) and fly cards in from the draw pile
   useEffect(() => {
@@ -420,8 +381,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     (index: number) => {
       if (g.gameOver || g.rolling) return;
       if (g.lastCall) { handleLastCallClick(index); return; }
-      if (doublePhase === "pick" && g.bonusPicking) { g.pickBonus(index); return; }
-      if (g.bonusPicking) return;
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
       if (g.wrongCards.has(index)) return;
@@ -434,7 +393,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     [g, peekLocked, doublePhase, handleLastCallClick]
   );
 
-  const whoopEnabled = !g.claimMode && !g.bonusPicking && !g.gameOver && !g.rolling && !g.lastCall;
+  const whoopEnabled = !g.claimMode && !g.gameOver && !g.rolling && !g.lastCall;
 
 
   const isSmall = mobile && (viewW ?? 9999) < 480;
@@ -963,7 +922,6 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
-                      (doublePhase === "reveal" && g.bonusPicks.includes(i)) ||
                       doublePhase === "shrink" ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
