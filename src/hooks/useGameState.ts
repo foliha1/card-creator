@@ -432,8 +432,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
 
 
-  const resolveOpponentClaim = useCallback((_picks?: number[]) => {
-    void _picks;
+  const resolveOpponentClaim = useCallback(() => {
     if (!opponentClaiming) return;
     const [a, b] = opponentClaiming.indices;
     const cardA = grid[a];
