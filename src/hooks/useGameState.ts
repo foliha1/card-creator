@@ -566,10 +566,6 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (oppClaimTimerRef.current) clearTimeout(oppClaimTimerRef.current);
     oppClaimTimerRef.current = setTimeout(() => {
       oppClaimTimerRef.current = null;
-      const picksExcluded = new Set<number>(excluded);
-      picksExcluded.add(best.a);
-      picksExcluded.add(best.b);
-      pendingOppPicksRef.current = memoryRef.current.bestBlindPicks(2, picksExcluded);
       opponentClaim(best.a, best.b);
     }, delay);
   }, [peekingCard, grid, claimMode, opponentClaiming, gameOver, rollPhase, wrongCards, matchRule, opponentClaim]);
@@ -582,15 +578,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   }, [claimMode, roundNum]);
 
   useEffect(() => {
-    if (!opponentClaiming) {
-      pendingOppPicksRef.current = null;
-      return;
-    }
-    if (pendingOppPicksRef.current === null) return;
-    const picks = pendingOppPicksRef.current;
+    if (!opponentClaiming) return;
     const t = setTimeout(() => {
-      pendingOppPicksRef.current = null;
-      resolveOpponentClaim(picks);
+      resolveOpponentClaim();
     }, 1600);
     return () => clearTimeout(t);
   }, [opponentClaiming, resolveOpponentClaim]);
