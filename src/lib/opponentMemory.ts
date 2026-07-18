@@ -99,9 +99,3 @@ export function createOpponentMemory(): OpponentMemory {
       store = new Map();
     },
   };
-}
-    reset() {
-      store = new Map();
-    },
-  };
-}
