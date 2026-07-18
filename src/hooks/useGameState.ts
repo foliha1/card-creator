@@ -103,7 +103,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const prevPeekingRef = useRef<number | null>(null);
   const prevGridRef = useRef<(Card | null)[]>([]);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingOppPicksRef = useRef<number[] | null>(null);
+  
   const claimedThisRoundRef = useRef(false);
   const drawEmptyRef = useRef(false);
   const lastCallRef = useRef(false);
