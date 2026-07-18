@@ -202,7 +202,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     memoryRef.current.reset();
     prevPeekingRef.current = null;
     prevGridRef.current = newGrid;
-    pendingOppPicksRef.current = null;
+    
     if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
     claimedThisRoundRef.current = false;
     drawEmptyRef.current = false;
