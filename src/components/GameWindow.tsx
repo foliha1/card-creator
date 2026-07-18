@@ -374,7 +374,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (peekUnlockTimer.current) clearTimeout(peekUnlockTimer.current);
       peekUnlockTimer.current = setTimeout(() => setPeekLocked(false), 1100);
     },
-    [g, peekLocked, doublePhase, handleLastCallClick]
+    [g, peekLocked, handleLastCallClick]
   );
 
   const whoopEnabled = !g.claimMode && !g.gameOver && !g.rolling && !g.lastCall;
