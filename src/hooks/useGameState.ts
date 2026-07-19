@@ -103,10 +103,14 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const prevPeekingRef = useRef<number | null>(null);
   const prevGridRef = useRef<(Card | null)[]>([]);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   const claimedThisRoundRef = useRef(false);
   const drawEmptyRef = useRef(false);
   const lastCallRef = useRef(false);
+  // Flip opportunities used (flip OR consumed skip) since last correct claim.
+  const flippedSinceClaimRef = useRef<Set<number>>(new Set());
+  // Guards the winner-rolls transition from double-firing.
+  const roundTransitionRef = useRef(false);
 
 
   const doRollDice = useCallback((): Promise<string[]> => {
