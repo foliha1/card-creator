@@ -38,7 +38,7 @@ const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", 
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
-  const { bgTheme, logoColor } = useTheme();
+  const { bgTheme, logoColor, arcade } = useTheme();
   const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
