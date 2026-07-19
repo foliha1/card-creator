@@ -530,7 +530,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       setMatchedCards(new Set());
       setMessage("Correct! +2 points.");
       setMessageType("success");
-      checkGameOver(newDeck, newGrid, matchRule);
+      const ended = checkGameOver(newDeck, newGrid, matchRule);
+      // Winner rolls: human becomes next Roller and Flipper.
+      if (!ended) startNewRound(0);
     } else {
       setWrongCards(new Set(selectedCards));
       setSkipNextFlip((s) => {
