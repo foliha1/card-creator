@@ -111,6 +111,8 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const flippedSinceClaimRef = useRef<Set<number>>(new Set());
   // Guards the winner-rolls transition from double-firing.
   const roundTransitionRef = useRef(false);
+  // Mirrors flipperIndex synchronously for use inside imperative helpers.
+  const flipperRef = useRef(0);
 
 
   const doRollDice = useCallback((): Promise<string[]> => {
