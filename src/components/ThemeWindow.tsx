@@ -3,14 +3,14 @@ import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, THEME_SWATCHES, TYP
 import { useTheme } from "@/lib/theme-context";
 
 const ThemeWindow: React.FC = () => {
-  const { bgTheme, setTheme } = useTheme();
+  const { bgTheme, setTheme, arcade, toggleArcade } = useTheme();
 
   return (
     <div style={{
       display: "flex",
       flexDirection: "column",
       padding: SPACE[5],
-      gap: SPACE[5],
+      gap: SPACE[6],
       height: "100%",
       justifyContent: "center",
     }}>
@@ -39,6 +39,45 @@ const ThemeWindow: React.FC = () => {
             />
           );
         })}
+      </div>
+
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: SPACE[4],
+        paddingTop: SPACE[4],
+        borderTop: `1px solid ${COLORS.panel}`,
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: SPACE[1] }}>
+          <span style={{ fontFamily: FONT_FAMILY, fontSize: TYPE.ui, color: COLORS.ink, fontWeight: 600 }}>
+            Arcade
+          </span>
+          <span style={{ fontFamily: FONT_FAMILY, fontSize: TYPE.caption, color: COLORS.inkMuted }}>
+            Retro scanline filter.
+          </span>
+        </div>
+        <button
+          onClick={toggleArcade}
+          aria-pressed={arcade}
+          aria-label="Toggle Arcade CRT filter"
+          style={{
+            fontFamily: FONT_FAMILY,
+            fontSize: TYPE.caption,
+            fontWeight: 700,
+            letterSpacing: 1,
+            padding: `${SPACE[3]}px ${SPACE[6]}px`,
+            border: BORDER.standard,
+            borderRadius: RADIUS.md,
+            background: arcade ? COLORS.ink : COLORS.surface,
+            color: arcade ? COLORS.surface : COLORS.ink,
+            cursor: "pointer",
+            transition: `background ${MOTION.fast}, color ${MOTION.fast}`,
+            minWidth: 72,
+          }}
+        >
+          {arcade ? "CRT ON" : "CRT OFF"}
+        </button>
       </div>
     </div>
   );

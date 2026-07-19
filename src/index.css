@@ -231,6 +231,11 @@ All colors MUST be HSL.
 }
 
 
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.9; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
