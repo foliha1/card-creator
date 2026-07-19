@@ -213,6 +213,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     claimedThisRoundRef.current = false;
     drawEmptyRef.current = false;
     lastCallRef.current = false;
+    flippedSinceClaimRef.current = new Set();
+    roundTransitionRef.current = false;
+    flipperRef.current = 0;
     setDrawEmpty(false);
     setRoundsSinceClaim(0);
     setLastCall(false);
