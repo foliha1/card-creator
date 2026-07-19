@@ -33,6 +33,8 @@ interface ThemeContextValue {
   logoColor: string;
   setTheme: (color: string) => void;
   themeInk: string;
+  arcade: boolean;
+  toggleArcade: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
