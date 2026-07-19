@@ -545,7 +545,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       setMessage("No match! You lose your next flip.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver]);
+  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
 
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
