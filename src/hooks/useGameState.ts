@@ -473,7 +473,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       });
       setMessage("Opponent claim — correct! +2");
       setMessageType("warning");
-      checkGameOver(newDeck, newGrid, matchRule);
+      setOpponentClaiming(null);
+      const ended = checkGameOver(newDeck, newGrid, matchRule);
+      // Winner rolls: opponent becomes next Roller and Flipper.
+      if (!ended) startNewRound(1);
     } else {
       setWrongCards((prev) => {
         const n = new Set(prev);
@@ -488,9 +491,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       });
       setMessage("Opponent claim — wrong! They lose their next flip.");
       setMessageType("info");
+      setOpponentClaiming(null);
     }
-    setOpponentClaiming(null);
-  }, [opponentClaiming, grid, matchRule, deck, refillGrid, checkGameOver]);
+  }, [opponentClaiming, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
 
   const selectCard = useCallback(
     (index: number) => {
