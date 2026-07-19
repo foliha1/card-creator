@@ -103,10 +103,16 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const prevPeekingRef = useRef<number | null>(null);
   const prevGridRef = useRef<(Card | null)[]>([]);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   const claimedThisRoundRef = useRef(false);
   const drawEmptyRef = useRef(false);
   const lastCallRef = useRef(false);
+  // Flip opportunities used (flip OR consumed skip) since last correct claim.
+  const flippedSinceClaimRef = useRef<Set<number>>(new Set());
+  // Guards the winner-rolls transition from double-firing.
+  const roundTransitionRef = useRef(false);
+  // Mirrors flipperIndex synchronously for use inside imperative helpers.
+  const flipperRef = useRef(0);
 
 
   const doRollDice = useCallback((): Promise<string[]> => {
@@ -207,6 +213,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     claimedThisRoundRef.current = false;
     drawEmptyRef.current = false;
     lastCallRef.current = false;
+    flippedSinceClaimRef.current = new Set();
+    roundTransitionRef.current = false;
+    flipperRef.current = 0;
     setDrawEmpty(false);
     setRoundsSinceClaim(0);
     setLastCall(false);
@@ -248,26 +257,26 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   }, [grid, deck, gameOver, rolling, claimMode]);
 
 
-  // Pass the flipper turn; if rotation completes, advance round + rotate roller
+  // Sync flipperIndex → flipperRef for imperative helpers.
+  useEffect(() => { flipperRef.current = flipperIndex; }, [flipperIndex]);
+
+  // Rotate flipper clockwise within the ongoing round. Rounds no longer end via
+  // rotation — a correct claim ends the round (see startNewRound). This also
+  // performs "no-claim round" detection for Last Call: if both players have had
+  // a flip opportunity since the last correct claim and the draw pile is empty,
+  // enter Last Call.
   const passFlipper = useCallback(() => {
-    setFlipperIndex((prev) => {
-      const next = (prev + 1) % PLAYERS.length;
-      if (next === rollerIndex) {
-        const newRoller = (rollerIndex + 1) % PLAYERS.length;
-        setRollerIndex(newRoller);
-        setRoundNum((r) => r + 1);
-        setWrongCards(new Set());
+    const prev = flipperRef.current;
+    flippedSinceClaimRef.current.add(prev);
+    const next = (prev + 1) % PLAYERS.length;
+    flipperRef.current = next;
+    setFlipperIndex(next);
 
-        const wasClaim = claimedThisRoundRef.current;
-        claimedThisRoundRef.current = false;
-
-        if (drawEmptyRef.current) {
-          setRoundsSinceClaim((rsc) => (wasClaim ? 0 : rsc + 1));
-        } else if (wasClaim) {
-          setRoundsSinceClaim(0);
-        }
-
-        if (!lastCallRef.current && drawEmptyRef.current && !wasClaim) {
+    if (flippedSinceClaimRef.current.size >= PLAYERS.length) {
+      flippedSinceClaimRef.current = new Set();
+      if (drawEmptyRef.current) {
+        setRoundsSinceClaim((rsc) => rsc + 1);
+        if (!lastCallRef.current) {
           lastCallRef.current = true;
           setLastCall(true);
           setAllFaceUp(true);
@@ -277,17 +286,31 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
           setDieValues([value]);
           setMatchRule([value]);
           setRollPhase(false);
-        } else if (!lastCallRef.current) {
-          setRollPhase(true);
-        } else {
-          setRollPhase(false);
         }
-        return newRoller;
       }
-      return next;
-    });
-  }, [rollerIndex]);
+    }
+  }, []);
 
+  // Start a new round with the given winner as Roller AND first Flipper.
+  // Called on every correct claim (human or opponent).
+  const startNewRound = useCallback((winnerIndex: number) => {
+    if (roundTransitionRef.current) return;
+    roundTransitionRef.current = true;
+    flippedSinceClaimRef.current = new Set();
+    claimedThisRoundRef.current = false;
+    setRoundsSinceClaim(0);
+    setRoundNum((r) => r + 1);
+    setRollerIndex(winnerIndex);
+    setFlipperIndex(winnerIndex);
+    flipperRef.current = winnerIndex;
+    setWrongCards(new Set());
+    setSkipNextFlip([false, false]);
+    setClaimMode(false);
+    setSelectedCards([]);
+    // In Last Call, no rolling — otherwise the winner rolls to start the round.
+    setRollPhase(!lastCallRef.current);
+    setTimeout(() => { roundTransitionRef.current = false; }, 0);
+  }, []);
 
   const skipRef = useRef(skipNextFlip);
   useEffect(() => { skipRef.current = skipNextFlip; }, [skipNextFlip]);
@@ -295,7 +318,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   useEffect(() => {
     if (prevFlipperRef.current === flipperIndex) return;
     prevFlipperRef.current = flipperIndex;
-    if (gameOver || rolling || claimMode) return;
+    if (gameOver || rolling || claimMode || rollPhase) return;
     if (peekingCard !== null) return;
     if (!skipRef.current[flipperIndex]) return;
     const idx = flipperIndex;
@@ -305,8 +328,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       return n;
     });
     skipRef.current = skipRef.current.map((v, i) => (i === idx ? false : v));
+    // Consumed skip counts as a flip opportunity used this round.
     passFlipper();
-  }, [flipperIndex, gameOver, rolling, claimMode, peekingCard, passFlipper]);
+  }, [flipperIndex, gameOver, rolling, claimMode, rollPhase, peekingCard, passFlipper]);
 
   const peekCard = useCallback((index: number) => {
     if (flipperIndex !== 0) return;
@@ -449,7 +473,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       });
       setMessage("Opponent claim — correct! +2");
       setMessageType("warning");
-      checkGameOver(newDeck, newGrid, matchRule);
+      setOpponentClaiming(null);
+      const ended = checkGameOver(newDeck, newGrid, matchRule);
+      // Winner rolls: opponent becomes next Roller and Flipper.
+      if (!ended) startNewRound(1);
     } else {
       setWrongCards((prev) => {
         const n = new Set(prev);
@@ -464,9 +491,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       });
       setMessage("Opponent claim — wrong! They lose their next flip.");
       setMessageType("info");
+      setOpponentClaiming(null);
     }
-    setOpponentClaiming(null);
-  }, [opponentClaiming, grid, matchRule, deck, refillGrid, checkGameOver]);
+  }, [opponentClaiming, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
 
   const selectCard = useCallback(
     (index: number) => {
@@ -503,7 +530,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       setMatchedCards(new Set());
       setMessage("Correct! +2 points.");
       setMessageType("success");
-      checkGameOver(newDeck, newGrid, matchRule);
+      const ended = checkGameOver(newDeck, newGrid, matchRule);
+      // Winner rolls: human becomes next Roller and Flipper.
+      if (!ended) startNewRound(0);
     } else {
       setWrongCards(new Set(selectedCards));
       setSkipNextFlip((s) => {
@@ -516,7 +545,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       setMessage("No match! You lose your next flip.");
       setMessageType("error");
     }
-  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver]);
+  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
 
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
