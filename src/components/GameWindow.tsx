@@ -616,17 +616,20 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 onClick={() => { g.rollDice(); }}
                 style={{
                   position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
+                  inset: mobile ? 3 : 6,
                   zIndex: 2,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "clamp(20px, 6vw, 44px)",
+                  textAlign: "center",
+                  fontSize: mobile ? "clamp(12px, 3.8vw, 15px)" : "clamp(14px, 1.6vw, 20px)",
                   fontWeight: 700,
                   letterSpacing: "0.02em",
-                  padding: 0,
+                  lineHeight: mobile ? 1.05 : 1,
+                  padding: mobile ? `0 ${SPACE[2]}px` : 0,
+                  minHeight: "unset",
+                  whiteSpace: mobile ? "normal" : "nowrap",
+                  overflow: "hidden",
                 }}
               >
                 {g.roundNum === 1 ? "LET'S DO IT" : "ROLL"}
@@ -676,7 +679,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               textOverflow: "ellipsis",
               minWidth: 0,
             }}>{OPPONENT_NAME}</span>
-            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0, color: COLORS.orange }}>{g.scores[1]}</span>
+            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0, color: COLORS.red }}>{g.scores[1]}</span>
             {bubble && !mobile && (
               <div style={{
                 position: "absolute",
