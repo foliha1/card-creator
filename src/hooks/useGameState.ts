@@ -301,8 +301,12 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   // claim), the round ends: either enter Last Call (draw pile empty, no claim
   // this cycle) or start a new round with the roll passing clockwise.
   const passFlipper = useCallback(() => {
+    // Never advance while a claim is active or pending — the round pauses
+    // until the claim resolves.
+    if (claimModeRef.current || opponentClaimingRef.current || claimPendingRef.current) return;
     const prev = flipperRef.current;
     flippedSinceClaimRef.current.add(prev);
+
 
     if (flippedSinceClaimRef.current.size >= PLAYERS.length) {
       const noClaim = !claimedThisRoundRef.current;
