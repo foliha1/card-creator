@@ -475,6 +475,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       (async () => {
         try {
           await doRollDice();
+          rollPhaseRef.current = false;
           setRollPhase(false);
           claimModeRef.current = true;
           setClaimMode(true);
