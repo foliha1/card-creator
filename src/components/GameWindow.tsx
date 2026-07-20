@@ -616,19 +616,20 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 onClick={() => { g.rollDice(); }}
                 style={{
                   position: "absolute",
-                  inset: mobile ? 4 : 8,
+                  inset: mobile ? 3 : 6,
                   zIndex: 2,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: mobile ? "clamp(18px, 5.5vw, 26px)" : "clamp(24px, 5vw, 44px)",
+                  textAlign: "center",
+                  fontSize: mobile ? "clamp(12px, 3.8vw, 15px)" : "clamp(14px, 1.6vw, 20px)",
                   fontWeight: 700,
                   letterSpacing: "0.02em",
-                  padding: 0,
+                  lineHeight: mobile ? 1.05 : 1,
+                  padding: mobile ? `0 ${SPACE[2]}px` : 0,
                   minHeight: "unset",
-                  whiteSpace: "nowrap",
+                  whiteSpace: mobile ? "normal" : "nowrap",
                   overflow: "hidden",
-                  textOverflow: "ellipsis",
                 }}
               >
                 {g.roundNum === 1 ? "LET'S DO IT" : "ROLL"}
