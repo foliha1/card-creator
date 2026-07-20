@@ -402,19 +402,18 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
           color: COLORS.ink,
         }}
       >
-        <div style={{ fontSize: TYPE.display, fontWeight: 700, fontStyle: "italic", fontFamily: FONT_FAMILY }}>
+        <div style={{ ...textStyle("display"), fontWeight: 700, fontStyle: "italic" }}>
           Game Over!
         </div>
-        <div style={{ fontSize: TYPE.body, color: COLORS.inkSubtle }}>
+        <div style={{ ...textStyle("body"), color: COLORS.inkMuted }}>
           You collected {collected} of {totalCards} cards
         </div>
-        <div style={{ fontSize: TYPE.head, fontWeight: 700, fontFamily: FONT_FAMILY }}>
+        <div style={{ ...textStyle("heading") }}>
           You {g.scores[0]} — {OPPONENT_NAME} {g.scores[1]}
         </div>
         {gameOverLine && (
           <div style={{
-            fontSize: TYPE.body,
-            fontFamily: FONT_FAMILY,
+            ...textStyle("body"),
             fontStyle: "italic",
             color: COLORS.ink,
             background: COLORS.surface,
@@ -472,7 +471,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             size="md"
             onClick={onNewGame}
             style={{
-              fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead,
+              fontSize: mobile ? TEXT.body.mobileSize : TEXT.heading.size,
               padding: mobile ? `${SPACE[3]}px ${SPACE[5]}px` : `${SPACE[6]}px ${SPACE[8]}px`,
               flexShrink: 0,
               whiteSpace: mobile ? "normal" : undefined,
@@ -511,7 +510,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   borderRadius: RADIUS.md,
                   fontFamily: FONT_FAMILY,
                   fontStyle: "normal",
-                  fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
+                  fontSize: mobile ? TEXT.caption.mobileSize : TEXT.subhead.size,
                   color: COLORS.ink,
                   whiteSpace: "nowrap",
                   textAlign: "center",
@@ -603,8 +602,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       : undefined,
                   }}
                 >
-                  <span style={{ fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
-                  <span style={{ fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
+                  <span style={{ fontSize: mobile ? TEXT.caption.mobileSize : TEXT.caption.size, fontFamily: FONT_FAMILY, fontStyle: "italic" }}>Match the</span>
+                  <span style={{ fontSize: mobile ? TEXT.body.mobileSize : TEXT.subhead.size, fontWeight: 700, textTransform: "uppercase", fontFamily: FONT_FAMILY }}>{attr}</span>
                 </div>
               ))}
             </div>
@@ -664,7 +663,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             padding: `${SPACE[3]}px ${mobile ? SPACE[4] : SPACE[5]}px`,
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
-            fontSize: mobile ? MOBILE_TYPE.caption : TYPE.ui,
+            fontSize: mobile ? TEXT.caption.mobileSize : TEXT.subhead.size,
             color: COLORS.ink,
             whiteSpace: "nowrap",
             flexShrink: mobile ? 0 : 1,
@@ -692,7 +691,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                 padding: `${SPACE[3]}px ${SPACE[5]}px`,
                 fontFamily: FONT_FAMILY,
                 fontStyle: "italic",
-                fontSize: TYPE.caption,
+                fontSize: TEXT.caption.size,
                 color: bubble.red ? COLORS.red : COLORS.ink,
                 fontWeight: bubble.red ? 700 : 400,
                 whiteSpace: "nowrap",
@@ -729,7 +728,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             padding: `${SPACE[3]}px ${SPACE[4]}px`,
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
-            fontSize: MOBILE_TYPE.caption,
+            fontSize: TEXT.caption.mobileSize,
             color: bubble.red ? COLORS.red : COLORS.ink,
             fontWeight: bubble.red ? 700 : 400,
             whiteSpace: "normal",
@@ -776,7 +775,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             textAlign: "center",
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
-            fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption,
+            fontSize: mobile ? TEXT.caption.mobileSize : TEXT.caption.size,
             color: g.lastCall ? COLORS.red : COLORS.ink,
             fontWeight: g.lastCall ? 700 : undefined,
           }}>
@@ -796,7 +795,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
             fontStyle: "italic",
             fontWeight: 700,
             color: COLORS.red,
-            fontSize: mobile ? MOBILE_TYPE.body : TYPE.subhead,
+            fontSize: mobile ? TEXT.body.mobileSize : TEXT.subhead.size,
             letterSpacing: 0.3,
           }}>
             LAST CALL — grab every pair you can!
