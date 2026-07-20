@@ -119,6 +119,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const claimModeRef = useRef(false);
   const opponentClaimingRef = useRef<{ indices: [number, number] } | null>(null);
   const claimPendingRef = useRef(false);
+  const rollPhaseRef = useRef(rollPhase);
 
 
 
