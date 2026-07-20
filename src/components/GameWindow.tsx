@@ -632,7 +632,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                   overflow: "hidden",
                 }}
               >
-                {g.roundNum === 1 ? "LET'S DO IT" : "ROLL"}
+                {g.roundNum === 1 ? "PLAY" : "ROLL"}
               </AppButton>
             )}
           </div>
