@@ -44,9 +44,9 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: SPACE[8] }}>
         {slide === 0 && (
           <>
-            <div style={headlineStyle}>Meet Auntie O.</div>
+            <div style={headlineStyle}>What is WHOOP! WHOOP!?</div>
             <div style={bodyStyle}>
-              You're playing against Auntie O., the family card shark who never forgets a card… usually. Beat her to the WHOOP! and the pair is yours.
+              A fast memory game where the rule keeps changing. Cards sit face-down; you flip them one at a time, remember what's where, and race to call matching pairs — but a die decides what counts as a match, and it changes every round.
             </div>
           </>
         )}
@@ -55,7 +55,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Roll · Flip · Remember</div>
             <div style={bodyStyle}>
-              Each round starts with a roll — 1 die (match one thing) or 2 dice (match both). Then you each flip one card face-up for everyone to see. Watch her flips as closely as your own — that's free information.
+              Each round starts with a roll — the die shows SHAPE, NUMBER, or COLOR. Then each player flips one card face-up for everyone to see. Watch every flip, yours and your opponent's — it's all information.
             </div>
             <div style={{ display: "flex", gap: SPACE[6], justifyContent: "center", alignItems: "center" }}>
               {["SHAPE", "COLOR"].map((label, i) => (
@@ -92,7 +92,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                 marginTop: SPACE[2],
               }}
             >
-              Two dice? Match by shape AND color.
+              The die picks what to match this round.
             </div>
           </>
         )}
@@ -101,7 +101,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>WHOOP! WHOOP!</div>
             <div style={bodyStyle}>
-              Spot a matching pair? Hit WHOOP! WHOOP! and tap the two cards — anytime, even on her turn. Right: they're yours. Wrong: the cards freeze face-up and you skip your next flip. She races you on every pair, so speak up fast.
+              Spot a matching pair? Shout WHOOP! WHOOP! and tap the two cards — anytime. Right: they're yours, and you roll next. Wrong: the cards freeze face-up and you skip your next flip. Land the most pairs to win.
             </div>
             <div style={{ display: "flex", gap: SPACE[5], justifyContent: "center", alignItems: "center" }}>
               <img
@@ -143,7 +143,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           <>
             <div style={headlineStyle}>Last Call</div>
             <div style={bodyStyle}>
-              When the draw pile runs dry and a round passes with no matches, everything flips face-up for Last Call — one die, no turns, grab every pair you can before she does. Most cards wins. Now go ruin a family dinner.
+              When the deck runs dry and a round passes with no match, everything flips face-up for Last Call — one die, no turns, grab every pair you can. Most cards wins.
             </div>
           </>
         )}
