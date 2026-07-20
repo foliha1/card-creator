@@ -609,23 +609,28 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               ))}
             </div>
             {showRollButton && (
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 2,
-              }}>
-                <AppButton
-                  variant="primary"
-                  tone="red"
-                  size={mobile ? "md" : "lg"}
-                  onClick={() => { g.rollDice(); }}
-                >
-                  ROLL
-                </AppButton>
-              </div>
+              <AppButton
+                variant="primary"
+                tone="red"
+                size={mobile ? "md" : "lg"}
+                onClick={() => { g.rollDice(); }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  zIndex: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "clamp(20px, 6vw, 44px)",
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                  padding: 0,
+                }}
+              >
+                {g.roundNum === 1 ? "LET'S DO IT" : "ROLL"}
+              </AppButton>
             )}
           </div>
         );
@@ -671,11 +676,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               textOverflow: "ellipsis",
               minWidth: 0,
             }}>{OPPONENT_NAME}</span>
-            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0 }}>{g.scores[1]}</span>
+            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0, color: COLORS.orange }}>{g.scores[1]}</span>
             {bubble && !mobile && (
               <div style={{
                 position: "absolute",
-                top: "calc(100% + 8px)",
+                bottom: "calc(100% + 8px)",
                 left: "50%",
                 transform: "translateX(-50%)",
                 background: COLORS.surface,
@@ -693,14 +698,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               }}>
                 <div style={{
                   position: "absolute",
-                  top: -6,
+                  bottom: -6,
                   left: "50%",
                   width: 10,
                   height: 10,
                   transform: "translateX(-50%) rotate(45deg)",
                   background: COLORS.surface,
-                  borderLeft: BORDER.standard,
-                  borderTop: BORDER.standard,
+                  borderRight: BORDER.standard,
+                  borderBottom: BORDER.standard,
                 }} />
                 {bubble.text}
               </div>
