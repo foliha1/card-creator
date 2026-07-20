@@ -330,6 +330,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
         setDieValues([value]);
         setMatchRule([value]);
+        rollPhaseRef.current = false;
         setRollPhase(false);
         return;
       }
