@@ -6,8 +6,8 @@ type MessageType = "info" | "success" | "error" | "warning";
 
 const PLAYERS = ["you", "opponent"] as const;
 export const OPPONENT_TUNING = {
-  reactionMinMs: 3500,
-  reactionMaxMs: 7000,
+  reactionMinMs: 2500,
+  reactionMaxMs: 5500,
   confidenceThreshold: 0.55,
   thinkDelayMs: 1400,
 } as const;
@@ -113,6 +113,8 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const roundTransitionRef = useRef(false);
   // Mirrors flipperIndex synchronously for use inside imperative helpers.
   const flipperRef = useRef(0);
+  // Mirrors rollerIndex synchronously for use inside imperative helpers.
+  const rollerRef = useRef(0);
 
 
   const doRollDice = useCallback((): Promise<string[]> => {
@@ -216,6 +218,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     flippedSinceClaimRef.current = new Set();
     roundTransitionRef.current = false;
     flipperRef.current = 0;
+    rollerRef.current = 0;
     setDrawEmpty(false);
     setRoundsSinceClaim(0);
     setLastCall(false);
@@ -259,58 +262,75 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
 
   // Sync flipperIndex → flipperRef for imperative helpers.
   useEffect(() => { flipperRef.current = flipperIndex; }, [flipperIndex]);
+  useEffect(() => { rollerRef.current = rollerIndex; }, [rollerIndex]);
 
-  // Rotate flipper clockwise within the ongoing round. Rounds no longer end via
-  // rotation — a correct claim ends the round (see startNewRound). This also
-  // performs "no-claim round" detection for Last Call: if both players have had
-  // a flip opportunity since the last correct claim and the draw pile is empty,
-  // enter Last Call.
-  const passFlipper = useCallback(() => {
-    const prev = flipperRef.current;
-    flippedSinceClaimRef.current.add(prev);
-    const next = (prev + 1) % PLAYERS.length;
-    flipperRef.current = next;
-    setFlipperIndex(next);
-
-    if (flippedSinceClaimRef.current.size >= PLAYERS.length) {
-      flippedSinceClaimRef.current = new Set();
-      if (drawEmptyRef.current) {
-        setRoundsSinceClaim((rsc) => rsc + 1);
-        if (!lastCallRef.current) {
-          lastCallRef.current = true;
-          setLastCall(true);
-          setAllFaceUp(true);
-          setWrongCards(new Set());
-          setSkipNextFlip([false, false]);
-          const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
-          setDieValues([value]);
-          setMatchRule([value]);
-          setRollPhase(false);
-        }
-      }
-    }
-  }, []);
-
-  // Start a new round with the given winner as Roller AND first Flipper.
-  // Called on every correct claim (human or opponent).
-  const startNewRound = useCallback((winnerIndex: number) => {
+  // Start a new round. If winnerIndex is provided (correct claim), that player
+  // becomes Roller and first Flipper. If null (flip-cycle completed with no
+  // claim), the roll passes clockwise from the current roller.
+  const startNewRound = useCallback((winnerIndex: number | null) => {
     if (roundTransitionRef.current) return;
     roundTransitionRef.current = true;
+    const nextRoller =
+      winnerIndex !== null
+        ? winnerIndex
+        : (rollerRef.current + 1) % PLAYERS.length;
     flippedSinceClaimRef.current = new Set();
     claimedThisRoundRef.current = false;
-    setRoundsSinceClaim(0);
+    if (winnerIndex !== null) setRoundsSinceClaim(0);
     setRoundNum((r) => r + 1);
-    setRollerIndex(winnerIndex);
-    setFlipperIndex(winnerIndex);
-    flipperRef.current = winnerIndex;
+    setRollerIndex(nextRoller);
+    setFlipperIndex(nextRoller);
+    flipperRef.current = nextRoller;
+    rollerRef.current = nextRoller;
     setWrongCards(new Set());
     setSkipNextFlip([false, false]);
     setClaimMode(false);
     setSelectedCards([]);
-    // In Last Call, no rolling — otherwise the winner rolls to start the round.
+    // In Last Call, no rolling — otherwise the roller rolls to start the round.
     setRollPhase(!lastCallRef.current);
     setTimeout(() => { roundTransitionRef.current = false; }, 0);
   }, []);
+
+  // Rotate flipper clockwise within the ongoing round. When the flip-cycle
+  // completes (every player has had one flip opportunity since the last correct
+  // claim), the round ends: either enter Last Call (draw pile empty, no claim
+  // this cycle) or start a new round with the roll passing clockwise.
+  const passFlipper = useCallback(() => {
+    const prev = flipperRef.current;
+    flippedSinceClaimRef.current.add(prev);
+
+    if (flippedSinceClaimRef.current.size >= PLAYERS.length) {
+      const noClaim = !claimedThisRoundRef.current;
+      flippedSinceClaimRef.current = new Set();
+
+      if (drawEmptyRef.current && noClaim && !lastCallRef.current) {
+        setRoundsSinceClaim((rsc) => rsc + 1);
+        lastCallRef.current = true;
+        setLastCall(true);
+        setAllFaceUp(true);
+        setWrongCards(new Set());
+        setSkipNextFlip([false, false]);
+        const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
+        setDieValues([value]);
+        setMatchRule([value]);
+        setRollPhase(false);
+        return;
+      }
+      if (lastCallRef.current) {
+        const next = (prev + 1) % PLAYERS.length;
+        flipperRef.current = next;
+        setFlipperIndex(next);
+        return;
+      }
+      // No-claim round completed: roll passes clockwise.
+      startNewRound(null);
+      return;
+    }
+
+    const next = (prev + 1) % PLAYERS.length;
+    flipperRef.current = next;
+    setFlipperIndex(next);
+  }, [startNewRound]);
 
   const skipRef = useRef(skipNextFlip);
   useEffect(() => { skipRef.current = skipNextFlip; }, [skipNextFlip]);
