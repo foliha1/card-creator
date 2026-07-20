@@ -609,23 +609,28 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               ))}
             </div>
             {showRollButton && (
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 2,
-              }}>
-                <AppButton
-                  variant="primary"
-                  tone="red"
-                  size={mobile ? "md" : "lg"}
-                  onClick={() => { g.rollDice(); }}
-                >
-                  ROLL
-                </AppButton>
-              </div>
+              <AppButton
+                variant="primary"
+                tone="red"
+                size={mobile ? "md" : "lg"}
+                onClick={() => { g.rollDice(); }}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  zIndex: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "clamp(20px, 6vw, 44px)",
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                  padding: 0,
+                }}
+              >
+                {g.roundNum === 1 ? "LET'S DO IT" : "ROLL"}
+              </AppButton>
             )}
           </div>
         );
