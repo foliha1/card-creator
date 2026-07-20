@@ -230,6 +230,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     setLastCall(false);
     setAllFaceUp(false);
     setMessage("");
+    rollPhaseRef.current = true;
     setRollPhase(true);
 
     const values = rollRandomAttributes(getDieCount());
