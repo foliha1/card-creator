@@ -424,7 +424,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       oppRevealRef.current = setTimeout(() => {
         if (
           rollPhaseRef.current ||
-          roundTransitionRef.current ||
+          
           gameOver ||
           claimModeRef.current ||
           opponentClaimingRef.current ||
