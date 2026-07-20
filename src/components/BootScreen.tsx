@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { COLORS, FONT_FAMILY, TYPE, SPACE, RADIUS } from "@/lib/tokens";
+import { COLORS, FONT_FAMILY, textStyle, SPACE, RADIUS } from "@/lib/tokens";
 
 interface BootScreenProps {
   onComplete: () => void;
@@ -167,10 +167,8 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete }) => {
       {/* Caption */}
       <div
         style={{
-          fontFamily: FONT_FAMILY,
+          ...textStyle("subhead"),
           fontStyle: "italic",
-          fontWeight: 700,
-          fontSize: TYPE.ui,
           color: COLORS.surface,
           opacity: 0.6,
           letterSpacing: 0.5,

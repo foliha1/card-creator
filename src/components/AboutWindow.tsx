@@ -1,27 +1,23 @@
 import React from "react";
-import { COLORS, FONT_FAMILY, TYPE, MOBILE_TYPE, SPACE, RADIUS, BORDER } from "@/lib/tokens";
+import { COLORS, SPACE, RADIUS, BORDER, textStyle } from "@/lib/tokens";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const AboutWindow: React.FC = () => {
   const mobile = useIsMobile();
 
   const chipStyle: React.CSSProperties = {
+    ...textStyle("caption"),
     backgroundColor: COLORS.surface,
     border: BORDER.standard,
     borderRadius: RADIUS.md,
     padding: `${SPACE[3]} ${SPACE[4]}`,
-    fontFamily: FONT_FAMILY,
-    fontStyle: "normal",
-    fontSize: TYPE.caption,
-    color: COLORS.inkSoft,
+    color: COLORS.inkMuted,
     whiteSpace: "nowrap",
   };
 
   const bodyStyle: React.CSSProperties = {
-    fontFamily: FONT_FAMILY,
-    fontStyle: "normal",
-    fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
-    color: COLORS.inkSubtle,
+    ...textStyle("body", mobile),
+    color: COLORS.inkMuted,
     lineHeight: 1.42,
     margin: 0,
     maxWidth: 440,
@@ -54,9 +50,8 @@ const AboutWindow: React.FC = () => {
         />
         <div
           style={{
-            fontFamily: FONT_FAMILY,
+            ...textStyle("subhead", mobile),
             fontStyle: "italic",
-            fontSize: mobile ? MOBILE_TYPE.subhead : TYPE.subhead,
             color: COLORS.ink,
           }}
         >
@@ -64,9 +59,8 @@ const AboutWindow: React.FC = () => {
         </div>
         <div
           style={{
-            fontFamily: FONT_FAMILY,
+            ...textStyle("body", mobile),
             fontStyle: "italic",
-            fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
             color: COLORS.inkMuted,
           }}
         >
@@ -142,9 +136,7 @@ const AboutWindow: React.FC = () => {
           />
           <span
             style={{
-              fontFamily: FONT_FAMILY,
-              fontStyle: "italic",
-              fontSize: TYPE.caption,
+              ...textStyle("captionItalic"),
               color: COLORS.inkMuted,
               marginLeft: SPACE[2],
             }}
@@ -155,9 +147,7 @@ const AboutWindow: React.FC = () => {
 
         <div
           style={{
-            fontFamily: FONT_FAMILY,
-            fontStyle: "normal",
-            fontSize: TYPE.caption,
+            ...textStyle("caption"),
             color: COLORS.inkMuted,
           }}
         >

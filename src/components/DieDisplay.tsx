@@ -1,4 +1,4 @@
-import { COLORS, TYPE } from "@/lib/tokens";
+import { COLORS, textStyle } from "@/lib/tokens";
 
 interface DieDisplayProps {
   value: string;
@@ -12,14 +12,13 @@ const DieDisplay = ({ value, rolling, landed }: DieDisplayProps) => {
   return (
     <div
       style={{
+        ...textStyle("display"),
         width: 80,
         height: 80,
         borderRadius: 10,
         border: `4px solid ${COLORS.ink}`,
         backgroundColor: COLORS.surface,
         color: COLORS.ink,
-        fontSize: TYPE.display,
-        fontWeight: 900,
         fontStyle: "italic",
         display: "flex",
         alignItems: "center",

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronDown, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
-import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TYPE, SHADOW, MOBILE_TYPE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, MOTION, FONT_FAMILY, SPACE, TEXT, SHADOW } from "@/lib/tokens";
 import { PLAYLISTS, Playlist } from "@/lib/playlists";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -283,7 +283,7 @@ const MusicWindow: React.FC = () => {
       }}>
         <span style={{
           fontFamily: FONT_FAMILY,
-          fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
+          fontSize: mobile ? TEXT.body.mobileSize : TEXT.body.size,
           color: COLORS.ink,
           flexShrink: 0,
         }}>
@@ -321,7 +321,7 @@ const MusicWindow: React.FC = () => {
           style={{
             flex: 1,
             height: 54,
-            background: playHover ? "#005f94" : COLORS.blue,
+            background: playHover ? COLORS.blueHover : COLORS.blue,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             display: "flex",
@@ -348,7 +348,7 @@ const MusicWindow: React.FC = () => {
           style={{
             flex: 1,
             height: 54,
-            background: pauseHover ? "#cf7d1f" : COLORS.orange,
+            background: pauseHover ? COLORS.orangeHover : COLORS.orange,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             display: "flex",
@@ -371,7 +371,7 @@ const MusicWindow: React.FC = () => {
           onMouseLeave={() => setPrevHover(false)}
           style={{
             flex: 0.5, height: 54,
-            background: prevHover ? "#e8e0d4" : COLORS.surface,
+            background: prevHover ? COLORS.surfaceHover : COLORS.surface,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -388,7 +388,7 @@ const MusicWindow: React.FC = () => {
           onMouseLeave={() => setNextHover(false)}
           style={{
             flex: 0.5, height: 54,
-            background: nextHover ? "#e8e0d4" : COLORS.surface,
+            background: nextHover ? COLORS.surfaceHover : COLORS.surface,
             border: BORDER.standard,
             borderRadius: RADIUS.md,
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -477,7 +477,7 @@ const MusicWindow: React.FC = () => {
                 cursor: "pointer",
                 fontFamily: FONT_FAMILY,
                 fontStyle: "italic",
-                fontSize: mobile ? MOBILE_TYPE.caption : TYPE.body,
+                fontSize: mobile ? TEXT.caption.mobileSize : TEXT.body.size,
                 color: COLORS.ink,
                 padding: `${SPACE[1]}px ${SPACE[2]}px`,
                 borderRadius: RADIUS.sm,
@@ -518,7 +518,7 @@ const MusicWindow: React.FC = () => {
                       borderBottom: idx === PLAYLISTS.length - 1 ? "none" : BORDER.standard,
                       fontFamily: FONT_FAMILY,
                       fontStyle: "italic",
-                      fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
+                      fontSize: mobile ? TEXT.body.mobileSize : TEXT.body.size,
                       color: COLORS.ink,
                       cursor: "pointer",
                       textAlign: "left",

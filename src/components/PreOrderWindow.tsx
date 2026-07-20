@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
+import { COLORS, SPACE, textStyle } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -17,10 +17,10 @@ const PreOrderWindow: React.FC = () => {
         textAlign: "center",
       }}
     >
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "italic", fontSize: mobile ? MOBILE_TYPE.head : TYPE.head, color: COLORS.ink }}>
+      <div style={{ ...textStyle("heading", mobile), fontStyle: "italic", color: COLORS.ink }}>
         Get the physical game
       </div>
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: mobile ? MOBILE_TYPE.body : TYPE.body, color: COLORS.inkMuted, maxWidth: 280, marginTop: SPACE[5], lineHeight: 1.5 }}>
+      <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, maxWidth: 280, marginTop: SPACE[5], lineHeight: 1.5 }}>
         48 cards, 2 match dice, and enough competition to ruin your family dinner.
       </div>
       <AppButton
@@ -31,7 +31,7 @@ const PreOrderWindow: React.FC = () => {
       >
         Pre-Order Now
       </AppButton>
-      <div style={{ fontFamily: FONT_FAMILY, fontStyle: "normal", fontSize: mobile ? MOBILE_TYPE.caption : TYPE.caption, color: COLORS.inkMuted, marginTop: SPACE[7] }}>
+      <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, marginTop: SPACE[7] }}>
         Coming soon — Oleeha &amp; Co
       </div>
     </div>
@@ -39,3 +39,4 @@ const PreOrderWindow: React.FC = () => {
 };
 
 export default PreOrderWindow;
+

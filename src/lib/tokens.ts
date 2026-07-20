@@ -1,19 +1,25 @@
 import type { CSSProperties } from "react";
 
 export const COLORS = {
+  // UI surface (window/content backgrounds)
   surface: "#F8F2E9",
+  surfaceHover: "#e8e0d4",
   panel: "#D0C3AF",
   panelMuted: "#ADA290",
   panelMutedHover: "#bdb5a4",
+  // Ink ramp: ink (strong text), inkMuted (secondary/subtle text)
   ink: "#231f20",
-  inkSoft: "#3a3637",
   inkMuted: "#706662",
-  inkSubtle: "#524b48",
-  inverse: "#F8F2E9",
+  // Brand tones + their hover states
   red: "#d72229",
+  redHover: "#b81b20",
   blue: "#0072B2",
+  blueHover: "#005a8f",
   orange: "#E79024",
+  orangeHover: "#c47618",
   success: "#59cd90",
+  successHover: "#4ab87d",
+  // Theme background (backs the "Off-White" theme swatch — distinct from `surface`, the UI background)
   offWhite: "#fef9f0",
 } as const;
 
@@ -86,23 +92,3 @@ export function textStyle(role: keyof typeof TEXT, mobile = false): CSSPropertie
     lineHeight: t.lineHeight,
   };
 }
-
-/** @deprecated Use TEXT and textStyle() instead. */
-export const TYPE = {
-  caption: TEXT.caption.size,
-  body: TEXT.body.size,
-  ui: TEXT.subhead.size,
-  subhead: TEXT.heading.size,
-  head: TEXT.heading.size,
-  display: TEXT.display.size,
-} as const;
-
-/** @deprecated Use TEXT and textStyle() instead. */
-export const MOBILE_TYPE = {
-  caption: TEXT.caption.mobileSize,
-  body: TEXT.body.mobileSize,
-  ui: TEXT.subhead.mobileSize,
-  subhead: TEXT.subhead.mobileSize,
-  head: TEXT.heading.mobileSize,
-  display: TEXT.display.mobileSize,
-} as const;

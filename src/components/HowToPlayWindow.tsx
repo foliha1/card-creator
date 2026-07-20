@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { COLORS, RADIUS, FONT_FAMILY, SPACE, TYPE, MOBILE_TYPE } from "@/lib/tokens";
+import { COLORS, RADIUS, FONT_FAMILY, SPACE, TEXT, textStyle } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -13,18 +13,13 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
   const mobile = useIsMobile();
 
   const headlineStyle: React.CSSProperties = {
-    fontFamily: FONT_FAMILY,
-    fontStyle: "normal",
-    fontWeight: 700,
-    fontSize: mobile ? MOBILE_TYPE.subhead : TYPE.subhead,
+    ...textStyle("subhead", mobile),
     color: COLORS.ink,
     marginBottom: SPACE[4],
   };
 
   const bodyStyle: React.CSSProperties = {
-    fontFamily: FONT_FAMILY,
-    fontStyle: "normal",
-    fontSize: mobile ? MOBILE_TYPE.body : TYPE.body,
+    ...textStyle("body", mobile),
     color: COLORS.inkMuted,
     maxWidth: 280,
     lineHeight: 1.5,
@@ -71,7 +66,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
                     fontFamily: FONT_FAMILY,
                     fontStyle: "italic",
                     fontWeight: 900,
-                    fontSize: mobile ? MOBILE_TYPE.caption : TYPE.body,
+                    fontSize: mobile ? TEXT.caption.mobileSize : TEXT.body.size,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -85,9 +80,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             </div>
             <div
               style={{
-                fontFamily: FONT_FAMILY,
-                fontStyle: "italic",
-                fontSize: TYPE.caption,
+                ...textStyle("captionItalic"),
                 color: COLORS.inkMuted,
                 marginTop: SPACE[2],
               }}
@@ -127,9 +120,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
             </div>
             <div
               style={{
-                fontFamily: FONT_FAMILY,
-                fontStyle: "italic",
-                fontSize: TYPE.caption,
+                ...textStyle("captionItalic"),
                 color: COLORS.inkMuted,
                 marginTop: SPACE[2],
               }}
@@ -175,7 +166,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
           fullWidth
           disabled={slide === 0}
           onClick={() => setSlide((s) => s - 1)}
-          style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: mobile ? TEXT.subhead.mobileSize : TEXT.subhead.size, padding: SPACE[6] }}
         >
           Back
         </AppButton>
@@ -191,7 +182,7 @@ const HowToPlayWindow: React.FC<HowToPlayWindowProps> = ({ onClose }) => {
               setSlide((s) => s + 1);
             }
           }}
-          style={{ flex: 1, fontSize: mobile ? MOBILE_TYPE.ui : TYPE.ui, padding: SPACE[6] }}
+          style={{ flex: 1, fontSize: mobile ? TEXT.subhead.mobileSize : TEXT.subhead.size, padding: SPACE[6] }}
         >
           {slide === 3 ? "Got it!" : "Next"}
         </AppButton>
