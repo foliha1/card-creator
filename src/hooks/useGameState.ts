@@ -299,6 +299,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     setClaimMode(false);
     setSelectedCards([]);
     // In Last Call, no rolling — otherwise the roller rolls to start the round.
+    rollPhaseRef.current = !lastCallRef.current;
     setRollPhase(!lastCallRef.current);
     setTimeout(() => { roundTransitionRef.current = false; }, 0);
   }, []);
