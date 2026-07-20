@@ -38,7 +38,7 @@ const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", 
 
 const DesktopShell: React.FC = () => {
   const mobile = useIsMobile();
-  const { bgTheme, logoColor, arcade } = useTheme();
+  const { bgTheme, logoColor } = useTheme();
   const [booted, setBooted] = useState(false);
   const [openWindows, setOpenWindows] = useState<Set<WindowId>>(new Set());
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
@@ -254,47 +254,6 @@ const DesktopShell: React.FC = () => {
         mobile={mobile}
       />
 
-      {arcade && (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 2147483647,
-            animation: "crt-flicker 4s ease-in-out infinite",
-          }}
-        >
-          {/* Scanlines */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage:
-                "repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 3px)",
-              mixBlendMode: "multiply",
-            }}
-          />
-          {/* RGB subpixel shimmer */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage:
-                "repeating-linear-gradient(90deg, rgba(255,0,0,0.04) 0px, rgba(255,0,0,0.04) 1px, rgba(0,255,0,0.04) 1px, rgba(0,255,0,0.04) 2px, rgba(0,0,255,0.04) 2px, rgba(0,0,255,0.04) 3px)",
-            }}
-          />
-          {/* Vignette */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.25) 100%)",
-            }}
-          />
-        </div>
-      )}
     </div>
   );
 };
