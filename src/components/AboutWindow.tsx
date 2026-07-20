@@ -89,10 +89,10 @@ const AboutWindow: React.FC = () => {
         </div>
 
         <p style={bodyStyle}>
-          Flip a card, remember what's on it, and race to call the pairs. Two dice decide what a match even means — same shape, same number, same color — and they change their mind every round. Your brain has to keep up.
+          Flip a card, remember what's on it, and race to call the pairs. A die decides what a match even means — same shape, same number, same color — and it changes its mind every round. Your brain has to keep up.
         </p>
         <p style={bodyStyle}>
-          Across the table sits Auntie O., the family card shark who never forgets a card. Usually. Beat her to the WHOOP! and the pair is yours.
+          This is a playable preview of the real thing — a physical card game meant for a table full of people. Here you're playing a quick round against a single opponent, but WHOOP! WHOOP! comes alive with 3, 4, 5, or 6 players all shouting over each other. That's where it's meant to be played.
         </p>
       </div>
 
