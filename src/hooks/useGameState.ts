@@ -115,6 +115,11 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const flipperRef = useRef(0);
   // Mirrors rollerIndex synchronously for use inside imperative helpers.
   const rollerRef = useRef(0);
+  // Mirrors claim-related state synchronously so passFlipper can bail out.
+  const claimModeRef = useRef(false);
+  const opponentClaimingRef = useRef<{ indices: [number, number] } | null>(null);
+  const claimPendingRef = useRef(false);
+
 
 
   const doRollDice = useCallback((): Promise<string[]> => {
@@ -263,6 +268,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   // Sync flipperIndex → flipperRef for imperative helpers.
   useEffect(() => { flipperRef.current = flipperIndex; }, [flipperIndex]);
   useEffect(() => { rollerRef.current = rollerIndex; }, [rollerIndex]);
+  useEffect(() => { claimModeRef.current = claimMode; }, [claimMode]);
+  useEffect(() => { opponentClaimingRef.current = opponentClaiming; }, [opponentClaiming]);
+  useEffect(() => { claimPendingRef.current = claimPending; }, [claimPending]);
+
 
   // Start a new round. If winnerIndex is provided (correct claim), that player
   // becomes Roller and first Flipper. If null (flip-cycle completed with no
@@ -296,8 +305,12 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   // claim), the round ends: either enter Last Call (draw pile empty, no claim
   // this cycle) or start a new round with the roll passing clockwise.
   const passFlipper = useCallback(() => {
+    // Never advance while a claim is active or pending — the round pauses
+    // until the claim resolves.
+    if (claimModeRef.current || opponentClaimingRef.current || claimPendingRef.current) return;
     const prev = flipperRef.current;
     flippedSinceClaimRef.current.add(prev);
+
 
     if (flippedSinceClaimRef.current.size >= PLAYERS.length) {
       const noClaim = !claimedThisRoundRef.current;
@@ -408,14 +421,25 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const enterClaimMode = useCallback(() => {
     if (opponentClaiming || claimMode || gameOver) return;
     if (rolling) return;
+    // Cancel any in-flight peek timer so the auto passFlipper() doesn't fire
+    // once the player has committed to claiming. Their flip is "held" by the
+    // claim; flippedSinceClaimRef still records it below so the cycle count
+    // stays correct for Last Call detection.
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+    setPeekingCard(null);
     if (rollPhase) {
       if (rollerIndex !== 0) return;
       if (claimPending) return;
+      claimPendingRef.current = true;
       setClaimPending(true);
       (async () => {
         try {
           await doRollDice();
           setRollPhase(false);
+          claimModeRef.current = true;
           setClaimMode(true);
           setSelectedCards([]);
           setMatchedCards(new Set());
@@ -424,17 +448,22 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         } catch {
           setRollPhase(false);
         } finally {
+          claimPendingRef.current = false;
           setClaimPending(false);
         }
       })();
       return;
     }
+    // Held flip counts toward the cycle even though passFlipper was canceled.
+    flippedSinceClaimRef.current.add(flipperRef.current);
+    claimModeRef.current = true;
     setClaimMode(true);
     setSelectedCards([]);
     setMatchedCards(new Set());
     setMessage("Select 2 cards that match the rule.");
     setMessageType("info");
   }, [opponentClaiming, claimMode, gameOver, rolling, rollPhase, rollerIndex, claimPending, doRollDice]);
+
 
 
   const refillGrid = useCallback(
@@ -561,11 +590,17 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         return n;
       });
       setSelectedCards([]);
+      claimModeRef.current = false;
       setClaimMode(false);
       setMessage("No match! You lose your next flip.");
       setMessageType("error");
+      // Claim is over; resume the cycle. The claimant's flip was already
+      // recorded in flippedSinceClaimRef when they entered claim mode, so
+      // passFlipper will correctly end the round if the cycle is complete.
+      passFlipper();
     }
-  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
+
+  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound, passFlipper]);
 
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
