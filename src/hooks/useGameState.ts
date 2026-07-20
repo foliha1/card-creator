@@ -272,6 +272,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   useEffect(() => { claimModeRef.current = claimMode; }, [claimMode]);
   useEffect(() => { opponentClaimingRef.current = opponentClaiming; }, [opponentClaiming]);
   useEffect(() => { claimPendingRef.current = claimPending; }, [claimPending]);
+  useEffect(() => { rollPhaseRef.current = rollPhase; }, [rollPhase]);
 
 
   // Start a new round. If winnerIndex is provided (correct claim), that player
