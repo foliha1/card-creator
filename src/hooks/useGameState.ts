@@ -230,6 +230,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     setLastCall(false);
     setAllFaceUp(false);
     setMessage("");
+    rollPhaseRef.current = true;
     setRollPhase(true);
 
     const values = rollRandomAttributes(getDieCount());
@@ -298,6 +299,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     setClaimMode(false);
     setSelectedCards([]);
     // In Last Call, no rolling — otherwise the roller rolls to start the round.
+    rollPhaseRef.current = !lastCallRef.current;
     setRollPhase(!lastCallRef.current);
     setTimeout(() => { roundTransitionRef.current = false; }, 0);
   }, []);
@@ -328,6 +330,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
         setDieValues([value]);
         setMatchRule([value]);
+        rollPhaseRef.current = false;
         setRollPhase(false);
         return;
       }
@@ -394,7 +397,6 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     oppDelayRef.current = setTimeout(() => {
       if (
         rollPhaseRef.current ||
-        roundTransitionRef.current ||
         gameOver ||
         claimModeRef.current ||
         opponentClaimingRef.current ||
@@ -422,7 +424,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       oppRevealRef.current = setTimeout(() => {
         if (
           rollPhaseRef.current ||
-          roundTransitionRef.current ||
+          
           gameOver ||
           claimModeRef.current ||
           opponentClaimingRef.current ||
@@ -472,6 +474,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       (async () => {
         try {
           await doRollDice();
+          rollPhaseRef.current = false;
           setRollPhase(false);
           claimModeRef.current = true;
           setClaimMode(true);
@@ -480,6 +483,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
           setMessage("Select 2 cards that match the rule.");
           setMessageType("info");
         } catch {
+          rollPhaseRef.current = false;
           setRollPhase(false);
         } finally {
           claimPendingRef.current = false;
@@ -535,6 +539,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (rollerIndex !== 0) return;
     if (rolling || gameOver) return;
     await doRollDice();
+    rollPhaseRef.current = false;
     setRollPhase(false);
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
 
@@ -709,7 +714,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (rollerIndex !== 1) return;
     if (rolling || gameOver) return;
     const t = setTimeout(() => {
-      doRollDice().then(() => setRollPhase(false));
+      doRollDice().then(() => { rollPhaseRef.current = false; setRollPhase(false); });
     }, OPPONENT_TUNING.thinkDelayMs);
     return () => clearTimeout(t);
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
