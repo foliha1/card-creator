@@ -33,8 +33,6 @@ interface ThemeContextValue {
   logoColor: string;
   setTheme: (color: string) => void;
   themeInk: string;
-  arcade: boolean;
-  toggleArcade: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -47,25 +45,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return DEFAULT_THEME;
   });
 
-  const [arcade, setArcade] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("whoop-arcade") === "true";
-    }
-    return false;
-  });
 
   const setTheme = useCallback((color: string) => {
     setBgTheme(color);
     localStorage.setItem("whoop-theme", color);
   }, []);
 
-  const toggleArcade = useCallback(() => {
-    setArcade((prev) => {
-      const next = !prev;
-      localStorage.setItem("whoop-arcade", String(next));
-      return next;
-    });
-  }, []);
 
   const logoColor = useMemo(() => {
     if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface) return COLORS.panelMuted;
@@ -74,7 +59,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [bgTheme]);
   const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue || bgTheme === "wild") ? COLORS.surface : COLORS.ink, [bgTheme]);
 
-  const value = useMemo(() => ({ bgTheme, logoColor, setTheme, themeInk, arcade, toggleArcade }), [bgTheme, logoColor, setTheme, themeInk, arcade, toggleArcade]);
+  const value = useMemo(() => ({ bgTheme, logoColor, setTheme, themeInk }), [bgTheme, logoColor, setTheme, themeInk]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
