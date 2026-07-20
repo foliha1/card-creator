@@ -115,6 +115,11 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const flipperRef = useRef(0);
   // Mirrors rollerIndex synchronously for use inside imperative helpers.
   const rollerRef = useRef(0);
+  // Mirrors claim-related state synchronously so passFlipper can bail out.
+  const claimModeRef = useRef(false);
+  const opponentClaimingRef = useRef<{ indices: [number, number] } | null>(null);
+  const claimPendingRef = useRef(false);
+
 
 
   const doRollDice = useCallback((): Promise<string[]> => {
