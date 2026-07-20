@@ -1,5 +1,5 @@
 import React from "react";
-import { COLORS, BORDER, RADIUS, FONT_FAMILY, MOTION, TYPE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, FONT_FAMILY, MOTION, TEXT } from "@/lib/tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "pill";
 export type ButtonTone = "ink" | "red" | "blue" | "orange" | "neutral" | "muted" | "success";
@@ -15,19 +15,19 @@ interface AppButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonEleme
 }
 
 const TONE_MAP: Record<ButtonTone, { bg: string; hoverBg: string; fg: string }> = {
-  ink:     { bg: COLORS.ink,        hoverBg: COLORS.inkSoft,          fg: COLORS.surface },
-  red:     { bg: COLORS.red,        hoverBg: "#b81b20",               fg: COLORS.surface },
-  blue:    { bg: COLORS.blue,       hoverBg: "#005a8f",               fg: COLORS.surface },
-  orange:  { bg: COLORS.orange,     hoverBg: "#c47618",               fg: COLORS.surface },
+  ink:     { bg: COLORS.ink,        hoverBg: COLORS.inkMuted,         fg: COLORS.surface },
+  red:     { bg: COLORS.red,        hoverBg: COLORS.redHover,         fg: COLORS.surface },
+  blue:    { bg: COLORS.blue,       hoverBg: COLORS.blueHover,        fg: COLORS.surface },
+  orange:  { bg: COLORS.orange,     hoverBg: COLORS.orangeHover,      fg: COLORS.surface },
   neutral: { bg: COLORS.surface,    hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
   muted:   { bg: COLORS.panelMuted, hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
-  success: { bg: COLORS.success,   hoverBg: "#4ab87d",               fg: COLORS.ink },
+  success: { bg: COLORS.success,    hoverBg: COLORS.successHover,     fg: COLORS.ink },
 };
 
-const SIZE_MAP: Record<ButtonSize, { fontSize: number | string; padding: string }> = {
-  sm: { fontSize: TYPE.caption, padding: "6px 12px" },
-  md: { fontSize: TYPE.ui, padding: "10px 20px" },
-  lg: { fontSize: TYPE.subhead, padding: "12px 24px" },
+const SIZE_MAP: Record<ButtonSize, { fontSize: number; padding: string }> = {
+  sm: { fontSize: TEXT.caption.size, padding: "6px 12px" },
+  md: { fontSize: TEXT.subhead.size, padding: "10px 20px" },
+  lg: { fontSize: TEXT.heading.size, padding: "12px 24px" },
 };
 
 export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(
