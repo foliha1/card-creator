@@ -397,7 +397,6 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     oppDelayRef.current = setTimeout(() => {
       if (
         rollPhaseRef.current ||
-        roundTransitionRef.current ||
         gameOver ||
         claimModeRef.current ||
         opponentClaimingRef.current ||
@@ -484,6 +483,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
           setMessage("Select 2 cards that match the rule.");
           setMessageType("info");
         } catch {
+          rollPhaseRef.current = false;
           setRollPhase(false);
         } finally {
           claimPendingRef.current = false;
@@ -539,6 +539,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (rollerIndex !== 0) return;
     if (rolling || gameOver) return;
     await doRollDice();
+    rollPhaseRef.current = false;
     setRollPhase(false);
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
 
@@ -713,7 +714,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (rollerIndex !== 1) return;
     if (rolling || gameOver) return;
     const t = setTimeout(() => {
-      doRollDice().then(() => setRollPhase(false));
+      doRollDice().then(() => { rollPhaseRef.current = false; setRollPhase(false); });
     }, OPPONENT_TUNING.thinkDelayMs);
     return () => clearTimeout(t);
   }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
