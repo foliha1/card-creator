@@ -18,7 +18,7 @@ const TONE_MAP: Record<ButtonTone, { bg: string; hoverBg: string; fg: string }> 
   ink:     { bg: COLORS.ink,        hoverBg: COLORS.inkMuted,         fg: COLORS.surface },
   red:     { bg: COLORS.red,        hoverBg: COLORS.redHover,         fg: COLORS.surface },
   blue:    { bg: COLORS.blue,       hoverBg: COLORS.blueHover,        fg: COLORS.surface },
-  orange:  { bg: COLORS.orange,     hoverBg: COLORS.orangeHover,      fg: COLORS.surface },
+  orange:  { bg: COLORS.orange,     hoverBg: COLORS.orangeHover,      fg: COLORS.ink },
   neutral: { bg: COLORS.surface,    hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
   muted:   { bg: COLORS.panelMuted, hoverBg: COLORS.panelMutedHover,  fg: COLORS.ink },
   success: { bg: COLORS.success,    hoverBg: COLORS.successHover,     fg: COLORS.ink },
