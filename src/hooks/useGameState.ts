@@ -218,6 +218,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     flippedSinceClaimRef.current = new Set();
     roundTransitionRef.current = false;
     flipperRef.current = 0;
+    rollerRef.current = 0;
     setDrawEmpty(false);
     setRoundsSinceClaim(0);
     setLastCall(false);
