@@ -392,6 +392,20 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
 
     if (oppDelayRef.current) clearTimeout(oppDelayRef.current);
     oppDelayRef.current = setTimeout(() => {
+      if (
+        rollPhaseRef.current ||
+        roundTransitionRef.current ||
+        gameOver ||
+        claimModeRef.current ||
+        opponentClaimingRef.current ||
+        flipperRef.current !== 1
+      ) {
+        if (oppDelayRef.current) {
+          clearTimeout(oppDelayRef.current);
+          oppDelayRef.current = null;
+        }
+        return;
+      }
       oppDelayRef.current = null;
       const candidates = grid
         .map((c, i) => (c !== null && !wrongCards.has(i) ? i : -1))
@@ -406,6 +420,20 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       setPeekingCard(pick);
       if (oppRevealRef.current) clearTimeout(oppRevealRef.current);
       oppRevealRef.current = setTimeout(() => {
+        if (
+          rollPhaseRef.current ||
+          roundTransitionRef.current ||
+          gameOver ||
+          claimModeRef.current ||
+          opponentClaimingRef.current ||
+          flipperRef.current !== 1
+        ) {
+          if (oppRevealRef.current) {
+            clearTimeout(oppRevealRef.current);
+            oppRevealRef.current = null;
+          }
+          return;
+        }
         oppRevealRef.current = null;
         setPeekingCard(null);
         passFlipper();
@@ -416,6 +444,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       if (oppDelayRef.current) {
         clearTimeout(oppDelayRef.current);
         oppDelayRef.current = null;
+      }
+      if (oppRevealRef.current) {
+        clearTimeout(oppRevealRef.current);
+        oppRevealRef.current = null;
       }
     };
   }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, peekingCard, grid, wrongCards, passFlipper]);
