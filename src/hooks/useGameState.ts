@@ -417,14 +417,25 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const enterClaimMode = useCallback(() => {
     if (opponentClaiming || claimMode || gameOver) return;
     if (rolling) return;
+    // Cancel any in-flight peek timer so the auto passFlipper() doesn't fire
+    // once the player has committed to claiming. Their flip is "held" by the
+    // claim; flippedSinceClaimRef still records it below so the cycle count
+    // stays correct for Last Call detection.
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
+    }
+    setPeekingCard(null);
     if (rollPhase) {
       if (rollerIndex !== 0) return;
       if (claimPending) return;
+      claimPendingRef.current = true;
       setClaimPending(true);
       (async () => {
         try {
           await doRollDice();
           setRollPhase(false);
+          claimModeRef.current = true;
           setClaimMode(true);
           setSelectedCards([]);
           setMatchedCards(new Set());
@@ -433,17 +444,22 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         } catch {
           setRollPhase(false);
         } finally {
+          claimPendingRef.current = false;
           setClaimPending(false);
         }
       })();
       return;
     }
+    // Held flip counts toward the cycle even though passFlipper was canceled.
+    flippedSinceClaimRef.current.add(flipperRef.current);
+    claimModeRef.current = true;
     setClaimMode(true);
     setSelectedCards([]);
     setMatchedCards(new Set());
     setMessage("Select 2 cards that match the rule.");
     setMessageType("info");
   }, [opponentClaiming, claimMode, gameOver, rolling, rollPhase, rollerIndex, claimPending, doRollDice]);
+
 
 
   const refillGrid = useCallback(
