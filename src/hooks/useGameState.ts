@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 import { createOpponentMemory } from "@/lib/opponentMemory";
 
@@ -63,186 +63,767 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 function computeRule(values: string[]): { rule: string[] } {
-  // Single-die core: rule is always a single-attribute array.
   return { rule: [values[0]] };
 }
 
+// ============================================================================
+// Reducer-driven control flow
+//
+// A single PHASE governs what actions are legal. All timed actions carry a
+// monotonically-increasing `token`; the reducer ignores stale completions
+// whose token doesn't match the current inFlight action. That single check
+// replaces the previous swarm of shadow-ref guards.
+// ============================================================================
+
+type Phase =
+  | "AWAITING_ROLL"
+  | "FLIPPING"
+  | "CLAIM_SELECTING"
+  | "CLAIM_RESOLVING"
+  | "LAST_CALL"
+  | "GAME_OVER";
+
+type InFlight =
+  | null
+  | { kind: "flip"; token: number; by: number; idx: number }
+  | { kind: "claim"; token: number; by: number; a: number; b: number };
+
+interface State {
+  phase: Phase;
+  slotCount: number;
+  roller: number;
+  flipper: number;
+  grid: (Card | null)[];
+  deck: Card[];
+  scores: number[];
+  rule: string[];
+  dieValues: string[];
+  wrong: Set<number>;
+  skip: boolean[];
+  flippedThisCycle: Set<number>;
+  claimedThisCycle: boolean;
+  drawEmpty: boolean;
+  roundNum: number;
+  roundsSinceClaim: number;
+  allFaceUp: boolean;
+  selectedCards: number[];
+  matchedCards: Set<number>;
+  peekingCard: number | null;
+  rolling: boolean;
+  message: string;
+  messageType: MessageType;
+  inFlight: InFlight;
+  claimPending: boolean;
+}
+
+type Action =
+  | { type: "INIT"; slotCount: number }
+  | { type: "TUMBLE"; values: string[] }
+  | { type: "ROLL_START" }
+  | { type: "ROLL_LAND"; values: string[]; rule: string[] }
+  | { type: "ROLL_SETTLE" }
+  | { type: "HUMAN_ENTER_CLAIM" }
+  | { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" }
+  | { type: "HUMAN_SELECT_CARD"; idx: number }
+  | { type: "HUMAN_RESOLVE_MATCH" }
+  | { type: "FLIP_START"; by: number; idx: number; token: number }
+  | { type: "FLIP_COMPLETE"; token: number }
+  | { type: "SKIP_TICK" }
+  | { type: "CLAIM_START"; by: number; a: number; b: number; token: number }
+  | { type: "CLAIM_RESOLVE"; token: number }
+  | { type: "LAST_CALL_CLAIM"; by: number; a: number; b: number }
+  | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
+  | { type: "REMOVE_MATCHED" }
+  | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
+
+function initialState(slotCount: number): State {
+  const newDeck = createDeck();
+  const dealt = newDeck.splice(0, slotCount);
+  const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
+  const values = rollRandomAttributes(getDieCount());
+  const { rule } = computeRule(values);
+  return {
+    phase: "AWAITING_ROLL",
+    slotCount,
+    roller: 0,
+    flipper: 0,
+    grid: newGrid,
+    deck: newDeck,
+    scores: [0, 0],
+    rule,
+    dieValues: values,
+    wrong: new Set(),
+    skip: [false, false],
+    flippedThisCycle: new Set(),
+    claimedThisCycle: false,
+    drawEmpty: newDeck.length === 0,
+    roundNum: 1,
+    roundsSinceClaim: 0,
+    allFaceUp: false,
+    selectedCards: [],
+    matchedCards: new Set(),
+    peekingCard: null,
+    rolling: false,
+    message: "",
+    messageType: "info",
+    inFlight: null,
+    claimPending: false,
+  };
+}
+
+function refill(
+  grid: (Card | null)[],
+  deck: Card[],
+  slots: number[]
+): { grid: (Card | null)[]; deck: Card[] } {
+  const g = [...grid];
+  const d = [...deck];
+  for (const i of slots) {
+    if (d.length > 0) g[i] = d.shift()!;
+    else g[i] = null;
+  }
+  return { grid: g, deck: d };
+}
+
+function withGameOverAnnounce(s: State): State {
+  const [you, opp] = s.scores;
+  const outcome =
+    you > opp
+      ? `You win! ${you}–${opp}`
+      : opp > you
+      ? `Opponent wins! ${opp}–${you}`
+      : `Tie ${you}–${opp}`;
+  return {
+    ...s,
+    phase: "GAME_OVER",
+    message: `Game over — ${outcome}`,
+    messageType: "info",
+    inFlight: null,
+    peekingCard: null,
+  };
+}
+
+function startRound(s: State, winnerIndex: number | null): State {
+  // GAME_OVER safety: if nothing can be played, end.
+  const hasCards = s.grid.some((c) => c !== null);
+  const filled = s.grid.filter((c) => c !== null).length;
+  if (!hasCards && s.deck.length === 0) return withGameOverAnnounce(s);
+  if (filled < 2 && s.deck.length === 0) return withGameOverAnnounce(s);
+
+  const nextRoller =
+    winnerIndex !== null ? winnerIndex : (s.roller + 1) % PLAYERS.length;
+  return {
+    ...s,
+    phase: "AWAITING_ROLL",
+    roller: nextRoller,
+    flipper: nextRoller,
+    wrong: new Set(),
+    skip: [false, false],
+    flippedThisCycle: new Set(),
+    claimedThisCycle: false,
+    selectedCards: [],
+    matchedCards: new Set(),
+    inFlight: null,
+    peekingCard: null,
+    roundNum: s.roundNum + 1,
+    roundsSinceClaim: winnerIndex !== null ? 0 : s.roundsSinceClaim,
+    claimPending: false,
+  };
+}
+
+function cycleAdvance(s: State, addWho: number): State {
+  const flipped = new Set(s.flippedThisCycle);
+  flipped.add(addWho);
+  if (flipped.size >= PLAYERS.length) {
+    const noClaim = !s.claimedThisCycle;
+    if (s.phase === "LAST_CALL") {
+      // In Last Call, cycle just rotates flippers indefinitely — no round advance.
+      const next = (s.flipper + 1) % PLAYERS.length;
+      return {
+        ...s,
+        flipper: next,
+        flippedThisCycle: new Set(),
+        inFlight: null,
+        peekingCard: null,
+      };
+    }
+    if (s.drawEmpty && noClaim) {
+      // Enter LAST_CALL
+      const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
+      return {
+        ...s,
+        phase: "LAST_CALL",
+        allFaceUp: true,
+        wrong: new Set(),
+        skip: [false, false],
+        dieValues: [value],
+        rule: [value],
+        flippedThisCycle: new Set(),
+        claimedThisCycle: false,
+        roundsSinceClaim: s.roundsSinceClaim + 1,
+        inFlight: null,
+        peekingCard: null,
+      };
+    }
+    // No-claim round completed: roll passes clockwise.
+    return startRound({ ...s, flippedThisCycle: flipped }, null);
+  }
+  const next = (s.flipper + 1) % PLAYERS.length;
+  return {
+    ...s,
+    flipper: next,
+    flippedThisCycle: flipped,
+    inFlight: null,
+    peekingCard: null,
+  };
+}
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "INIT":
+      return initialState(action.slotCount);
+
+    case "TUMBLE":
+      if (!state.rolling) return state;
+      return { ...state, dieValues: action.values };
+
+    case "ROLL_START":
+      if (state.phase !== "AWAITING_ROLL") return state;
+      return { ...state, rolling: true };
+
+    case "ROLL_LAND": {
+      if (!state.rolling) return state;
+      return {
+        ...state,
+        dieValues: action.values,
+        rule: action.rule,
+      };
+    }
+
+    case "ROLL_SETTLE": {
+      if (!state.rolling) return state;
+      const base = { ...state, rolling: false };
+      if (state.claimPending) {
+        // Human hit WHOOP during roll — go straight to selection.
+        return {
+          ...base,
+          phase: "CLAIM_SELECTING",
+          claimPending: false,
+          selectedCards: [],
+          matchedCards: new Set(),
+          message: "Select 2 cards that match the rule.",
+          messageType: "info",
+        };
+      }
+      // Roll complete → enter flip phase, flipper = roller.
+      return {
+        ...base,
+        phase: "FLIPPING",
+        flipper: state.roller,
+      };
+    }
+
+    case "HUMAN_ENTER_CLAIM": {
+      if (state.phase !== "FLIPPING") return state;
+      // The held (in-progress) flip counts toward the cycle regardless of
+      // whether its reveal timer completes.
+      const flipped = new Set(state.flippedThisCycle);
+      if (state.inFlight?.kind === "flip") flipped.add(state.inFlight.by);
+      else flipped.add(state.flipper);
+      return {
+        ...state,
+        phase: "CLAIM_SELECTING",
+        flippedThisCycle: flipped,
+        inFlight: null,
+        peekingCard: null,
+        selectedCards: [],
+        matchedCards: new Set(),
+        message: "Select 2 cards that match the rule.",
+        messageType: "info",
+      };
+    }
+
+    case "HUMAN_ENTER_CLAIM_DURING_ROLL": {
+      if (state.phase !== "AWAITING_ROLL") return state;
+      if (state.roller !== 0) return state;
+      if (state.claimPending) return state;
+      return { ...state, claimPending: true };
+    }
+
+    case "HUMAN_SELECT_CARD": {
+      if (state.phase !== "CLAIM_SELECTING") return state;
+      const idx = action.idx;
+      if (state.wrong.has(idx)) return state;
+      if (state.selectedCards.includes(idx)) return state;
+      if (state.grid[idx] === null) return state;
+      if (state.selectedCards.length >= 2) return state;
+      return { ...state, selectedCards: [...state.selectedCards, idx] };
+    }
+
+    case "HUMAN_RESOLVE_MATCH": {
+      if (state.phase !== "CLAIM_SELECTING") return state;
+      if (state.selectedCards.length !== 2) return state;
+      const [ia, ib] = state.selectedCards;
+      const a = state.grid[ia];
+      const b = state.grid[ib];
+      if (a && b && cardsMatchRule(a, b, state.rule)) {
+        const scores = [...state.scores];
+        scores[0] += 2;
+        const { grid: newGrid, deck: newDeck } = refill(
+          state.grid,
+          state.deck,
+          state.selectedCards
+        );
+        const draining = newDeck.length === 0;
+        const post: State = {
+          ...state,
+          scores,
+          grid: newGrid,
+          deck: newDeck,
+          matchedCards: new Set(state.selectedCards),
+          selectedCards: [],
+          claimedThisCycle: true,
+          drawEmpty: state.drawEmpty || draining,
+          message: "Correct! +2 points.",
+          messageType: "success",
+        };
+        // Winner rolls: human becomes next Roller and Flipper.
+        return startRound(post, 0);
+      }
+      // Wrong claim: lock cards, skip penalty, resume cycle.
+      const wrong = new Set(state.wrong);
+      wrong.add(ia);
+      wrong.add(ib);
+      const skip = [...state.skip];
+      skip[0] = true;
+      const post: State = {
+        ...state,
+        phase: "FLIPPING",
+        wrong,
+        skip,
+        selectedCards: [],
+        matchedCards: new Set(),
+        message: "No match! You lose your next flip.",
+        messageType: "error",
+      };
+      // The claimant's flip was already recorded in flippedThisCycle when
+      // they entered claim mode, so cycleAdvance will end the round if the
+      // cycle is complete. Add 0 again is idempotent (Set).
+      return cycleAdvance(post, 0);
+    }
+
+    case "FLIP_START": {
+      if (state.phase !== "FLIPPING") return state;
+      if (state.flipper !== action.by) return state;
+      if (state.inFlight) return state;
+      if (state.wrong.has(action.idx)) return state;
+      if (state.grid[action.idx] === null) return state;
+      return {
+        ...state,
+        inFlight: {
+          kind: "flip",
+          token: action.token,
+          by: action.by,
+          idx: action.idx,
+        },
+        peekingCard: action.idx,
+      };
+    }
+
+    case "FLIP_COMPLETE": {
+      // Stale-token guard: ignore completions whose action was superseded.
+      if (state.inFlight?.kind !== "flip") return state;
+      if (state.inFlight.token !== action.token) return state;
+      const who = state.inFlight.by;
+      return cycleAdvance(state, who);
+    }
+
+    case "SKIP_TICK": {
+      if (state.phase !== "FLIPPING") return state;
+      if (state.inFlight) return state;
+      const who = state.flipper;
+      if (!state.skip[who]) return state;
+      const skip = [...state.skip];
+      skip[who] = false;
+      // Consumed skip counts as this player's flip opportunity.
+      return cycleAdvance({ ...state, skip }, who);
+    }
+
+    case "CLAIM_START": {
+      // Opponent-initiated claim (interrupts any in-flight flip).
+      if (
+        state.phase !== "FLIPPING" &&
+        state.phase !== "CLAIM_SELECTING" // safety, ignore
+      ) {
+        return state;
+      }
+      if (state.phase === "CLAIM_SELECTING") return state;
+      if (action.by !== 1) return state; // human uses HUMAN_RESOLVE_MATCH path
+      if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
+      if (state.wrong.has(action.a) || state.wrong.has(action.b)) return state;
+      // Record claimant's flip opportunity for cycle accounting.
+      const flipped = new Set(state.flippedThisCycle);
+      flipped.add(action.by);
+      return {
+        ...state,
+        phase: "CLAIM_RESOLVING",
+        flippedThisCycle: flipped,
+        peekingCard: null,
+        inFlight: {
+          kind: "claim",
+          token: action.token,
+          by: action.by,
+          a: action.a,
+          b: action.b,
+        },
+      };
+    }
+
+    case "CLAIM_RESOLVE": {
+      if (state.inFlight?.kind !== "claim") return state;
+      if (state.inFlight.token !== action.token) return state;
+      const { by, a, b } = state.inFlight;
+      const cardA = state.grid[a];
+      const cardB = state.grid[b];
+      if (cardA && cardB && cardsMatchRule(cardA, cardB, state.rule)) {
+        const scores = [...state.scores];
+        scores[by] += 2;
+        const { grid: newGrid, deck: newDeck } = refill(
+          state.grid,
+          state.deck,
+          [a, b]
+        );
+        const draining = newDeck.length === 0;
+        const post: State = {
+          ...state,
+          scores,
+          grid: newGrid,
+          deck: newDeck,
+          claimedThisCycle: true,
+          drawEmpty: state.drawEmpty || draining,
+          message:
+            by === 1 ? "Opponent claim — correct! +2" : "Correct! +2 points.",
+          messageType: by === 1 ? "warning" : "success",
+          inFlight: null,
+        };
+        return startRound(post, by);
+      }
+      // Wrong opponent claim
+      const wrong = new Set(state.wrong);
+      wrong.add(a);
+      wrong.add(b);
+      const skip = [...state.skip];
+      skip[by] = true;
+      const post: State = {
+        ...state,
+        phase: "FLIPPING",
+        wrong,
+        skip,
+        inFlight: null,
+        message:
+          by === 1
+            ? "Opponent claim — wrong! They lose their next flip."
+            : "No match! You lose your next flip.",
+        messageType: "info",
+      };
+      return cycleAdvance(post, by);
+    }
+
+    case "LAST_CALL_CLAIM": {
+      if (state.phase !== "LAST_CALL") return state;
+      const { by, a, b } = action;
+      if (a === b) return state;
+      const cardA = state.grid[a];
+      const cardB = state.grid[b];
+      if (!cardA || !cardB) return state;
+      if (!cardsMatchRule(cardA, cardB, state.rule)) return state;
+      const newGrid = [...state.grid];
+      newGrid[a] = null;
+      newGrid[b] = null;
+      const scores = [...state.scores];
+      scores[by] += 2;
+      const hasCards = newGrid.some((c) => c !== null);
+      const stillPlayable = hasValidPair(newGrid, state.rule);
+      const post: State = {
+        ...state,
+        grid: newGrid,
+        scores,
+        message:
+          by === 1
+            ? "Last Call — Auntie O. claimed! +2"
+            : "Last Call — you claimed! +2",
+        messageType: by === 1 ? "warning" : "success",
+      };
+      if (!hasCards || !stillPlayable) return withGameOverAnnounce(post);
+      return post;
+    }
+
+    case "SAFETY_SWAP":
+      return {
+        ...state,
+        grid: action.grid,
+        deck: action.deck,
+        message: "Refreshing grid — no possible matches!",
+        messageType: "warning",
+      };
+
+    case "REMOVE_MATCHED": {
+      if (state.matchedCards.size === 0) return state;
+      const g = [...state.grid];
+      state.matchedCards.forEach((i) => { g[i] = null; });
+      return { ...state, grid: g };
+    }
+
+    case "SET_MESSAGE":
+      return { ...state, message: action.message, messageType: action.messageType };
+
+    default:
+      return state;
+  }
+}
+
+// ============================================================================
+// Hook
+// ============================================================================
+
 export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const slotCount = gridSize === "3x3" ? 9 : 6;
-  const [deck, setDeck] = useState<Card[]>([]);
-  const [grid, setGrid] = useState<(Card | null)[]>(Array(slotCount).fill(null));
-  const [matchRule, setMatchRule] = useState<string[]>([]);
-  const [dieValues, setDieValues] = useState<string[]>([]);
-  const [scores, setScores] = useState<number[]>([0, 0]);
-  const [roundNum, setRoundNum] = useState(1);
-  const [rollerIndex, setRollerIndex] = useState(0);
-  const [flipperIndex, setFlipperIndex] = useState(0);
-  const [skipNextFlip, setSkipNextFlip] = useState<boolean[]>([false, false]);
-  const [peekingCard, setPeekingCard] = useState<number | null>(null);
-  const [claimMode, setClaimMode] = useState(false);
-  const [selectedCards, setSelectedCards] = useState<number[]>([]);
-  const [wrongCards, setWrongCards] = useState<Set<number>>(new Set());
-  const [matchedCards, setMatchedCards] = useState<Set<number>>(new Set());
-  const [opponentClaiming, setOpponentClaiming] = useState<{ indices: [number, number] } | null>(null);
-  const [gameOver, setGameOver] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<MessageType>("info");
-  const [rolling, setRolling] = useState(false);
-  const [rollPhase, setRollPhase] = useState(true);
-  const [drawEmpty, setDrawEmpty] = useState(false);
-  const [roundsSinceClaim, setRoundsSinceClaim] = useState(0);
-  const [lastCall, setLastCall] = useState(false);
-  const [allFaceUp, setAllFaceUp] = useState(false);
-  const [claimPending, setClaimPending] = useState(false);
+  const [state, dispatch] = useReducer(reducer, slotCount, initialState);
 
-  const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const oppDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const oppRevealRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Read-latest snapshot for timer callbacks (never used for guards — only
+  // to compute picks/candidates from the freshest grid/memory).
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // Monotonic token allocator (unique across the hook's lifetime).
+  const tokenRef = useRef(0);
+  const nextToken = () => ++tokenRef.current;
+
   const memoryRef = useRef(createOpponentMemory());
   const prevPeekingRef = useRef<number | null>(null);
-  const prevGridRef = useRef<(Card | null)[]>([]);
+  const prevGridRef = useRef<(Card | null)[]>(state.grid);
+  const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const oppDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const oppRevealRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const oppClaimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const oppClaimResolveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rollSettleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const claimedThisRoundRef = useRef(false);
-  const drawEmptyRef = useRef(false);
-  const lastCallRef = useRef(false);
-  // Flip opportunities used (flip OR consumed skip) since last correct claim.
-  const flippedSinceClaimRef = useRef<Set<number>>(new Set());
-  // Guards the winner-rolls transition from double-firing.
-  const roundTransitionRef = useRef(false);
-  // Mirrors flipperIndex synchronously for use inside imperative helpers.
-  const flipperRef = useRef(0);
-  // Mirrors rollerIndex synchronously for use inside imperative helpers.
-  const rollerRef = useRef(0);
-  // Mirrors claim-related state synchronously so passFlipper can bail out.
-  const claimModeRef = useRef(false);
-  const opponentClaimingRef = useRef<{ indices: [number, number] } | null>(null);
-  const claimPendingRef = useRef(false);
-  const rollPhaseRef = useRef(rollPhase);
+  // Re-init when slotCount changes.
+  const firstSlotRef = useRef(slotCount);
+  useEffect(() => {
+    if (firstSlotRef.current === slotCount) return;
+    firstSlotRef.current = slotCount;
+    memoryRef.current.reset();
+    prevPeekingRef.current = null;
+    dispatch({ type: "INIT", slotCount });
+  }, [slotCount]);
 
-
-
-  const doRollDice = useCallback((): Promise<string[]> => {
-    const count = getDieCount();
-    const finalValues = rollRandomAttributes(count);
-    const { rule } = computeRule(finalValues);
-
-    setRolling(true);
-    if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
-    rollIntervalRef.current = setInterval(() => {
-      setDieValues(rollRandomAttributes(count));
-    }, 100);
-
+  // ------------------------------------------------------------------
+  // Roll animation (shared by human rollDice, opponent auto-roll, and
+  // the "claim during roll" flow). Two dispatches with a small settle
+  // window preserve the visual cadence of the original implementation.
+  // ------------------------------------------------------------------
+  const runRollAnimation = useCallback((): Promise<string[]> => {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
-        rollIntervalRef.current = null;
-        setDieValues(finalValues);
-        setMatchRule(rule);
-        setTimeout(() => {
-          setRolling(false);
+      dispatch({ type: "ROLL_START" });
+      const count = getDieCount();
+      const finalValues = rollRandomAttributes(count);
+      const { rule } = computeRule(finalValues);
+      if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
+      rollIntervalRef.current = setInterval(() => {
+        dispatch({ type: "TUMBLE", values: rollRandomAttributes(count) });
+      }, 100);
+      if (rollTimeoutRef.current) clearTimeout(rollTimeoutRef.current);
+      rollTimeoutRef.current = setTimeout(() => {
+        rollTimeoutRef.current = null;
+        if (rollIntervalRef.current) {
+          clearInterval(rollIntervalRef.current);
+          rollIntervalRef.current = null;
+        }
+        dispatch({ type: "ROLL_LAND", values: finalValues, rule });
+        if (rollSettleRef.current) clearTimeout(rollSettleRef.current);
+        rollSettleRef.current = setTimeout(() => {
+          rollSettleRef.current = null;
+          dispatch({ type: "ROLL_SETTLE" });
           resolve(rule);
         }, 300);
       }, 800);
     });
   }, []);
 
-  const doRollDiceSync = useCallback((): string[] => {
-    const count = getDieCount();
-    const values = rollRandomAttributes(count);
-    const { rule } = computeRule(values);
-    setDieValues(values);
-    setMatchRule(rule);
-    return rule;
+  // Human roll
+  const rollDice = useCallback(async () => {
+    const s = stateRef.current;
+    if (s.phase !== "AWAITING_ROLL") return;
+    if (s.roller !== 0) return;
+    if (s.rolling) return;
+    await runRollAnimation();
+  }, [runRollAnimation]);
+
+  // Legacy export — kept to preserve the return surface. Callers who want a
+  // Promise can still await it; no consumer currently does.
+  const doRollDice = runRollAnimation;
+
+  // Opponent auto-roll
+  useEffect(() => {
+    if (state.phase !== "AWAITING_ROLL") return;
+    if (state.roller !== 1) return;
+    if (state.rolling) return;
+    const t = setTimeout(() => {
+      runRollAnimation();
+    }, OPPONENT_TUNING.thinkDelayMs);
+    return () => clearTimeout(t);
+  }, [state.phase, state.roller, state.rolling, runRollAnimation]);
+
+  // ------------------------------------------------------------------
+  // Human peek — dispatches FLIP_START + schedules FLIP_COMPLETE.
+  // ------------------------------------------------------------------
+  const peekCard = useCallback((index: number) => {
+    const s = stateRef.current;
+    if (s.phase !== "FLIPPING") return;
+    if (s.flipper !== 0) return;
+    if (s.inFlight) return;
+    if (s.wrong.has(index)) return;
+    if (s.grid[index] === null) return;
+    const token = nextToken();
+    dispatch({ type: "FLIP_START", by: 0, idx: index, token });
+    if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
+    peekTimerRef.current = setTimeout(() => {
+      peekTimerRef.current = null;
+      dispatch({ type: "FLIP_COMPLETE", token });
+    }, REVEAL_MS);
   }, []);
-  void doRollDiceSync;
 
-  const checkGameOver = useCallback(
-    (currentDeck: Card[], currentGrid: (Card | null)[], rule: string[]) => {
-      const hasCards = currentGrid.some((c) => c !== null);
-      if (!hasCards && currentDeck.length === 0) {
-        setGameOver(true);
-        return true;
-      }
-      if (lastCallRef.current && hasCards && !hasValidPair(currentGrid, rule)) {
-        setGameOver(true);
-        return true;
-      }
-      return false;
-    },
-    []
-  );
-
-  // Track draw pile empty
+  // ------------------------------------------------------------------
+  // Skip penalty — consume when it's the penalized player's turn to flip.
+  // ------------------------------------------------------------------
   useEffect(() => {
-    if (deck.length === 0 && !drawEmptyRef.current) {
-      drawEmptyRef.current = true;
-      setDrawEmpty(true);
+    if (state.phase !== "FLIPPING") return;
+    if (state.inFlight) return;
+    if (!state.skip[state.flipper]) return;
+    dispatch({ type: "SKIP_TICK" });
+  }, [state.phase, state.flipper, state.inFlight, state.skip]);
+
+  // ------------------------------------------------------------------
+  // Opponent auto-flip. Deps intentionally minimal (phase + flipper +
+  // inFlight-nullness) so the effect doesn't re-run when the grid or
+  // peeking card changes mid-reveal. Latest data is read via stateRef.
+  // ------------------------------------------------------------------
+  const inFlightNullMarker = state.inFlight === null;
+  useEffect(() => {
+    if (state.phase !== "FLIPPING") return;
+    if (state.flipper !== 1) return;
+    if (!inFlightNullMarker) return;
+    if (oppDelayRef.current) clearTimeout(oppDelayRef.current);
+    oppDelayRef.current = setTimeout(() => {
+      oppDelayRef.current = null;
+      const s = stateRef.current;
+      if (s.phase !== "FLIPPING" || s.flipper !== 1 || s.inFlight) return;
+      const candidates = s.grid
+        .map((c, i) => (c !== null && !s.wrong.has(i) ? i : -1))
+        .filter((i) => i !== -1);
+      if (candidates.length === 0) {
+        // Nothing to flip — count this as the opponent's flip opportunity.
+        dispatch({ type: "SKIP_TICK" });
+        return;
+      }
+      const unknown = candidates.filter(
+        (i) => memoryRef.current.recall(i) === null
+      );
+      const pool = unknown.length > 0 ? unknown : candidates;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      const token = nextToken();
+      dispatch({ type: "FLIP_START", by: 1, idx: pick, token });
+      if (oppRevealRef.current) clearTimeout(oppRevealRef.current);
+      oppRevealRef.current = setTimeout(() => {
+        oppRevealRef.current = null;
+        dispatch({ type: "FLIP_COMPLETE", token });
+      }, REVEAL_MS);
+    }, OPPONENT_TUNING.thinkDelayMs);
+    return () => {
+      if (oppDelayRef.current) {
+        clearTimeout(oppDelayRef.current);
+        oppDelayRef.current = null;
+      }
+    };
+  }, [state.phase, state.flipper, inFlightNullMarker]);
+
+  // ------------------------------------------------------------------
+  // Claim intents
+  // ------------------------------------------------------------------
+  const enterClaimMode = useCallback(() => {
+    const s = stateRef.current;
+    if (s.phase === "CLAIM_SELECTING" || s.phase === "CLAIM_RESOLVING") return;
+    if (s.phase === "GAME_OVER") return;
+    if (s.rolling) return;
+    // Cancel any in-flight human peek timer.
+    if (peekTimerRef.current) {
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = null;
     }
-  }, [deck.length]);
+    if (s.phase === "AWAITING_ROLL") {
+      if (s.roller !== 0) return;
+      dispatch({ type: "HUMAN_ENTER_CLAIM_DURING_ROLL" });
+      runRollAnimation();
+      return;
+    }
+    dispatch({ type: "HUMAN_ENTER_CLAIM" });
+  }, [runRollAnimation]);
 
+  const selectCard = useCallback((index: number) => {
+    dispatch({ type: "HUMAN_SELECT_CARD", idx: index });
+  }, []);
 
-  // Announce winner when game ends (reads latest scores)
+  const resolveMatch = useCallback(() => {
+    dispatch({ type: "HUMAN_RESOLVE_MATCH" });
+  }, []);
+
+  const opponentClaim = useCallback((a: number, b: number) => {
+    const s = stateRef.current;
+    if (s.phase !== "FLIPPING") return;
+    if (a === b) return;
+    if (s.grid[a] === null || s.grid[b] === null) return;
+    if (s.wrong.has(a) || s.wrong.has(b)) return;
+    const token = nextToken();
+    dispatch({ type: "CLAIM_START", by: 1, a, b, token });
+    if (oppClaimResolveRef.current) clearTimeout(oppClaimResolveRef.current);
+    oppClaimResolveRef.current = setTimeout(() => {
+      oppClaimResolveRef.current = null;
+      dispatch({ type: "CLAIM_RESOLVE", token });
+    }, 1600);
+  }, []);
+
+  // Legacy export — reducer resolves opponent claim on its own timer, but
+  // the return surface still exposes this callable.
+  const resolveOpponentClaim = useCallback(() => {
+    // No-op: opponent claim resolution is now token-driven inside the reducer.
+  }, []);
+
+  const claimLastCall = useCallback((a: number, b: number) => {
+    dispatch({ type: "LAST_CALL_CLAIM", by: 0, a, b });
+  }, []);
+
+  const removeMatchedFromGrid = useCallback(() => {
+    dispatch({ type: "REMOVE_MATCHED" });
+  }, []);
+
+  // ------------------------------------------------------------------
+  // Dead-grid safety valve (unchanged rule).
+  // ------------------------------------------------------------------
   useEffect(() => {
-    if (!gameOver) return;
-    const [you, opp] = scores;
-    const outcome =
-      you > opp ? `You win! ${you}–${opp}`
-      : opp > you ? `Opponent wins! ${opp}–${you}`
-      : `Tie ${you}–${opp}`;
-    setMessage(`Game over — ${outcome}`);
-    setMessageType("info");
-  }, [gameOver, scores]);
-
-  // Init
-  useEffect(() => {
-    const newDeck = createDeck();
-    const dealt = newDeck.splice(0, slotCount);
-    const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
-    setDeck(newDeck);
-    setGrid(newGrid);
-    setScores([0, 0]);
-    setRoundNum(1);
-    setRollerIndex(0);
-    setFlipperIndex(0);
-    setSkipNextFlip([false, false]);
-    setGameOver(false);
-    setClaimMode(false);
-    setSelectedCards([]);
-    setWrongCards(new Set());
-    setMatchedCards(new Set());
-    setOpponentClaiming(null);
-    memoryRef.current.reset();
-    prevPeekingRef.current = null;
-    prevGridRef.current = newGrid;
-    
-    if (oppClaimTimerRef.current) { clearTimeout(oppClaimTimerRef.current); oppClaimTimerRef.current = null; }
-    claimedThisRoundRef.current = false;
-    drawEmptyRef.current = false;
-    lastCallRef.current = false;
-    flippedSinceClaimRef.current = new Set();
-    roundTransitionRef.current = false;
-    flipperRef.current = 0;
-    rollerRef.current = 0;
-    setDrawEmpty(false);
-    setRoundsSinceClaim(0);
-    setLastCall(false);
-    setAllFaceUp(false);
-    setMessage("");
-    rollPhaseRef.current = true;
-    setRollPhase(true);
-
-    const values = rollRandomAttributes(getDieCount());
-    const { rule } = computeRule(values);
-    setDieValues(values);
-    setMatchRule(rule);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slotCount]);
-
-  // Dead-grid safety valve: if NO possible pair exists for any rule, swap 2 cards from deck.
-  useEffect(() => {
-    if (gameOver || rolling || claimMode) return;
+    if (
+      state.phase === "GAME_OVER" ||
+      state.phase === "CLAIM_SELECTING" ||
+      state.phase === "CLAIM_RESOLVING" ||
+      state.rolling
+    ) {
+      return;
+    }
+    const grid = state.grid;
+    const deck = state.deck;
     if (!grid.some((c) => c !== null)) return;
     if (deck.length === 0) return;
     if (hasAnyValidPair(grid)) return;
@@ -260,419 +841,41 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     for (const idx of swapIndices) {
       newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
     }
-    setGrid(newGrid);
-    setDeck(newDeck);
-    setMessage("Refreshing grid — no possible matches!");
-    setMessageType("warning");
-  }, [grid, deck, gameOver, rolling, claimMode]);
+    dispatch({ type: "SAFETY_SWAP", grid: newGrid, deck: newDeck });
+  }, [state.grid, state.deck, state.phase, state.rolling]);
 
-
-  // Sync flipperIndex → flipperRef for imperative helpers.
-  useEffect(() => { flipperRef.current = flipperIndex; }, [flipperIndex]);
-  useEffect(() => { rollerRef.current = rollerIndex; }, [rollerIndex]);
-  useEffect(() => { claimModeRef.current = claimMode; }, [claimMode]);
-  useEffect(() => { opponentClaimingRef.current = opponentClaiming; }, [opponentClaiming]);
-  useEffect(() => { claimPendingRef.current = claimPending; }, [claimPending]);
-  useEffect(() => { rollPhaseRef.current = rollPhase; }, [rollPhase]);
-  const gridRef = useRef(grid);
-  const wrongCardsRef = useRef(wrongCards);
-  useEffect(() => { gridRef.current = grid; }, [grid]);
-  useEffect(() => { wrongCardsRef.current = wrongCards; }, [wrongCards]);
-
-
-  // Start a new round. If winnerIndex is provided (correct claim), that player
-  // becomes Roller and first Flipper. If null (flip-cycle completed with no
-  // claim), the roll passes clockwise from the current roller.
-  const startNewRound = useCallback((winnerIndex: number | null) => {
-    if (roundTransitionRef.current) return;
-    roundTransitionRef.current = true;
-    const nextRoller =
-      winnerIndex !== null
-        ? winnerIndex
-        : (rollerRef.current + 1) % PLAYERS.length;
-    flippedSinceClaimRef.current = new Set();
-    claimedThisRoundRef.current = false;
-    if (winnerIndex !== null) setRoundsSinceClaim(0);
-    setRoundNum((r) => r + 1);
-    setRollerIndex(nextRoller);
-    setFlipperIndex(nextRoller);
-    flipperRef.current = nextRoller;
-    rollerRef.current = nextRoller;
-    setWrongCards(new Set());
-    setSkipNextFlip([false, false]);
-    setClaimMode(false);
-    setSelectedCards([]);
-    // In Last Call, no rolling — otherwise the roller rolls to start the round.
-    rollPhaseRef.current = !lastCallRef.current;
-    setRollPhase(!lastCallRef.current);
-    setTimeout(() => { roundTransitionRef.current = false; }, 0);
-  }, []);
-
-  // Rotate flipper clockwise within the ongoing round. When the flip-cycle
-  // completes (every player has had one flip opportunity since the last correct
-  // claim), the round ends: either enter Last Call (draw pile empty, no claim
-  // this cycle) or start a new round with the roll passing clockwise.
-  const passFlipper = useCallback(() => {
-    // Never advance while a claim is active or pending — the round pauses
-    // until the claim resolves.
-    if (claimModeRef.current || opponentClaimingRef.current || claimPendingRef.current) return;
-    const prev = flipperRef.current;
-    flippedSinceClaimRef.current.add(prev);
-
-
-    if (flippedSinceClaimRef.current.size >= PLAYERS.length) {
-      const noClaim = !claimedThisRoundRef.current;
-      flippedSinceClaimRef.current = new Set();
-
-      if (drawEmptyRef.current && noClaim && !lastCallRef.current) {
-        setRoundsSinceClaim((rsc) => rsc + 1);
-        lastCallRef.current = true;
-        setLastCall(true);
-        setAllFaceUp(true);
-        setWrongCards(new Set());
-        setSkipNextFlip([false, false]);
-        const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
-        setDieValues([value]);
-        setMatchRule([value]);
-        rollPhaseRef.current = false;
-        setRollPhase(false);
-        return;
-      }
-      if (lastCallRef.current) {
-        const next = (prev + 1) % PLAYERS.length;
-        flipperRef.current = next;
-        setFlipperIndex(next);
-        return;
-      }
-      // No-claim round completed: roll passes clockwise.
-      startNewRound(null);
-      return;
-    }
-
-    const next = (prev + 1) % PLAYERS.length;
-    flipperRef.current = next;
-    setFlipperIndex(next);
-  }, [startNewRound]);
-
-  const skipRef = useRef(skipNextFlip);
-  useEffect(() => { skipRef.current = skipNextFlip; }, [skipNextFlip]);
-  const prevFlipperRef = useRef(flipperIndex);
-  useEffect(() => {
-    if (prevFlipperRef.current === flipperIndex) return;
-    prevFlipperRef.current = flipperIndex;
-    if (gameOver || rolling || claimMode || rollPhase) return;
-    if (peekingCard !== null) return;
-    if (!skipRef.current[flipperIndex]) return;
-    const idx = flipperIndex;
-    setSkipNextFlip((s) => {
-      const n = [...s];
-      n[idx] = false;
-      return n;
-    });
-    skipRef.current = skipRef.current.map((v, i) => (i === idx ? false : v));
-    // Consumed skip counts as a flip opportunity used this round.
-    passFlipper();
-  }, [flipperIndex, gameOver, rolling, claimMode, rollPhase, peekingCard, passFlipper]);
-
-  const peekCard = useCallback((index: number) => {
-    if (flipperIndex !== 0) return;
-    if (rollPhase) return;
-    if (claimMode || rolling || gameOver) return;
-    if (opponentClaiming) return;
-    if (wrongCards.has(index)) return;
-    if (grid[index] === null) return;
-    if (peekingCard !== null) return;
-    if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
-    setPeekingCard(index);
-    peekTimerRef.current = setTimeout(() => {
-      setPeekingCard(null);
-      passFlipper();
-    }, REVEAL_MS);
-  }, [flipperIndex, rollPhase, claimMode, rolling, gameOver, opponentClaiming, wrongCards, grid, peekingCard, passFlipper]);
-
-  // Opponent auto-flip when it's their turn
-  useEffect(() => {
-    if (flipperIndex !== 1) return;
-    if (rollPhase) return;
-    if (gameOver || rolling || claimMode) return;
-    if (oppRevealRef.current) return;
-
-    if (oppDelayRef.current) clearTimeout(oppDelayRef.current);
-    oppDelayRef.current = setTimeout(() => {
-      oppDelayRef.current = null;
-      if (
-        rollPhaseRef.current ||
-        gameOver ||
-        claimModeRef.current ||
-        opponentClaimingRef.current ||
-        flipperRef.current !== 1
-      ) {
-        return;
-      }
-      const g = gridRef.current;
-      const wc = wrongCardsRef.current;
-      const candidates = g
-        .map((c, i) => (c !== null && !wc.has(i) ? i : -1))
-        .filter((i) => i !== -1);
-      if (candidates.length === 0) {
-        passFlipper();
-        return;
-      }
-      const unknown = candidates.filter((i) => memoryRef.current.recall(i) === null);
-      const pool = unknown.length > 0 ? unknown : candidates;
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      setPeekingCard(pick);
-      if (oppRevealRef.current) clearTimeout(oppRevealRef.current);
-      oppRevealRef.current = setTimeout(() => {
-        oppRevealRef.current = null;
-        if (
-          rollPhaseRef.current ||
-          gameOver ||
-          claimModeRef.current ||
-          opponentClaimingRef.current ||
-          flipperRef.current !== 1
-        ) {
-          return;
-        }
-        setPeekingCard(null);
-        passFlipper();
-      }, REVEAL_MS);
-    }, OPPONENT_TUNING.thinkDelayMs);
-
-    return () => {
-      if (oppDelayRef.current) {
-        clearTimeout(oppDelayRef.current);
-        oppDelayRef.current = null;
-      }
-      if (oppRevealRef.current) {
-        clearTimeout(oppRevealRef.current);
-        oppRevealRef.current = null;
-      }
-    };
-  }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, passFlipper]);
-
-
-  const enterClaimMode = useCallback(() => {
-    if (opponentClaiming || claimMode || gameOver) return;
-    if (rolling) return;
-    // Cancel any in-flight peek timer so the auto passFlipper() doesn't fire
-    // once the player has committed to claiming. Their flip is "held" by the
-    // claim; flippedSinceClaimRef still records it below so the cycle count
-    // stays correct for Last Call detection.
-    if (peekTimerRef.current) {
-      clearTimeout(peekTimerRef.current);
-      peekTimerRef.current = null;
-    }
-    setPeekingCard(null);
-    if (rollPhase) {
-      if (rollerIndex !== 0) return;
-      if (claimPending) return;
-      claimPendingRef.current = true;
-      setClaimPending(true);
-      (async () => {
-        try {
-          await doRollDice();
-          rollPhaseRef.current = false;
-          setRollPhase(false);
-          claimModeRef.current = true;
-          setClaimMode(true);
-          setSelectedCards([]);
-          setMatchedCards(new Set());
-          setMessage("Select 2 cards that match the rule.");
-          setMessageType("info");
-        } catch {
-          rollPhaseRef.current = false;
-          setRollPhase(false);
-        } finally {
-          claimPendingRef.current = false;
-          setClaimPending(false);
-        }
-      })();
-      return;
-    }
-    // Held flip counts toward the cycle even though passFlipper was canceled.
-    flippedSinceClaimRef.current.add(flipperRef.current);
-    claimModeRef.current = true;
-    setClaimMode(true);
-    setSelectedCards([]);
-    setMatchedCards(new Set());
-    setMessage("Select 2 cards that match the rule.");
-    setMessageType("info");
-  }, [opponentClaiming, claimMode, gameOver, rolling, rollPhase, rollerIndex, claimPending, doRollDice]);
-
-
-
-  const refillGrid = useCallback(
-    (
-      currentGrid: (Card | null)[],
-      currentDeck: Card[],
-      slotsToFill: number[]
-    ): { newGrid: (Card | null)[]; newDeck: Card[] } => {
-      const newGrid = [...currentGrid];
-      const newDeck = [...currentDeck];
-      for (const idx of slotsToFill) {
-        if (newDeck.length > 0) {
-          newGrid[idx] = newDeck.shift()!;
-        } else {
-          newGrid[idx] = null;
-        }
-      }
-      return { newGrid, newDeck };
-    },
-    []
-  );
-
-  const opponentClaim = useCallback((a: number, b: number) => {
-    if (claimMode || rolling || gameOver) return;
-    if (rollPhase) return;
-    if (opponentClaiming) return;
-    if (a === b) return;
-    if (grid[a] === null || grid[b] === null) return;
-    if (wrongCards.has(a) || wrongCards.has(b)) return;
-    setOpponentClaiming({ indices: [a, b] });
-  }, [claimMode, rolling, gameOver, rollPhase, opponentClaiming, grid, wrongCards]);
-
-  const rollDice = useCallback(async () => {
-    if (!rollPhase) return;
-    if (rollerIndex !== 0) return;
-    if (rolling || gameOver) return;
-    await doRollDice();
-    rollPhaseRef.current = false;
-    setRollPhase(false);
-  }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
-
-
-  const resolveOpponentClaim = useCallback(() => {
-    if (!opponentClaiming) return;
-    const [a, b] = opponentClaiming.indices;
-    const cardA = grid[a];
-    const cardB = grid[b];
-    if (cardA && cardB && cardsMatchRule(cardA, cardB, matchRule)) {
-      claimedThisRoundRef.current = true;
-      const { newGrid, newDeck } = refillGrid(grid, deck, [a, b]);
-      setGrid(newGrid);
-      setDeck(newDeck);
-      setScores((s) => {
-        const next = [...s];
-        next[1] += 2;
-        return next;
-      });
-      setMessage("Opponent claim — correct! +2");
-      setMessageType("warning");
-      setOpponentClaiming(null);
-      const ended = checkGameOver(newDeck, newGrid, matchRule);
-      // Winner rolls: opponent becomes next Roller and Flipper.
-      if (!ended) startNewRound(1);
-    } else {
-      setWrongCards((prev) => {
-        const n = new Set(prev);
-        n.add(a);
-        n.add(b);
-        return n;
-      });
-      setSkipNextFlip((s) => {
-        const n = [...s];
-        n[1] = true;
-        return n;
-      });
-      setMessage("Opponent claim — wrong! They lose their next flip.");
-      setMessageType("info");
-      setOpponentClaiming(null);
-    }
-  }, [opponentClaiming, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
-
-  const selectCard = useCallback(
-    (index: number) => {
-      if (!claimMode) return;
-      if (wrongCards.has(index)) return;
-      if (selectedCards.includes(index)) return;
-      if (grid[index] === null) return;
-      if (selectedCards.length >= 2) return;
-      setSelectedCards([...selectedCards, index]);
-    },
-    [claimMode, selectedCards, grid, wrongCards]
-  );
-
-  const resolveMatch = useCallback(() => {
-    if (selectedCards.length !== 2) return;
-
-    const a = grid[selectedCards[0]];
-    const b = grid[selectedCards[1]];
-
-    if (a && b && cardsMatchRule(a, b, matchRule)) {
-      claimedThisRoundRef.current = true;
-      setMatchedCards(new Set(selectedCards));
-
-      setScores((s) => {
-        const next = [...s];
-        next[0] += 2;
-        return next;
-      });
-      const { newGrid, newDeck } = refillGrid(grid, deck, selectedCards);
-      setGrid(newGrid);
-      setDeck(newDeck);
-      setClaimMode(false);
-      setSelectedCards([]);
-      setMatchedCards(new Set());
-      setMessage("Correct! +2 points.");
-      setMessageType("success");
-      const ended = checkGameOver(newDeck, newGrid, matchRule);
-      // Winner rolls: human becomes next Roller and Flipper.
-      if (!ended) startNewRound(0);
-    } else {
-      setWrongCards(new Set(selectedCards));
-      setSkipNextFlip((s) => {
-        const n = [...s];
-        n[0] = true;
-        return n;
-      });
-      setSelectedCards([]);
-      claimModeRef.current = false;
-      setClaimMode(false);
-      setMessage("No match! You lose your next flip.");
-      setMessageType("error");
-      // Claim is over; resume the cycle. The claimant's flip was already
-      // recorded in flippedSinceClaimRef when they entered claim mode, so
-      // passFlipper will correctly end the round if the cycle is complete.
-      passFlipper();
-    }
-
-  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound, passFlipper]);
-
-  const removeMatchedFromGrid = useCallback(() => {
-    setGrid((prev) => {
-      const next = [...prev];
-      matchedCards.forEach((idx) => { next[idx] = null; });
-      return next;
-    });
-  }, [matchedCards]);
-
-  // Memory: forget slots whose card changed or emptied
+  // ------------------------------------------------------------------
+  // Memory bookkeeping
+  // ------------------------------------------------------------------
+  // Forget slots whose card changed or emptied.
   useEffect(() => {
     const prev = prevGridRef.current;
-    for (let i = 0; i < grid.length; i++) {
+    for (let i = 0; i < state.grid.length; i++) {
       const pc = prev[i] ?? null;
-      const cc = grid[i] ?? null;
+      const cc = state.grid[i] ?? null;
       if ((pc?.id ?? null) !== (cc?.id ?? null)) {
         memoryRef.current.forget(i);
       }
     }
-    prevGridRef.current = grid;
-  }, [grid]);
+    prevGridRef.current = state.grid;
+  }, [state.grid]);
 
-  // Memory: observe on completed reveal + schedule opponent claim check
+  // Observe on completed reveal + schedule opponent claim decision.
   useEffect(() => {
     const prev = prevPeekingRef.current;
-    prevPeekingRef.current = peekingCard;
-    if (prev === null || peekingCard !== null) return;
-    const card = grid[prev];
+    prevPeekingRef.current = state.peekingCard;
+    if (prev === null || state.peekingCard !== null) return;
+    const card = state.grid[prev];
     memoryRef.current.decayAll();
     if (card) memoryRef.current.observe(prev, card);
 
-    if (claimMode || opponentClaiming || gameOver || rollPhase) return;
-    const excluded = new Set<number>(wrongCards);
-    grid.forEach((c, i) => { if (c === null) excluded.add(i); });
-    const best = memoryRef.current.bestPair(matchRule, excluded);
+    if (
+      state.phase !== "FLIPPING" ||
+      state.inFlight // don't schedule while a claim is already resolving
+    ) return;
+    const excluded = new Set<number>(state.wrong);
+    state.grid.forEach((c, i) => { if (c === null) excluded.add(i); });
+    const best = memoryRef.current.bestPair(state.rule, excluded);
     if (!best || best.confidence < OPPONENT_TUNING.confidenceThreshold) return;
     const span = OPPONENT_TUNING.reactionMaxMs - OPPONENT_TUNING.reactionMinMs;
     const t = Math.max(
@@ -689,137 +892,90 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       oppClaimTimerRef.current = null;
       opponentClaim(best.a, best.b);
     }, delay);
-  }, [peekingCard, grid, claimMode, opponentClaiming, gameOver, rollPhase, wrongCards, matchRule, opponentClaim]);
+  }, [state.peekingCard, state.grid, state.phase, state.inFlight, state.wrong, state.rule, opponentClaim]);
 
+  // Cancel a pending opponent claim decision on round/phase change.
   useEffect(() => {
     if (oppClaimTimerRef.current) {
       clearTimeout(oppClaimTimerRef.current);
       oppClaimTimerRef.current = null;
     }
-  }, [claimMode, roundNum]);
+  }, [state.roundNum, state.phase]);
 
-  useEffect(() => {
-    if (!opponentClaiming) return;
-    const t = setTimeout(() => {
-      resolveOpponentClaim();
-    }, 1600);
-    return () => clearTimeout(t);
-  }, [opponentClaiming, resolveOpponentClaim]);
-
-  // Auto-roll for opponent roller during rollPhase
-  useEffect(() => {
-    if (!rollPhase) return;
-    if (rollerIndex !== 1) return;
-    if (rolling || gameOver) return;
-    const t = setTimeout(() => {
-      doRollDice().then(() => { rollPhaseRef.current = false; setRollPhase(false); });
-    }, OPPONENT_TUNING.thinkDelayMs);
-    return () => clearTimeout(t);
-  }, [rollPhase, rollerIndex, rolling, gameOver, doRollDice]);
-
-
-  const claimLastCall = useCallback(
-    (a: number, b: number) => {
-      if (!lastCallRef.current || gameOver) return;
-      if (a === b) return;
-      const cardA = grid[a];
-      const cardB = grid[b];
-      if (!cardA || !cardB) return;
-      if (!cardsMatchRule(cardA, cardB, matchRule)) return;
-      const newGrid = [...grid];
-      newGrid[a] = null;
-      newGrid[b] = null;
-      setGrid(newGrid);
-      setScores((s) => {
-        const next = [...s];
-        next[0] += 2;
-        return next;
-      });
-      setMessage("Last Call — you claimed! +2");
-      setMessageType("success");
-      const hasCards = newGrid.some((c) => c !== null);
-      if (!hasCards || !hasValidPair(newGrid, matchRule)) {
-        setGameOver(true);
-      }
-    },
-    [grid, matchRule, gameOver]
-  );
-
+  // ------------------------------------------------------------------
   // Opponent Last Call scanner
+  // ------------------------------------------------------------------
   useEffect(() => {
-    if (!lastCall || gameOver) return;
+    if (state.phase !== "LAST_CALL") return;
     const delay = 1200 + Math.random() * 1600;
     const t = setTimeout(() => {
-      if (!lastCallRef.current || gameOver) return;
-      const cards = grid
+      const s = stateRef.current;
+      if (s.phase !== "LAST_CALL") return;
+      const cards = s.grid
         .map((c, i) => ({ c, i }))
         .filter((x): x is { c: Card; i: number } => x.c !== null);
       const pairs: Array<[number, number]> = [];
       for (let i = 0; i < cards.length; i++) {
         for (let j = i + 1; j < cards.length; j++) {
-          if (cardsMatchRule(cards[i].c, cards[j].c, matchRule)) {
+          if (cardsMatchRule(cards[i].c, cards[j].c, s.rule)) {
             pairs.push([cards[i].i, cards[j].i]);
           }
         }
       }
       if (pairs.length === 0) return;
       const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
-      const newGrid = [...grid];
-      newGrid[a] = null;
-      newGrid[b] = null;
-      setGrid(newGrid);
-      setScores((s) => {
-        const next = [...s];
-        next[1] += 2;
-        return next;
-      });
-      setMessage("Last Call — Auntie O. claimed! +2");
-      setMessageType("warning");
-      const hasCards = newGrid.some((c) => c !== null);
-      if (!hasCards || !hasValidPair(newGrid, matchRule)) {
-        setGameOver(true);
-      }
+      dispatch({ type: "LAST_CALL_CLAIM", by: 1, a, b });
     }, delay);
     return () => clearTimeout(t);
-  }, [lastCall, gameOver, grid, matchRule, scores]);
+  }, [state.phase, state.grid, state.scores]);
 
+  // ------------------------------------------------------------------
+  // Derived return surface (byte-identical to the previous shape).
+  // ------------------------------------------------------------------
+  const opponentClaimingValue = useMemo(
+    () =>
+      state.inFlight?.kind === "claim" && state.inFlight.by === 1
+        ? { indices: [state.inFlight.a, state.inFlight.b] as [number, number] }
+        : null,
+    [state.inFlight]
+  );
 
   return {
-    deck,
-    grid,
-    matchRule,
-    dieValues,
-    scores,
-    roundNum,
+    deck: state.deck,
+    grid: state.grid,
+    matchRule: state.rule,
+    dieValues: state.dieValues,
+    scores: state.scores,
+    roundNum: state.roundNum,
     players: PLAYERS as unknown as string[],
-    rollerIndex,
-    flipperIndex,
-    skipNextFlip,
-    peekingCard,
-    claimMode,
-    selectedCards,
-    wrongCards,
-    matchedCards,
-    gameOver,
-    message,
-    messageType,
-    rolling,
+    rollerIndex: state.roller,
+    flipperIndex: state.flipper,
+    skipNextFlip: state.skip,
+    peekingCard: state.peekingCard,
+    claimMode: state.phase === "CLAIM_SELECTING",
+    selectedCards: state.selectedCards,
+    wrongCards: state.wrong,
+    matchedCards: state.matchedCards,
+    gameOver: state.phase === "GAME_OVER",
+    message: state.message,
+    messageType: state.messageType,
+    rolling: state.rolling,
     peekCard,
     enterClaimMode,
     selectCard,
     removeMatchedFromGrid,
     resolveMatch,
     doRollDice,
-    opponentClaiming,
+    opponentClaiming: opponentClaimingValue,
     opponentClaim,
     resolveOpponentClaim,
-    rollPhase,
+    rollPhase: state.phase === "AWAITING_ROLL",
     rollDice,
-    lastCall,
-    allFaceUp,
-    drawEmpty,
-    roundsSinceClaim,
+    lastCall: state.phase === "LAST_CALL",
+    allFaceUp: state.allFaceUp,
+    drawEmpty: state.drawEmpty,
+    roundsSinceClaim: state.roundsSinceClaim,
     claimLastCall,
-    claimPending,
+    claimPending: state.claimPending,
   };
 }
