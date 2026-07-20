@@ -9,7 +9,8 @@ export const COLORS = {
   panelMutedHover: "#bdb5a4",
   // Ink ramp: ink (strong text), inkMuted (secondary/subtle text)
   ink: "#231f20",
-  inkMuted: "#706662",
+  // Darkened from #706662 so it meets WCAG AA (4.5:1) on every surface — including panel (#D0C3AF).
+  inkMuted: "#544c4a",
   // Brand tones + their hover states
   red: "#d72229",
   redHover: "#b81b20",
