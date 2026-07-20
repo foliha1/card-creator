@@ -590,10 +590,16 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         return n;
       });
       setSelectedCards([]);
+      claimModeRef.current = false;
       setClaimMode(false);
       setMessage("No match! You lose your next flip.");
       setMessageType("error");
+      // Claim is over; resume the cycle. The claimant's flip was already
+      // recorded in flippedSinceClaimRef when they entered claim mode, so
+      // passFlipper will correctly end the round if the cycle is complete.
+      passFlipper();
     }
+
   }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
 
   const removeMatchedFromGrid = useCallback(() => {
