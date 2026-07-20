@@ -6,8 +6,8 @@ type MessageType = "info" | "success" | "error" | "warning";
 
 const PLAYERS = ["you", "opponent"] as const;
 export const OPPONENT_TUNING = {
-  reactionMinMs: 3500,
-  reactionMaxMs: 7000,
+  reactionMinMs: 2500,
+  reactionMaxMs: 5500,
   confidenceThreshold: 0.55,
   thinkDelayMs: 1400,
 } as const;
