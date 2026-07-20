@@ -163,10 +163,8 @@ const Window: React.FC<WindowProps> = ({
         </IconButton>
         <h2
           style={{
+            ...textStyle("subhead", mobile),
             flex: 1,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "normal",
-            fontSize: mobile ? MOBILE_TYPE.subhead : TYPE.subhead,
             color: COLORS.ink,
             pointerEvents: "none",
             lineHeight: 1,

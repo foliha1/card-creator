@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { COLORS, FONT_FAMILY, TYPE, SPACE, RADIUS } from "@/lib/tokens";
+import { COLORS, FONT_FAMILY, textStyle, SPACE, RADIUS } from "@/lib/tokens";
 
 interface BootScreenProps {
   onComplete: () => void;

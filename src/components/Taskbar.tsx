@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { Music, Palette, ChevronLeft, ChevronRight } from "lucide-react";
-import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY, TYPE, MOBILE_TYPE } from "@/lib/tokens";
+import { COLORS, BORDER, RADIUS, SPACE, TEXT } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
 type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
@@ -124,7 +124,7 @@ const Taskbar: React.FC<TaskbarProps> = ({ openWindows, onOpen, onFocus, activeW
               onMouseEnter={btn.id === "music" ? preloadSoundCloudWidget : undefined}
               style={{
                 fontStyle: "normal",
-                fontSize: MOBILE_TYPE.body,
+                fontSize: TEXT.body.mobileSize,
                 padding: `${SPACE[4]}px ${SPACE[6]}px`,
                 borderRadius: RADIUS.lg,
                 border: BORDER.heavy,
