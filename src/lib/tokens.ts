@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export const COLORS = {
   surface: "#F8F2E9",
   panel: "#D0C3AF",
@@ -63,20 +65,44 @@ export const THEME_SWATCHES = [
 
 export const FONT_FAMILY = '"Friend", Georgia, "Times New Roman", serif';
 
-export const TYPE = {
-  caption: 16,
-  body: 18,
-  ui: 20,
-  subhead: 24,
-  head: 28,
-  display: 34,
+export const TEXT = {
+  // role: { size, mobileSize, weight, italic, lineHeight }
+  caption: { size: 14, mobileSize: 12, weight: 400, italic: false, lineHeight: 1.4 },
+  captionItalic: { size: 14, mobileSize: 12, weight: 400, italic: true, lineHeight: 1.4 },
+  body: { size: 17, mobileSize: 15, weight: 400, italic: false, lineHeight: 1.55 },
+  label: { size: 17, mobileSize: 15, weight: 700, italic: false, lineHeight: 1.3 },
+  subhead: { size: 21, mobileSize: 18, weight: 700, italic: false, lineHeight: 1.25 },
+  heading: { size: 26, mobileSize: 22, weight: 700, italic: false, lineHeight: 1.2 },
+  display: { size: 34, mobileSize: 28, weight: 900, italic: false, lineHeight: 1.1 },
 } as const;
 
+export function textStyle(role: keyof typeof TEXT, mobile = false): CSSProperties {
+  const t = TEXT[role];
+  return {
+    fontFamily: FONT_FAMILY,
+    fontSize: mobile ? t.mobileSize : t.size,
+    fontWeight: t.weight,
+    fontStyle: t.italic ? "italic" : "normal",
+    lineHeight: t.lineHeight,
+  };
+}
+
+/** @deprecated Use TEXT and textStyle() instead. */
+export const TYPE = {
+  caption: TEXT.caption.size,
+  body: TEXT.body.size,
+  ui: TEXT.subhead.size,
+  subhead: TEXT.heading.size,
+  head: TEXT.heading.size,
+  display: TEXT.display.size,
+} as const;
+
+/** @deprecated Use TEXT and textStyle() instead. */
 export const MOBILE_TYPE = {
-  caption: 13,
-  body: 15,
-  ui: 17,
-  subhead: 18,
-  head: 22,
-  display: 28,
+  caption: TEXT.caption.mobileSize,
+  body: TEXT.body.mobileSize,
+  ui: TEXT.subhead.mobileSize,
+  subhead: TEXT.subhead.mobileSize,
+  head: TEXT.heading.mobileSize,
+  display: TEXT.display.mobileSize,
 } as const;
