@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { COLORS } from "@/lib/tokens";
+import { ensureAA, pickReadable } from "@/lib/contrast";
 
 export function deriveLogoColor(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -55,9 +56,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const logoColor = useMemo(() => {
     if (bgTheme === COLORS.offWhite || bgTheme === COLORS.surface) return COLORS.panelMuted;
     if (bgTheme === "wild") return "rgba(35,31,32,0.35)";
-    return deriveLogoColor(bgTheme);
+    // Guarantee AA (large-text threshold) against the current background
+    // while preserving hue as much as possible.
+    return ensureAA(deriveLogoColor(bgTheme), bgTheme, true);
   }, [bgTheme]);
-  const themeInk = useMemo(() => (bgTheme === COLORS.red || bgTheme === COLORS.blue || bgTheme === "wild") ? COLORS.surface : COLORS.ink, [bgTheme]);
+  // Auto-pick the ink color that best satisfies WCAG AA against the
+  // background. Brand background colors are never modified.
+  const themeInk = useMemo(
+    () => pickReadable(bgTheme === "wild" ? COLORS.ink : bgTheme, [COLORS.ink, COLORS.surface]),
+    [bgTheme]
+  );
 
   const value = useMemo(() => ({ bgTheme, logoColor, setTheme, themeInk }), [bgTheme, logoColor, setTheme, themeInk]);
 
