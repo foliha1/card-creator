@@ -274,6 +274,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   useEffect(() => { opponentClaimingRef.current = opponentClaiming; }, [opponentClaiming]);
   useEffect(() => { claimPendingRef.current = claimPending; }, [claimPending]);
   useEffect(() => { rollPhaseRef.current = rollPhase; }, [rollPhase]);
+  const gridRef = useRef(grid);
+  const wrongCardsRef = useRef(wrongCards);
+  useEffect(() => { gridRef.current = grid; }, [grid]);
+  useEffect(() => { wrongCardsRef.current = wrongCards; }, [wrongCards]);
 
 
   // Start a new round. If winnerIndex is provided (correct claim), that player
@@ -391,10 +395,11 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (flipperIndex !== 1) return;
     if (rollPhase) return;
     if (gameOver || rolling || claimMode) return;
-    if (peekingCard !== null) return;
+    if (oppRevealRef.current) return;
 
     if (oppDelayRef.current) clearTimeout(oppDelayRef.current);
     oppDelayRef.current = setTimeout(() => {
+      oppDelayRef.current = null;
       if (
         rollPhaseRef.current ||
         gameOver ||
@@ -402,15 +407,12 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         opponentClaimingRef.current ||
         flipperRef.current !== 1
       ) {
-        if (oppDelayRef.current) {
-          clearTimeout(oppDelayRef.current);
-          oppDelayRef.current = null;
-        }
         return;
       }
-      oppDelayRef.current = null;
-      const candidates = grid
-        .map((c, i) => (c !== null && !wrongCards.has(i) ? i : -1))
+      const g = gridRef.current;
+      const wc = wrongCardsRef.current;
+      const candidates = g
+        .map((c, i) => (c !== null && !wc.has(i) ? i : -1))
         .filter((i) => i !== -1);
       if (candidates.length === 0) {
         passFlipper();
@@ -422,21 +424,16 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       setPeekingCard(pick);
       if (oppRevealRef.current) clearTimeout(oppRevealRef.current);
       oppRevealRef.current = setTimeout(() => {
+        oppRevealRef.current = null;
         if (
           rollPhaseRef.current ||
-          
           gameOver ||
           claimModeRef.current ||
           opponentClaimingRef.current ||
           flipperRef.current !== 1
         ) {
-          if (oppRevealRef.current) {
-            clearTimeout(oppRevealRef.current);
-            oppRevealRef.current = null;
-          }
           return;
         }
-        oppRevealRef.current = null;
         setPeekingCard(null);
         passFlipper();
       }, REVEAL_MS);
@@ -452,7 +449,8 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         oppRevealRef.current = null;
       }
     };
-  }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, peekingCard, grid, wrongCards, passFlipper]);
+  }, [flipperIndex, rollPhase, gameOver, rolling, claimMode, passFlipper]);
+
 
   const enterClaimMode = useCallback(() => {
     if (opponentClaiming || claimMode || gameOver) return;
