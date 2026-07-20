@@ -274,6 +274,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   useEffect(() => { opponentClaimingRef.current = opponentClaiming; }, [opponentClaiming]);
   useEffect(() => { claimPendingRef.current = claimPending; }, [claimPending]);
   useEffect(() => { rollPhaseRef.current = rollPhase; }, [rollPhase]);
+  const gridRef = useRef(grid);
+  const wrongCardsRef = useRef(wrongCards);
+  useEffect(() => { gridRef.current = grid; }, [grid]);
+  useEffect(() => { wrongCardsRef.current = wrongCards; }, [wrongCards]);
 
 
   // Start a new round. If winnerIndex is provided (correct claim), that player
