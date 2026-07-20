@@ -676,11 +676,11 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               textOverflow: "ellipsis",
               minWidth: 0,
             }}>{OPPONENT_NAME}</span>
-            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0 }}>{g.scores[1]}</span>
+            <span style={{ fontStyle: "normal", fontWeight: 700, flexShrink: 0, color: COLORS.orange }}>{g.scores[1]}</span>
             {bubble && !mobile && (
               <div style={{
                 position: "absolute",
-                top: "calc(100% + 8px)",
+                bottom: "calc(100% + 8px)",
                 left: "50%",
                 transform: "translateX(-50%)",
                 background: COLORS.surface,
@@ -698,14 +698,14 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
               }}>
                 <div style={{
                   position: "absolute",
-                  top: -6,
+                  bottom: -6,
                   left: "50%",
                   width: 10,
                   height: 10,
                   transform: "translateX(-50%) rotate(45deg)",
                   background: COLORS.surface,
-                  borderLeft: BORDER.standard,
-                  borderTop: BORDER.standard,
+                  borderRight: BORDER.standard,
+                  borderBottom: BORDER.standard,
                 }} />
                 {bubble.text}
               </div>
