@@ -600,7 +600,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       passFlipper();
     }
 
-  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound]);
+  }, [selectedCards, grid, matchRule, deck, refillGrid, checkGameOver, startNewRound, passFlipper]);
 
   const removeMatchedFromGrid = useCallback(() => {
     setGrid((prev) => {
