@@ -268,6 +268,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   // Sync flipperIndex → flipperRef for imperative helpers.
   useEffect(() => { flipperRef.current = flipperIndex; }, [flipperIndex]);
   useEffect(() => { rollerRef.current = rollerIndex; }, [rollerIndex]);
+  useEffect(() => { claimModeRef.current = claimMode; }, [claimMode]);
+  useEffect(() => { opponentClaimingRef.current = opponentClaiming; }, [opponentClaiming]);
+  useEffect(() => { claimPendingRef.current = claimPending; }, [claimPending]);
+
 
   // Start a new round. If winnerIndex is provided (correct claim), that player
   // becomes Roller and first Flipper. If null (flip-cycle completed with no
