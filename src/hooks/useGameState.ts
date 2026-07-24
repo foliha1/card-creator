@@ -136,7 +136,7 @@ export type Action =
   | { type: "REMOVE_MATCHED" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
 
-function initialState(slotCount: number): State {
+export function initialState(slotCount: number): State {
   const newDeck = createDeck();
   const dealt = newDeck.splice(0, slotCount);
   const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
