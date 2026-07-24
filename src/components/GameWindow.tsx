@@ -376,7 +376,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (g.lastCall) { handleLastCallClick(index); return; }
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
-      if (g.wrongCards.has(index)) return;
+      if (g.wrongByMe.has(index)) return;
       setPeekLocked(true);
       playFlip();
       g.peekCard(index);
@@ -841,8 +841,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       ? "red-pulse-border 1.6s infinite"
                       : undefined,
                     borderRadius: RADIUS.md,
-                    ...(g.wrongCards.has(i)
-                      ? { opacity: 0.55, cursor: "default" }
+                    ...(g.wrongByMe.has(i)
+                      ? { cursor: "default" }
                       : {}),
                     ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
@@ -859,6 +859,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
+                      g.wrongCards.has(i) ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
                     }
