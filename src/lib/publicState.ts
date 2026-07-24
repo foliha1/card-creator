@@ -100,5 +100,6 @@ export function toPublicState(
     rolling: state.rolling,
     wrongBy: state.wrongBy.map((s) => Array.from(s)),
     seatMap: seatMap.slice(),
+    claimWindow,
   };
 }
