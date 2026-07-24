@@ -352,6 +352,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           The host will start the game.
         </div>
       )}
+
+      <AppButton
+        variant="secondary"
+        tone="ink"
+        size="md"
+        onClick={() => {
+          setCodeInput("");
+          setView({ kind: "idle" });
+        }}
+        fullWidth
+      >
+        Leave room
+      </AppButton>
     </div>
   );
 };
