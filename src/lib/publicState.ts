@@ -64,6 +64,7 @@ export interface PublicState {
 export function toPublicState(
   state: State,
   seatMap: Array<{ seat: number; visitor_id: string; display_name: string }>,
+  claimWindow: number = 0,
 ): PublicState {
   const exposed = new Set<number>();
   if (state.peekingCard !== null) exposed.add(state.peekingCard);
