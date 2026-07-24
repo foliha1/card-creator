@@ -41,11 +41,15 @@ export function useRoomPresence(
 ): {
   participants: PresenceParticipant[];
   status: PresenceStatus;
+  channel: RealtimeChannel | null;
   channelRef: React.MutableRefObject<RealtimeChannel | null>;
   onBroadcast: (listener: BroadcastListener) => () => void;
 } {
   const [participants, setParticipants] = useState<PresenceParticipant[]>([]);
   const [status, setStatus] = useState<PresenceStatus>("connecting");
+  // Channel exposed as STATE so consumers re-render when it becomes available.
+  // A ref alone silently strands hooks that gate on `channel != null`.
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const joinedAtRef = useRef<number>(Date.now());
   const channelRef = useRef<RealtimeChannel | null>(null);
   const listenersRef = useRef<Set<BroadcastListener>>(new Set());
@@ -60,19 +64,21 @@ export function useRoomPresence(
       setParticipants([]);
       setStatus("connecting");
       channelRef.current = null;
+      setChannel(null);
       return;
     }
 
     joinedAtRef.current = Date.now();
     setStatus("connecting");
 
-    const channel: RealtimeChannel = supabase.channel(`room:${roomId}`, {
+    const ch: RealtimeChannel = supabase.channel(`room:${roomId}`, {
       config: {
         presence: { key: visitorId },
         broadcast: { self: false, ack: false },
       },
     });
-    channelRef.current = channel;
+    channelRef.current = ch;
+
 
     const syncParticipants = () => {
       const state = channel.presenceState<PresenceMeta>();
