@@ -330,7 +330,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
-    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current);
+    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current, gameId);
     return (
       <MultiplayerGameView
         publicState={publicState}
