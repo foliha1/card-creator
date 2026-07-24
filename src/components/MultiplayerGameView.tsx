@@ -423,8 +423,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   // Score row banner selection. Precedence: cancel-during-claim > penalty >
   // too-slow > your-flip > none.
   let banner: BannerKind = null;
-  const firstTouched = inClaimMode && s.selectedCards.length >= 1;
-  const canCancelClaim = inClaimMode && s.selectedCards.length === 0;
+  const canCancelClaim = inClaimMode && s.selectedCards.length < 2;
   if (canCancelClaim) banner = "CANCEL";
   else if (mySeat !== null && s.skip[mySeat] && s.phase === "FLIPPING" && s.flipper === mySeat) banner = "PENALTY";
   else if (tooSlowAt !== null) banner = "TOO_SLOW";
@@ -437,8 +436,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   if (inClaimMode) {
     // Whether the second touch has locked in (button becomes a passive label).
     buttonKind = "SELECT_MATCH";
-    if (firstTouched) {
-      // No cancel; buttons become passive per rulebook — no take-backs.
+    if (s.selectedCards.length >= 2) {
       buttonOnClick = undefined;
     }
   } else if (isMyTurnToRoll) {
