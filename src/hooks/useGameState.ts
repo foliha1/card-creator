@@ -75,7 +75,7 @@ function computeRule(values: string[]): { rule: string[] } {
 // replaces the previous swarm of shadow-ref guards.
 // ============================================================================
 
-type Phase =
+export type Phase =
   | "AWAITING_ROLL"
   | "FLIPPING"
   | "CLAIM_SELECTING"
