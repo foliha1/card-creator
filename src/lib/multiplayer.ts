@@ -23,6 +23,7 @@ export const PROTOCOL_VERSION = 1;
 // 1:1 onto seat-generic reducer actions.
 export type IntentAction =
   | { type: "REQUEST_ROLL" }
+  | { type: "CANCEL_CLAIM"; by: number }
   | Extract<
       Action,
       | { type: "PLAYER_ENTER_CLAIM" }
