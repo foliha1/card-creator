@@ -106,6 +106,13 @@ export function useRoomPresence(
       .on("presence", { event: "sync" }, syncParticipants)
       .on("presence", { event: "join" }, syncParticipants)
       .on("presence", { event: "leave" }, syncParticipants)
+      .on("broadcast", { event: "msg" }, (msg) => {
+        // Fan-out to listeners registered via onBroadcast. Registered
+        // pre-subscribe so late-added listeners still receive messages.
+        listenersRef.current.forEach((cb) => {
+          try { cb(msg as { payload: unknown }); } catch { /* isolate */ }
+        });
+      })
       .subscribe(async (subStatus) => {
         if (subStatus === "SUBSCRIBED") {
           try {
