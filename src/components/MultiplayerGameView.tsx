@@ -473,7 +473,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       setClaimBusy(false);
       if (!result.won) setTooSlowAt(Date.now());
     };
-    if (claimBusy) buttonLabel = "…";
+    if (claimBusy) { buttonLabel = "…"; buttonKind = "DISABLED"; buttonOnClick = undefined; }
   } else if (inLastCall && mySeat !== null) {
     buttonKind = "WHOOP";
     buttonLabel = "LAST CALL!";
