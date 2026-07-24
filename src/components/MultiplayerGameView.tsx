@@ -363,6 +363,9 @@ const MultiplayerGameView: React.FC<Props> = ({
   React.useEffect(() => {
     const prev = prevPeekRef.current;
     prevPeekRef.current = s.peekingCard;
+    if (typeof window !== "undefined" && (window as any).__debugAnim) {
+      console.log("[anim effect] prev=", prev, "curr=", s.peekingCard, "isAnimating=", isAnimating);
+    }
     if (prev === null && s.peekingCard !== null) {
       setIsAnimating(true);
       const t = setTimeout(() => setIsAnimating(false), 500);
