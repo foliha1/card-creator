@@ -64,7 +64,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
   const isHostView = view.kind === "host";
   const displayName = getDisplayName();
-  const { participants, status: presenceStatus, channelRef } = useRoomPresence(
+  const { participants, status: presenceStatus, channelRef, onBroadcast } = useRoomPresence(
     activeRoom ? activeRoom.id : null,
     visitorId,
     displayName,
