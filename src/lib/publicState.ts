@@ -106,5 +106,6 @@ export function toPublicState(
     wrongBy: state.wrongBy.map((s) => Array.from(s)),
     seatMap: seatMap.slice(),
     claimWindow,
+    gameId,
   };
 }
