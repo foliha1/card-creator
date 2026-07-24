@@ -47,9 +47,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   useEffect(() => {
     if (!initialRoomCode) return;
     const normalized = initialRoomCode.toUpperCase();
+    const visitorId = getVisitorId();
     let cancelled = false;
     setBusy(true);
-    findRoomByCode(normalized)
+    findRoomByCode(normalized, visitorId)
       .then((room) => {
         if (cancelled) return;
         const found = !!room;
@@ -58,8 +59,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           metadata: { room_found: found },
         });
         if (room) {
-          const visitorId = getVisitorId();
-          if (room.host_visitor_id === visitorId) {
+          if (room.is_host) {
             setView({ kind: "host", room });
           } else {
             setView({ kind: "joiner", room });
@@ -71,6 +71,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             error: `Room "${normalized}" doesn't exist or has ended.`,
           });
         }
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        trackEvent("invite_link_clicked", {
+          roomCode: normalized,
+          metadata: { room_found: false, error: true },
+        });
+        const msg = e instanceof Error ? e.message : "Couldn't reach the room. Check your connection.";
+        setView({ kind: "idle", error: msg });
       })
       .finally(() => {
         if (!cancelled) setBusy(false);
@@ -105,13 +114,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     }
     setBusy(true);
     try {
-      const room = await findRoomByCode(normalized);
+      const visitorId = getVisitorId();
+      const room = await findRoomByCode(normalized, visitorId);
       if (!room) {
         setView({ kind: "idle", error: `Room "${normalized}" doesn't exist.` });
         return;
       }
-      const visitorId = getVisitorId();
-      if (room.host_visitor_id === visitorId) {
+      if (room.is_host) {
         setView({ kind: "host", room });
       } else {
         setView({ kind: "joiner", room });
@@ -343,6 +352,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           The host will start the game.
         </div>
       )}
+
+      <AppButton
+        variant="secondary"
+        tone="ink"
+        size="md"
+        onClick={() => {
+          setCodeInput("");
+          setView({ kind: "idle" });
+        }}
+        fullWidth
+      >
+        Leave room
+      </AppButton>
     </div>
   );
 };
