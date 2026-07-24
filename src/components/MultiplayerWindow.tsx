@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { getVisitorId, getDisplayName, setDisplayName } from "@/lib/visitor";
 import { trackEvent } from "@/lib/analytics";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
-import { useMultiplayerHost, useMultiplayerJoiner, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
+import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { toPublicState } from "@/lib/publicState";
 import {
