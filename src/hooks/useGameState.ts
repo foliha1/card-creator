@@ -278,7 +278,7 @@ function cycleAdvance(s: State, addWho: number): State {
   };
 }
 
-function reducer(state: State, action: Action): State {
+export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "INIT":
       return initialState(action.slotCount);
