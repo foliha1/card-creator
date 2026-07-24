@@ -327,7 +327,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     height: "100%",
     boxSizing: "border-box",
     overflow: "auto",
+    justifyContent: "center",
   };
+
 
   const inputStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
