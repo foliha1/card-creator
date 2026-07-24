@@ -14,7 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          room_code: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          room_code?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          room_code?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      claim_locks: {
+        Row: {
+          claim_window: number
+          created_at: string
+          id: string
+          player_seat: number
+          room_id: string
+        }
+        Insert: {
+          claim_window: number
+          created_at?: string
+          id?: string
+          player_seat: number
+          room_id: string
+        }
+        Update: {
+          claim_window?: number
+          created_at?: string
+          id?: string
+          player_seat?: number
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_locks_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          host_visitor_id: string
+          id: string
+          last_active_at: string
+          room_code: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          host_visitor_id: string
+          id?: string
+          last_active_at?: string
+          room_code: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          host_visitor_id?: string
+          id?: string
+          last_active_at?: string
+          room_code?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
