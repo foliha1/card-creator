@@ -40,7 +40,12 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
 const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", "theme", "multiplayer"];
 
 
-const DesktopShell: React.FC = () => {
+interface DesktopShellProps {
+  initialRoomCode?: string;
+}
+
+const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
+
   const mobile = useIsMobile();
   const { bgTheme, logoColor } = useTheme();
   const [booted, setBooted] = useState(false);
@@ -90,9 +95,10 @@ const DesktopShell: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => openWindow("game"), 300);
+    const t = setTimeout(() => openWindow(initialRoomCode ? "multiplayer" : "game"), 300);
     return () => clearTimeout(t);
-  }, [openWindow]);
+  }, [openWindow, initialRoomCode]);
+
 
   // On mobile, the active (visible) window is the last in windowOrder that's open
   const activeWindow = mobile
@@ -113,8 +119,10 @@ const DesktopShell: React.FC = () => {
       case "about": return <Suspense fallback={<WindowLoader />}><AboutWindow /></Suspense>;
       case "music": return <Suspense fallback={<WindowLoader />}><MusicWindow /></Suspense>;
       case "theme": return <Suspense fallback={<WindowLoader />}><ThemeWindow /></Suspense>;
+      case "multiplayer": return <Suspense fallback={<WindowLoader />}><MultiplayerWindow initialRoomCode={initialRoomCode} /></Suspense>;
     }
   };
+
 
   const isFocused = (id: WindowId) => {
     if (mobile) return activeWindow === id;
