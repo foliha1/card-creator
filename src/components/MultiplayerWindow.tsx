@@ -316,24 +316,25 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   };
 
   // ---------- GAME IN PROGRESS: HOST ----------
-  if (isHostView && frozenSeats !== null) {
-    const publicState = toPublicState(host.state, frozenSeats);
+  if (isHostView && frozenSeats !== null && activeRoom) {
+    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current);
     return (
       <MultiplayerGameView
         publicState={publicState}
         mySeat={0}
         onIntent={(action) => {
           // Host acts locally — bypass wire, hit reducer directly.
+          // NOTE: WHOOP / PLAYER_ENTER_CLAIM* is NOT handled here. It goes
+          // through the claim-lock arbiter (called by the view directly),
+          // which broadcasts claim_grant → useMultiplayerHost dispatches.
           if (action.type === "REQUEST_ROLL") {
             void host.doRollDice();
             return;
           }
-          if (action.type === "PLAYER_ENTER_CLAIM") {
-            host.dispatch({ type: "PLAYER_ENTER_CLAIM", by: 0 });
-          } else if (action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
-            host.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 });
-            void host.doRollDice();
-          } else if (action.type === "PLAYER_SELECT_CARD") {
+          if (action.type === "PLAYER_ENTER_CLAIM" || action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
+            return;
+          }
+          if (action.type === "PLAYER_SELECT_CARD") {
             host.dispatch({ type: "PLAYER_SELECT_CARD", by: 0, idx: action.idx });
           } else if (action.type === "PLAYER_RESOLVE_MATCH") {
             host.dispatch({ type: "PLAYER_RESOLVE_MATCH", by: 0 });
@@ -349,12 +350,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         }}
         onLeave={leaveToIdle}
         mobile={mobile}
+        roomId={activeRoom.id}
+        visitorId={visitorId}
       />
     );
   }
 
   // ---------- GAME IN PROGRESS: JOINER ----------
-  if (view.kind === "joiner" && joinerPublicState) {
+  if (view.kind === "joiner" && joinerPublicState && activeRoom) {
     return (
       <MultiplayerGameView
         publicState={joinerPublicState}
@@ -362,6 +365,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         onIntent={joiner.sendIntent}
         onLeave={leaveToIdle}
         mobile={mobile}
+        roomId={activeRoom.id}
+        visitorId={visitorId}
       />
     );
   }
