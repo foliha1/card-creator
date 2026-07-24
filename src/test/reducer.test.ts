@@ -50,18 +50,21 @@ function baseState(overrides: Partial<State> = {}): State {
     UNRELATED_C,   // 4
     UNRELATED_D,   // 5
   ];
+  const seatCount = overrides.seatCount ?? 2;
   return {
     phase: "FLIPPING",
     slotCount: 6,
+    seatCount,
+    names: Array.from({ length: seatCount }, (_, i) => ["you", "opponent"][i] ?? `p${i}`),
     roller: 0,
     flipper: 0,
     grid,
     deck: [card("square", 1, "blue"), card("square", 2, "red")],
-    scores: [0, 0],
+    scores: Array(seatCount).fill(0),
     rule: ["SHAPE"],
     dieValues: ["SHAPE"],
-    wrongBy: [new Set<number>(), new Set<number>()],
-    skip: [false, false],
+    wrongBy: Array.from({ length: seatCount }, () => new Set<number>()),
+    skip: Array(seatCount).fill(false),
     flippedThisCycle: new Set<number>(),
     claimedThisCycle: false,
     drawEmpty: false,
@@ -76,6 +79,7 @@ function baseState(overrides: Partial<State> = {}): State {
     messageType: "info",
     inFlight: null,
     claimPending: false,
+    claimBy: 0,
     ...overrides,
   };
 }
@@ -263,9 +267,9 @@ describe("FLIP_COMPLETE", () => {
 });
 
 // ===========================================================================
-// HUMAN_ENTER_CLAIM
+// PLAYER_ENTER_CLAIM
 // ===========================================================================
-describe("HUMAN_ENTER_CLAIM", () => {
+describe("PLAYER_ENTER_CLAIM", () => {
   it("enters CLAIM_SELECTING from FLIPPING and records the held flip", () => {
     const s = baseState({
       phase: "FLIPPING",
@@ -273,7 +277,7 @@ describe("HUMAN_ENTER_CLAIM", () => {
       inFlight: { kind: "flip", token: 5, by: 0, idx: 3 },
       peekingCard: 3,
     });
-    const next = reducer(s, { type: "HUMAN_ENTER_CLAIM" });
+    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 });
     expect(next.phase).toBe("CLAIM_SELECTING");
     expect(next.flippedThisCycle.has(0)).toBe(true);
     expect(next.inFlight).toBeNull();
@@ -283,55 +287,55 @@ describe("HUMAN_ENTER_CLAIM", () => {
 
   it("records the flipper into flippedThisCycle when no flip is in flight", () => {
     const s = baseState({ phase: "FLIPPING", flipper: 0 });
-    const next = reducer(s, { type: "HUMAN_ENTER_CLAIM" });
+    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 });
     expect(next.flippedThisCycle.has(0)).toBe(true);
   });
 
   it("is a NO-OP outside FLIPPING", () => {
     const s = baseState({ phase: "AWAITING_ROLL" });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(s);
   });
 });
 
 // ===========================================================================
-// HUMAN_ENTER_CLAIM_DURING_ROLL
+// PLAYER_ENTER_CLAIM_DURING_ROLL
 // ===========================================================================
-describe("HUMAN_ENTER_CLAIM_DURING_ROLL", () => {
+describe("PLAYER_ENTER_CLAIM_DURING_ROLL", () => {
   it("sets claimPending in AWAITING_ROLL when human is roller", () => {
     const s = baseState({ phase: "AWAITING_ROLL", roller: 0 });
-    const next = reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" });
+    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 });
     expect(next.claimPending).toBe(true);
   });
 
   it("is a NO-OP outside AWAITING_ROLL", () => {
     const s = baseState({ phase: "FLIPPING", roller: 0 });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
   });
 
   it("is a NO-OP when human is not the roller", () => {
     const s = baseState({ phase: "AWAITING_ROLL", roller: 1 });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
   });
 
   it("is a NO-OP when already pending", () => {
     const s = baseState({ phase: "AWAITING_ROLL", roller: 0, claimPending: true });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
   });
 });
 
 // ===========================================================================
-// HUMAN_SELECT_CARD
+// PLAYER_SELECT_CARD
 // ===========================================================================
-describe("HUMAN_SELECT_CARD", () => {
+describe("PLAYER_SELECT_CARD", () => {
   it("appends the index to selectedCards", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [] });
-    const next = reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 });
+    const next = reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 });
     expect(next.selectedCards).toEqual([2]);
   });
 
   it("is a NO-OP outside CLAIM_SELECTING", () => {
     const s = baseState({ phase: "FLIPPING" });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP for a card in the human's wrongBy set", () => {
@@ -339,31 +343,31 @@ describe("HUMAN_SELECT_CARD", () => {
       phase: "CLAIM_SELECTING",
       wrongBy: [new Set([2]), new Set()],
     });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP for a duplicate selection", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [2] });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP for a null grid slot", () => {
     const grid = baseState().grid.slice();
     grid[2] = null;
     const s = baseState({ phase: "CLAIM_SELECTING", grid });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP once two cards are already selected", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [0, 1] });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 3 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 3 })).toBe(s);
   });
 });
 
 // ===========================================================================
-// HUMAN_RESOLVE_MATCH
+// PLAYER_RESOLVE_MATCH
 // ===========================================================================
-describe("HUMAN_RESOLVE_MATCH", () => {
+describe("PLAYER_RESOLVE_MATCH", () => {
   it("correct match: +2 points, refills slots, winner rolls next round", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
@@ -373,7 +377,7 @@ describe("HUMAN_RESOLVE_MATCH", () => {
       flipper: 1,
       roundNum: 3,
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.scores).toEqual([2, 0]);
     expect(next.phase).toBe("AWAITING_ROLL");
     // Winner rolls
@@ -395,7 +399,7 @@ describe("HUMAN_RESOLVE_MATCH", () => {
       flipper: 0,
       flippedThisCycle: new Set([0]), // human already recorded their flip
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.scores).toEqual([0, 0]);
     expect(next.wrongBy[0].has(1)).toBe(true);
     expect(next.wrongBy[0].has(3)).toBe(true);
@@ -407,12 +411,12 @@ describe("HUMAN_RESOLVE_MATCH", () => {
 
   it("is a NO-OP outside CLAIM_SELECTING", () => {
     const s = baseState({ phase: "FLIPPING", selectedCards: [0, 2] });
-    expect(reducer(s, { type: "HUMAN_RESOLVE_MATCH" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
   });
 
   it("is a NO-OP when fewer than 2 cards are selected", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [0] });
-    expect(reducer(s, { type: "HUMAN_RESOLVE_MATCH" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
   });
 });
 
@@ -472,9 +476,11 @@ describe("CLAIM_START", () => {
     expect(reducer(s, { type: "CLAIM_START", by: 1, a: 0, b: 2, token: 1 })).toBe(s);
   });
 
-  it("is a NO-OP for by === 0 (humans use HUMAN_RESOLVE_MATCH)", () => {
+  it("accepts by === 0 in the generalized reducer (no more seat gate)", () => {
     const s = baseState({ phase: "FLIPPING" });
-    expect(reducer(s, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 1 })).toBe(s);
+    const next = reducer(s, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 1 });
+    expect(next.phase).toBe("CLAIM_RESOLVING");
+    expect(next.claimBy).toBe(0);
   });
 
   it("is a NO-OP when either target slot is null", () => {
@@ -729,7 +735,7 @@ describe("skip penalty end-to-end", () => {
       flipper: 0,
       flippedThisCycle: new Set([0]),
     });
-    s = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(s.skip[0]).toBe(true);
     // After cycleAdvance, flipper is now opponent (1). Simulate the opponent
     // completing their flip so the cycle rolls back to the human.
@@ -776,7 +782,7 @@ describe("winner rolls (v6.2)", () => {
       roller: 1,
       flipper: 1,
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.roller).toBe(0);
     expect(next.flipper).toBe(0);
   });
@@ -847,7 +853,7 @@ describe("game over terminal", () => {
         null,
       ],
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.phase).toBe("GAME_OVER");
     expect(next.scores).toEqual([2, 0]);
   });
@@ -855,8 +861,8 @@ describe("game over terminal", () => {
   it("further actions after GAME_OVER are ignored where phase-guarded", () => {
     const s = baseState({ phase: "GAME_OVER" });
     expect(reducer(s, { type: "ROLL_START" })).toBe(s);
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM" })).toBe(s);
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 0 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 0 })).toBe(s);
     expect(reducer(s, { type: "FLIP_START", by: 0, idx: 0, token: 1 })).toBe(s);
     expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
     expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
@@ -871,7 +877,7 @@ describe("scoring", () => {
       rule: ["SHAPE"],
       scores: [4, 6],
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.scores).toEqual([6, 6]);
   });
 
@@ -912,5 +918,141 @@ describe("initialState (deterministic under Math.random stub)", () => {
     expect(a.grid.map((c) => c?.id)).toEqual(b.grid.map((c) => c?.id));
     expect(a.rule).toEqual(b.rule);
     expect(a.dieValues).toEqual(b.dieValues);
+  });
+});
+
+// ===========================================================================
+// N>2 generalization tests
+// ===========================================================================
+describe("N>2 generalization", () => {
+  it("cycleAdvance rotates correctly at seatCount=3", () => {
+    // seat 0 flips → flipper becomes 1
+    let s = baseState({
+      seatCount: 3,
+      phase: "FLIPPING",
+      flipper: 0,
+      inFlight: { kind: "flip", token: 1, by: 0, idx: 0 },
+      peekingCard: 0,
+    });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 1 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.flipper).toBe(1);
+    // seat 1 flips → flipper becomes 2 (cycle NOT complete yet)
+    s = { ...s, inFlight: { kind: "flip", token: 2, by: 1, idx: 3 }, peekingCard: 3 };
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 2 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.flipper).toBe(2);
+    // seat 2 flips → cycle complete, roll passes clockwise (no claim)
+    s = { ...s, inFlight: { kind: "flip", token: 3, by: 2, idx: 4 }, peekingCard: 4 };
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 3 });
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roller).toBe(1); // (0 + 1) % 3
+  });
+
+  it("cycleAdvance rotates correctly at seatCount=5", () => {
+    let s = baseState({ seatCount: 5, phase: "FLIPPING", flipper: 0 });
+    for (let i = 0; i < 4; i++) {
+      s = {
+        ...s,
+        inFlight: { kind: "flip", token: i + 1, by: i, idx: i },
+        peekingCard: i,
+      };
+      s = reducer(s, { type: "FLIP_COMPLETE", token: i + 1 });
+      expect(s.phase).toBe("FLIPPING");
+      expect(s.flipper).toBe(i + 1);
+    }
+    // 5th flip completes the cycle → new round
+    s = { ...s, inFlight: { kind: "flip", token: 5, by: 4, idx: 5 }, peekingCard: 5 };
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 5 });
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roller).toBe(1);
+  });
+
+  it("skip penalty applies to the correct seat at seatCount=4", () => {
+    const s = baseState({
+      seatCount: 4,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 1, by: 2, a: 1, b: 3 }, // wrong pair
+      rule: ["SHAPE"],
+      flippedThisCycle: new Set(), // mid-cycle so state persists
+      claimBy: 2,
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 1 });
+    expect(next.phase).toBe("FLIPPING");
+    expect(next.skip).toEqual([false, false, true, false]);
+    expect(next.scores).toEqual([0, 0, 0, 0]);
+  });
+
+  it("wrongBy tracks per-seat at seatCount=4", () => {
+    const s = baseState({
+      seatCount: 4,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 1, by: 2, a: 1, b: 3 },
+      rule: ["SHAPE"],
+      flippedThisCycle: new Set(),
+      claimBy: 2,
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 1 });
+    expect(next.wrongBy[2].has(1)).toBe(true);
+    expect(next.wrongBy[2].has(3)).toBe(true);
+    expect(next.wrongBy[0].size).toBe(0);
+    expect(next.wrongBy[1].size).toBe(0);
+    expect(next.wrongBy[3].size).toBe(0);
+  });
+
+  it("claimBy is set on PLAYER_ENTER_CLAIM and cleared on resolve", () => {
+    const s = baseState({ seatCount: 3, phase: "FLIPPING", flipper: 2, claimBy: null });
+    const entered = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 2 });
+    expect(entered.phase).toBe("CLAIM_SELECTING");
+    expect(entered.claimBy).toBe(2);
+    // Select and resolve correct pair
+    const selA = reducer(entered, { type: "PLAYER_SELECT_CARD", by: 2, idx: 0 });
+    const selB = reducer(selA, { type: "PLAYER_SELECT_CARD", by: 2, idx: 2 });
+    const resolved = reducer(selB, { type: "PLAYER_RESOLVE_MATCH", by: 2 });
+    expect(resolved.claimBy).toBeNull();
+  });
+
+  it("claimBy is cleared on wrong claim (void)", () => {
+    const s = baseState({
+      seatCount: 3,
+      phase: "CLAIM_SELECTING",
+      selectedCards: [1, 3], // wrong pair
+      claimBy: 1,
+      flipper: 1,
+    });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 1 });
+    expect(next.claimBy).toBeNull();
+  });
+
+  it("PLAYER_SELECT_CARD rejects seats that are not the current claimant", () => {
+    const s = baseState({ seatCount: 3, phase: "CLAIM_SELECTING", claimBy: 1 });
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 0 })).toBe(s);
+    const ok = reducer(s, { type: "PLAYER_SELECT_CARD", by: 1, idx: 0 });
+    expect(ok.selectedCards).toEqual([0]);
+  });
+
+  it("winner-rolls: correct claim by seat 2 at seatCount=4 makes seat 2 next roller", () => {
+    const s = baseState({
+      seatCount: 4,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 9, by: 2, a: 0, b: 2 },
+      rule: ["SHAPE"],
+      roller: 0,
+      flipper: 0,
+      claimBy: 2,
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 9 });
+    expect(next.phase).toBe("AWAITING_ROLL");
+    expect(next.roller).toBe(2);
+    expect(next.flipper).toBe(2);
+    expect(next.scores).toEqual([0, 0, 2, 0]);
+  });
+
+  it("CLAIM_START accepts any bot/human seat (no more by !== 1 gate)", () => {
+    const s = baseState({ seatCount: 3, phase: "FLIPPING" });
+    const next = reducer(s, { type: "CLAIM_START", by: 2, a: 0, b: 2, token: 1 });
+    expect(next.phase).toBe("CLAIM_RESOLVING");
+    expect(next.claimBy).toBe(2);
+    expect(next.inFlight).toMatchObject({ kind: "claim", by: 2 });
   });
 });

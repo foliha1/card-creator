@@ -1,10 +1,9 @@
 import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
-import { createOpponentMemory } from "@/lib/opponentMemory";
+import { createOpponentMemory, OpponentMemory } from "@/lib/opponentMemory";
 
 type MessageType = "info" | "success" | "error" | "warning";
 
-const PLAYERS = ["you", "opponent"] as const;
 export const OPPONENT_TUNING = {
   reactionMinMs: 2500,
   reactionMaxMs: 5500,
@@ -66,13 +65,21 @@ function computeRule(values: string[]): { rule: string[] } {
   return { rule: [values[0]] };
 }
 
+function defaultNames(seatCount: number): string[] {
+  const base = ["you", "opponent"];
+  const out: string[] = [];
+  for (let i = 0; i < seatCount; i++) {
+    out.push(base[i] ?? `player ${i + 1}`);
+  }
+  return out;
+}
+
+function emptyWrongBy(seatCount: number): Set<number>[] {
+  return Array.from({ length: seatCount }, () => new Set<number>());
+}
+
 // ============================================================================
 // Reducer-driven control flow
-//
-// A single PHASE governs what actions are legal. All timed actions carry a
-// monotonically-increasing `token`; the reducer ignores stale completions
-// whose token doesn't match the current inFlight action. That single check
-// replaces the previous swarm of shadow-ref guards.
 // ============================================================================
 
 export type Phase =
@@ -91,6 +98,8 @@ type InFlight =
 export interface State {
   phase: Phase;
   slotCount: number;
+  seatCount: number;
+  names: string[];
   roller: number;
   flipper: number;
   grid: (Card | null)[];
@@ -98,7 +107,7 @@ export interface State {
   scores: number[];
   rule: string[];
   dieValues: string[];
-  wrongBy: [Set<number>, Set<number>];
+  wrongBy: Set<number>[];
   skip: boolean[];
   flippedThisCycle: Set<number>;
   claimedThisCycle: boolean;
@@ -114,18 +123,24 @@ export interface State {
   messageType: MessageType;
   inFlight: InFlight;
   claimPending: boolean;
+  claimBy: number | null;
+}
+
+export interface InitOptions {
+  seatCount?: number;
+  names?: string[];
 }
 
 export type Action =
-  | { type: "INIT"; slotCount: number }
+  | { type: "INIT"; slotCount: number; seatCount?: number; names?: string[] }
   | { type: "TUMBLE"; values: string[] }
   | { type: "ROLL_START" }
   | { type: "ROLL_LAND"; values: string[]; rule: string[] }
   | { type: "ROLL_SETTLE" }
-  | { type: "HUMAN_ENTER_CLAIM" }
-  | { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" }
-  | { type: "HUMAN_SELECT_CARD"; idx: number }
-  | { type: "HUMAN_RESOLVE_MATCH" }
+  | { type: "PLAYER_ENTER_CLAIM"; by: number }
+  | { type: "PLAYER_ENTER_CLAIM_DURING_ROLL"; by: number }
+  | { type: "PLAYER_SELECT_CARD"; by: number; idx: number }
+  | { type: "PLAYER_RESOLVE_MATCH"; by: number }
   | { type: "FLIP_START"; by: number; idx: number; token: number }
   | { type: "FLIP_COMPLETE"; token: number }
   | { type: "SKIP_TICK" }
@@ -136,7 +151,9 @@ export type Action =
   | { type: "REMOVE_MATCHED" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
 
-export function initialState(slotCount: number): State {
+export function initialState(slotCount: number, opts: InitOptions = {}): State {
+  const seatCount = opts.seatCount ?? 2;
+  const names = opts.names ?? defaultNames(seatCount);
   const newDeck = createDeck();
   const dealt = newDeck.splice(0, slotCount);
   const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
@@ -145,15 +162,17 @@ export function initialState(slotCount: number): State {
   return {
     phase: "AWAITING_ROLL",
     slotCount,
+    seatCount,
+    names,
     roller: 0,
     flipper: 0,
     grid: newGrid,
     deck: newDeck,
-    scores: [0, 0],
+    scores: Array(seatCount).fill(0),
     rule,
     dieValues: values,
-    wrongBy: [new Set(), new Set()],
-    skip: [false, false],
+    wrongBy: emptyWrongBy(seatCount),
+    skip: Array(seatCount).fill(false),
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     drawEmpty: newDeck.length === 0,
@@ -168,6 +187,7 @@ export function initialState(slotCount: number): State {
     messageType: "info",
     inFlight: null,
     claimPending: false,
+    claimBy: null,
   };
 }
 
@@ -186,13 +206,14 @@ function refill(
 }
 
 function withGameOverAnnounce(s: State): State {
-  const [you, opp] = s.scores;
+  const top = Math.max(...s.scores);
+  const winners = s.scores
+    .map((v, i) => (v === top ? i : -1))
+    .filter((i) => i !== -1);
   const outcome =
-    you > opp
-      ? `You win! ${you}–${opp}`
-      : opp > you
-      ? `Opponent wins! ${opp}–${you}`
-      : `Tie ${you}–${opp}`;
+    winners.length === 1
+      ? `${s.names[winners[0]]} wins! ${s.scores.join("–")}`
+      : `Tie ${s.scores.join("–")}`;
   return {
     ...s,
     phase: "GAME_OVER",
@@ -200,25 +221,25 @@ function withGameOverAnnounce(s: State): State {
     messageType: "info",
     inFlight: null,
     peekingCard: null,
+    claimBy: null,
   };
 }
 
 function startRound(s: State, winnerIndex: number | null): State {
-  // GAME_OVER safety: if nothing can be played, end.
   const hasCards = s.grid.some((c) => c !== null);
   const filled = s.grid.filter((c) => c !== null).length;
   if (!hasCards && s.deck.length === 0) return withGameOverAnnounce(s);
   if (filled < 2 && s.deck.length === 0) return withGameOverAnnounce(s);
 
   const nextRoller =
-    winnerIndex !== null ? winnerIndex : (s.roller + 1) % PLAYERS.length;
+    winnerIndex !== null ? winnerIndex : (s.roller + 1) % s.seatCount;
   return {
     ...s,
     phase: "AWAITING_ROLL",
     roller: nextRoller,
     flipper: nextRoller,
-    wrongBy: [new Set(), new Set()],
-    skip: [false, false],
+    wrongBy: emptyWrongBy(s.seatCount),
+    skip: Array(s.seatCount).fill(false),
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     selectedCards: [],
@@ -228,17 +249,17 @@ function startRound(s: State, winnerIndex: number | null): State {
     roundNum: s.roundNum + 1,
     roundsSinceClaim: winnerIndex !== null ? 0 : s.roundsSinceClaim,
     claimPending: false,
+    claimBy: null,
   };
 }
 
 function cycleAdvance(s: State, addWho: number): State {
   const flipped = new Set(s.flippedThisCycle);
   flipped.add(addWho);
-  if (flipped.size >= PLAYERS.length) {
+  if (flipped.size >= s.seatCount) {
     const noClaim = !s.claimedThisCycle;
     if (s.phase === "LAST_CALL") {
-      // In Last Call, cycle just rotates flippers indefinitely — no round advance.
-      const next = (s.flipper + 1) % PLAYERS.length;
+      const next = (s.flipper + 1) % s.seatCount;
       return {
         ...s,
         flipper: next,
@@ -248,14 +269,13 @@ function cycleAdvance(s: State, addWho: number): State {
       };
     }
     if (s.drawEmpty && noClaim) {
-      // Enter LAST_CALL
       const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
       return {
         ...s,
         phase: "LAST_CALL",
         allFaceUp: true,
-        wrongBy: [new Set(), new Set()],
-        skip: [false, false],
+        wrongBy: emptyWrongBy(s.seatCount),
+        skip: Array(s.seatCount).fill(false),
         dieValues: [value],
         rule: [value],
         flippedThisCycle: new Set(),
@@ -263,12 +283,12 @@ function cycleAdvance(s: State, addWho: number): State {
         roundsSinceClaim: s.roundsSinceClaim + 1,
         inFlight: null,
         peekingCard: null,
+        claimBy: null,
       };
     }
-    // No-claim round completed: roll passes clockwise.
     return startRound({ ...s, flippedThisCycle: flipped }, null);
   }
-  const next = (s.flipper + 1) % PLAYERS.length;
+  const next = (s.flipper + 1) % s.seatCount;
   return {
     ...s,
     flipper: next,
@@ -278,10 +298,19 @@ function cycleAdvance(s: State, addWho: number): State {
   };
 }
 
+function replaceAt<T>(arr: T[], idx: number, value: T): T[] {
+  const out = arr.slice();
+  out[idx] = value;
+  return out;
+}
+
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "INIT":
-      return initialState(action.slotCount);
+      return initialState(action.slotCount, {
+        seatCount: action.seatCount ?? state.seatCount,
+        names: action.names ?? state.names,
+      });
 
     case "TUMBLE":
       if (!state.rolling) return state;
@@ -293,18 +322,13 @@ export function reducer(state: State, action: Action): State {
 
     case "ROLL_LAND": {
       if (!state.rolling) return state;
-      return {
-        ...state,
-        dieValues: action.values,
-        rule: action.rule,
-      };
+      return { ...state, dieValues: action.values, rule: action.rule };
     }
 
     case "ROLL_SETTLE": {
       if (!state.rolling) return state;
       const base = { ...state, rolling: false };
       if (state.claimPending) {
-        // Human hit WHOOP during roll — go straight to selection.
         return {
           ...base,
           phase: "CLAIM_SELECTING",
@@ -315,18 +339,11 @@ export function reducer(state: State, action: Action): State {
           messageType: "info",
         };
       }
-      // Roll complete → enter flip phase, flipper = roller.
-      return {
-        ...base,
-        phase: "FLIPPING",
-        flipper: state.roller,
-      };
+      return { ...base, phase: "FLIPPING", flipper: state.roller };
     }
 
-    case "HUMAN_ENTER_CLAIM": {
+    case "PLAYER_ENTER_CLAIM": {
       if (state.phase !== "FLIPPING") return state;
-      // The held (in-progress) flip counts toward the cycle regardless of
-      // whether its reveal timer completes.
       const flipped = new Set(state.flippedThisCycle);
       if (state.inFlight?.kind === "flip") flipped.add(state.inFlight.by);
       else flipped.add(state.flipper);
@@ -338,37 +355,40 @@ export function reducer(state: State, action: Action): State {
         peekingCard: null,
         selectedCards: [],
         matchedCards: new Set(),
+        claimBy: action.by,
         message: "Select 2 cards that match the rule.",
         messageType: "info",
       };
     }
 
-    case "HUMAN_ENTER_CLAIM_DURING_ROLL": {
+    case "PLAYER_ENTER_CLAIM_DURING_ROLL": {
       if (state.phase !== "AWAITING_ROLL") return state;
-      if (state.roller !== 0) return state;
+      if (state.roller !== action.by) return state;
       if (state.claimPending) return state;
-      return { ...state, claimPending: true };
+      return { ...state, claimPending: true, claimBy: action.by };
     }
 
-    case "HUMAN_SELECT_CARD": {
+    case "PLAYER_SELECT_CARD": {
       if (state.phase !== "CLAIM_SELECTING") return state;
+      if (state.claimBy !== action.by) return state;
       const idx = action.idx;
-      if (state.wrongBy[0].has(idx)) return state;
+      if (state.wrongBy[action.by].has(idx)) return state;
       if (state.selectedCards.includes(idx)) return state;
       if (state.grid[idx] === null) return state;
       if (state.selectedCards.length >= 2) return state;
       return { ...state, selectedCards: [...state.selectedCards, idx] };
     }
 
-    case "HUMAN_RESOLVE_MATCH": {
+    case "PLAYER_RESOLVE_MATCH": {
       if (state.phase !== "CLAIM_SELECTING") return state;
+      if (state.claimBy !== action.by) return state;
       if (state.selectedCards.length !== 2) return state;
+      const by = action.by;
       const [ia, ib] = state.selectedCards;
       const a = state.grid[ia];
       const b = state.grid[ib];
       if (a && b && cardsMatchRule(a, b, state.rule)) {
-        const scores = [...state.scores];
-        scores[0] += 2;
+        const scores = replaceAt(state.scores, by, state.scores[by] + 2);
         const { grid: newGrid, deck: newDeck } = refill(
           state.grid,
           state.deck,
@@ -384,33 +404,31 @@ export function reducer(state: State, action: Action): State {
           selectedCards: [],
           claimedThisCycle: true,
           drawEmpty: state.drawEmpty || draining,
-          message: "Correct! +2 points.",
+          claimBy: null,
+          message: `${state.names[by]} — match! +2`,
           messageType: "success",
         };
-        // Winner rolls: human becomes next Roller and Flipper.
-        return startRound(post, 0);
+        return startRound(post, by);
       }
-      // Wrong claim: expose cards to opponent (they can be claimed by them),
-      // block this player from re-picking them, skip penalty, resume cycle.
-      const wrongByHuman = new Set(state.wrongBy[0]);
-      wrongByHuman.add(ia);
-      wrongByHuman.add(ib);
-      const skip = [...state.skip];
-      skip[0] = true;
+      // Wrong claim
+      const wrongForBy = new Set(state.wrongBy[by]);
+      wrongForBy.add(ia);
+      wrongForBy.add(ib);
+      const nextWrongBy = state.wrongBy.slice();
+      nextWrongBy[by] = wrongForBy;
+      const skip = replaceAt(state.skip, by, true);
       const post: State = {
         ...state,
         phase: "FLIPPING",
-        wrongBy: [wrongByHuman, state.wrongBy[1]],
+        wrongBy: nextWrongBy,
         skip,
         selectedCards: [],
         matchedCards: new Set(),
-        message: "No match! You lose your next flip.",
+        claimBy: null,
+        message: `${state.names[by]} — no match. Skip next flip.`,
         messageType: "error",
       };
-      // The claimant's flip was already recorded in flippedThisCycle when
-      // they entered claim mode, so cycleAdvance will end the round if the
-      // cycle is complete. Add 0 again is idempotent (Set).
-      return cycleAdvance(post, 0);
+      return cycleAdvance(post, by);
     }
 
     case "FLIP_START": {
@@ -432,7 +450,6 @@ export function reducer(state: State, action: Action): State {
     }
 
     case "FLIP_COMPLETE": {
-      // Stale-token guard: ignore completions whose action was superseded.
       if (state.inFlight?.kind !== "flip") return state;
       if (state.inFlight.token !== action.token) return state;
       const who = state.inFlight.by;
@@ -444,25 +461,19 @@ export function reducer(state: State, action: Action): State {
       if (state.inFlight) return state;
       const who = state.flipper;
       if (!state.skip[who]) return state;
-      const skip = [...state.skip];
-      skip[who] = false;
-      // Consumed skip counts as this player's flip opportunity.
+      const skip = replaceAt(state.skip, who, false);
       return cycleAdvance({ ...state, skip }, who);
     }
 
     case "CLAIM_START": {
-      // Opponent-initiated claim (interrupts any in-flight flip).
-      if (
-        state.phase !== "FLIPPING" &&
-        state.phase !== "CLAIM_SELECTING" // safety, ignore
-      ) {
-        return state;
-      }
+      if (state.phase !== "FLIPPING" && state.phase !== "CLAIM_SELECTING") return state;
       if (state.phase === "CLAIM_SELECTING") return state;
-      if (action.by !== 1) return state; // human uses HUMAN_RESOLVE_MATCH path
       if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
-      if (state.wrongBy[action.by].has(action.a) || state.wrongBy[action.by].has(action.b)) return state;
-      // Record claimant's flip opportunity for cycle accounting.
+      if (
+        state.wrongBy[action.by].has(action.a) ||
+        state.wrongBy[action.by].has(action.b)
+      )
+        return state;
       const flipped = new Set(state.flippedThisCycle);
       flipped.add(action.by);
       return {
@@ -470,6 +481,7 @@ export function reducer(state: State, action: Action): State {
         phase: "CLAIM_RESOLVING",
         flippedThisCycle: flipped,
         peekingCard: null,
+        claimBy: action.by,
         inFlight: {
           kind: "claim",
           token: action.token,
@@ -487,13 +499,8 @@ export function reducer(state: State, action: Action): State {
       const cardA = state.grid[a];
       const cardB = state.grid[b];
       if (cardA && cardB && cardsMatchRule(cardA, cardB, state.rule)) {
-        const scores = [...state.scores];
-        scores[by] += 2;
-        const { grid: newGrid, deck: newDeck } = refill(
-          state.grid,
-          state.deck,
-          [a, b]
-        );
+        const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+        const { grid: newGrid, deck: newDeck } = refill(state.grid, state.deck, [a, b]);
         const draining = newDeck.length === 0;
         const post: State = {
           ...state,
@@ -502,31 +509,27 @@ export function reducer(state: State, action: Action): State {
           deck: newDeck,
           claimedThisCycle: true,
           drawEmpty: state.drawEmpty || draining,
-          message:
-            by === 1 ? "Opponent claim — correct! +2" : "Correct! +2 points.",
-          messageType: by === 1 ? "warning" : "success",
+          message: `${state.names[by]} — match! +2`,
+          messageType: "success",
           inFlight: null,
+          claimBy: null,
         };
         return startRound(post, by);
       }
-      // Wrong opponent claim — expose cards to the other player, penalize claimant.
       const wrongForBy = new Set(state.wrongBy[by]);
       wrongForBy.add(a);
       wrongForBy.add(b);
-      const nextWrongBy: [Set<number>, Set<number>] =
-        by === 0 ? [wrongForBy, state.wrongBy[1]] : [state.wrongBy[0], wrongForBy];
-      const skip = [...state.skip];
-      skip[by] = true;
+      const nextWrongBy = state.wrongBy.slice();
+      nextWrongBy[by] = wrongForBy;
+      const skip = replaceAt(state.skip, by, true);
       const post: State = {
         ...state,
         phase: "FLIPPING",
         wrongBy: nextWrongBy,
         skip,
         inFlight: null,
-        message:
-          by === 1
-            ? "Opponent claim — wrong! They lose their next flip."
-            : "No match! You lose your next flip.",
+        claimBy: null,
+        message: `${state.names[by]} — no match. Skip next flip.`,
         messageType: "info",
       };
       return cycleAdvance(post, by);
@@ -543,19 +546,15 @@ export function reducer(state: State, action: Action): State {
       const newGrid = [...state.grid];
       newGrid[a] = null;
       newGrid[b] = null;
-      const scores = [...state.scores];
-      scores[by] += 2;
+      const scores = replaceAt(state.scores, by, state.scores[by] + 2);
       const hasCards = newGrid.some((c) => c !== null);
       const stillPlayable = hasValidPair(newGrid, state.rule);
       const post: State = {
         ...state,
         grid: newGrid,
         scores,
-        message:
-          by === 1
-            ? "Last Call — Auntie O. claimed! +2"
-            : "Last Call — you claimed! +2",
-        messageType: by === 1 ? "warning" : "success",
+        message: `Last Call — ${state.names[by]} matched! +2`,
+        messageType: "success",
       };
       if (!hasCards || !stillPlayable) return withGameOverAnnounce(post);
       return post;
@@ -589,20 +588,45 @@ export function reducer(state: State, action: Action): State {
 // Hook
 // ============================================================================
 
-export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
-  const slotCount = gridSize === "3x3" ? 9 : 6;
-  const [state, dispatch] = useReducer(reducer, slotCount, initialState);
+export interface UseGameStateOptions {
+  seatCount?: number;
+  botSeats?: number[];
+  names?: string[];
+}
 
-  // Read-latest snapshot for timer callbacks (never used for guards — only
-  // to compute picks/candidates from the freshest grid/memory).
+export function useGameState(
+  gridSize: "3x2" | "3x3" = "3x2",
+  opts: UseGameStateOptions = {}
+) {
+  const slotCount = gridSize === "3x3" ? 9 : 6;
+  const seatCount = opts.seatCount ?? 2;
+  const botSeats = opts.botSeats ?? [1];
+  const names = opts.names ?? defaultNames(seatCount);
+  const botSeatSet = useMemo(() => new Set(botSeats), [botSeats.join(",")]);
+  const humanSeat = useMemo(() => {
+    for (let i = 0; i < seatCount; i++) if (!botSeatSet.has(i)) return i;
+    return 0;
+  }, [seatCount, botSeatSet]);
+  // The scheduling bot seat (single-bot memory scheduler preserves today's
+  // behaviour verbatim at N=2, botSeats=[1]). Multi-bot memory is out of scope.
+  const schedulerBot = botSeats.length > 0 ? botSeats[0] : -1;
+
+  const [state, dispatch] = useReducer(
+    reducer,
+    undefined,
+    () => initialState(slotCount, { seatCount, names })
+  );
+
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
 
-  // Monotonic token allocator (unique across the hook's lifetime).
   const tokenRef = useRef(0);
   const nextToken = () => ++tokenRef.current;
 
-  const memoryRef = useRef(createOpponentMemory());
+  const memoryRef = useRef<OpponentMemory | null>(null);
+  if (botSeats.length > 0 && memoryRef.current === null) {
+    memoryRef.current = createOpponentMemory();
+  }
   const prevPeekingRef = useRef<number | null>(null);
   const prevGridRef = useRef<(Card | null)[]>(state.grid);
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -614,21 +638,15 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
   const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollSettleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Re-init when slotCount changes.
   const firstSlotRef = useRef(slotCount);
   useEffect(() => {
     if (firstSlotRef.current === slotCount) return;
     firstSlotRef.current = slotCount;
-    memoryRef.current.reset();
+    memoryRef.current?.reset();
     prevPeekingRef.current = null;
-    dispatch({ type: "INIT", slotCount });
-  }, [slotCount]);
+    dispatch({ type: "INIT", slotCount, seatCount, names });
+  }, [slotCount, seatCount, names]);
 
-  // ------------------------------------------------------------------
-  // Roll animation (shared by human rollDice, opponent auto-roll, and
-  // the "claim during roll" flow). Two dispatches with a small settle
-  // window preserve the visual cadence of the original implementation.
-  // ------------------------------------------------------------------
   const runRollAnimation = useCallback((): Promise<string[]> => {
     return new Promise((resolve) => {
       dispatch({ type: "ROLL_START" });
@@ -657,52 +675,43 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     });
   }, []);
 
-  // Human roll
   const rollDice = useCallback(async () => {
     const s = stateRef.current;
     if (s.phase !== "AWAITING_ROLL") return;
-    if (s.roller !== 0) return;
+    if (s.roller !== humanSeat) return;
     if (s.rolling) return;
     await runRollAnimation();
-  }, [runRollAnimation]);
+  }, [runRollAnimation, humanSeat]);
 
-  // Legacy export — kept to preserve the return surface. Callers who want a
-  // Promise can still await it; no consumer currently does.
   const doRollDice = runRollAnimation;
 
-  // Opponent auto-roll
+  // Bot auto-roll
   useEffect(() => {
     if (state.phase !== "AWAITING_ROLL") return;
-    if (state.roller !== 1) return;
+    if (!botSeatSet.has(state.roller)) return;
     if (state.rolling) return;
     const t = setTimeout(() => {
       runRollAnimation();
     }, OPPONENT_TUNING.thinkDelayMs);
     return () => clearTimeout(t);
-  }, [state.phase, state.roller, state.rolling, runRollAnimation]);
+  }, [state.phase, state.roller, state.rolling, runRollAnimation, botSeatSet]);
 
-  // ------------------------------------------------------------------
-  // Human peek — dispatches FLIP_START + schedules FLIP_COMPLETE.
-  // ------------------------------------------------------------------
   const peekCard = useCallback((index: number) => {
     const s = stateRef.current;
     if (s.phase !== "FLIPPING") return;
-    if (s.flipper !== 0) return;
+    if (s.flipper !== humanSeat) return;
     if (s.inFlight) return;
-    if (s.wrongBy[0].has(index)) return;
+    if (s.wrongBy[humanSeat].has(index)) return;
     if (s.grid[index] === null) return;
     const token = nextToken();
-    dispatch({ type: "FLIP_START", by: 0, idx: index, token });
+    dispatch({ type: "FLIP_START", by: humanSeat, idx: index, token });
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current);
     peekTimerRef.current = setTimeout(() => {
       peekTimerRef.current = null;
       dispatch({ type: "FLIP_COMPLETE", token });
     }, REVEAL_MS);
-  }, []);
+  }, [humanSeat]);
 
-  // ------------------------------------------------------------------
-  // Skip penalty — consume when it's the penalized player's turn to flip.
-  // ------------------------------------------------------------------
   useEffect(() => {
     if (state.phase !== "FLIPPING") return;
     if (state.inFlight) return;
@@ -710,36 +719,32 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     dispatch({ type: "SKIP_TICK" });
   }, [state.phase, state.flipper, state.inFlight, state.skip]);
 
-  // ------------------------------------------------------------------
-  // Opponent auto-flip. Deps intentionally minimal (phase + flipper +
-  // inFlight-nullness) so the effect doesn't re-run when the grid or
-  // peeking card changes mid-reveal. Latest data is read via stateRef.
-  // ------------------------------------------------------------------
+  // Bot auto-flip
   const inFlightNullMarker = state.inFlight === null;
   useEffect(() => {
     if (state.phase !== "FLIPPING") return;
-    if (state.flipper !== 1) return;
+    if (!botSeatSet.has(state.flipper)) return;
     if (!inFlightNullMarker) return;
+    const botSeat = state.flipper;
     if (oppDelayRef.current) clearTimeout(oppDelayRef.current);
     oppDelayRef.current = setTimeout(() => {
       oppDelayRef.current = null;
       const s = stateRef.current;
-      if (s.phase !== "FLIPPING" || s.flipper !== 1 || s.inFlight) return;
+      if (s.phase !== "FLIPPING" || s.flipper !== botSeat || s.inFlight) return;
       const candidates = s.grid
-        .map((c, i) => (c !== null && !s.wrongBy[1].has(i) ? i : -1))
+        .map((c, i) => (c !== null && !s.wrongBy[botSeat].has(i) ? i : -1))
         .filter((i) => i !== -1);
       if (candidates.length === 0) {
-        // Nothing to flip — count this as the opponent's flip opportunity.
         dispatch({ type: "SKIP_TICK" });
         return;
       }
       const unknown = candidates.filter(
-        (i) => memoryRef.current.recall(i) === null
+        (i) => memoryRef.current?.recall(i) == null
       );
       const pool = unknown.length > 0 ? unknown : candidates;
       const pick = pool[Math.floor(Math.random() * pool.length)];
       const token = nextToken();
-      dispatch({ type: "FLIP_START", by: 1, idx: pick, token });
+      dispatch({ type: "FLIP_START", by: botSeat, idx: pick, token });
       if (oppRevealRef.current) clearTimeout(oppRevealRef.current);
       oppRevealRef.current = setTimeout(() => {
         oppRevealRef.current = null;
@@ -752,70 +757,61 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
         oppDelayRef.current = null;
       }
     };
-  }, [state.phase, state.flipper, inFlightNullMarker]);
+  }, [state.phase, state.flipper, inFlightNullMarker, botSeatSet]);
 
-  // ------------------------------------------------------------------
-  // Claim intents
-  // ------------------------------------------------------------------
   const enterClaimMode = useCallback(() => {
     const s = stateRef.current;
     if (s.phase === "CLAIM_SELECTING" || s.phase === "CLAIM_RESOLVING") return;
     if (s.phase === "GAME_OVER") return;
     if (s.rolling) return;
-    // Cancel any in-flight human peek timer.
     if (peekTimerRef.current) {
       clearTimeout(peekTimerRef.current);
       peekTimerRef.current = null;
     }
     if (s.phase === "AWAITING_ROLL") {
-      if (s.roller !== 0) return;
-      dispatch({ type: "HUMAN_ENTER_CLAIM_DURING_ROLL" });
+      if (s.roller !== humanSeat) return;
+      dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: humanSeat });
       runRollAnimation();
       return;
     }
-    dispatch({ type: "HUMAN_ENTER_CLAIM" });
-  }, [runRollAnimation]);
+    dispatch({ type: "PLAYER_ENTER_CLAIM", by: humanSeat });
+  }, [runRollAnimation, humanSeat]);
 
   const selectCard = useCallback((index: number) => {
-    dispatch({ type: "HUMAN_SELECT_CARD", idx: index });
-  }, []);
+    dispatch({ type: "PLAYER_SELECT_CARD", by: humanSeat, idx: index });
+  }, [humanSeat]);
 
   const resolveMatch = useCallback(() => {
-    dispatch({ type: "HUMAN_RESOLVE_MATCH" });
-  }, []);
+    dispatch({ type: "PLAYER_RESOLVE_MATCH", by: humanSeat });
+  }, [humanSeat]);
 
   const opponentClaim = useCallback((a: number, b: number) => {
     const s = stateRef.current;
     if (s.phase !== "FLIPPING") return;
+    if (schedulerBot < 0) return;
     if (a === b) return;
     if (s.grid[a] === null || s.grid[b] === null) return;
-    if (s.wrongBy[1].has(a) || s.wrongBy[1].has(b)) return;
+    if (s.wrongBy[schedulerBot].has(a) || s.wrongBy[schedulerBot].has(b)) return;
     const token = nextToken();
-    dispatch({ type: "CLAIM_START", by: 1, a, b, token });
+    dispatch({ type: "CLAIM_START", by: schedulerBot, a, b, token });
     if (oppClaimResolveRef.current) clearTimeout(oppClaimResolveRef.current);
     oppClaimResolveRef.current = setTimeout(() => {
       oppClaimResolveRef.current = null;
       dispatch({ type: "CLAIM_RESOLVE", token });
     }, 1600);
-  }, []);
+  }, [schedulerBot]);
 
-  // Legacy export — reducer resolves opponent claim on its own timer, but
-  // the return surface still exposes this callable.
-  const resolveOpponentClaim = useCallback(() => {
-    // No-op: opponent claim resolution is now token-driven inside the reducer.
-  }, []);
+  const resolveOpponentClaim = useCallback(() => {}, []);
 
   const claimLastCall = useCallback((a: number, b: number) => {
-    dispatch({ type: "LAST_CALL_CLAIM", by: 0, a, b });
-  }, []);
+    dispatch({ type: "LAST_CALL_CLAIM", by: humanSeat, a, b });
+  }, [humanSeat]);
 
   const removeMatchedFromGrid = useCallback(() => {
     dispatch({ type: "REMOVE_MATCHED" });
   }, []);
 
-  // ------------------------------------------------------------------
-  // Dead-grid safety valve (unchanged rule).
-  // ------------------------------------------------------------------
+  // Dead-grid safety valve
   useEffect(() => {
     if (
       state.phase === "GAME_OVER" ||
@@ -847,11 +843,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     dispatch({ type: "SAFETY_SWAP", grid: newGrid, deck: newDeck });
   }, [state.grid, state.deck, state.phase, state.rolling]);
 
-  // ------------------------------------------------------------------
-  // Memory bookkeeping
-  // ------------------------------------------------------------------
-  // Forget slots whose card changed or emptied.
+  // Bot memory — only if any bot seat exists
   useEffect(() => {
+    if (!memoryRef.current) return;
     const prev = prevGridRef.current;
     for (let i = 0; i < state.grid.length; i++) {
       const pc = prev[i] ?? null;
@@ -863,8 +857,9 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     prevGridRef.current = state.grid;
   }, [state.grid]);
 
-  // Observe on completed reveal + schedule opponent claim decision.
   useEffect(() => {
+    if (!memoryRef.current) return;
+    if (schedulerBot < 0) return;
     const prev = prevPeekingRef.current;
     prevPeekingRef.current = state.peekingCard;
     if (prev === null || state.peekingCard !== null) return;
@@ -872,11 +867,8 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     memoryRef.current.decayAll();
     if (card) memoryRef.current.observe(prev, card);
 
-    if (
-      state.phase !== "FLIPPING" ||
-      state.inFlight // don't schedule while a claim is already resolving
-    ) return;
-    const excluded = new Set<number>(state.wrongBy[1]);
+    if (state.phase !== "FLIPPING" || state.inFlight) return;
+    const excluded = new Set<number>(state.wrongBy[schedulerBot]);
     state.grid.forEach((c, i) => { if (c === null) excluded.add(i); });
     const best = memoryRef.current.bestPair(state.rule, excluded);
     if (!best || best.confidence < OPPONENT_TUNING.confidenceThreshold) return;
@@ -895,9 +887,8 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       oppClaimTimerRef.current = null;
       opponentClaim(best.a, best.b);
     }, delay);
-  }, [state.peekingCard, state.grid, state.phase, state.inFlight, state.wrongBy, state.rule, opponentClaim]);
+  }, [state.peekingCard, state.grid, state.phase, state.inFlight, state.wrongBy, state.rule, opponentClaim, schedulerBot]);
 
-  // Cancel a pending opponent claim decision on round/phase change.
   useEffect(() => {
     if (oppClaimTimerRef.current) {
       clearTimeout(oppClaimTimerRef.current);
@@ -905,11 +896,10 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     }
   }, [state.roundNum, state.phase]);
 
-  // ------------------------------------------------------------------
-  // Opponent Last Call scanner
-  // ------------------------------------------------------------------
+  // Bot Last Call scanner
   useEffect(() => {
     if (state.phase !== "LAST_CALL") return;
+    if (schedulerBot < 0) return;
     const delay = 1200 + Math.random() * 1600;
     const t = setTimeout(() => {
       const s = stateRef.current;
@@ -927,25 +917,22 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       }
       if (pairs.length === 0) return;
       const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
-      dispatch({ type: "LAST_CALL_CLAIM", by: 1, a, b });
+      dispatch({ type: "LAST_CALL_CLAIM", by: schedulerBot, a, b });
     }, delay);
     return () => clearTimeout(t);
-  }, [state.phase, state.grid, state.scores]);
+  }, [state.phase, state.grid, state.scores, schedulerBot]);
 
-  // ------------------------------------------------------------------
-  // Derived return surface (byte-identical to the previous shape).
-  // ------------------------------------------------------------------
   const opponentClaimingValue = useMemo(
     () =>
-      state.inFlight?.kind === "claim" && state.inFlight.by === 1
+      state.inFlight?.kind === "claim" && botSeatSet.has(state.inFlight.by)
         ? { indices: [state.inFlight.a, state.inFlight.b] as [number, number] }
         : null,
-    [state.inFlight]
+    [state.inFlight, botSeatSet]
   );
 
   const wrongCardsUnion = useMemo(() => {
-    const u = new Set<number>(state.wrongBy[0]);
-    state.wrongBy[1].forEach((i) => u.add(i));
+    const u = new Set<number>();
+    for (const s of state.wrongBy) s.forEach((i) => u.add(i));
     return u;
   }, [state.wrongBy]);
 
@@ -956,7 +943,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     dieValues: state.dieValues,
     scores: state.scores,
     roundNum: state.roundNum,
-    players: PLAYERS as unknown as string[],
+    players: state.names,
     rollerIndex: state.roller,
     flipperIndex: state.flipper,
     skipNextFlip: state.skip,
@@ -964,7 +951,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     claimMode: state.phase === "CLAIM_SELECTING",
     selectedCards: state.selectedCards,
     wrongCards: wrongCardsUnion,
-    wrongByMe: state.wrongBy[0],
+    wrongByMe: state.wrongBy[humanSeat] ?? new Set<number>(),
     matchedCards: state.matchedCards,
     gameOver: state.phase === "GAME_OVER",
     message: state.message,
