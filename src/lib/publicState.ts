@@ -116,5 +116,6 @@ export function toPublicState(
     seatMap: seatMap.slice(),
     claimWindow,
     gameId,
+    disconnectedSeats: disconnectedSeats.slice(),
   };
 }
