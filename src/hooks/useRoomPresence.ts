@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +18,8 @@ interface PresenceMeta {
   is_host: boolean;
 }
 
+export type BroadcastListener = (msg: { payload: unknown }) => void;
+
 /**
  * Subscribes to Supabase Realtime PRESENCE for a room, and exposes the
  * channel via a ref so callers can piggyback broadcast on it.
@@ -25,6 +27,11 @@ interface PresenceMeta {
  * `isHost` comes from the client's own rooms RPC result and is included in
  * this client's presence meta so every OTHER client can identify the host
  * by data, not by guessing at seat 0.
+ *
+ * Broadcast fan-out: Supabase Realtime requires broadcast `.on(...)`
+ * handlers to be registered BEFORE `.subscribe()`. We register a single
+ * broadcast handler here (pre-subscribe) that fans out to any listeners
+ * registered via `onBroadcast`.
  */
 export function useRoomPresence(
   roomId: string | null,
@@ -35,11 +42,13 @@ export function useRoomPresence(
   participants: PresenceParticipant[];
   status: PresenceStatus;
   channelRef: React.MutableRefObject<RealtimeChannel | null>;
+  onBroadcast: (listener: BroadcastListener) => () => void;
 } {
   const [participants, setParticipants] = useState<PresenceParticipant[]>([]);
   const [status, setStatus] = useState<PresenceStatus>("connecting");
   const joinedAtRef = useRef<number>(Date.now());
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const listenersRef = useRef<Set<BroadcastListener>>(new Set());
 
   const displayNameRef = useRef(displayName);
   displayNameRef.current = displayName;
@@ -97,6 +106,11 @@ export function useRoomPresence(
       .on("presence", { event: "sync" }, syncParticipants)
       .on("presence", { event: "join" }, syncParticipants)
       .on("presence", { event: "leave" }, syncParticipants)
+      .on("broadcast", { event: "msg" }, (msg: { payload?: unknown }) => {
+        listenersRef.current.forEach((cb) => {
+          try { cb({ payload: msg.payload }); } catch { /* isolate */ }
+        });
+      })
       .subscribe(async (subStatus) => {
         if (subStatus === "SUBSCRIBED") {
           try {
@@ -146,8 +160,13 @@ export function useRoomPresence(
       });
   }, [displayName, isHost, roomId, status, visitorId]);
 
+  const onBroadcast = useCallback((listener: BroadcastListener) => {
+    listenersRef.current.add(listener);
+    return () => { listenersRef.current.delete(listener); };
+  }, []);
+
   return useMemo(
-    () => ({ participants, status, channelRef }),
-    [participants, status],
+    () => ({ participants, status, channelRef, onBroadcast }),
+    [participants, status, onBroadcast],
   );
 }

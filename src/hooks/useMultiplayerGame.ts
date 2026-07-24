@@ -37,15 +37,18 @@ const BROADCAST_THROTTLE_MS = 70;
 
 // ---------- HOST ----------
 
+export type BroadcastSubscribe = (listener: (msg: { payload: unknown }) => void) => () => void;
+
 export function useMultiplayerHost(opts: {
   channel: RealtimeChannel | null;
+  onBroadcast: BroadcastSubscribe;
   seatMap: SeatMapEntry[];
   hostVisitorId: string;
   enabled: boolean;
   gameId: string;
   disconnectedSeats: number[];
 }) {
-  const { channel, seatMap, hostVisitorId, enabled, gameId, disconnectedSeats } = opts;
+  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, disconnectedSeats } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
@@ -178,8 +181,8 @@ export function useMultiplayerHost(opts: {
   // Receive intents and inject as reducer actions.
   useEffect(() => {
     if (!enabled || !channel) return;
-    const handler = (msg: { payload: Envelope }) => {
-      const env = msg.payload;
+    const handler = (msg: { payload: unknown }) => {
+      const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION) return;
       if (env.type === "intent") {
         const intent: IntentPayload = env.payload;
@@ -190,8 +193,8 @@ export function useMultiplayerHost(opts: {
         handleHostIntent(g.dispatch, g.doRollDice, intent.seat, intent.action);
       }
     };
-    channel.on("broadcast", { event: "msg" }, handler);
-  }, [enabled, channel, g.dispatch, g.doRollDice, hostVisitorId]);
+    return onBroadcast(handler);
+  }, [enabled, channel, onBroadcast, g.dispatch, g.doRollDice, hostVisitorId]);
 
   // Listen for authoritative claim grants from the arbiter edge function.
   // The host is the ONLY dispatcher of PLAYER_ENTER_CLAIM — even the host's
@@ -199,11 +202,10 @@ export function useMultiplayerHost(opts: {
   const grantedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!enabled || !channel) return;
-    const handler = (msg: { payload: Envelope }) => {
-      const env = msg.payload;
+    const handler = (msg: { payload: unknown }) => {
+      const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "claim_grant") return;
       const grant = (env as ClaimGrantEnvelope).payload;
-      // Only act on the current window — stale grants are ignored.
       if (grant.claim_window !== claimWindowRef.current) return;
       const dedupeKey = `${grant.claim_window}:${grant.seat}`;
       if (grantedRef.current.has(dedupeKey)) return;
@@ -211,15 +213,13 @@ export function useMultiplayerHost(opts: {
       const phase = latestStateRef.current.phase;
       if (phase === "AWAITING_ROLL") {
         g.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: grant.seat });
-        // Kick the dice animation so the round proceeds into FLIPPING.
         void g.doRollDice();
       } else if (phase === "FLIPPING") {
         g.dispatch({ type: "PLAYER_ENTER_CLAIM", by: grant.seat });
       }
-      // Any other phase (CLAIM_SELECTING, LAST_CALL, GAME_OVER) — ignore.
     };
-    channel.on("broadcast", { event: "msg" }, handler);
-  }, [enabled, channel, g.dispatch, g.doRollDice]);
+    return onBroadcast(handler);
+  }, [enabled, channel, onBroadcast, g.dispatch, g.doRollDice]);
 
   // ---- transient event emission ----
   // The host observes reducer transitions and emits transient events on the
@@ -296,13 +296,17 @@ function handleHostIntent(
 // Shared: subscribes to transient events on the channel, deduped by id.
 // Older events fall out after LIFETIME_MS so a stuck event never persists.
 const EVENT_LIFETIME_MS = 1400;
-function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): TransientEvent[] {
+function useTransientEvents(
+  channel: RealtimeChannel | null,
+  onBroadcast: BroadcastSubscribe,
+  enabled: boolean,
+): TransientEvent[] {
   const [events, setEvents] = useState<TransientEvent[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!enabled || !channel) return;
-    const handler = (msg: { payload: Envelope }) => {
-      const env = msg.payload;
+    const handler = (msg: { payload: unknown }) => {
+      const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "event") return;
       const ev = (env as EventEnvelope).payload;
       if (seenRef.current.has(ev.id)) return;
@@ -312,8 +316,8 @@ function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): 
         setEvents((prev) => prev.filter((e) => e.id !== ev.id));
       }, EVENT_LIFETIME_MS);
     };
-    channel.on("broadcast", { event: "msg" }, handler);
-  }, [channel, enabled]);
+    return onBroadcast(handler);
+  }, [channel, onBroadcast, enabled]);
   return events;
 }
 
@@ -321,27 +325,28 @@ function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): 
 
 export function useMultiplayerJoiner(opts: {
   channel: RealtimeChannel | null;
+  onBroadcast: BroadcastSubscribe;
   mySeat: number | null;
   visitorId: string;
   enabled: boolean;
 }) {
-  const { channel, mySeat, visitorId, enabled } = opts;
+  const { channel, onBroadcast, mySeat, visitorId, enabled } = opts;
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
-  const events = useTransientEvents(channel, enabled);
+  const events = useTransientEvents(channel, onBroadcast, enabled);
 
   useEffect(() => {
     if (!enabled || !channel) return;
-    const handler = (msg: { payload: Envelope }) => {
-      const env = msg.payload;
+    const handler = (msg: { payload: unknown }) => {
+      const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "state") return;
       if (env.seq <= lastSeqRef.current) return;
       lastSeqRef.current = env.seq;
       setPublicState(env.payload);
     };
-    channel.on("broadcast", { event: "msg" }, handler);
-  }, [enabled, channel]);
+    return onBroadcast(handler);
+  }, [enabled, channel, onBroadcast]);
 
   const sendIntent = useCallback(
     (action: IntentAction) => {

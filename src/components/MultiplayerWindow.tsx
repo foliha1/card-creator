@@ -64,7 +64,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
   const isHostView = view.kind === "host";
   const displayName = getDisplayName();
-  const { participants, status: presenceStatus, channelRef } = useRoomPresence(
+  const { participants, status: presenceStatus, channelRef, onBroadcast } = useRoomPresence(
     activeRoom ? activeRoom.id : null,
     visitorId,
     displayName,
@@ -89,13 +89,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const gameEnabled = isHostView && frozenSeats !== null;
   const host = useMultiplayerHost({
     channel: channelRef.current,
+    onBroadcast,
     seatMap: frozenSeats ?? [],
     hostVisitorId: visitorId,
     enabled: gameEnabled,
     gameId,
     disconnectedSeats,
   });
-  const hostEvents = useTransientEvents(channelRef.current, gameEnabled);
+  const hostEvents = useTransientEvents(channelRef.current, onBroadcast, gameEnabled);
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
@@ -122,6 +123,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const joinerEnabled = view.kind === "joiner" && !!channelRef.current;
   const joiner = useMultiplayerJoiner({
     channel: channelRef.current,
+    onBroadcast,
     mySeat: null, // resolved from seatMap after first state msg
     visitorId,
     enabled: joinerEnabled,
