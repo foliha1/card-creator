@@ -204,6 +204,36 @@ export function useMultiplayerHost(opts: {
     channel.on("broadcast", { event: "msg" }, handler);
   }, [enabled, channel, g.dispatch, g.doRollDice]);
 
+  // ---- transient event emission ----
+  // The host observes reducer transitions and emits transient events on the
+  // wire. GREAT_MATCH fires on the tick a successful claim resolves;
+  // NOPE fires on the tick a wrong claim resolves. Events carry a unique id
+  // so receivers can dedupe (an event applied twice must not animate twice).
+  const eventSeqRef = useRef(0);
+  const prevScoresRef = useRef<number[]>(g.state.scores);
+  const prevWrongCountRef = useRef<number[]>(g.state.wrongBy.map((s) => s.size));
+  useEffect(() => {
+    if (!enabled || !channel) return;
+    const prevScores = prevScoresRef.current;
+    const prevWrong = prevWrongCountRef.current;
+    const nextWrong = g.state.wrongBy.map((s) => s.size);
+    const send = (kind: TransientEventKind, seat: number) => {
+      eventSeqRef.current += 1;
+      const ev: TransientEvent = {
+        id: `${gameIdRef.current}:${eventSeqRef.current}:${kind}:${seat}`,
+        kind, seat, at: Date.now(),
+      };
+      const env: EventEnvelope = { v: PROTOCOL_VERSION, type: "event", seq: eventSeqRef.current, payload: ev };
+      channel.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
+    };
+    for (let i = 0; i < g.state.scores.length; i++) {
+      if ((prevScores[i] ?? 0) < (g.state.scores[i] ?? 0)) send("GREAT_MATCH", i);
+      if ((prevWrong[i] ?? 0) < (nextWrong[i] ?? 0)) send("NOPE", i);
+    }
+    prevScoresRef.current = g.state.scores.slice();
+    prevWrongCountRef.current = nextWrong;
+  }, [enabled, channel, g.state.scores, g.state.wrongBy]);
+
   return g;
 }
 
