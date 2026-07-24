@@ -147,6 +147,8 @@ export type Action =
   | { type: "CLAIM_START"; by: number; a: number; b: number; token: number }
   | { type: "CLAIM_RESOLVE"; token: number }
   | { type: "LAST_CALL_CLAIM"; by: number; a: number; b: number }
+  | { type: "CANCEL_CLAIM"; by: number }
+  | { type: "MARK_DISCONNECTED"; seats: number[] }
   | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
   | { type: "REMOVE_MATCHED" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
