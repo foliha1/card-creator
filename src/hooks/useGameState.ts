@@ -217,7 +217,7 @@ function startRound(s: State, winnerIndex: number | null): State {
     phase: "AWAITING_ROLL",
     roller: nextRoller,
     flipper: nextRoller,
-    wrong: new Set(),
+    wrongBy: [new Set(), new Set()],
     skip: [false, false],
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
@@ -254,7 +254,7 @@ function cycleAdvance(s: State, addWho: number): State {
         ...s,
         phase: "LAST_CALL",
         allFaceUp: true,
-        wrong: new Set(),
+        wrongBy: [new Set(), new Set()],
         skip: [false, false],
         dieValues: [value],
         rule: [value],
@@ -353,7 +353,7 @@ function reducer(state: State, action: Action): State {
     case "HUMAN_SELECT_CARD": {
       if (state.phase !== "CLAIM_SELECTING") return state;
       const idx = action.idx;
-      if (state.wrong.has(idx)) return state;
+      if (state.wrongBy[0].has(idx)) return state;
       if (state.selectedCards.includes(idx)) return state;
       if (state.grid[idx] === null) return state;
       if (state.selectedCards.length >= 2) return state;
@@ -390,16 +390,17 @@ function reducer(state: State, action: Action): State {
         // Winner rolls: human becomes next Roller and Flipper.
         return startRound(post, 0);
       }
-      // Wrong claim: lock cards, skip penalty, resume cycle.
-      const wrong = new Set(state.wrong);
-      wrong.add(ia);
-      wrong.add(ib);
+      // Wrong claim: expose cards to opponent (they can be claimed by them),
+      // block this player from re-picking them, skip penalty, resume cycle.
+      const wrongByHuman = new Set(state.wrongBy[0]);
+      wrongByHuman.add(ia);
+      wrongByHuman.add(ib);
       const skip = [...state.skip];
       skip[0] = true;
       const post: State = {
         ...state,
         phase: "FLIPPING",
-        wrong,
+        wrongBy: [wrongByHuman, state.wrongBy[1]],
         skip,
         selectedCards: [],
         matchedCards: new Set(),
@@ -416,7 +417,7 @@ function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.flipper !== action.by) return state;
       if (state.inFlight) return state;
-      if (state.wrong.has(action.idx)) return state;
+      if (state.wrongBy[action.by].has(action.idx)) return state;
       if (state.grid[action.idx] === null) return state;
       return {
         ...state,
@@ -460,7 +461,7 @@ function reducer(state: State, action: Action): State {
       if (state.phase === "CLAIM_SELECTING") return state;
       if (action.by !== 1) return state; // human uses HUMAN_RESOLVE_MATCH path
       if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
-      if (state.wrong.has(action.a) || state.wrong.has(action.b)) return state;
+      if (state.wrongBy[action.by].has(action.a) || state.wrongBy[action.by].has(action.b)) return state;
       // Record claimant's flip opportunity for cycle accounting.
       const flipped = new Set(state.flippedThisCycle);
       flipped.add(action.by);
@@ -508,16 +509,18 @@ function reducer(state: State, action: Action): State {
         };
         return startRound(post, by);
       }
-      // Wrong opponent claim
-      const wrong = new Set(state.wrong);
-      wrong.add(a);
-      wrong.add(b);
+      // Wrong opponent claim — expose cards to the other player, penalize claimant.
+      const wrongForBy = new Set(state.wrongBy[by]);
+      wrongForBy.add(a);
+      wrongForBy.add(b);
+      const nextWrongBy: [Set<number>, Set<number>] =
+        by === 0 ? [wrongForBy, state.wrongBy[1]] : [state.wrongBy[0], wrongForBy];
       const skip = [...state.skip];
       skip[by] = true;
       const post: State = {
         ...state,
         phase: "FLIPPING",
-        wrong,
+        wrongBy: nextWrongBy,
         skip,
         inFlight: null,
         message:
@@ -686,7 +689,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (s.phase !== "FLIPPING") return;
     if (s.flipper !== 0) return;
     if (s.inFlight) return;
-    if (s.wrong.has(index)) return;
+    if (s.wrongBy[0].has(index)) return;
     if (s.grid[index] === null) return;
     const token = nextToken();
     dispatch({ type: "FLIP_START", by: 0, idx: index, token });
@@ -723,7 +726,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       const s = stateRef.current;
       if (s.phase !== "FLIPPING" || s.flipper !== 1 || s.inFlight) return;
       const candidates = s.grid
-        .map((c, i) => (c !== null && !s.wrong.has(i) ? i : -1))
+        .map((c, i) => (c !== null && !s.wrongBy[1].has(i) ? i : -1))
         .filter((i) => i !== -1);
       if (candidates.length === 0) {
         // Nothing to flip — count this as the opponent's flip opportunity.
@@ -786,7 +789,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     if (s.phase !== "FLIPPING") return;
     if (a === b) return;
     if (s.grid[a] === null || s.grid[b] === null) return;
-    if (s.wrong.has(a) || s.wrong.has(b)) return;
+    if (s.wrongBy[1].has(a) || s.wrongBy[1].has(b)) return;
     const token = nextToken();
     dispatch({ type: "CLAIM_START", by: 1, a, b, token });
     if (oppClaimResolveRef.current) clearTimeout(oppClaimResolveRef.current);
@@ -873,7 +876,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       state.phase !== "FLIPPING" ||
       state.inFlight // don't schedule while a claim is already resolving
     ) return;
-    const excluded = new Set<number>(state.wrong);
+    const excluded = new Set<number>(state.wrongBy[1]);
     state.grid.forEach((c, i) => { if (c === null) excluded.add(i); });
     const best = memoryRef.current.bestPair(state.rule, excluded);
     if (!best || best.confidence < OPPONENT_TUNING.confidenceThreshold) return;
@@ -892,7 +895,7 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
       oppClaimTimerRef.current = null;
       opponentClaim(best.a, best.b);
     }, delay);
-  }, [state.peekingCard, state.grid, state.phase, state.inFlight, state.wrong, state.rule, opponentClaim]);
+  }, [state.peekingCard, state.grid, state.phase, state.inFlight, state.wrongBy, state.rule, opponentClaim]);
 
   // Cancel a pending opponent claim decision on round/phase change.
   useEffect(() => {
@@ -954,7 +957,8 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     peekingCard: state.peekingCard,
     claimMode: state.phase === "CLAIM_SELECTING",
     selectedCards: state.selectedCards,
-    wrongCards: state.wrong,
+    wrongCards: wrongCardsUnion,
+    wrongByMe: state.wrongBy[0],
     matchedCards: state.matchedCards,
     gameOver: state.phase === "GAME_OVER",
     message: state.message,
