@@ -83,6 +83,7 @@ export function toPublicState(
   const exposed = new Set<number>();
   if (state.peekingCard !== null) exposed.add(state.peekingCard);
   state.matchedCards.forEach((i) => exposed.add(i));
+  state.selectedCards.forEach((i) => exposed.add(i));
   for (const s of state.wrongBy) s.forEach((i) => exposed.add(i));
 
   const grid: PublicSlot[] = state.grid.map((c, i) => {
