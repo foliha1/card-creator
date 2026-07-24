@@ -123,6 +123,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const joinerEnabled = view.kind === "joiner" && !!channelRef.current;
   const joiner = useMultiplayerJoiner({
     channel: channelRef.current,
+    onBroadcast,
     mySeat: null, // resolved from seatMap after first state msg
     visitorId,
     enabled: joinerEnabled,
