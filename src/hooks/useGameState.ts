@@ -625,15 +625,17 @@ export function reducer(state: State, action: Action): State {
     case "SET_MESSAGE":
       return { ...state, message: action.message, messageType: action.messageType };
 
-    // Cancel-claim path for multiplayer. Resets claim state to FLIPPING with
-    // NO skip penalty. claimBy transitions non-null → null, which the host
-    // hook watches to bump claimWindow (so the consumed claim_locks row is
-    // rotated past). Preserves flippedThisCycle: the flip that led to the
-    // claim already counted. Cycle-advances so play continues.
+    // Cancel-claim: a claim INTERRUPTS an in-progress FLIPPING turn; per the
+    // rulebook, cancelling returns control to whoever was flipping so they
+    // finish their turn. flipper stays put. No skip penalty; cancelling is
+    // penalty-free. flippedThisCycle is untouched (the interrupted flip did
+    // not complete). claimBy transitions non-null → null, which the host
+    // hook watches to bump claimWindow so the consumed claim_locks row is
+    // rotated past.
     case "CANCEL_CLAIM": {
       if (state.phase !== "CLAIM_SELECTING") return state;
       if (state.claimBy !== action.by) return state;
-      const post: State = {
+      return {
         ...state,
         phase: "FLIPPING",
         selectedCards: [],
@@ -644,19 +646,44 @@ export function reducer(state: State, action: Action): State {
         message: `${state.names[action.by]} — cancelled.`,
         messageType: "info",
       };
-      return cycleAdvance(post, action.by);
     }
 
-    // Piggyback on the existing skip machinery for disconnected seats:
-    // marking skip[seat]=true makes SKIP_TICK auto-advance past that seat
-    // when it becomes flipper. No new game-rule surface.
-    case "MARK_DISCONNECTED": {
-      if (!action.seats.length) return state;
-      const skip = state.skip.slice();
+    // SET_DISCONNECTED uses REPLACE semantics — the payload is the complete
+    // current set of disconnected seats, not a delta. Idempotent, and gives
+    // reconnection for free (a seat missing from `seats` becomes connected).
+    // If the current roller is now disconnected while AWAITING_ROLL, reassign
+    // the roll to the next connected seat so the game never stalls waiting
+    // for a roll that will never come.
+    case "SET_DISCONNECTED": {
+      const disconnected = Array(state.seatCount).fill(false) as boolean[];
       for (const s of action.seats) {
-        if (s >= 0 && s < skip.length) skip[s] = true;
+        if (s >= 0 && s < state.seatCount) disconnected[s] = true;
       }
-      return { ...state, skip };
+      let out: State = { ...state, disconnected };
+      if (
+        out.phase === "AWAITING_ROLL" &&
+        disconnected[out.roller] &&
+        connectedCount(out.seatCount, disconnected) > 0
+      ) {
+        const nr = nextConnected(out.roller, out.seatCount, disconnected);
+        out = { ...out, roller: nr, flipper: nr };
+      }
+      return out;
+    }
+
+    // Host policy: when the table empties (fewer than 2 connected seats),
+    // cleanly end the game with a clear message rather than leaving a lone
+    // player staring at a live-looking board. Not a normal completion.
+    case "END_GAME_TABLE_EMPTY": {
+      return {
+        ...state,
+        phase: "GAME_OVER",
+        message: "Game ended — not enough players remain.",
+        messageType: "warning",
+        inFlight: null,
+        peekingCard: null,
+        claimBy: null,
+      };
     }
 
     default:
