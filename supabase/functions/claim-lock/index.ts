@@ -16,6 +16,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 interface Body {
   room_id: string;
+  game_id: string;
   claim_window: number;
   player_seat: number;
   visitor_id: string;
@@ -40,9 +41,11 @@ Deno.serve(async (req) => {
   } catch {
     return bad(400, "invalid_json");
   }
-  const { room_id, claim_window, player_seat, visitor_id } = body ?? {};
+  const { room_id, game_id, claim_window, player_seat, visitor_id } = body ?? {};
   if (
     typeof room_id !== "string" ||
+    typeof game_id !== "string" ||
+    !game_id ||
     typeof claim_window !== "number" ||
     !Number.isFinite(claim_window) ||
     claim_window < 0 ||
@@ -61,9 +64,11 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
-  // Attempt to claim the window.
+  // Attempt to claim the window. UNIQUE (room_id, game_id, claim_window) is
+  // the fairness mechanism — first insert wins.
   const { error: insertErr } = await supabase.from("claim_locks").insert({
     room_id,
+    game_id,
     claim_window,
     player_seat,
   });
