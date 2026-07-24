@@ -53,7 +53,17 @@ export interface IntentEnvelope {
   payload: IntentPayload;
 }
 
-export type Envelope = StateEnvelope | IntentEnvelope;
+// Emitted server-side by the claim-lock edge function on a successful lock.
+// The host listens and dispatches PLAYER_ENTER_CLAIM for the granted seat.
+// Joiners can ignore it — they see the winner via the next state broadcast.
+export interface ClaimGrantEnvelope {
+  v: number;
+  type: "claim_grant";
+  seq: number;
+  payload: { claim_window: number; seat: number; visitor_id: string };
+}
+
+export type Envelope = StateEnvelope | IntentEnvelope | ClaimGrantEnvelope;
 
 // Set<number>s inside State do not survive JSON.stringify — they serialize as
 // {}. toPublicState() already flattens Sets to arrays. These helpers exist for
