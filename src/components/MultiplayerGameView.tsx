@@ -184,6 +184,7 @@ const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent
               setClaimBusy(true);
               const result = await callClaimLock({
                 room_id: roomId,
+                game_id: s.gameId,
                 claim_window: s.claimWindow,
                 player_seat: mySeat,
                 visitor_id: visitorId,

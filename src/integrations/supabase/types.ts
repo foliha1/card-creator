@@ -45,6 +45,7 @@ export type Database = {
         Row: {
           claim_window: number
           created_at: string
+          game_id: string
           id: string
           player_seat: number
           room_id: string
@@ -52,6 +53,7 @@ export type Database = {
         Insert: {
           claim_window: number
           created_at?: string
+          game_id: string
           id?: string
           player_seat: number
           room_id: string
@@ -59,6 +61,7 @@ export type Database = {
         Update: {
           claim_window?: number
           created_at?: string
+          game_id?: string
           id?: string
           player_seat?: number
           room_id?: string

@@ -39,8 +39,9 @@ export function useMultiplayerHost(opts: {
   seatMap: SeatMapEntry[];
   hostVisitorId: string;
   enabled: boolean;
+  gameId: string;
 }) {
-  const { channel, seatMap, hostVisitorId, enabled } = opts;
+  const { channel, seatMap, hostVisitorId, enabled, gameId } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
@@ -74,6 +75,17 @@ export function useMultiplayerHost(opts: {
   const lastSentAtRef = useRef(0);
   const channelRef = useRef<RealtimeChannel | null>(null);
   channelRef.current = channel;
+  const gameIdRef = useRef(gameId);
+  gameIdRef.current = gameId;
+
+  // Reset claim window + grant dedupe whenever the game id changes so a new
+  // game in the same room starts at claim_window 0 with an unused (room,game)
+  // scope, and stale grants from prior games are ignored.
+  const prevGameIdRef = useRef(gameId);
+  if (prevGameIdRef.current !== gameId) {
+    prevGameIdRef.current = gameId;
+    claimWindowRef.current = 0;
+  }
 
   const doSend = useCallback(() => {
     const ch = channelRef.current;
@@ -83,7 +95,7 @@ export function useMultiplayerHost(opts: {
       v: PROTOCOL_VERSION,
       type: "state",
       seq: seqRef.current,
-      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current),
+      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current, gameIdRef.current),
     };
     lastSentAtRef.current = Date.now();
     ch.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});

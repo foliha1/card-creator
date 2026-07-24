@@ -56,6 +56,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Game-started state — seat freeze lives here on the HOST. Joiners learn
   // seats from the wire via PublicState.seatMap.
   const [frozenSeats, setFrozenSeats] = useState<SeatMapEntry[] | null>(null);
+  // Host-minted game id. Scopes the arbiter's UNIQUE (room, game, window)
+  // constraint so consecutive games in the same room don't collide.
+  const [gameId, setGameId] = useState<string>("");
 
   const visitorId = useMemo(() => getVisitorId(), []);
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
@@ -81,6 +84,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     seatMap: frozenSeats ?? [],
     hostVisitorId: visitorId,
     enabled: gameEnabled,
+    gameId,
   });
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
@@ -88,6 +92,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const hostClaimWindowRef = useRef(0);
   const hostPrevClaimByRef = useRef<number | null>(null);
   const hostPrevRoundRef = useRef<number>(host.state.roundNum);
+  const hostPrevGameIdRef = useRef<string>(gameId);
+  if (hostPrevGameIdRef.current !== gameId) {
+    hostPrevGameIdRef.current = gameId;
+    hostClaimWindowRef.current = 0;
+    hostPrevRoundRef.current = host.state.roundNum;
+    hostPrevClaimByRef.current = null;
+  }
   if (host.state.roundNum !== hostPrevRoundRef.current) {
     hostPrevRoundRef.current = host.state.roundNum;
     hostClaimWindowRef.current += 1;
@@ -249,6 +260,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       visitor_id: p.visitor_id,
       display_name: p.display_name,
     }));
+    setGameId(crypto.randomUUID());
     setFrozenSeats(seatMap);
     completedFiredRef.current = false;
     trackEvent("game_started", {
@@ -289,6 +301,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const leaveToIdle = useCallback(() => {
     setCodeInput("");
     setFrozenSeats(null);
+    setGameId("");
     setView({ kind: "idle" });
   }, []);
 
@@ -317,7 +330,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
-    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current);
+    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current, gameId);
     return (
       <MultiplayerGameView
         publicState={publicState}

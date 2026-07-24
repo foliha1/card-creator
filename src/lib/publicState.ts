@@ -59,12 +59,17 @@ export interface PublicState {
   // the claim state REOPENS (after a claim resolves, or when a round ends).
   // The claim-lock edge function keys UNIQUE (room_id, claim_window) on this.
   claimWindow: number;
+  // Host-generated UUID minted at game start. Scopes the arbiter's
+  // UNIQUE (room_id, game_id, claim_window) constraint so a second game in
+  // the same room does not collide with the first game's rows.
+  gameId: string;
 }
 
 export function toPublicState(
   state: State,
   seatMap: Array<{ seat: number; visitor_id: string; display_name: string }>,
   claimWindow: number = 0,
+  gameId: string = "",
 ): PublicState {
   const exposed = new Set<number>();
   if (state.peekingCard !== null) exposed.add(state.peekingCard);
@@ -101,5 +106,6 @@ export function toPublicState(
     wrongBy: state.wrongBy.map((s) => Array.from(s)),
     seatMap: seatMap.slice(),
     claimWindow,
+    gameId,
   };
 }
