@@ -15,10 +15,13 @@ import {
   PROTOCOL_VERSION,
   type ClaimGrantEnvelope,
   type Envelope,
+  type EventEnvelope,
   type IntentAction,
   type IntentEnvelope,
   type IntentPayload,
   type StateEnvelope,
+  type TransientEvent,
+  type TransientEventKind,
 } from "@/lib/multiplayer";
 
 export interface SeatMapEntry {
