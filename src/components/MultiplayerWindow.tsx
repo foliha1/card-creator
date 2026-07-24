@@ -260,6 +260,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       visitor_id: p.visitor_id,
       display_name: p.display_name,
     }));
+    setGameId(crypto.randomUUID());
     setFrozenSeats(seatMap);
     completedFiredRef.current = false;
     trackEvent("game_started", {
