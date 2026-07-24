@@ -477,10 +477,10 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div style={{
       display: "flex", flexDirection: "column", gap: 8,
       padding: 8, height: "100%", boxSizing: "border-box",
-      background: SURFACE, overflow: "auto",
+      background: SURFACE, overflow: "hidden",
     }}>
-      <OpponentRow chips={chips} />
       <RoundBar round={s.roundNum} />
+      <OpponentRow chips={chips} />
 
       {/* Card area */}
       <div style={{
@@ -488,10 +488,12 @@ const MultiplayerGameView: React.FC<Props> = ({
         borderRadius: R_BOX,
         padding: typeof cardAreaPadding === "string" ? cardAreaPadding : cardAreaPadding,
         paddingTop: overlay ? 16 : 12, paddingBottom: overlay ? 16 : 12,
-        boxSizing: "border-box",
+        boxSizing: "border-box", flex: "1 1 auto", minHeight: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
+          width: "100%", maxHeight: "100%",
         }}>
           {s.grid.map((slot, i) => {
             if (!slot.occupied) {
