@@ -86,6 +86,11 @@ export function toPublicState(
   state.selectedCards.forEach((i) => exposed.add(i));
   for (const s of state.wrongBy) s.forEach((i) => exposed.add(i));
 
+  // DEBUG
+  if (typeof window !== "undefined" && (window as any).__debugPublicState) {
+    console.log("[toPublicState] peekingCard=", state.peekingCard, "exposed=", Array.from(exposed), "grid cards null?", state.grid.map((c) => c === null));
+  }
+
   const grid: PublicSlot[] = state.grid.map((c, i) => {
     if (c === null) return { occupied: false, card: null };
     const show = state.allFaceUp || exposed.has(i);
