@@ -12,13 +12,14 @@ import GameCard from "@/components/GameCard";
 import { AppButton } from "@/components/ui/AppButton";
 import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY, TEXT, textStyle } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
-import type { IntentAction } from "@/lib/multiplayer";
+import type { IntentAction, TransientEvent } from "@/lib/multiplayer";
 import type { Card } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 
 interface Props {
   publicState: PublicState;
   mySeat: number | null; // null = spectator
+  events?: TransientEvent[];
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
@@ -27,7 +28,8 @@ interface Props {
   visitorId: string;
 }
 
-const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent, onLeave, mobile = false, roomId, visitorId }) => {
+const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, events, onIntent, onLeave, mobile = false, roomId, visitorId }) => {
+  void events; // Chip-row consumer wires this in a follow-up; keep the transient event surface here so the wire is verified.
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   const canClaim =
