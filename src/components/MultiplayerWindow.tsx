@@ -407,10 +407,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       <div style={containerStyle}>
         <div>
           <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
-            What should we call you?
+            Pick a nickname
           </div>
           <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, marginTop: SPACE[3] }}>
-            {pendingLabel}. Up to 12 characters.
+            {pendingLabel}. Up to 8 characters so it fits on the chip.
           </div>
         </div>
 
@@ -429,12 +429,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
         <input
           value={nameInput}
-          onChange={(e) => setNameInput(e.target.value.slice(0, 12))}
+          onChange={(e) => setNameInput(e.target.value.slice(0, 8))}
           onKeyDown={(e) => { if (e.key === "Enter") handleConfirmName(); }}
-          placeholder="Your name"
-          maxLength={12}
+          placeholder="Nickname"
+          maxLength={8}
           autoFocus
-          aria-label="Display name"
+          aria-label="Nickname"
           style={{ ...inputStyle, textTransform: "none", letterSpacing: 0 }}
         />
 
