@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
       .from("claim_locks")
       .select("player_seat")
       .eq("room_id", room_id)
+      .eq("game_id", game_id)
       .eq("claim_window", claim_window)
       .maybeSingle();
     if (selErr || !existing) {
