@@ -943,6 +943,12 @@ export function useGameState(gridSize: "3x2" | "3x3" = "3x2") {
     [state.inFlight]
   );
 
+  const wrongCardsUnion = useMemo(() => {
+    const u = new Set<number>(state.wrongBy[0]);
+    state.wrongBy[1].forEach((i) => u.add(i));
+    return u;
+  }, [state.wrongBy]);
+
   return {
     deck: state.deck,
     grid: state.grid,
