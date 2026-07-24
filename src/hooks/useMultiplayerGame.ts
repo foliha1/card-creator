@@ -84,7 +84,7 @@ export function useMultiplayerHost(opts: {
       v: PROTOCOL_VERSION,
       type: "state",
       seq: seqRef.current,
-      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current),
+      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current, gameId),
     };
     lastSentAtRef.current = Date.now();
     ch.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
