@@ -176,18 +176,29 @@ const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent
         {canClaim && !inClaimMode && !inLastCall && s.phase !== "GAME_OVER" && (
           <AppButton
             variant="primary"
-            tone={s.claimBy === mySeat ? "orange" : "red"}
+            tone={tooSlowAt !== null ? "ink" : "red"}
             size="md"
-            onClick={() => {
-              if (mySeat === null) return;
-              if (s.phase === "AWAITING_ROLL") {
-                onIntent({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: mySeat });
-              } else {
-                onIntent({ type: "PLAYER_ENTER_CLAIM", by: mySeat });
+            disabled={claimBusy}
+            onClick={async () => {
+              if (mySeat === null || claimBusy) return;
+              setClaimBusy(true);
+              const result = await callClaimLock({
+                room_id: roomId,
+                claim_window: s.claimWindow,
+                player_seat: mySeat,
+                visitor_id: visitorId,
+              });
+              setClaimBusy(false);
+              if (!result.won) {
+                // Local-only signal. The arbiter's response IS the signal
+                // — no broadcast, no event channel.
+                setTooSlowAt(Date.now());
               }
+              // If won: the host will dispatch PLAYER_ENTER_CLAIM on the
+              // server-side claim_grant broadcast. We just wait for state.
             }}
           >
-            WHOOP!
+            {claimBusy ? "…" : tooSlowAt !== null ? "TOO SLOW!" : "WHOOP!"}
           </AppButton>
         )}
       </div>
