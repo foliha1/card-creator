@@ -63,11 +63,28 @@ export interface ClaimGrantEnvelope {
   payload: { claim_window: number; seat: number; visitor_id: string };
 }
 
-export type Envelope = StateEnvelope | IntentEnvelope | ClaimGrantEnvelope;
+// Transient events (NICE!, Great Match!, NOPE!). Each carries a unique id so
+// clients can dedupe — an event applied twice must not animate twice. Events
+// cannot be derived from a PublicState snapshot; a client that misses one
+// degrades gracefully because the derived state on the next snapshot is
+// self-sufficient. TOO SLOW! is NOT broadcast — the arbiter's `won:false`
+// response is rendered locally by the loser only.
+export type TransientEventKind = "NICE" | "GREAT_MATCH" | "NOPE";
+export interface TransientEvent {
+  id: string;
+  kind: TransientEventKind;
+  seat: number;   // whose chip / grid the event lands on
+  at: number;     // host-issued epoch millis (informational)
+}
+export interface EventEnvelope {
+  v: number;
+  type: "event";
+  seq: number;
+  payload: TransientEvent;
+}
 
-// Set<number>s inside State do not survive JSON.stringify — they serialize as
-// {}. toPublicState() already flattens Sets to arrays. These helpers exist for
-// callers who serialize arbitrary payloads: keep everything JSON-safe.
+export type Envelope = StateEnvelope | IntentEnvelope | ClaimGrantEnvelope | EventEnvelope;
+
 export function jsonSerialize(payload: unknown): string {
   return JSON.stringify(payload);
 }
