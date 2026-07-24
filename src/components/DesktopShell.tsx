@@ -34,7 +34,7 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
   about: { width: 400, height: 580, title: "ABOUT" },
   music: { width: 396, height: 340, title: "MUSIC" },
   theme: { width: 380, height: 150, title: "THEME" },
-  multiplayer: { width: 460, height: 620, title: "MULTIPLAYER" },
+  multiplayer: { width: 440, height: 900, title: "MULTIPLAYER" },
 };
 
 const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", "theme", "multiplayer"];

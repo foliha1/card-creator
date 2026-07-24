@@ -64,12 +64,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
   const isHostView = view.kind === "host";
   const displayName = getDisplayName();
-  const { participants, status: presenceStatus, channelRef, onBroadcast } = useRoomPresence(
+  const { participants, status: presenceStatus, channel, onBroadcast } = useRoomPresence(
     activeRoom ? activeRoom.id : null,
     visitorId,
     displayName,
     isHostView,
   );
+
 
   const hostVisitorId = useMemo(() => {
     if (isHostView) return visitorId;
@@ -88,7 +89,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Host: game controller.
   const gameEnabled = isHostView && frozenSeats !== null;
   const host = useMultiplayerHost({
-    channel: channelRef.current,
+    channel,
     onBroadcast,
     seatMap: frozenSeats ?? [],
     hostVisitorId: visitorId,
@@ -96,7 +97,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     gameId,
     disconnectedSeats,
   });
-  const hostEvents = useTransientEvents(channelRef.current, onBroadcast, gameEnabled);
+  const hostEvents = useTransientEvents(channel, onBroadcast, gameEnabled);
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
@@ -120,14 +121,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   hostPrevClaimByRef.current = host.state.claimBy;
 
   // Joiner: pure receiver.
-  const joinerEnabled = view.kind === "joiner" && !!channelRef.current;
+  const joinerEnabled = view.kind === "joiner" && !!channel;
   const joiner = useMultiplayerJoiner({
-    channel: channelRef.current,
+    channel,
     onBroadcast,
     mySeat: null, // resolved from seatMap after first state msg
     visitorId,
     enabled: joinerEnabled,
   });
+
   const joinerPublicState = joiner.publicState;
   const joinerSeat = useMemo(() => {
     if (!joinerPublicState) return null;
@@ -325,7 +327,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     height: "100%",
     boxSizing: "border-box",
     overflow: "auto",
+    justifyContent: "center",
   };
+
 
   const inputStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,

@@ -41,11 +41,15 @@ export function useRoomPresence(
 ): {
   participants: PresenceParticipant[];
   status: PresenceStatus;
+  channel: RealtimeChannel | null;
   channelRef: React.MutableRefObject<RealtimeChannel | null>;
   onBroadcast: (listener: BroadcastListener) => () => void;
 } {
   const [participants, setParticipants] = useState<PresenceParticipant[]>([]);
   const [status, setStatus] = useState<PresenceStatus>("connecting");
+  // Channel exposed as STATE so consumers re-render when it becomes available.
+  // A ref alone silently strands hooks that gate on `channel != null`.
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const joinedAtRef = useRef<number>(Date.now());
   const channelRef = useRef<RealtimeChannel | null>(null);
   const listenersRef = useRef<Set<BroadcastListener>>(new Set());
@@ -60,22 +64,24 @@ export function useRoomPresence(
       setParticipants([]);
       setStatus("connecting");
       channelRef.current = null;
+      setChannel(null);
       return;
     }
 
     joinedAtRef.current = Date.now();
     setStatus("connecting");
 
-    const channel: RealtimeChannel = supabase.channel(`room:${roomId}`, {
+    const ch: RealtimeChannel = supabase.channel(`room:${roomId}`, {
       config: {
         presence: { key: visitorId },
         broadcast: { self: false, ack: false },
       },
     });
-    channelRef.current = channel;
+    channelRef.current = ch;
+
 
     const syncParticipants = () => {
-      const state = channel.presenceState<PresenceMeta>();
+      const state = ch.presenceState<PresenceMeta>();
       const seen = new Map<string, PresenceParticipant>();
       for (const key of Object.keys(state)) {
         const metas = state[key];
@@ -102,7 +108,7 @@ export function useRoomPresence(
       setParticipants(list);
     };
 
-    channel
+    ch
       .on("presence", { event: "sync" }, syncParticipants)
       .on("presence", { event: "join" }, syncParticipants)
       .on("presence", { event: "leave" }, syncParticipants)
@@ -114,12 +120,13 @@ export function useRoomPresence(
       .subscribe(async (subStatus) => {
         if (subStatus === "SUBSCRIBED") {
           try {
-            await channel.track({
+            await ch.track({
               visitor_id: visitorId,
               display_name: displayNameRef.current,
               joined_at: joinedAtRef.current,
               is_host: isHostRef.current,
             } satisfies PresenceMeta);
+            setChannel(ch);
             setStatus("connected");
           } catch (e) {
             console.warn("[presence] track failed", e);
@@ -134,21 +141,22 @@ export function useRoomPresence(
 
     return () => {
       try {
-        channel.untrack();
+        ch.untrack();
       } catch {
         // ignore
       }
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ch);
       channelRef.current = null;
+      setChannel(null);
     };
   }, [roomId, visitorId]);
 
   // Re-track on display-name or host-flag change while connected.
   useEffect(() => {
     if (!roomId || status !== "connected") return;
-    const channel = channelRef.current;
-    if (!channel) return;
-    channel
+    const ch = channelRef.current;
+    if (!ch) return;
+    ch
       .track({
         visitor_id: visitorId,
         display_name: displayName,
@@ -166,7 +174,8 @@ export function useRoomPresence(
   }, []);
 
   return useMemo(
-    () => ({ participants, status, channelRef, onBroadcast }),
-    [participants, status, onBroadcast],
+    () => ({ participants, status, channel, channelRef, onBroadcast }),
+    [participants, status, channel, onBroadcast],
   );
 }
+
