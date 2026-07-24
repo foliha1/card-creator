@@ -296,13 +296,17 @@ function handleHostIntent(
 // Shared: subscribes to transient events on the channel, deduped by id.
 // Older events fall out after LIFETIME_MS so a stuck event never persists.
 const EVENT_LIFETIME_MS = 1400;
-function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): TransientEvent[] {
+function useTransientEvents(
+  channel: RealtimeChannel | null,
+  onBroadcast: BroadcastSubscribe,
+  enabled: boolean,
+): TransientEvent[] {
   const [events, setEvents] = useState<TransientEvent[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!enabled || !channel) return;
-    const handler = (msg: { payload: Envelope }) => {
-      const env = msg.payload;
+    const handler = (msg: { payload: unknown }) => {
+      const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "event") return;
       const ev = (env as EventEnvelope).payload;
       if (seenRef.current.has(ev.id)) return;
@@ -312,8 +316,8 @@ function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): 
         setEvents((prev) => prev.filter((e) => e.id !== ev.id));
       }, EVENT_LIFETIME_MS);
     };
-    channel.on("broadcast", { event: "msg" }, handler);
-  }, [channel, enabled]);
+    return onBroadcast(handler);
+  }, [channel, onBroadcast, enabled]);
   return events;
 }
 
@@ -321,27 +325,28 @@ function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): 
 
 export function useMultiplayerJoiner(opts: {
   channel: RealtimeChannel | null;
+  onBroadcast: BroadcastSubscribe;
   mySeat: number | null;
   visitorId: string;
   enabled: boolean;
 }) {
-  const { channel, mySeat, visitorId, enabled } = opts;
+  const { channel, onBroadcast, mySeat, visitorId, enabled } = opts;
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
-  const events = useTransientEvents(channel, enabled);
+  const events = useTransientEvents(channel, onBroadcast, enabled);
 
   useEffect(() => {
     if (!enabled || !channel) return;
-    const handler = (msg: { payload: Envelope }) => {
-      const env = msg.payload;
+    const handler = (msg: { payload: unknown }) => {
+      const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "state") return;
       if (env.seq <= lastSeqRef.current) return;
       lastSeqRef.current = env.seq;
       setPublicState(env.payload);
     };
-    channel.on("broadcast", { event: "msg" }, handler);
-  }, [enabled, channel]);
+    return onBroadcast(handler);
+  }, [enabled, channel, onBroadcast]);
 
   const sendIntent = useCallback(
     (action: IntentAction) => {
