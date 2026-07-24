@@ -1,0 +1,99 @@
+// ============================================================================
+// PublicState — the redacted view of the host's reducer State that is safe to
+// broadcast to all clients. The host must NEVER broadcast the raw reducer
+// State: `grid` contains face-down Card objects and `deck` contains the full
+// remaining draw order, both of which would expose hidden information via
+// devtools.
+//
+// A slot in `grid` is emitted as a real Card ONLY when it is legitimately
+// visible to everyone right now:
+//   - currently peeking (state.peekingCard === i)
+//   - a wrong-claim penalty exposure (any wrongBy set contains i)
+//   - matched this tick (state.matchedCards has i)
+//   - Last Call, where all cards are face-up (state.allFaceUp)
+// Any face-down slot is emitted as { occupied: true, card: null }, and empty
+// slots as { occupied: false, card: null }. A client MUST NOT be able to tell
+// "face-down card" from "empty slot" by inspecting the payload contents beyond
+// the explicit `occupied` flag.
+//
+// `deck` is dropped entirely and replaced by `deckCount: number`.
+// ============================================================================
+
+import type { Card } from "@/cardData";
+import type { Phase, State } from "@/hooks/useGameState";
+
+export interface PublicSlot {
+  occupied: boolean;
+  card: Card | null;
+}
+
+export interface PublicState {
+  phase: Phase;
+  seatCount: number;
+  roller: number;
+  flipper: number;
+  scores: number[];
+  rule: string[];
+  dieValues: string[];
+  skip: boolean[];
+  claimBy: number | null;
+  roundNum: number;
+  allFaceUp: boolean;
+  selectedCards: number[];
+  matchedCards: number[]; // Set<number> serialized as array
+  peekingCard: number | null;
+  message: string;
+  messageType: "info" | "success" | "error" | "warning";
+  drawEmpty: boolean;
+  deckCount: number;
+  grid: PublicSlot[];
+  rolling: boolean;
+  // wrongBy union of exposed indices per seat. Faces of these cards are
+  // already visible in `grid` above; the per-seat sets tell clients who owes
+  // which wrong-claim penalty. Serialized as arrays.
+  wrongBy: number[][];
+  // Frozen seat map — host's authoritative visitor_id → seat mapping. Joiners
+  // learn their own seat by looking themselves up here.
+  seatMap: Array<{ seat: number; visitor_id: string; display_name: string }>;
+}
+
+export function toPublicState(
+  state: State,
+  seatMap: Array<{ seat: number; visitor_id: string; display_name: string }>,
+): PublicState {
+  const exposed = new Set<number>();
+  if (state.peekingCard !== null) exposed.add(state.peekingCard);
+  state.matchedCards.forEach((i) => exposed.add(i));
+  for (const s of state.wrongBy) s.forEach((i) => exposed.add(i));
+
+  const grid: PublicSlot[] = state.grid.map((c, i) => {
+    if (c === null) return { occupied: false, card: null };
+    const show = state.allFaceUp || exposed.has(i);
+    return { occupied: true, card: show ? c : null };
+  });
+
+  return {
+    phase: state.phase,
+    seatCount: state.seatCount,
+    roller: state.roller,
+    flipper: state.flipper,
+    scores: state.scores.slice(),
+    rule: state.rule.slice(),
+    dieValues: state.dieValues.slice(),
+    skip: state.skip.slice(),
+    claimBy: state.claimBy,
+    roundNum: state.roundNum,
+    allFaceUp: state.allFaceUp,
+    selectedCards: state.selectedCards.slice(),
+    matchedCards: Array.from(state.matchedCards),
+    peekingCard: state.peekingCard,
+    message: state.message,
+    messageType: state.messageType,
+    drawEmpty: state.drawEmpty,
+    deckCount: state.deck.length,
+    grid,
+    rolling: state.rolling,
+    wrongBy: state.wrongBy.map((s) => Array.from(s)),
+    seatMap: seatMap.slice(),
+  };
+}
