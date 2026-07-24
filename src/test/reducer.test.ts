@@ -263,9 +263,9 @@ describe("FLIP_COMPLETE", () => {
 });
 
 // ===========================================================================
-// HUMAN_ENTER_CLAIM
+// PLAYER_ENTER_CLAIM
 // ===========================================================================
-describe("HUMAN_ENTER_CLAIM", () => {
+describe("PLAYER_ENTER_CLAIM", () => {
   it("enters CLAIM_SELECTING from FLIPPING and records the held flip", () => {
     const s = baseState({
       phase: "FLIPPING",
@@ -273,7 +273,7 @@ describe("HUMAN_ENTER_CLAIM", () => {
       inFlight: { kind: "flip", token: 5, by: 0, idx: 3 },
       peekingCard: 3,
     });
-    const next = reducer(s, { type: "HUMAN_ENTER_CLAIM" });
+    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 });
     expect(next.phase).toBe("CLAIM_SELECTING");
     expect(next.flippedThisCycle.has(0)).toBe(true);
     expect(next.inFlight).toBeNull();
@@ -283,55 +283,55 @@ describe("HUMAN_ENTER_CLAIM", () => {
 
   it("records the flipper into flippedThisCycle when no flip is in flight", () => {
     const s = baseState({ phase: "FLIPPING", flipper: 0 });
-    const next = reducer(s, { type: "HUMAN_ENTER_CLAIM" });
+    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 });
     expect(next.flippedThisCycle.has(0)).toBe(true);
   });
 
   it("is a NO-OP outside FLIPPING", () => {
     const s = baseState({ phase: "AWAITING_ROLL" });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(s);
   });
 });
 
 // ===========================================================================
-// HUMAN_ENTER_CLAIM_DURING_ROLL
+// PLAYER_ENTER_CLAIM_DURING_ROLL
 // ===========================================================================
-describe("HUMAN_ENTER_CLAIM_DURING_ROLL", () => {
+describe("PLAYER_ENTER_CLAIM_DURING_ROLL", () => {
   it("sets claimPending in AWAITING_ROLL when human is roller", () => {
     const s = baseState({ phase: "AWAITING_ROLL", roller: 0 });
-    const next = reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" });
+    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 });
     expect(next.claimPending).toBe(true);
   });
 
   it("is a NO-OP outside AWAITING_ROLL", () => {
     const s = baseState({ phase: "FLIPPING", roller: 0 });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
   });
 
   it("is a NO-OP when human is not the roller", () => {
     const s = baseState({ phase: "AWAITING_ROLL", roller: 1 });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
   });
 
   it("is a NO-OP when already pending", () => {
     const s = baseState({ phase: "AWAITING_ROLL", roller: 0, claimPending: true });
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM_DURING_ROLL" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
   });
 });
 
 // ===========================================================================
-// HUMAN_SELECT_CARD
+// PLAYER_SELECT_CARD
 // ===========================================================================
-describe("HUMAN_SELECT_CARD", () => {
+describe("PLAYER_SELECT_CARD", () => {
   it("appends the index to selectedCards", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [] });
-    const next = reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 });
+    const next = reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 });
     expect(next.selectedCards).toEqual([2]);
   });
 
   it("is a NO-OP outside CLAIM_SELECTING", () => {
     const s = baseState({ phase: "FLIPPING" });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP for a card in the human's wrongBy set", () => {
@@ -339,31 +339,31 @@ describe("HUMAN_SELECT_CARD", () => {
       phase: "CLAIM_SELECTING",
       wrongBy: [new Set([2]), new Set()],
     });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP for a duplicate selection", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [2] });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP for a null grid slot", () => {
     const grid = baseState().grid.slice();
     grid[2] = null;
     const s = baseState({ phase: "CLAIM_SELECTING", grid });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 2 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 2 })).toBe(s);
   });
 
   it("is a NO-OP once two cards are already selected", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [0, 1] });
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 3 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 3 })).toBe(s);
   });
 });
 
 // ===========================================================================
-// HUMAN_RESOLVE_MATCH
+// PLAYER_RESOLVE_MATCH
 // ===========================================================================
-describe("HUMAN_RESOLVE_MATCH", () => {
+describe("PLAYER_RESOLVE_MATCH", () => {
   it("correct match: +2 points, refills slots, winner rolls next round", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
@@ -373,7 +373,7 @@ describe("HUMAN_RESOLVE_MATCH", () => {
       flipper: 1,
       roundNum: 3,
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.scores).toEqual([2, 0]);
     expect(next.phase).toBe("AWAITING_ROLL");
     // Winner rolls
@@ -395,7 +395,7 @@ describe("HUMAN_RESOLVE_MATCH", () => {
       flipper: 0,
       flippedThisCycle: new Set([0]), // human already recorded their flip
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.scores).toEqual([0, 0]);
     expect(next.wrongBy[0].has(1)).toBe(true);
     expect(next.wrongBy[0].has(3)).toBe(true);
@@ -407,12 +407,12 @@ describe("HUMAN_RESOLVE_MATCH", () => {
 
   it("is a NO-OP outside CLAIM_SELECTING", () => {
     const s = baseState({ phase: "FLIPPING", selectedCards: [0, 2] });
-    expect(reducer(s, { type: "HUMAN_RESOLVE_MATCH" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
   });
 
   it("is a NO-OP when fewer than 2 cards are selected", () => {
     const s = baseState({ phase: "CLAIM_SELECTING", selectedCards: [0] });
-    expect(reducer(s, { type: "HUMAN_RESOLVE_MATCH" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
   });
 });
 
@@ -472,7 +472,7 @@ describe("CLAIM_START", () => {
     expect(reducer(s, { type: "CLAIM_START", by: 1, a: 0, b: 2, token: 1 })).toBe(s);
   });
 
-  it("is a NO-OP for by === 0 (humans use HUMAN_RESOLVE_MATCH)", () => {
+  it("is a NO-OP for by === 0 (humans use PLAYER_RESOLVE_MATCH)", () => {
     const s = baseState({ phase: "FLIPPING" });
     expect(reducer(s, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 1 })).toBe(s);
   });
@@ -729,7 +729,7 @@ describe("skip penalty end-to-end", () => {
       flipper: 0,
       flippedThisCycle: new Set([0]),
     });
-    s = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(s.skip[0]).toBe(true);
     // After cycleAdvance, flipper is now opponent (1). Simulate the opponent
     // completing their flip so the cycle rolls back to the human.
@@ -776,7 +776,7 @@ describe("winner rolls (v6.2)", () => {
       roller: 1,
       flipper: 1,
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.roller).toBe(0);
     expect(next.flipper).toBe(0);
   });
@@ -847,7 +847,7 @@ describe("game over terminal", () => {
         null,
       ],
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.phase).toBe("GAME_OVER");
     expect(next.scores).toEqual([2, 0]);
   });
@@ -855,8 +855,8 @@ describe("game over terminal", () => {
   it("further actions after GAME_OVER are ignored where phase-guarded", () => {
     const s = baseState({ phase: "GAME_OVER" });
     expect(reducer(s, { type: "ROLL_START" })).toBe(s);
-    expect(reducer(s, { type: "HUMAN_ENTER_CLAIM" })).toBe(s);
-    expect(reducer(s, { type: "HUMAN_SELECT_CARD", idx: 0 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 0 })).toBe(s);
     expect(reducer(s, { type: "FLIP_START", by: 0, idx: 0, token: 1 })).toBe(s);
     expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
     expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
@@ -871,7 +871,7 @@ describe("scoring", () => {
       rule: ["SHAPE"],
       scores: [4, 6],
     });
-    const next = reducer(s, { type: "HUMAN_RESOLVE_MATCH" });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(next.scores).toEqual([6, 6]);
   });
 
