@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { COLORS, SPACE, BORDER, RADIUS, textStyle, TEXT, FONT_FAMILY } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getVisitorId } from "@/lib/visitor";
+import { getVisitorId, getDisplayName, setDisplayName } from "@/lib/visitor";
 import { trackEvent } from "@/lib/analytics";
+import { useRoomPresence } from "@/hooks/useRoomPresence";
 import {
   createRoom,
   findRoomByCode,
@@ -18,12 +19,19 @@ interface MultiplayerWindowProps {
   initialRoomCode?: string;
 }
 
-type Participant = { visitorId: string; label?: string };
+const ROOM_CAPACITY = 6;
+
+type PendingAction =
+  | { kind: "create" }
+  | { kind: "join-code"; code: string }
+  | { kind: "join-link"; code: string };
 
 type View =
   | { kind: "idle"; error?: string }
+  | { kind: "name-prompt"; pending: PendingAction; error?: string }
   | { kind: "host"; room: RoomRow }
-  | { kind: "joiner"; room: RoomRow };
+  | { kind: "joiner"; room: RoomRow }
+  | { kind: "full"; code: string };
 
 const sanitizeCodeInput = (raw: string): string => {
   const upper = raw.toUpperCase();
@@ -40,96 +48,123 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const [view, setView] = useState<View>({ kind: "idle" });
   const [busy, setBusy] = useState(false);
   const [codeInput, setCodeInput] = useState("");
-  // Placeholder participants array — later prompt wires this from realtime presence.
-  const [participants] = useState<Participant[]>([]);
+  const [nameInput, setNameInput] = useState<string>(() => getDisplayName());
 
-  // Handle /play/:roomCode entrypoint
+  const visitorId = useMemo(() => getVisitorId(), []);
+  const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
+  const displayName = getDisplayName();
+  const { participants, status: presenceStatus } = useRoomPresence(
+    activeRoom ? activeRoom.id : null,
+    visitorId,
+    displayName,
+  );
+
+  // Handle /play/:roomCode entrypoint — always go through name prompt.
   useEffect(() => {
     if (!initialRoomCode) return;
     const normalized = initialRoomCode.toUpperCase();
-    const visitorId = getVisitorId();
-    let cancelled = false;
-    setBusy(true);
-    findRoomByCode(normalized, visitorId)
-      .then((room) => {
-        if (cancelled) return;
-        const found = !!room;
-        trackEvent("invite_link_clicked", {
-          roomCode: normalized,
-          metadata: { room_found: found },
-        });
-        if (room) {
-          if (room.is_host) {
-            setView({ kind: "host", room });
-          } else {
-            setView({ kind: "joiner", room });
-            trackEvent("room_joined", { roomCode: room.room_code, metadata: { via: "link" } });
-          }
-        } else {
-          setView({
-            kind: "idle",
-            error: `Room "${normalized}" doesn't exist or has ended.`,
-          });
-        }
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        trackEvent("invite_link_clicked", {
-          roomCode: normalized,
-          metadata: { room_found: false, error: true },
-        });
-        const msg = e instanceof Error ? e.message : "Couldn't reach the room. Check your connection.";
-        setView({ kind: "idle", error: msg });
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    setView({ kind: "name-prompt", pending: { kind: "join-link", code: normalized } });
   }, [initialRoomCode]);
 
-  const handleStartRoom = useCallback(async () => {
+  const enterRoom = useCallback(
+    async (action: PendingAction) => {
+      setBusy(true);
+      try {
+        if (action.kind === "create") {
+          const room = await createRoom(visitorId);
+          trackEvent("room_created", { roomCode: room.room_code });
+          setView({ kind: "host", room });
+          return;
+        }
+        const code = action.code;
+        const room = await findRoomByCode(code, visitorId);
+        if (!room) {
+          setView({
+            kind: "idle",
+            error:
+              action.kind === "join-link"
+                ? `Room "${code}" doesn't exist or has ended.`
+                : `Room "${code}" doesn't exist.`,
+          });
+          if (action.kind === "join-link") {
+            trackEvent("invite_link_clicked", {
+              roomCode: code,
+              metadata: { room_found: false },
+            });
+          }
+          return;
+        }
+        if (action.kind === "join-link") {
+          trackEvent("invite_link_clicked", {
+            roomCode: code,
+            metadata: { room_found: true },
+          });
+        }
+        if (room.is_host) {
+          setView({ kind: "host", room });
+        } else {
+          setView({ kind: "joiner", room });
+          trackEvent("room_joined", {
+            roomCode: room.room_code,
+            metadata: { via: action.kind === "join-link" ? "link" : "code" },
+          });
+        }
+      } catch (e) {
+        console.error("[multiplayer] enterRoom failed", e);
+        if (action.kind === "join-link") {
+          trackEvent("invite_link_clicked", {
+            roomCode: action.code,
+            metadata: { room_found: false, error: true },
+          });
+        }
+        setView({
+          kind: "idle",
+          error: "Couldn't reach the room. Check your connection and try again.",
+        });
+      } finally {
+        setBusy(false);
+      }
+    },
+    [visitorId],
+  );
+
+  const handleStartRoom = useCallback(() => {
     if (busy) return;
-    setBusy(true);
-    try {
-      const visitorId = getVisitorId();
-      const room = await createRoom(visitorId);
-      trackEvent("room_created", { roomCode: room.room_code });
-      setView({ kind: "host", room });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
-      setView({ kind: "idle", error: msg });
-    } finally {
-      setBusy(false);
-    }
+    setNameInput(getDisplayName());
+    setView({ kind: "name-prompt", pending: { kind: "create" } });
   }, [busy]);
 
-  const handleJoinByCode = useCallback(async () => {
+  const handleJoinByCode = useCallback(() => {
     if (busy) return;
     const normalized = codeInput.toUpperCase();
     if (!isValidRoomCode(normalized)) {
       setView({ kind: "idle", error: "That doesn't look like a valid code." });
       return;
     }
-    setBusy(true);
-    try {
-      const visitorId = getVisitorId();
-      const room = await findRoomByCode(normalized, visitorId);
-      if (!room) {
-        setView({ kind: "idle", error: `Room "${normalized}" doesn't exist.` });
-        return;
-      }
-      if (room.is_host) {
-        setView({ kind: "host", room });
-      } else {
-        setView({ kind: "joiner", room });
-        trackEvent("room_joined", { roomCode: room.room_code, metadata: { via: "code" } });
-      }
-    } finally {
-      setBusy(false);
-    }
+    setNameInput(getDisplayName());
+    setView({ kind: "name-prompt", pending: { kind: "join-code", code: normalized } });
   }, [busy, codeInput]);
+
+  const handleConfirmName = useCallback(() => {
+    if (view.kind !== "name-prompt" || busy) return;
+    const trimmed = nameInput.trim();
+    if (!trimmed) {
+      setView({ ...view, error: "Enter a name so others can see who you are." });
+      return;
+    }
+    const stored = setDisplayName(trimmed);
+    setNameInput(stored);
+    void enterRoom(view.pending);
+  }, [view, nameInput, busy, enterRoom]);
+
+  // Capacity guard — client-side only; server enforcement lands with game-start prompt.
+  useEffect(() => {
+    if (!activeRoom) return;
+    if (view.kind !== "joiner") return; // host is never over-capacity from their own view
+    if (participants.length > ROOM_CAPACITY) {
+      setView({ kind: "full", code: activeRoom.room_code });
+    }
+  }, [participants.length, activeRoom, view]);
 
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
@@ -144,7 +179,6 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       }
       throw new Error("no clipboard");
     } catch {
-      // Manual-select fallback
       try {
         const ta = document.createElement("textarea");
         ta.value = url;
@@ -161,6 +195,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     }
   }, []);
 
+  const leaveToIdle = useCallback(() => {
+    setCodeInput("");
+    setView({ kind: "idle" });
+  }, []);
+
   const containerStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -170,6 +209,107 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     boxSizing: "border-box",
     overflow: "auto",
   };
+
+  const inputStyle: React.CSSProperties = {
+    fontFamily: FONT_FAMILY,
+    fontSize: TEXT.subhead.size,
+    padding: `${SPACE[4]}px ${SPACE[5]}px`,
+    border: BORDER.heavy,
+    borderRadius: RADIUS.md,
+    background: COLORS.surface,
+    color: COLORS.ink,
+    flex: 1,
+    minWidth: 0,
+    outline: "none",
+  };
+
+  if (view.kind === "name-prompt") {
+    const pendingLabel =
+      view.pending.kind === "create"
+        ? "Starting a room"
+        : `Joining ${view.pending.code}`;
+    return (
+      <div style={containerStyle}>
+        <div>
+          <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
+            What should we call you?
+          </div>
+          <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, marginTop: SPACE[3] }}>
+            {pendingLabel}. Up to 12 characters.
+          </div>
+        </div>
+
+        {view.error && (
+          <div
+            role="alert"
+            style={{
+              ...textStyle("caption", mobile),
+              color: COLORS.red,
+              border: `1.5px solid ${COLORS.red}`,
+              borderRadius: RADIUS.md,
+              padding: `${SPACE[3]}px ${SPACE[4]}px`,
+              background: COLORS.surface,
+            }}
+          >
+            {view.error}
+          </div>
+        )}
+
+        <input
+          value={nameInput}
+          onChange={(e) => setNameInput(e.target.value.slice(0, 12))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleConfirmName();
+          }}
+          placeholder="Your name"
+          maxLength={12}
+          autoFocus
+          aria-label="Display name"
+          style={{ ...inputStyle, textTransform: "none", letterSpacing: 0 }}
+        />
+
+        <div style={{ display: "flex", gap: SPACE[3], flexDirection: mobile ? "column" : "row" }}>
+          <AppButton
+            variant="primary"
+            tone="red"
+            size={mobile ? "md" : "lg"}
+            onClick={handleConfirmName}
+            disabled={busy || !nameInput.trim()}
+            fullWidth
+          >
+            {busy ? "Connecting…" : "Continue"}
+          </AppButton>
+          <AppButton
+            variant="secondary"
+            tone="ink"
+            size={mobile ? "md" : "lg"}
+            onClick={leaveToIdle}
+            disabled={busy}
+            fullWidth={mobile}
+          >
+            Cancel
+          </AppButton>
+        </div>
+      </div>
+    );
+  }
+
+  if (view.kind === "full") {
+    return (
+      <div style={containerStyle}>
+        <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
+          Room "{view.code}" is full.
+        </div>
+        <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted }}>
+          Rooms hold up to {ROOM_CAPACITY} players. Ask the host to start a new room, or wait for a
+          spot to open.
+        </div>
+        <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
+          Back
+        </AppButton>
+      </div>
+    );
+  }
 
   if (view.kind === "idle") {
     return (
@@ -207,7 +347,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           disabled={busy}
           fullWidth
         >
-          {busy ? "Starting…" : "Start a room"}
+          Start a room
         </AppButton>
 
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
@@ -225,20 +365,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
               spellCheck={false}
               maxLength={ROOM_CODE_LENGTH}
               aria-label="Room code"
-              style={{
-                fontFamily: FONT_FAMILY,
-                fontSize: TEXT.subhead.size,
-                letterSpacing: 4,
-                textTransform: "uppercase",
-                padding: `${SPACE[4]}px ${SPACE[5]}px`,
-                border: BORDER.heavy,
-                borderRadius: RADIUS.md,
-                background: COLORS.surface,
-                color: COLORS.ink,
-                flex: 1,
-                minWidth: 0,
-                outline: "none",
-              }}
+              style={{ ...inputStyle, letterSpacing: 4, textTransform: "uppercase" }}
             />
             <AppButton
               variant="primary"
@@ -258,6 +385,25 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Host / Joiner shared body
   const isHost = view.kind === "host";
   const { room } = view;
+
+  // Seat ordering (LOBBY-ONLY, provisional): host pinned to seat 0, others by
+  // presence join order. Do not rely on these indices once a game starts.
+  const hostEntry = participants.find((p) => p.visitor_id === (isHost ? visitorId : undefined));
+  const orderedParticipants: typeof participants = [];
+  if (isHost && hostEntry) orderedParticipants.push(hostEntry);
+  for (const p of participants) {
+    if (isHost && p.visitor_id === visitorId) continue;
+    orderedParticipants.push(p);
+  }
+  const visibleParticipants = isHost ? orderedParticipants : participants;
+  const canStart = visibleParticipants.length >= 2;
+
+  const statusLabel =
+    presenceStatus === "connected"
+      ? null
+      : presenceStatus === "connecting"
+      ? "Connecting…"
+      : "Connection lost — retrying";
 
   return (
     <div style={containerStyle}>
@@ -309,8 +455,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-        <div style={{ ...textStyle("label", mobile), color: COLORS.ink }}>
-          Players
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: SPACE[3] }}>
+          <div style={{ ...textStyle("label", mobile), color: COLORS.ink }}>
+            Players ({visibleParticipants.length}/{ROOM_CAPACITY})
+          </div>
+          {statusLabel && (
+            <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, fontStyle: "italic" }}>
+              {statusLabel}
+            </div>
+          )}
         </div>
         <div
           style={{
@@ -324,16 +477,45 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             gap: SPACE[3],
           }}
         >
-          {participants.length === 0 ? (
+          {visibleParticipants.length === 0 ? (
             <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted }}>
               Waiting for players…
             </div>
           ) : (
-            participants.map((p) => (
-              <div key={p.visitorId} style={{ ...textStyle("body", mobile), color: COLORS.ink }}>
-                {p.label ?? p.visitorId.slice(0, 6)}
-              </div>
-            ))
+            visibleParticipants.map((p, i) => {
+              const isYou = p.visitor_id === visitorId;
+              const seatLabel = isHost && i === 0 ? "Host" : `Seat ${i + 1}`;
+              return (
+                <div
+                  key={p.visitor_id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: SPACE[3],
+                  }}
+                >
+                  <div style={{ ...textStyle("body", mobile), color: COLORS.ink }}>
+                    {p.display_name || p.visitor_id.slice(0, 6)}
+                    {isYou && (
+                      <span
+                        style={{
+                          ...textStyle("caption", mobile),
+                          color: COLORS.inkMuted,
+                          marginLeft: SPACE[2],
+                          fontStyle: "italic",
+                        }}
+                      >
+                        (you)
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
+                    {seatLabel}
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -344,7 +526,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             Start game
           </AppButton>
           <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted, textAlign: "center" }}>
-            Activates once another player joins.
+            {canStart ? "Coming soon — game start not wired yet." : "Needs at least 2 players."}
           </div>
         </div>
       ) : (
@@ -357,10 +539,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         variant="secondary"
         tone="ink"
         size="md"
-        onClick={() => {
-          setCodeInput("");
-          setView({ kind: "idle" });
-        }}
+        onClick={leaveToIdle}
         fullWidth
       >
         Leave room
