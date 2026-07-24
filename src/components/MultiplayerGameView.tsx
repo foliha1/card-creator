@@ -353,10 +353,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId,
 }) => {
   void _mobile;
-  // DEBUG
-  if (typeof window !== "undefined" && (window as any).__debugMPV) {
-    console.log("[MPV render] peekingCard=", s.peekingCard, "grid[0].card=", s.grid[0]?.card?.id ?? null, "isAnimating local will be tracked");
-  }
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // Block WHOOP for ~500ms during the flip rotation itself (matches
