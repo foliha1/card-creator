@@ -223,19 +223,28 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.message, g.messageType, g.roundNum, g.scores[0]]);
 
+  const prevWrongSizeRef = useRef(0);
   useEffect(() => {
-    if (g.wrongCards.size === 2) {
-      playWrong();
-      showWhoopFeedback("Wrong Match!", "red");
-      const indices = Array.from(g.wrongCards);
-      setWrongFlashCards(new Set(indices));
-      setShakingCards(new Set(indices));
-      setTimeout(() => {
-        setShakingCards(new Set());
-        setWrongFlashCards(new Set());
-        setWrongWashCards((prev) => new Set([...prev, ...indices]));
-      }, 300);
-    }
+    const wrong = g.wrongCards as Set<number>;
+    const prev = prevWrongSizeRef.current;
+    prevWrongSizeRef.current = wrong.size;
+    if (wrong.size <= prev) return;
+    // A new wrong-claim added 2 indices this tick — flash the newest additions.
+    playWrong();
+    showWhoopFeedback("Wrong Match!", "red");
+    const indices: number[] = Array.from(wrong);
+    const newest = indices.slice(-2);
+    setWrongFlashCards(new Set<number>(newest));
+    setShakingCards(new Set<number>(newest));
+    setTimeout(() => {
+      setShakingCards(new Set<number>());
+      setWrongFlashCards(new Set<number>());
+      setWrongWashCards((prevWash) => {
+        const next = new Set<number>(prevWash);
+        newest.forEach((i) => next.add(i));
+        return next;
+      });
+    }, 300);
   }, [g.wrongCards, showWhoopFeedback]);
 
 
