@@ -83,6 +83,20 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     enabled: gameEnabled,
   });
 
+  // Track claimWindow on the host in parallel to what useMultiplayerHost
+  // broadcasts, so the local toPublicState render matches the wire payload.
+  const hostClaimWindowRef = useRef(0);
+  const hostPrevClaimByRef = useRef<number | null>(null);
+  const hostPrevRoundRef = useRef<number>(host.state.roundNum);
+  if (host.state.roundNum !== hostPrevRoundRef.current) {
+    hostPrevRoundRef.current = host.state.roundNum;
+    hostClaimWindowRef.current += 1;
+  }
+  if (hostPrevClaimByRef.current !== null && host.state.claimBy === null) {
+    hostClaimWindowRef.current += 1;
+  }
+  hostPrevClaimByRef.current = host.state.claimBy;
+
   // Joiner: pure receiver.
   const joinerEnabled = view.kind === "joiner" && !!channelRef.current;
   const joiner = useMultiplayerJoiner({
