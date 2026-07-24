@@ -160,8 +160,13 @@ export function useRoomPresence(
       });
   }, [displayName, isHost, roomId, status, visitorId]);
 
+  const onBroadcast = useCallback((listener: BroadcastListener) => {
+    listenersRef.current.add(listener);
+    return () => { listenersRef.current.delete(listener); };
+  }, []);
+
   return useMemo(
-    () => ({ participants, status, channelRef }),
-    [participants, status],
+    () => ({ participants, status, channelRef, onBroadcast }),
+    [participants, status, onBroadcast],
   );
 }
