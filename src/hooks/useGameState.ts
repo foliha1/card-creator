@@ -498,6 +498,14 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.inFlight) return state;
       const who = state.flipper;
+      // Disconnected seats auto-advance every rotation without consuming
+      // the one-shot `skip` penalty — disconnection is persistent, skip is
+      // transient. If a seat is BOTH disconnected and skip-penalised, we
+      // advance without consuming skip; the penalty still owes when they
+      // return.
+      if (state.disconnected[who]) {
+        return cycleAdvance(state, who);
+      }
       if (!state.skip[who]) return state;
       const skip = replaceAt(state.skip, who, false);
       return cycleAdvance({ ...state, skip }, who);
