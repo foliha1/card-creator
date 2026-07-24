@@ -8,42 +8,49 @@ export interface PresenceParticipant {
   visitor_id: string;
   display_name: string;
   joined_at: number;
+  is_host: boolean;
 }
 
 interface PresenceMeta {
   visitor_id: string;
   display_name: string;
   joined_at: number;
+  is_host: boolean;
 }
 
 /**
- * Subscribes to Supabase Realtime PRESENCE for a room.
+ * Subscribes to Supabase Realtime PRESENCE for a room, and exposes the
+ * channel via a ref so callers can piggyback broadcast on it.
  *
- * SEAT ORDERING: This ordering is LOBBY-ONLY and provisional. Presence is
- * ephemeral and may reorder on reconnect. Seats MUST be frozen at game start
- * in a later prompt — do not build anything downstream that assumes the seat
- * indices derived from this hook are stable once a game begins.
- *
- * The hook only orders by joined_at then visitor_id. The caller supplies
- * host identity separately (from rooms.is_host) and pins the host to seat 0.
+ * `isHost` comes from the client's own rooms RPC result and is included in
+ * this client's presence meta so every OTHER client can identify the host
+ * by data, not by guessing at seat 0.
  */
 export function useRoomPresence(
   roomId: string | null,
   visitorId: string,
   displayName: string,
-): { participants: PresenceParticipant[]; status: PresenceStatus } {
+  isHost: boolean,
+): {
+  participants: PresenceParticipant[];
+  status: PresenceStatus;
+  channelRef: React.MutableRefObject<RealtimeChannel | null>;
+} {
   const [participants, setParticipants] = useState<PresenceParticipant[]>([]);
   const [status, setStatus] = useState<PresenceStatus>("connecting");
   const joinedAtRef = useRef<number>(Date.now());
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
-  // Stable display name ref so re-track doesn't churn on every keystroke.
   const displayNameRef = useRef(displayName);
   displayNameRef.current = displayName;
+  const isHostRef = useRef(isHost);
+  isHostRef.current = isHost;
 
   useEffect(() => {
     if (!roomId) {
       setParticipants([]);
       setStatus("connecting");
+      channelRef.current = null;
       return;
     }
 
@@ -53,8 +60,10 @@ export function useRoomPresence(
     const channel: RealtimeChannel = supabase.channel(`room:${roomId}`, {
       config: {
         presence: { key: visitorId },
+        broadcast: { self: false, ack: false },
       },
     });
+    channelRef.current = channel;
 
     const syncParticipants = () => {
       const state = channel.presenceState<PresenceMeta>();
@@ -62,7 +71,6 @@ export function useRoomPresence(
       for (const key of Object.keys(state)) {
         const metas = state[key];
         if (!metas || metas.length === 0) continue;
-        // Pick the earliest joined_at meta for this visitor.
         let best: PresenceMeta | null = null;
         for (const m of metas) {
           if (!best || m.joined_at < best.joined_at) best = m;
@@ -72,10 +80,13 @@ export function useRoomPresence(
             visitor_id: best.visitor_id,
             display_name: best.display_name,
             joined_at: best.joined_at,
+            is_host: !!best.is_host,
           });
         }
       }
       const list = Array.from(seen.values()).sort((a, b) => {
+        // Host always seat 0 in lobby ordering.
+        if (a.is_host !== b.is_host) return a.is_host ? -1 : 1;
         if (a.joined_at !== b.joined_at) return a.joined_at - b.joined_at;
         return a.visitor_id.localeCompare(b.visitor_id);
       });
@@ -93,6 +104,7 @@ export function useRoomPresence(
               visitor_id: visitorId,
               display_name: displayNameRef.current,
               joined_at: joinedAtRef.current,
+              is_host: isHostRef.current,
             } satisfies PresenceMeta);
             setStatus("connected");
           } catch (e) {
@@ -113,24 +125,29 @@ export function useRoomPresence(
         // ignore
       }
       supabase.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [roomId, visitorId]);
 
-  // If display name changes while connected, re-track quietly.
+  // Re-track on display-name or host-flag change while connected.
   useEffect(() => {
     if (!roomId || status !== "connected") return;
-    const channel = supabase.getChannels().find((c) => c.topic === `realtime:room:${roomId}`);
+    const channel = channelRef.current;
     if (!channel) return;
     channel
       .track({
         visitor_id: visitorId,
         display_name: displayName,
         joined_at: joinedAtRef.current,
+        is_host: isHost,
       } satisfies PresenceMeta)
       .catch(() => {
         /* non-fatal */
       });
-  }, [displayName, roomId, status, visitorId]);
+  }, [displayName, isHost, roomId, status, visitorId]);
 
-  return useMemo(() => ({ participants, status }), [participants, status]);
+  return useMemo(
+    () => ({ participants, status, channelRef }),
+    [participants, status],
+  );
 }
