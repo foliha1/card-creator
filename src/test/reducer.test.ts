@@ -918,3 +918,139 @@ describe("initialState (deterministic under Math.random stub)", () => {
     expect(a.dieValues).toEqual(b.dieValues);
   });
 });
+
+// ===========================================================================
+// N>2 generalization tests
+// ===========================================================================
+describe("N>2 generalization", () => {
+  it("cycleAdvance rotates correctly at seatCount=3", () => {
+    // seat 0 flips → flipper becomes 1
+    let s = baseState({
+      seatCount: 3,
+      phase: "FLIPPING",
+      flipper: 0,
+      inFlight: { kind: "flip", token: 1, by: 0, idx: 0 },
+      peekingCard: 0,
+    });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 1 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.flipper).toBe(1);
+    // seat 1 flips → flipper becomes 2 (cycle NOT complete yet)
+    s = { ...s, inFlight: { kind: "flip", token: 2, by: 1, idx: 3 }, peekingCard: 3 };
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 2 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.flipper).toBe(2);
+    // seat 2 flips → cycle complete, roll passes clockwise (no claim)
+    s = { ...s, inFlight: { kind: "flip", token: 3, by: 2, idx: 4 }, peekingCard: 4 };
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 3 });
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roller).toBe(1); // (0 + 1) % 3
+  });
+
+  it("cycleAdvance rotates correctly at seatCount=5", () => {
+    let s = baseState({ seatCount: 5, phase: "FLIPPING", flipper: 0 });
+    for (let i = 0; i < 4; i++) {
+      s = {
+        ...s,
+        inFlight: { kind: "flip", token: i + 1, by: i, idx: i },
+        peekingCard: i,
+      };
+      s = reducer(s, { type: "FLIP_COMPLETE", token: i + 1 });
+      expect(s.phase).toBe("FLIPPING");
+      expect(s.flipper).toBe(i + 1);
+    }
+    // 5th flip completes the cycle → new round
+    s = { ...s, inFlight: { kind: "flip", token: 5, by: 4, idx: 5 }, peekingCard: 5 };
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 5 });
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roller).toBe(1);
+  });
+
+  it("skip penalty applies to the correct seat at seatCount=4", () => {
+    const s = baseState({
+      seatCount: 4,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 1, by: 2, a: 1, b: 3 }, // wrong pair
+      rule: ["SHAPE"],
+      flippedThisCycle: new Set(), // mid-cycle so state persists
+      claimBy: 2,
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 1 });
+    expect(next.phase).toBe("FLIPPING");
+    expect(next.skip).toEqual([false, false, true, false]);
+    expect(next.scores).toEqual([0, 0, 0, 0]);
+  });
+
+  it("wrongBy tracks per-seat at seatCount=4", () => {
+    const s = baseState({
+      seatCount: 4,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 1, by: 2, a: 1, b: 3 },
+      rule: ["SHAPE"],
+      flippedThisCycle: new Set(),
+      claimBy: 2,
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 1 });
+    expect(next.wrongBy[2].has(1)).toBe(true);
+    expect(next.wrongBy[2].has(3)).toBe(true);
+    expect(next.wrongBy[0].size).toBe(0);
+    expect(next.wrongBy[1].size).toBe(0);
+    expect(next.wrongBy[3].size).toBe(0);
+  });
+
+  it("claimBy is set on PLAYER_ENTER_CLAIM and cleared on resolve", () => {
+    const s = baseState({ seatCount: 3, phase: "FLIPPING", flipper: 2, claimBy: null });
+    const entered = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 2 });
+    expect(entered.phase).toBe("CLAIM_SELECTING");
+    expect(entered.claimBy).toBe(2);
+    // Select and resolve correct pair
+    const selA = reducer(entered, { type: "PLAYER_SELECT_CARD", by: 2, idx: 0 });
+    const selB = reducer(selA, { type: "PLAYER_SELECT_CARD", by: 2, idx: 2 });
+    const resolved = reducer(selB, { type: "PLAYER_RESOLVE_MATCH", by: 2 });
+    expect(resolved.claimBy).toBeNull();
+  });
+
+  it("claimBy is cleared on wrong claim (void)", () => {
+    const s = baseState({
+      seatCount: 3,
+      phase: "CLAIM_SELECTING",
+      selectedCards: [1, 3], // wrong pair
+      claimBy: 1,
+      flipper: 1,
+    });
+    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 1 });
+    expect(next.claimBy).toBeNull();
+  });
+
+  it("PLAYER_SELECT_CARD rejects seats that are not the current claimant", () => {
+    const s = baseState({ seatCount: 3, phase: "CLAIM_SELECTING", claimBy: 1 });
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 0 })).toBe(s);
+    const ok = reducer(s, { type: "PLAYER_SELECT_CARD", by: 1, idx: 0 });
+    expect(ok.selectedCards).toEqual([0]);
+  });
+
+  it("winner-rolls: correct claim by seat 2 at seatCount=4 makes seat 2 next roller", () => {
+    const s = baseState({
+      seatCount: 4,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 9, by: 2, a: 0, b: 2 },
+      rule: ["SHAPE"],
+      roller: 0,
+      flipper: 0,
+      claimBy: 2,
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 9 });
+    expect(next.phase).toBe("AWAITING_ROLL");
+    expect(next.roller).toBe(2);
+    expect(next.flipper).toBe(2);
+    expect(next.scores).toEqual([0, 0, 2, 0]);
+  });
+
+  it("CLAIM_START accepts any bot/human seat (no more by !== 1 gate)", () => {
+    const s = baseState({ seatCount: 3, phase: "FLIPPING" });
+    const next = reducer(s, { type: "CLAIM_START", by: 2, a: 0, b: 2, token: 1 });
+    expect(next.phase).toBe("CLAIM_RESOLVING");
+    expect(next.claimBy).toBe(2);
+    expect(next.inFlight).toMatchObject({ kind: "claim", by: 2 });
+  });
+});
