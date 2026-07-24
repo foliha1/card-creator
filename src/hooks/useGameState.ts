@@ -78,6 +78,30 @@ function emptyWrongBy(seatCount: number): Set<number>[] {
   return Array.from({ length: seatCount }, () => new Set<number>());
 }
 
+// Advance to the next connected seat starting AFTER `from`. Bounded by
+// seatCount so all-disconnected / single-connected tables cannot spin. If no
+// other connected seat exists, returns the neighbouring seat — host-level
+// end-game policy handles the "table empty" case; the reducer must still
+// terminate.
+function nextConnected(
+  from: number,
+  seatCount: number,
+  disconnected: boolean[],
+): number {
+  let next = (from + 1) % seatCount;
+  for (let i = 0; i < seatCount; i++) {
+    if (!disconnected[next]) return next;
+    next = (next + 1) % seatCount;
+  }
+  return (from + 1) % seatCount;
+}
+
+function connectedCount(seatCount: number, disconnected: boolean[]): number {
+  let n = 0;
+  for (let i = 0; i < seatCount; i++) if (!disconnected[i]) n++;
+  return n;
+}
+
 // ============================================================================
 // Reducer-driven control flow
 // ============================================================================
@@ -109,6 +133,7 @@ export interface State {
   dieValues: string[];
   wrongBy: Set<number>[];
   skip: boolean[];
+  disconnected: boolean[];
   flippedThisCycle: Set<number>;
   claimedThisCycle: boolean;
   drawEmpty: boolean;
@@ -148,7 +173,8 @@ export type Action =
   | { type: "CLAIM_RESOLVE"; token: number }
   | { type: "LAST_CALL_CLAIM"; by: number; a: number; b: number }
   | { type: "CANCEL_CLAIM"; by: number }
-  | { type: "MARK_DISCONNECTED"; seats: number[] }
+  | { type: "SET_DISCONNECTED"; seats: number[] }
+  | { type: "END_GAME_TABLE_EMPTY" }
   | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
   | { type: "REMOVE_MATCHED" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
@@ -175,6 +201,7 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     dieValues: values,
     wrongBy: emptyWrongBy(seatCount),
     skip: Array(seatCount).fill(false),
+    disconnected: Array(seatCount).fill(false),
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     drawEmpty: newDeck.length === 0,
@@ -233,8 +260,13 @@ function startRound(s: State, winnerIndex: number | null): State {
   if (!hasCards && s.deck.length === 0) return withGameOverAnnounce(s);
   if (filled < 2 && s.deck.length === 0) return withGameOverAnnounce(s);
 
-  const nextRoller =
+  const candidate =
     winnerIndex !== null ? winnerIndex : (s.roller + 1) % s.seatCount;
+  // If the candidate roller is disconnected, hop forward to the next connected
+  // seat. Bounded by nextConnected.
+  const nextRoller = s.disconnected[candidate]
+    ? nextConnected(candidate, s.seatCount, s.disconnected)
+    : candidate;
   return {
     ...s,
     phase: "AWAITING_ROLL",
@@ -242,6 +274,7 @@ function startRound(s: State, winnerIndex: number | null): State {
     flipper: nextRoller,
     wrongBy: emptyWrongBy(s.seatCount),
     skip: Array(s.seatCount).fill(false),
+    // NOTE: disconnected is persistent across rounds — do NOT reset it here.
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     selectedCards: [],
@@ -258,10 +291,13 @@ function startRound(s: State, winnerIndex: number | null): State {
 function cycleAdvance(s: State, addWho: number): State {
   const flipped = new Set(s.flippedThisCycle);
   flipped.add(addWho);
-  if (flipped.size >= s.seatCount) {
+  // Cycle ends when every CONNECTED seat has flipped this cycle. Disconnected
+  // seats never contribute a flip, so counting them would stall the loop.
+  const conn = Math.max(1, connectedCount(s.seatCount, s.disconnected));
+  if (flipped.size >= conn) {
     const noClaim = !s.claimedThisCycle;
     if (s.phase === "LAST_CALL") {
-      const next = (s.flipper + 1) % s.seatCount;
+      const next = nextConnected(s.flipper, s.seatCount, s.disconnected);
       return {
         ...s,
         flipper: next,
@@ -290,7 +326,7 @@ function cycleAdvance(s: State, addWho: number): State {
     }
     return startRound({ ...s, flippedThisCycle: flipped }, null);
   }
-  const next = (s.flipper + 1) % s.seatCount;
+  const next = nextConnected(s.flipper, s.seatCount, s.disconnected);
   return {
     ...s,
     flipper: next,
@@ -462,6 +498,14 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.inFlight) return state;
       const who = state.flipper;
+      // Disconnected seats auto-advance every rotation without consuming
+      // the one-shot `skip` penalty — disconnection is persistent, skip is
+      // transient. If a seat is BOTH disconnected and skip-penalised, we
+      // advance without consuming skip; the penalty still owes when they
+      // return.
+      if (state.disconnected[who]) {
+        return cycleAdvance(state, who);
+      }
       if (!state.skip[who]) return state;
       const skip = replaceAt(state.skip, who, false);
       return cycleAdvance({ ...state, skip }, who);
@@ -581,15 +625,17 @@ export function reducer(state: State, action: Action): State {
     case "SET_MESSAGE":
       return { ...state, message: action.message, messageType: action.messageType };
 
-    // Cancel-claim path for multiplayer. Resets claim state to FLIPPING with
-    // NO skip penalty. claimBy transitions non-null → null, which the host
-    // hook watches to bump claimWindow (so the consumed claim_locks row is
-    // rotated past). Preserves flippedThisCycle: the flip that led to the
-    // claim already counted. Cycle-advances so play continues.
+    // Cancel-claim: a claim INTERRUPTS an in-progress FLIPPING turn; per the
+    // rulebook, cancelling returns control to whoever was flipping so they
+    // finish their turn. flipper stays put. No skip penalty; cancelling is
+    // penalty-free. flippedThisCycle is untouched (the interrupted flip did
+    // not complete). claimBy transitions non-null → null, which the host
+    // hook watches to bump claimWindow so the consumed claim_locks row is
+    // rotated past.
     case "CANCEL_CLAIM": {
       if (state.phase !== "CLAIM_SELECTING") return state;
       if (state.claimBy !== action.by) return state;
-      const post: State = {
+      return {
         ...state,
         phase: "FLIPPING",
         selectedCards: [],
@@ -600,19 +646,44 @@ export function reducer(state: State, action: Action): State {
         message: `${state.names[action.by]} — cancelled.`,
         messageType: "info",
       };
-      return cycleAdvance(post, action.by);
     }
 
-    // Piggyback on the existing skip machinery for disconnected seats:
-    // marking skip[seat]=true makes SKIP_TICK auto-advance past that seat
-    // when it becomes flipper. No new game-rule surface.
-    case "MARK_DISCONNECTED": {
-      if (!action.seats.length) return state;
-      const skip = state.skip.slice();
+    // SET_DISCONNECTED uses REPLACE semantics — the payload is the complete
+    // current set of disconnected seats, not a delta. Idempotent, and gives
+    // reconnection for free (a seat missing from `seats` becomes connected).
+    // If the current roller is now disconnected while AWAITING_ROLL, reassign
+    // the roll to the next connected seat so the game never stalls waiting
+    // for a roll that will never come.
+    case "SET_DISCONNECTED": {
+      const disconnected = Array(state.seatCount).fill(false) as boolean[];
       for (const s of action.seats) {
-        if (s >= 0 && s < skip.length) skip[s] = true;
+        if (s >= 0 && s < state.seatCount) disconnected[s] = true;
       }
-      return { ...state, skip };
+      let out: State = { ...state, disconnected };
+      if (
+        out.phase === "AWAITING_ROLL" &&
+        disconnected[out.roller] &&
+        connectedCount(out.seatCount, disconnected) > 0
+      ) {
+        const nr = nextConnected(out.roller, out.seatCount, disconnected);
+        out = { ...out, roller: nr, flipper: nr };
+      }
+      return out;
+    }
+
+    // Host policy: when the table empties (fewer than 2 connected seats),
+    // cleanly end the game with a clear message rather than leaving a lone
+    // player staring at a live-looking board. Not a normal completion.
+    case "END_GAME_TABLE_EMPTY": {
+      return {
+        ...state,
+        phase: "GAME_OVER",
+        message: "Game ended — not enough players remain.",
+        messageType: "warning",
+        inFlight: null,
+        peekingCard: null,
+        claimBy: null,
+      };
     }
 
     default:

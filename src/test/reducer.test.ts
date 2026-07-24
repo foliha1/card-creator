@@ -65,6 +65,7 @@ function baseState(overrides: Partial<State> = {}): State {
     dieValues: ["SHAPE"],
     wrongBy: Array.from({ length: seatCount }, () => new Set<number>()),
     skip: Array(seatCount).fill(false),
+    disconnected: Array(seatCount).fill(false),
     flippedThisCycle: new Set<number>(),
     claimedThisCycle: false,
     drawEmpty: false,
@@ -1054,5 +1055,151 @@ describe("N>2 generalization", () => {
     expect(next.phase).toBe("CLAIM_RESOLVING");
     expect(next.claimBy).toBe(2);
     expect(next.inFlight).toMatchObject({ kind: "claim", by: 2 });
+  });
+});
+
+// ===========================================================================
+// CANCEL_CLAIM (bug 1 fix)
+// ===========================================================================
+describe("CANCEL_CLAIM", () => {
+  it("preserves flipper — does NOT advance the cycle", () => {
+    const s = baseState({
+      phase: "CLAIM_SELECTING",
+      flipper: 0,
+      claimBy: 0,
+      selectedCards: [1],
+      flippedThisCycle: new Set<number>(),
+    });
+    const next = reducer(s, { type: "CANCEL_CLAIM", by: 0 });
+    expect(next.phase).toBe("FLIPPING");
+    expect(next.flipper).toBe(0); // unchanged
+    expect(next.flippedThisCycle.size).toBe(0); // untouched
+  });
+
+  it("sets claimBy to null (this is what the host watches to rotate claimWindow)", () => {
+    const s = baseState({ phase: "CLAIM_SELECTING", claimBy: 1, flipper: 1 });
+    const next = reducer(s, { type: "CANCEL_CLAIM", by: 1 });
+    expect(next.claimBy).toBeNull();
+  });
+
+  it("applies no skip penalty", () => {
+    const s = baseState({
+      phase: "CLAIM_SELECTING",
+      claimBy: 0,
+      skip: [false, false],
+    });
+    const next = reducer(s, { type: "CANCEL_CLAIM", by: 0 });
+    expect(next.skip).toEqual([false, false]);
+  });
+
+  it("is a NO-OP when phase !== CLAIM_SELECTING", () => {
+    for (const phase of ["FLIPPING", "AWAITING_ROLL", "CLAIM_RESOLVING", "LAST_CALL", "GAME_OVER"] as Phase[]) {
+      const s = baseState({ phase, claimBy: 0 });
+      expect(reducer(s, { type: "CANCEL_CLAIM", by: 0 })).toBe(s);
+    }
+  });
+
+  it("is a NO-OP when claimBy !== action.by", () => {
+    const s = baseState({ phase: "CLAIM_SELECTING", claimBy: 0 });
+    expect(reducer(s, { type: "CANCEL_CLAIM", by: 1 })).toBe(s);
+  });
+
+  it("after cancel, PLAYER_ENTER_CLAIM in the same round is accepted", () => {
+    const s = baseState({ phase: "CLAIM_SELECTING", claimBy: 0, flipper: 0 });
+    const cancelled = reducer(s, { type: "CANCEL_CLAIM", by: 0 });
+    expect(cancelled.phase).toBe("FLIPPING");
+    const reclaimed = reducer(cancelled, { type: "PLAYER_ENTER_CLAIM", by: 1 });
+    expect(reclaimed.phase).toBe("CLAIM_SELECTING");
+    expect(reclaimed.claimBy).toBe(1);
+  });
+});
+
+// ===========================================================================
+// SET_DISCONNECTED (bug 2 fix)
+// ===========================================================================
+describe("SET_DISCONNECTED", () => {
+  it("replaces the set rather than merging", () => {
+    const s = baseState({
+      seatCount: 3,
+      disconnected: [false, true, false],
+      skip: [false, false, false],
+      scores: [0, 0, 0],
+      wrongBy: [new Set(), new Set(), new Set()],
+    });
+    const next = reducer(s, { type: "SET_DISCONNECTED", seats: [2] });
+    expect(next.disconnected).toEqual([false, false, true]);
+    // No borrowing of the one-shot skip flag
+    expect(next.skip).toEqual([false, false, false]);
+  });
+
+  it("advancement skips a disconnected seat", () => {
+    const s = baseState({
+      seatCount: 3,
+      disconnected: [false, true, false],
+      skip: [false, false, false],
+      scores: [0, 0, 0],
+      wrongBy: [new Set(), new Set(), new Set()],
+      phase: "FLIPPING",
+      flipper: 0,
+    });
+    // Complete flipper 0's flip → should hop over seat 1 to seat 2.
+    const withFlight = reducer(s, { type: "FLIP_START", by: 0, idx: 0, token: 1 });
+    const next = reducer(withFlight, { type: "FLIP_COMPLETE", token: 1 });
+    expect(next.flipper).toBe(2);
+  });
+
+  it("advancement terminates when only one connected seat remains", () => {
+    const s = baseState({
+      seatCount: 3,
+      disconnected: [false, true, true],
+      skip: [false, false, false],
+      scores: [0, 0, 0],
+      wrongBy: [new Set(), new Set(), new Set()],
+      phase: "FLIPPING",
+      flipper: 0,
+      flippedThisCycle: new Set<number>(),
+    });
+    // Seat 0 flips; cycle should end (connectedCount=1) and start next round
+    // without spinning. Bound: the advance loop must not exceed seatCount.
+    const withFlight = reducer(s, { type: "FLIP_START", by: 0, idx: 0, token: 1 });
+    const next = reducer(withFlight, { type: "FLIP_COMPLETE", token: 1 });
+    // Cycle-end → startRound → AWAITING_ROLL with roller = next connected = 0.
+    expect(next.phase).toBe("AWAITING_ROLL");
+    expect(next.roller).toBe(0);
+    expect(next.flipper).toBe(0);
+  });
+
+  it("a seat both disconnected and skip-penalised advances without consuming skip", () => {
+    const s = baseState({
+      seatCount: 3,
+      disconnected: [false, true, false],
+      skip: [false, true, false],
+      scores: [0, 0, 0],
+      wrongBy: [new Set(), new Set(), new Set()],
+      phase: "FLIPPING",
+      flipper: 1,
+      inFlight: null,
+    });
+    const next = reducer(s, { type: "SKIP_TICK" });
+    // Advanced past seat 1 to seat 2; disconnect path does not consume skip.
+    expect(next.flipper).toBe(2);
+    expect(next.skip[1]).toBe(true);
+  });
+
+  it("roll passes to the next connected seat when the roller is disconnected", () => {
+    const s = baseState({
+      seatCount: 3,
+      disconnected: [false, false, false],
+      skip: [false, false, false],
+      scores: [0, 0, 0],
+      wrongBy: [new Set(), new Set(), new Set()],
+      phase: "AWAITING_ROLL",
+      roller: 0,
+      flipper: 0,
+    });
+    const next = reducer(s, { type: "SET_DISCONNECTED", seats: [0] });
+    expect(next.roller).toBe(1);
+    expect(next.flipper).toBe(1);
+    expect(next.phase).toBe("AWAITING_ROLL");
   });
 });
