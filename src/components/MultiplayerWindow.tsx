@@ -340,16 +340,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
-    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current, gameId);
+    const publicState = toPublicState(
+      host.state,
+      frozenSeats,
+      hostClaimWindowRef.current,
+      gameId,
+      disconnectedSeats,
+    );
     return (
       <MultiplayerGameView
         publicState={publicState}
         mySeat={0}
+        events={hostEvents}
         onIntent={(action) => {
-          // Host acts locally — bypass wire, hit reducer directly.
-          // NOTE: WHOOP / PLAYER_ENTER_CLAIM* is NOT handled here. It goes
-          // through the claim-lock arbiter (called by the view directly),
-          // which broadcasts claim_grant → useMultiplayerHost dispatches.
           if (action.type === "REQUEST_ROLL") {
             void host.doRollDice();
             return;
@@ -357,13 +360,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           if (action.type === "PLAYER_ENTER_CLAIM" || action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
             return;
           }
-          if (action.type === "PLAYER_SELECT_CARD") {
+          if (action.type === "CANCEL_CLAIM") {
+            host.dispatch({ type: "CANCEL_CLAIM", by: 0 });
+          } else if (action.type === "PLAYER_SELECT_CARD") {
             host.dispatch({ type: "PLAYER_SELECT_CARD", by: 0, idx: action.idx });
           } else if (action.type === "PLAYER_RESOLVE_MATCH") {
             host.dispatch({ type: "PLAYER_RESOLVE_MATCH", by: 0 });
           } else if (action.type === "FLIP_START") {
             host.dispatch({ type: "FLIP_START", by: 0, idx: action.idx, token: action.token });
-            // Auto-complete after peek window — mirror single-player REVEAL_MS.
             setTimeout(() => {
               host.dispatch({ type: "FLIP_COMPLETE", token: action.token });
             }, 2000);
@@ -385,6 +389,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       <MultiplayerGameView
         publicState={joinerPublicState}
         mySeat={joinerSeat}
+        events={joiner.events}
         onIntent={joiner.sendIntent}
         onLeave={leaveToIdle}
         mobile={mobile}
