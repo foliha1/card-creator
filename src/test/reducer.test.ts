@@ -65,6 +65,7 @@ function baseState(overrides: Partial<State> = {}): State {
     dieValues: ["SHAPE"],
     wrongBy: Array.from({ length: seatCount }, () => new Set<number>()),
     skip: Array(seatCount).fill(false),
+    disconnected: Array(seatCount).fill(false),
     flippedThisCycle: new Set<number>(),
     claimedThisCycle: false,
     drawEmpty: false,
