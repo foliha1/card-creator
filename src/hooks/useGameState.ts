@@ -147,6 +147,8 @@ export type Action =
   | { type: "CLAIM_START"; by: number; a: number; b: number; token: number }
   | { type: "CLAIM_RESOLVE"; token: number }
   | { type: "LAST_CALL_CLAIM"; by: number; a: number; b: number }
+  | { type: "CANCEL_CLAIM"; by: number }
+  | { type: "MARK_DISCONNECTED"; seats: number[] }
   | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
   | { type: "REMOVE_MATCHED" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
@@ -578,6 +580,40 @@ export function reducer(state: State, action: Action): State {
 
     case "SET_MESSAGE":
       return { ...state, message: action.message, messageType: action.messageType };
+
+    // Cancel-claim path for multiplayer. Resets claim state to FLIPPING with
+    // NO skip penalty. claimBy transitions non-null → null, which the host
+    // hook watches to bump claimWindow (so the consumed claim_locks row is
+    // rotated past). Preserves flippedThisCycle: the flip that led to the
+    // claim already counted. Cycle-advances so play continues.
+    case "CANCEL_CLAIM": {
+      if (state.phase !== "CLAIM_SELECTING") return state;
+      if (state.claimBy !== action.by) return state;
+      const post: State = {
+        ...state,
+        phase: "FLIPPING",
+        selectedCards: [],
+        matchedCards: new Set(),
+        peekingCard: null,
+        inFlight: null,
+        claimBy: null,
+        message: `${state.names[action.by]} — cancelled.`,
+        messageType: "info",
+      };
+      return cycleAdvance(post, action.by);
+    }
+
+    // Piggyback on the existing skip machinery for disconnected seats:
+    // marking skip[seat]=true makes SKIP_TICK auto-advance past that seat
+    // when it becomes flipper. No new game-rule surface.
+    case "MARK_DISCONNECTED": {
+      if (!action.seats.length) return state;
+      const skip = state.skip.slice();
+      for (const s of action.seats) {
+        if (s >= 0 && s < skip.length) skip[s] = true;
+      }
+      return { ...state, skip };
+    }
 
     default:
       return state;

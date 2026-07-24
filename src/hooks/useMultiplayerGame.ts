@@ -15,10 +15,13 @@ import {
   PROTOCOL_VERSION,
   type ClaimGrantEnvelope,
   type Envelope,
+  type EventEnvelope,
   type IntentAction,
   type IntentEnvelope,
   type IntentPayload,
   type StateEnvelope,
+  type TransientEvent,
+  type TransientEventKind,
 } from "@/lib/multiplayer";
 
 export interface SeatMapEntry {
@@ -40,8 +43,9 @@ export function useMultiplayerHost(opts: {
   hostVisitorId: string;
   enabled: boolean;
   gameId: string;
+  disconnectedSeats: number[];
 }) {
-  const { channel, seatMap, hostVisitorId, enabled, gameId } = opts;
+  const { channel, seatMap, hostVisitorId, enabled, gameId, disconnectedSeats } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
@@ -95,11 +99,30 @@ export function useMultiplayerHost(opts: {
       v: PROTOCOL_VERSION,
       type: "state",
       seq: seqRef.current,
-      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current, gameIdRef.current),
+      payload: toPublicState(
+        latestStateRef.current,
+        seatMapRef.current,
+        claimWindowRef.current,
+        gameIdRef.current,
+        disconnectedRef.current,
+      ),
     };
     lastSentAtRef.current = Date.now();
     ch.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
   }, []);
+
+  // Track disconnected seats via a ref (used in doSend) and re-mark skip
+  // whenever the reducer resets skip[] (round boundary). MARK_DISCONNECTED
+  // is idempotent — the reducer only sets skip=true where it isn't already.
+  const disconnectedRef = useRef<number[]>(disconnectedSeats);
+  disconnectedRef.current = disconnectedSeats;
+  useEffect(() => {
+    if (!enabled || disconnectedSeats.length === 0) return;
+    // Only dispatch if any listed seat is currently NOT flagged skip=true —
+    // avoids a dispatch storm during every state tick.
+    const needs = disconnectedSeats.some((s) => !g.state.skip[s]);
+    if (needs) g.dispatch({ type: "MARK_DISCONNECTED", seats: disconnectedSeats });
+  }, [enabled, disconnectedSeats, g.state.skip, g.state.roundNum, g.dispatch]);
 
   useEffect(() => {
     if (!enabled || !channel) return;
@@ -181,6 +204,36 @@ export function useMultiplayerHost(opts: {
     channel.on("broadcast", { event: "msg" }, handler);
   }, [enabled, channel, g.dispatch, g.doRollDice]);
 
+  // ---- transient event emission ----
+  // The host observes reducer transitions and emits transient events on the
+  // wire. GREAT_MATCH fires on the tick a successful claim resolves;
+  // NOPE fires on the tick a wrong claim resolves. Events carry a unique id
+  // so receivers can dedupe (an event applied twice must not animate twice).
+  const eventSeqRef = useRef(0);
+  const prevScoresRef = useRef<number[]>(g.state.scores);
+  const prevWrongCountRef = useRef<number[]>(g.state.wrongBy.map((s) => s.size));
+  useEffect(() => {
+    if (!enabled || !channel) return;
+    const prevScores = prevScoresRef.current;
+    const prevWrong = prevWrongCountRef.current;
+    const nextWrong = g.state.wrongBy.map((s) => s.size);
+    const send = (kind: TransientEventKind, seat: number) => {
+      eventSeqRef.current += 1;
+      const ev: TransientEvent = {
+        id: `${gameIdRef.current}:${eventSeqRef.current}:${kind}:${seat}`,
+        kind, seat, at: Date.now(),
+      };
+      const env: EventEnvelope = { v: PROTOCOL_VERSION, type: "event", seq: eventSeqRef.current, payload: ev };
+      channel.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
+    };
+    for (let i = 0; i < g.state.scores.length; i++) {
+      if ((prevScores[i] ?? 0) < (g.state.scores[i] ?? 0)) send("GREAT_MATCH", i);
+      if ((prevWrong[i] ?? 0) < (nextWrong[i] ?? 0)) send("NOPE", i);
+    }
+    prevScoresRef.current = g.state.scores.slice();
+    prevWrongCountRef.current = nextWrong;
+  }, [enabled, channel, g.state.scores, g.state.wrongBy]);
+
   return g;
 }
 
@@ -205,6 +258,9 @@ function handleHostIntent(
     case "PLAYER_ENTER_CLAIM_DURING_ROLL":
       // Ignored — the arbiter is the only path into claim mode.
       return;
+    case "CANCEL_CLAIM":
+      dispatch({ type: "CANCEL_CLAIM", by: seat });
+      return;
     case "PLAYER_SELECT_CARD":
       dispatch({ type: "PLAYER_SELECT_CARD", by: seat, idx: action.idx });
       return;
@@ -220,6 +276,30 @@ function handleHostIntent(
   }
 }
 
+// Shared: subscribes to transient events on the channel, deduped by id.
+// Older events fall out after LIFETIME_MS so a stuck event never persists.
+const EVENT_LIFETIME_MS = 1400;
+function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): TransientEvent[] {
+  const [events, setEvents] = useState<TransientEvent[]>([]);
+  const seenRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!enabled || !channel) return;
+    const handler = (msg: { payload: Envelope }) => {
+      const env = msg.payload;
+      if (!env || env.v !== PROTOCOL_VERSION || env.type !== "event") return;
+      const ev = (env as EventEnvelope).payload;
+      if (seenRef.current.has(ev.id)) return;
+      seenRef.current.add(ev.id);
+      setEvents((prev) => [...prev, ev]);
+      setTimeout(() => {
+        setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+      }, EVENT_LIFETIME_MS);
+    };
+    channel.on("broadcast", { event: "msg" }, handler);
+  }, [channel, enabled]);
+  return events;
+}
+
 // ---------- JOINER ----------
 
 export function useMultiplayerJoiner(opts: {
@@ -232,6 +312,7 @@ export function useMultiplayerJoiner(opts: {
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
+  const events = useTransientEvents(channel, enabled);
 
   useEffect(() => {
     if (!enabled || !channel) return;
@@ -260,5 +341,7 @@ export function useMultiplayerJoiner(opts: {
     [channel, mySeat, visitorId],
   );
 
-  return { publicState, sendIntent };
+  return { publicState, sendIntent, events };
 }
+
+export { useTransientEvents };

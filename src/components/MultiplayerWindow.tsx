@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { getVisitorId, getDisplayName, setDisplayName } from "@/lib/visitor";
 import { trackEvent } from "@/lib/analytics";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
-import { useMultiplayerHost, useMultiplayerJoiner, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
+import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { toPublicState } from "@/lib/publicState";
 import {
@@ -77,6 +77,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     return hostP?.visitor_id ?? null;
   }, [isHostView, visitorId, participants]);
 
+  // Compute disconnected seats: seats in frozenSeats whose visitor_id is no
+  // longer present in the room. Skipped before game start (frozenSeats null).
+  const disconnectedSeats = useMemo(() => {
+    if (!frozenSeats) return [] as number[];
+    const present = new Set(participants.map((p) => p.visitor_id));
+    return frozenSeats.filter((e) => !present.has(e.visitor_id)).map((e) => e.seat);
+  }, [frozenSeats, participants]);
+
   // Host: game controller.
   const gameEnabled = isHostView && frozenSeats !== null;
   const host = useMultiplayerHost({
@@ -85,7 +93,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     hostVisitorId: visitorId,
     enabled: gameEnabled,
     gameId,
+    disconnectedSeats,
   });
+  const hostEvents = useTransientEvents(channelRef.current, gameEnabled);
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
@@ -330,16 +340,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
-    const publicState = toPublicState(host.state, frozenSeats, hostClaimWindowRef.current, gameId);
+    const publicState = toPublicState(
+      host.state,
+      frozenSeats,
+      hostClaimWindowRef.current,
+      gameId,
+      disconnectedSeats,
+    );
     return (
       <MultiplayerGameView
         publicState={publicState}
         mySeat={0}
+        events={hostEvents}
         onIntent={(action) => {
-          // Host acts locally — bypass wire, hit reducer directly.
-          // NOTE: WHOOP / PLAYER_ENTER_CLAIM* is NOT handled here. It goes
-          // through the claim-lock arbiter (called by the view directly),
-          // which broadcasts claim_grant → useMultiplayerHost dispatches.
           if (action.type === "REQUEST_ROLL") {
             void host.doRollDice();
             return;
@@ -347,13 +360,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           if (action.type === "PLAYER_ENTER_CLAIM" || action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
             return;
           }
-          if (action.type === "PLAYER_SELECT_CARD") {
+          if (action.type === "CANCEL_CLAIM") {
+            host.dispatch({ type: "CANCEL_CLAIM", by: 0 });
+          } else if (action.type === "PLAYER_SELECT_CARD") {
             host.dispatch({ type: "PLAYER_SELECT_CARD", by: 0, idx: action.idx });
           } else if (action.type === "PLAYER_RESOLVE_MATCH") {
             host.dispatch({ type: "PLAYER_RESOLVE_MATCH", by: 0 });
           } else if (action.type === "FLIP_START") {
             host.dispatch({ type: "FLIP_START", by: 0, idx: action.idx, token: action.token });
-            // Auto-complete after peek window — mirror single-player REVEAL_MS.
             setTimeout(() => {
               host.dispatch({ type: "FLIP_COMPLETE", token: action.token });
             }, 2000);
@@ -375,6 +389,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       <MultiplayerGameView
         publicState={joinerPublicState}
         mySeat={joinerSeat}
+        events={joiner.events}
         onIntent={joiner.sendIntent}
         onLeave={leaveToIdle}
         mobile={mobile}
@@ -407,10 +422,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       <div style={containerStyle}>
         <div>
           <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
-            What should we call you?
+            Pick a nickname
           </div>
           <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, marginTop: SPACE[3] }}>
-            {pendingLabel}. Up to 12 characters.
+            {pendingLabel}. Up to 8 characters so it fits on the chip.
           </div>
         </div>
 
@@ -429,12 +444,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
         <input
           value={nameInput}
-          onChange={(e) => setNameInput(e.target.value.slice(0, 12))}
+          onChange={(e) => setNameInput(e.target.value.slice(0, 8))}
           onKeyDown={(e) => { if (e.key === "Enter") handleConfirmName(); }}
-          placeholder="Your name"
-          maxLength={12}
+          placeholder="Nickname"
+          maxLength={8}
           autoFocus
-          aria-label="Display name"
+          aria-label="Nickname"
           style={{ ...inputStyle, textTransform: "none", letterSpacing: 0 }}
         />
 
