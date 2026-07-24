@@ -355,10 +355,25 @@ const MultiplayerGameView: React.FC<Props> = ({
   void _mobile;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
+  // Block WHOOP for ~500ms during the flip rotation itself (matches
+  // GameCard's `transform 0.5s` transition). Once the face has settled the
+  // full hold window remains claimable.
+  const [isAnimating, setIsAnimating] = React.useState(false);
+  const prevPeekRef = React.useRef<number | null>(s.peekingCard);
+  React.useEffect(() => {
+    const prev = prevPeekRef.current;
+    prevPeekRef.current = s.peekingCard;
+    if (prev === null && s.peekingCard !== null) {
+      setIsAnimating(true);
+      const t = setTimeout(() => setIsAnimating(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [s.peekingCard]);
   const canClaim =
     mySeat !== null &&
     (s.phase === "FLIPPING" || s.phase === "AWAITING_ROLL") &&
-    s.claimBy === null;
+    s.claimBy === null &&
+    !isAnimating;
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
   const inLastCall = s.phase === "LAST_CALL";
   const [lastCallSel, setLastCallSel] = React.useState<number[]>([]);
@@ -458,7 +473,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       setClaimBusy(false);
       if (!result.won) setTooSlowAt(Date.now());
     };
-    if (claimBusy) buttonLabel = "…";
+    if (claimBusy) { buttonLabel = "…"; buttonKind = "DISABLED"; buttonOnClick = undefined; }
   } else if (inLastCall && mySeat !== null) {
     buttonKind = "WHOOP";
     buttonLabel = "LAST CALL!";
