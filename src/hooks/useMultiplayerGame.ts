@@ -258,6 +258,9 @@ function handleHostIntent(
     case "PLAYER_ENTER_CLAIM_DURING_ROLL":
       // Ignored — the arbiter is the only path into claim mode.
       return;
+    case "CANCEL_CLAIM":
+      dispatch({ type: "CANCEL_CLAIM", by: seat });
+      return;
     case "PLAYER_SELECT_CARD":
       dispatch({ type: "PLAYER_SELECT_CARD", by: seat, idx: action.idx });
       return;
