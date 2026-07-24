@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { COLORS, SPACE, BORDER, RADIUS, textStyle, TEXT, FONT_FAMILY } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
@@ -6,6 +6,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { getVisitorId, getDisplayName, setDisplayName } from "@/lib/visitor";
 import { trackEvent } from "@/lib/analytics";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
+import { useMultiplayerHost, useMultiplayerJoiner, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
+import MultiplayerGameView from "@/components/MultiplayerGameView";
+import { toPublicState } from "@/lib/publicState";
 import {
   createRoom,
   findRoomByCode,
@@ -31,7 +34,8 @@ type View =
   | { kind: "name-prompt"; pending: PendingAction; error?: string }
   | { kind: "host"; room: RoomRow }
   | { kind: "joiner"; room: RoomRow }
-  | { kind: "full"; code: string };
+  | { kind: "full"; code: string }
+  | { kind: "host-left" };
 
 const sanitizeCodeInput = (raw: string): string => {
   const upper = raw.toUpperCase();
@@ -49,17 +53,86 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const [busy, setBusy] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [nameInput, setNameInput] = useState<string>(() => getDisplayName());
+  // Game-started state — seat freeze lives here on the HOST. Joiners learn
+  // seats from the wire via PublicState.seatMap.
+  const [frozenSeats, setFrozenSeats] = useState<SeatMapEntry[] | null>(null);
 
   const visitorId = useMemo(() => getVisitorId(), []);
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
+  const isHostView = view.kind === "host";
   const displayName = getDisplayName();
-  const { participants, status: presenceStatus } = useRoomPresence(
+  const { participants, status: presenceStatus, channelRef } = useRoomPresence(
     activeRoom ? activeRoom.id : null,
     visitorId,
     displayName,
+    isHostView,
   );
 
-  // Handle /play/:roomCode entrypoint — always go through name prompt.
+  const hostVisitorId = useMemo(() => {
+    if (isHostView) return visitorId;
+    const hostP = participants.find((p) => p.is_host);
+    return hostP?.visitor_id ?? null;
+  }, [isHostView, visitorId, participants]);
+
+  // Host: game controller.
+  const gameEnabled = isHostView && frozenSeats !== null;
+  const host = useMultiplayerHost({
+    channel: channelRef.current,
+    seatMap: frozenSeats ?? [],
+    hostVisitorId: visitorId,
+    enabled: gameEnabled,
+  });
+
+  // Joiner: pure receiver.
+  const joinerEnabled = view.kind === "joiner" && !!channelRef.current;
+  const joiner = useMultiplayerJoiner({
+    channel: channelRef.current,
+    mySeat: null, // resolved from seatMap after first state msg
+    visitorId,
+    enabled: joinerEnabled,
+  });
+  const joinerPublicState = joiner.publicState;
+  const joinerSeat = useMemo(() => {
+    if (!joinerPublicState) return null;
+    const me = joinerPublicState.seatMap.find((e) => e.visitor_id === visitorId);
+    return me?.seat ?? null;
+  }, [joinerPublicState, visitorId]);
+
+  // Watch for host departure once a game is in progress.
+  useEffect(() => {
+    if (view.kind !== "joiner") return;
+    if (!joinerPublicState) return; // game hasn't started
+    if (!hostVisitorId) {
+      setView({ kind: "host-left" });
+      return;
+    }
+    const hostStillHere = participants.some((p) => p.visitor_id === hostVisitorId);
+    if (!hostStillHere) {
+      setView({ kind: "host-left" });
+    }
+  }, [view.kind, joinerPublicState, participants, hostVisitorId]);
+
+  // Fire game_completed once when host reaches GAME_OVER normally (not on
+  // host departure).
+  const completedFiredRef = useRef(false);
+  useEffect(() => {
+    if (!gameEnabled) return;
+    if (host.state.phase !== "GAME_OVER") return;
+    if (completedFiredRef.current) return;
+    completedFiredRef.current = true;
+    const top = Math.max(...host.state.scores);
+    const winners = host.state.scores
+      .map((v, i) => (v === top ? i : -1))
+      .filter((i) => i !== -1);
+    trackEvent("game_completed", {
+      roomCode: activeRoom?.room_code,
+      metadata: {
+        round_count: host.state.roundNum,
+        winner_seat: winners.length === 1 ? winners[0] : null,
+      },
+    });
+  }, [gameEnabled, host.state.phase, host.state.scores, host.state.roundNum, activeRoom]);
+
   useEffect(() => {
     if (!initialRoomCode) return;
     const normalized = initialRoomCode.toUpperCase();
@@ -87,18 +160,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
                 : `Room "${code}" doesn't exist.`,
           });
           if (action.kind === "join-link") {
-            trackEvent("invite_link_clicked", {
-              roomCode: code,
-              metadata: { room_found: false },
-            });
+            trackEvent("invite_link_clicked", { roomCode: code, metadata: { room_found: false } });
           }
           return;
         }
         if (action.kind === "join-link") {
-          trackEvent("invite_link_clicked", {
-            roomCode: code,
-            metadata: { room_found: true },
-          });
+          trackEvent("invite_link_clicked", { roomCode: code, metadata: { room_found: true } });
         }
         if (room.is_host) {
           setView({ kind: "host", room });
@@ -112,15 +179,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       } catch (e) {
         console.error("[multiplayer] enterRoom failed", e);
         if (action.kind === "join-link") {
-          trackEvent("invite_link_clicked", {
-            roomCode: action.code,
-            metadata: { room_found: false, error: true },
-          });
+          trackEvent("invite_link_clicked", { roomCode: action.code, metadata: { room_found: false, error: true } });
         }
-        setView({
-          kind: "idle",
-          error: "Couldn't reach the room. Check your connection and try again.",
-        });
+        setView({ kind: "idle", error: "Couldn't reach the room. Check your connection and try again." });
       } finally {
         setBusy(false);
       }
@@ -157,14 +218,30 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     void enterRoom(view.pending);
   }, [view, nameInput, busy, enterRoom]);
 
-  // Capacity guard — client-side only; server enforcement lands with game-start prompt.
+  // Capacity guard — fixed to `>=` per spec so the "full" state matches
+  // rather than admitting a 7th before flipping. (See: prompt 8.1.)
   useEffect(() => {
     if (!activeRoom) return;
-    if (view.kind !== "joiner") return; // host is never over-capacity from their own view
-    if (participants.length > ROOM_CAPACITY) {
+    if (view.kind !== "joiner") return;
+    if (participants.length >= ROOM_CAPACITY + 1) {
       setView({ kind: "full", code: activeRoom.room_code });
     }
   }, [participants.length, activeRoom, view]);
+
+  const handleStartGame = useCallback(() => {
+    if (!isHostView || participants.length < 2) return;
+    const seatMap: SeatMapEntry[] = participants.slice(0, ROOM_CAPACITY).map((p, i) => ({
+      seat: i,
+      visitor_id: p.visitor_id,
+      display_name: p.display_name,
+    }));
+    setFrozenSeats(seatMap);
+    completedFiredRef.current = false;
+    trackEvent("game_started", {
+      roomCode: activeRoom?.room_code,
+      metadata: { player_count: seatMap.length },
+    });
+  }, [isHostView, participants, activeRoom]);
 
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
@@ -197,6 +274,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const leaveToIdle = useCallback(() => {
     setCodeInput("");
+    setFrozenSeats(null);
     setView({ kind: "idle" });
   }, []);
 
@@ -223,11 +301,76 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     outline: "none",
   };
 
+  // ---------- GAME IN PROGRESS: HOST ----------
+  if (isHostView && frozenSeats !== null) {
+    const publicState = toPublicState(host.state, frozenSeats);
+    return (
+      <MultiplayerGameView
+        publicState={publicState}
+        mySeat={0}
+        onIntent={(action) => {
+          // Host acts locally — bypass wire, hit reducer directly.
+          if (action.type === "REQUEST_ROLL") {
+            void host.doRollDice();
+            return;
+          }
+          if (action.type === "PLAYER_ENTER_CLAIM") {
+            host.dispatch({ type: "PLAYER_ENTER_CLAIM", by: 0 });
+          } else if (action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
+            host.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 });
+            void host.doRollDice();
+          } else if (action.type === "PLAYER_SELECT_CARD") {
+            host.dispatch({ type: "PLAYER_SELECT_CARD", by: 0, idx: action.idx });
+          } else if (action.type === "PLAYER_RESOLVE_MATCH") {
+            host.dispatch({ type: "PLAYER_RESOLVE_MATCH", by: 0 });
+          } else if (action.type === "FLIP_START") {
+            host.dispatch({ type: "FLIP_START", by: 0, idx: action.idx, token: action.token });
+            // Auto-complete after peek window — mirror single-player REVEAL_MS.
+            setTimeout(() => {
+              host.dispatch({ type: "FLIP_COMPLETE", token: action.token });
+            }, 2000);
+          } else if (action.type === "LAST_CALL_CLAIM") {
+            host.dispatch({ type: "LAST_CALL_CLAIM", by: 0, a: action.a, b: action.b });
+          }
+        }}
+        onLeave={leaveToIdle}
+        mobile={mobile}
+      />
+    );
+  }
+
+  // ---------- GAME IN PROGRESS: JOINER ----------
+  if (view.kind === "joiner" && joinerPublicState) {
+    return (
+      <MultiplayerGameView
+        publicState={joinerPublicState}
+        mySeat={joinerSeat}
+        onIntent={joiner.sendIntent}
+        onLeave={leaveToIdle}
+        mobile={mobile}
+      />
+    );
+  }
+
+  if (view.kind === "host-left") {
+    return (
+      <div style={containerStyle}>
+        <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
+          The host left the game.
+        </div>
+        <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted }}>
+          Games end when the host leaves. Start your own room to play again.
+        </div>
+        <AppButton variant="primary" tone="red" size="md" onClick={leaveToIdle} fullWidth>
+          Back to lobby
+        </AppButton>
+      </div>
+    );
+  }
+
   if (view.kind === "name-prompt") {
     const pendingLabel =
-      view.pending.kind === "create"
-        ? "Starting a room"
-        : `Joining ${view.pending.code}`;
+      view.pending.kind === "create" ? "Starting a room" : `Joining ${view.pending.code}`;
     return (
       <div style={containerStyle}>
         <div>
@@ -240,17 +383,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         </div>
 
         {view.error && (
-          <div
-            role="alert"
-            style={{
-              ...textStyle("caption", mobile),
-              color: COLORS.red,
-              border: `1.5px solid ${COLORS.red}`,
-              borderRadius: RADIUS.md,
-              padding: `${SPACE[3]}px ${SPACE[4]}px`,
-              background: COLORS.surface,
-            }}
-          >
+          <div role="alert" style={{
+            ...textStyle("caption", mobile),
+            color: COLORS.red,
+            border: `1.5px solid ${COLORS.red}`,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[3]}px ${SPACE[4]}px`,
+            background: COLORS.surface,
+          }}>
             {view.error}
           </div>
         )}
@@ -258,9 +398,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         <input
           value={nameInput}
           onChange={(e) => setNameInput(e.target.value.slice(0, 12))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleConfirmName();
-          }}
+          onKeyDown={(e) => { if (e.key === "Enter") handleConfirmName(); }}
           placeholder="Your name"
           maxLength={12}
           autoFocus
@@ -301,8 +439,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           Room "{view.code}" is full.
         </div>
         <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted }}>
-          Rooms hold up to {ROOM_CAPACITY} players. Ask the host to start a new room, or wait for a
-          spot to open.
+          Rooms hold up to {ROOM_CAPACITY} players.
         </div>
         <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
           Back
@@ -324,17 +461,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         </div>
 
         {view.error && (
-          <div
-            role="alert"
-            style={{
-              ...textStyle("caption", mobile),
-              color: COLORS.red,
-              border: `1.5px solid ${COLORS.red}`,
-              borderRadius: RADIUS.md,
-              padding: `${SPACE[3]}px ${SPACE[4]}px`,
-              background: COLORS.surface,
-            }}
-          >
+          <div role="alert" style={{
+            ...textStyle("caption", mobile),
+            color: COLORS.red,
+            border: `1.5px solid ${COLORS.red}`,
+            borderRadius: RADIUS.md,
+            padding: `${SPACE[3]}px ${SPACE[4]}px`,
+            background: COLORS.surface,
+          }}>
             {view.error}
           </div>
         )}
@@ -351,9 +485,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         </AppButton>
 
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-          <div style={{ ...textStyle("label", mobile), color: COLORS.ink }}>
-            Got a code?
-          </div>
+          <div style={{ ...textStyle("label", mobile), color: COLORS.ink }}>Got a code?</div>
           <div style={{ display: "flex", gap: SPACE[3], flexDirection: mobile ? "column" : "row" }}>
             <input
               value={codeInput}
@@ -382,20 +514,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     );
   }
 
-  // Host / Joiner shared body
+  // Host/Joiner LOBBY view (game not yet started).
+  const room = (view as { room: RoomRow }).room;
   const isHost = view.kind === "host";
-  const { room } = view;
-
-  // Seat ordering (LOBBY-ONLY, provisional): host pinned to seat 0, others by
-  // presence join order. Do not rely on these indices once a game starts.
-  const hostEntry = participants.find((p) => p.visitor_id === (isHost ? visitorId : undefined));
-  const orderedParticipants: typeof participants = [];
-  if (isHost && hostEntry) orderedParticipants.push(hostEntry);
-  for (const p of participants) {
-    if (isHost && p.visitor_id === visitorId) continue;
-    orderedParticipants.push(p);
-  }
-  const visibleParticipants = isHost ? orderedParticipants : participants;
+  const visibleParticipants = participants;
   const canStart = visibleParticipants.length >= 2;
 
   const statusLabel =
@@ -411,41 +533,35 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, textTransform: "uppercase", letterSpacing: 2 }}>
           Room code
         </div>
-        <div
-          style={{
-            ...textStyle("display", mobile),
-            color: COLORS.ink,
-            letterSpacing: mobile ? 6 : 10,
-            fontVariantNumeric: "tabular-nums",
-            padding: `${SPACE[5]}px ${SPACE[6]}px`,
-            border: BORDER.heavy,
-            borderRadius: RADIUS.md,
-            background: COLORS.surface,
-            textAlign: "center",
-            userSelect: "all",
-          }}
-        >
+        <div style={{
+          ...textStyle("display", mobile),
+          color: COLORS.ink,
+          letterSpacing: mobile ? 6 : 10,
+          fontVariantNumeric: "tabular-nums",
+          padding: `${SPACE[5]}px ${SPACE[6]}px`,
+          border: BORDER.heavy,
+          borderRadius: RADIUS.md,
+          background: COLORS.surface,
+          textAlign: "center",
+          userSelect: "all",
+        }}>
           {room.room_code}
         </div>
       </div>
 
       {isHost && (
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-          <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
-            Share this link:
-          </div>
-          <div
-            style={{
-              ...textStyle("caption", mobile),
-              color: COLORS.ink,
-              padding: `${SPACE[3]}px ${SPACE[4]}px`,
-              border: BORDER.standard,
-              borderRadius: RADIUS.sm,
-              background: COLORS.surface,
-              wordBreak: "break-all",
-              userSelect: "all",
-            }}
-          >
+          <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>Share this link:</div>
+          <div style={{
+            ...textStyle("caption", mobile),
+            color: COLORS.ink,
+            padding: `${SPACE[3]}px ${SPACE[4]}px`,
+            border: BORDER.standard,
+            borderRadius: RADIUS.sm,
+            background: COLORS.surface,
+            wordBreak: "break-all",
+            userSelect: "all",
+          }}>
             {shareUrl(room.room_code)}
           </div>
           <AppButton variant="primary" tone="blue" size="md" onClick={() => handleCopy(room.room_code)}>
@@ -465,18 +581,16 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             </div>
           )}
         </div>
-        <div
-          style={{
-            border: BORDER.standard,
-            borderRadius: RADIUS.md,
-            background: COLORS.surface,
-            padding: SPACE[5],
-            minHeight: 72,
-            display: "flex",
-            flexDirection: "column",
-            gap: SPACE[3],
-          }}
-        >
+        <div style={{
+          border: BORDER.standard,
+          borderRadius: RADIUS.md,
+          background: COLORS.surface,
+          padding: SPACE[5],
+          minHeight: 72,
+          display: "flex",
+          flexDirection: "column",
+          gap: SPACE[3],
+        }}>
           {visibleParticipants.length === 0 ? (
             <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted }}>
               Waiting for players…
@@ -484,30 +598,23 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           ) : (
             visibleParticipants.map((p, i) => {
               const isYou = p.visitor_id === visitorId;
-              const seatLabel = isHost && i === 0 ? "Host" : `Seat ${i + 1}`;
+              const seatLabel = p.is_host ? "Host" : `Seat ${i + 1}`;
               return (
-                <div
-                  key={p.visitor_id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: SPACE[3],
-                  }}
-                >
+                <div key={p.visitor_id} style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: SPACE[3],
+                }}>
                   <div style={{ ...textStyle("body", mobile), color: COLORS.ink }}>
                     {p.display_name || p.visitor_id.slice(0, 6)}
                     {isYou && (
-                      <span
-                        style={{
-                          ...textStyle("caption", mobile),
-                          color: COLORS.inkMuted,
-                          marginLeft: SPACE[2],
-                          fontStyle: "italic",
-                        }}
-                      >
-                        (you)
-                      </span>
+                      <span style={{
+                        ...textStyle("caption", mobile),
+                        color: COLORS.inkMuted,
+                        marginLeft: SPACE[2],
+                        fontStyle: "italic",
+                      }}>(you)</span>
                     )}
                   </div>
                   <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
@@ -522,12 +629,21 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
       {isHost ? (
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
-          <AppButton variant="primary" tone="red" size={mobile ? "md" : "lg"} disabled fullWidth>
+          <AppButton
+            variant="primary"
+            tone="red"
+            size={mobile ? "md" : "lg"}
+            onClick={handleStartGame}
+            disabled={!canStart}
+            fullWidth
+          >
             Start game
           </AppButton>
-          <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted, textAlign: "center" }}>
-            {canStart ? "Coming soon — game start not wired yet." : "Needs at least 2 players."}
-          </div>
+          {!canStart && (
+            <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted, textAlign: "center" }}>
+              Needs at least 2 players.
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted, textAlign: "center" }}>
@@ -535,13 +651,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         </div>
       )}
 
-      <AppButton
-        variant="secondary"
-        tone="ink"
-        size="md"
-        onClick={leaveToIdle}
-        fullWidth
-      >
+      <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
         Leave room
       </AppButton>
     </div>

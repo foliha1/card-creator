@@ -937,6 +937,11 @@ export function useGameState(
   }, [state.wrongBy]);
 
   return {
+    // Multiplayer escape hatches — host uses these to broadcast state and
+    // inject validated intents from joiners. Do NOT use in single-player UI.
+    state,
+    dispatch,
+
     deck: state.deck,
     grid: state.grid,
     matchRule: state.rule,
