@@ -260,8 +260,13 @@ function startRound(s: State, winnerIndex: number | null): State {
   if (!hasCards && s.deck.length === 0) return withGameOverAnnounce(s);
   if (filled < 2 && s.deck.length === 0) return withGameOverAnnounce(s);
 
-  const nextRoller =
+  const candidate =
     winnerIndex !== null ? winnerIndex : (s.roller + 1) % s.seatCount;
+  // If the candidate roller is disconnected, hop forward to the next connected
+  // seat. Bounded by nextConnected.
+  const nextRoller = s.disconnected[candidate]
+    ? nextConnected(candidate, s.seatCount, s.disconnected)
+    : candidate;
   return {
     ...s,
     phase: "AWAITING_ROLL",
@@ -269,6 +274,7 @@ function startRound(s: State, winnerIndex: number | null): State {
     flipper: nextRoller,
     wrongBy: emptyWrongBy(s.seatCount),
     skip: Array(s.seatCount).fill(false),
+    // NOTE: disconnected is persistent across rounds — do NOT reset it here.
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     selectedCards: [],
@@ -285,10 +291,13 @@ function startRound(s: State, winnerIndex: number | null): State {
 function cycleAdvance(s: State, addWho: number): State {
   const flipped = new Set(s.flippedThisCycle);
   flipped.add(addWho);
-  if (flipped.size >= s.seatCount) {
+  // Cycle ends when every CONNECTED seat has flipped this cycle. Disconnected
+  // seats never contribute a flip, so counting them would stall the loop.
+  const conn = Math.max(1, connectedCount(s.seatCount, s.disconnected));
+  if (flipped.size >= conn) {
     const noClaim = !s.claimedThisCycle;
     if (s.phase === "LAST_CALL") {
-      const next = (s.flipper + 1) % s.seatCount;
+      const next = nextConnected(s.flipper, s.seatCount, s.disconnected);
       return {
         ...s,
         flipper: next,
@@ -317,7 +326,7 @@ function cycleAdvance(s: State, addWho: number): State {
     }
     return startRound({ ...s, flippedThisCycle: flipped }, null);
   }
-  const next = (s.flipper + 1) % s.seatCount;
+  const next = nextConnected(s.flipper, s.seatCount, s.disconnected);
   return {
     ...s,
     flipper: next,
