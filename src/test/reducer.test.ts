@@ -476,9 +476,11 @@ describe("CLAIM_START", () => {
     expect(reducer(s, { type: "CLAIM_START", by: 1, a: 0, b: 2, token: 1 })).toBe(s);
   });
 
-  it("is a NO-OP for by === 0 (humans use PLAYER_RESOLVE_MATCH)", () => {
+  it("accepts by === 0 in the generalized reducer (no more seat gate)", () => {
     const s = baseState({ phase: "FLIPPING" });
-    expect(reducer(s, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 1 })).toBe(s);
+    const next = reducer(s, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 1 });
+    expect(next.phase).toBe("CLAIM_RESOLVING");
+    expect(next.claimBy).toBe(0);
   });
 
   it("is a NO-OP when either target slot is null", () => {
