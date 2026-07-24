@@ -50,18 +50,21 @@ function baseState(overrides: Partial<State> = {}): State {
     UNRELATED_C,   // 4
     UNRELATED_D,   // 5
   ];
+  const seatCount = overrides.seatCount ?? 2;
   return {
     phase: "FLIPPING",
     slotCount: 6,
+    seatCount,
+    names: Array.from({ length: seatCount }, (_, i) => ["you", "opponent"][i] ?? `p${i}`),
     roller: 0,
     flipper: 0,
     grid,
     deck: [card("square", 1, "blue"), card("square", 2, "red")],
-    scores: [0, 0],
+    scores: Array(seatCount).fill(0),
     rule: ["SHAPE"],
     dieValues: ["SHAPE"],
-    wrongBy: [new Set<number>(), new Set<number>()],
-    skip: [false, false],
+    wrongBy: Array.from({ length: seatCount }, () => new Set<number>()),
+    skip: Array(seatCount).fill(false),
     flippedThisCycle: new Set<number>(),
     claimedThisCycle: false,
     drawEmpty: false,
@@ -76,6 +79,7 @@ function baseState(overrides: Partial<State> = {}): State {
     messageType: "info",
     inFlight: null,
     claimPending: false,
+    claimBy: 0,
     ...overrides,
   };
 }
