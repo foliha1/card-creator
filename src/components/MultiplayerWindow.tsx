@@ -84,6 +84,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     seatMap: frozenSeats ?? [],
     hostVisitorId: visitorId,
     enabled: gameEnabled,
+    gameId,
   });
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
@@ -91,6 +92,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const hostClaimWindowRef = useRef(0);
   const hostPrevClaimByRef = useRef<number | null>(null);
   const hostPrevRoundRef = useRef<number>(host.state.roundNum);
+  const hostPrevGameIdRef = useRef<string>(gameId);
+  if (hostPrevGameIdRef.current !== gameId) {
+    hostPrevGameIdRef.current = gameId;
+    hostClaimWindowRef.current = 0;
+    hostPrevRoundRef.current = host.state.roundNum;
+    hostPrevClaimByRef.current = null;
+  }
   if (host.state.roundNum !== hostPrevRoundRef.current) {
     hostPrevRoundRef.current = host.state.roundNum;
     hostClaimWindowRef.current += 1;
