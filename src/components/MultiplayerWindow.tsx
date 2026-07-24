@@ -56,6 +56,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Game-started state — seat freeze lives here on the HOST. Joiners learn
   // seats from the wire via PublicState.seatMap.
   const [frozenSeats, setFrozenSeats] = useState<SeatMapEntry[] | null>(null);
+  // Host-minted game id. Scopes the arbiter's UNIQUE (room, game, window)
+  // constraint so consecutive games in the same room don't collide.
+  const [gameId, setGameId] = useState<string>("");
 
   const visitorId = useMemo(() => getVisitorId(), []);
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
