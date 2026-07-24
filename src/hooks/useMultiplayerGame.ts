@@ -111,18 +111,35 @@ export function useMultiplayerHost(opts: {
     ch.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
   }, []);
 
-  // Track disconnected seats via a ref (used in doSend) and re-mark skip
-  // whenever the reducer resets skip[] (round boundary). MARK_DISCONNECTED
-  // is idempotent — the reducer only sets skip=true where it isn't already.
+  // Track disconnected seats via a ref (used in doSend). SET_DISCONNECTED
+  // uses REPLACE semantics on the reducer — the payload is the complete
+  // current set, so reconnection is handled for free (a seat missing from
+  // the array becomes connected again).
   const disconnectedRef = useRef<number[]>(disconnectedSeats);
   disconnectedRef.current = disconnectedSeats;
+  const prevDisconnectedKey = useRef<string>("");
   useEffect(() => {
-    if (!enabled || disconnectedSeats.length === 0) return;
-    // Only dispatch if any listed seat is currently NOT flagged skip=true —
-    // avoids a dispatch storm during every state tick.
-    const needs = disconnectedSeats.some((s) => !g.state.skip[s]);
-    if (needs) g.dispatch({ type: "MARK_DISCONNECTED", seats: disconnectedSeats });
-  }, [enabled, disconnectedSeats, g.state.skip, g.state.roundNum, g.dispatch]);
+    if (!enabled) return;
+    const key = disconnectedSeats.slice().sort((a, b) => a - b).join(",");
+    if (key === prevDisconnectedKey.current) return;
+    prevDisconnectedKey.current = key;
+    g.dispatch({ type: "SET_DISCONNECTED", seats: disconnectedSeats });
+  }, [enabled, disconnectedSeats, g.dispatch]);
+
+  // Host end-game policy: fewer than 2 connected seats → end the game with a
+  // clear message. This is deliberate — a lone player staring at a live board
+  // is worse than a clean ending. Not fired as a normal completion.
+  const endedForEmptyRef = useRef(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const total = seatMap.length;
+    if (total < 2) return;
+    const connected = total - disconnectedSeats.length;
+    if (connected < 2 && !endedForEmptyRef.current && g.state.phase !== "GAME_OVER") {
+      endedForEmptyRef.current = true;
+      g.dispatch({ type: "END_GAME_TABLE_EMPTY" });
+    }
+  }, [enabled, seatMap.length, disconnectedSeats, g.state.phase, g.dispatch]);
 
   useEffect(() => {
     if (!enabled || !channel) return;
