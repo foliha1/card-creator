@@ -37,15 +37,18 @@ const BROADCAST_THROTTLE_MS = 70;
 
 // ---------- HOST ----------
 
+export type BroadcastSubscribe = (listener: (msg: { payload: unknown }) => void) => () => void;
+
 export function useMultiplayerHost(opts: {
   channel: RealtimeChannel | null;
+  onBroadcast: BroadcastSubscribe;
   seatMap: SeatMapEntry[];
   hostVisitorId: string;
   enabled: boolean;
   gameId: string;
   disconnectedSeats: number[];
 }) {
-  const { channel, seatMap, hostVisitorId, enabled, gameId, disconnectedSeats } = opts;
+  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, disconnectedSeats } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
