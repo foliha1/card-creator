@@ -286,6 +286,7 @@ function handleHostIntent(
       return;
     case "FLIP_START":
       dispatch({ type: "FLIP_START", by: seat, idx: action.idx, token: action.token });
+      setTimeout(() => dispatch({ type: "FLIP_COMPLETE", token: action.token }), 2000);
       return;
     case "LAST_CALL_CLAIM":
       dispatch({ type: "LAST_CALL_CLAIM", by: seat, a: action.a, b: action.b });
