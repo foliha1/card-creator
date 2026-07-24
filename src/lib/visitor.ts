@@ -1,5 +1,7 @@
 const STORAGE_KEY = "ww_visitor_id";
+const NAME_KEY = "ww_display_name";
 let inMemoryId: string | null = null;
+let inMemoryName: string | null = null;
 
 function generateUuid(): string {
   try {
@@ -9,7 +11,6 @@ function generateUuid(): string {
   } catch {
     // fall through
   }
-  // RFC4122-ish fallback
   const rnd = (n: number) =>
     Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join("");
   return `${rnd(8)}-${rnd(4)}-4${rnd(3)}-${((Math.random() * 4) | 8).toString(16)}${rnd(3)}-${rnd(12)}`;
@@ -25,8 +26,33 @@ export function getVisitorId(): string {
       return fresh;
     }
   } catch {
-    // fall through to in-memory
+    // fall through
   }
   if (!inMemoryId) inMemoryId = generateUuid();
   return inMemoryId;
+}
+
+export function getDisplayName(): string {
+  try {
+    if (typeof localStorage !== "undefined") {
+      const v = localStorage.getItem(NAME_KEY);
+      if (v) return v;
+    }
+  } catch {
+    // fall through
+  }
+  return inMemoryName ?? "";
+}
+
+export function setDisplayName(name: string): string {
+  const trimmed = name.trim().slice(0, 12);
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(NAME_KEY, trimmed);
+    }
+  } catch {
+    // fall through
+  }
+  inMemoryName = trimmed;
+  return trimmed;
 }
