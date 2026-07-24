@@ -89,13 +89,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const gameEnabled = isHostView && frozenSeats !== null;
   const host = useMultiplayerHost({
     channel: channelRef.current,
+    onBroadcast,
     seatMap: frozenSeats ?? [],
     hostVisitorId: visitorId,
     enabled: gameEnabled,
     gameId,
     disconnectedSeats,
   });
-  const hostEvents = useTransientEvents(channelRef.current, gameEnabled);
+  const hostEvents = useTransientEvents(channelRef.current, onBroadcast, gameEnabled);
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
