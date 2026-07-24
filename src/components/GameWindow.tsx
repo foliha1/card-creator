@@ -223,19 +223,28 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
     }
   }, [g.message, g.messageType, g.roundNum, g.scores[0]]);
 
+  const prevWrongSizeRef = useRef(0);
   useEffect(() => {
-    if (g.wrongCards.size === 2) {
-      playWrong();
-      showWhoopFeedback("Wrong Match!", "red");
-      const indices = Array.from(g.wrongCards);
-      setWrongFlashCards(new Set(indices));
-      setShakingCards(new Set(indices));
-      setTimeout(() => {
-        setShakingCards(new Set());
-        setWrongFlashCards(new Set());
-        setWrongWashCards((prev) => new Set([...prev, ...indices]));
-      }, 300);
-    }
+    const wrong = g.wrongCards as Set<number>;
+    const prev = prevWrongSizeRef.current;
+    prevWrongSizeRef.current = wrong.size;
+    if (wrong.size <= prev) return;
+    // A new wrong-claim added 2 indices this tick — flash the newest additions.
+    playWrong();
+    showWhoopFeedback("Wrong Match!", "red");
+    const indices: number[] = Array.from(wrong);
+    const newest = indices.slice(-2);
+    setWrongFlashCards(new Set<number>(newest));
+    setShakingCards(new Set<number>(newest));
+    setTimeout(() => {
+      setShakingCards(new Set<number>());
+      setWrongFlashCards(new Set<number>());
+      setWrongWashCards((prevWash) => {
+        const next = new Set<number>(prevWash);
+        newest.forEach((i) => next.add(i));
+        return next;
+      });
+    }, 300);
   }, [g.wrongCards, showWhoopFeedback]);
 
 
@@ -367,7 +376,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
       if (g.lastCall) { handleLastCallClick(index); return; }
       if (g.claimMode) { g.selectCard(index); return; }
       if (peekLocked || g.grid[index] === null) return;
-      if (g.wrongCards.has(index)) return;
+      if (g.wrongByMe.has(index)) return;
       setPeekLocked(true);
       playFlip();
       g.peekCard(index);
@@ -832,8 +841,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       ? "red-pulse-border 1.6s infinite"
                       : undefined,
                     borderRadius: RADIUS.md,
-                    ...(g.wrongCards.has(i)
-                      ? { opacity: 0.55, cursor: "default" }
+                    ...(g.wrongByMe.has(i)
+                      ? { cursor: "default" }
                       : {}),
                     ...(g.opponentClaiming && g.opponentClaiming.indices.includes(i)
                       ? { boxShadow: `0 0 0 3px ${COLORS.blue}, 0 0 16px rgba(0,114,178,0.6)` }
@@ -850,6 +859,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                       g.peekingCard === i ||
                       (g.claimMode && g.selectedCards.includes(i)) ||
                       (g.opponentClaiming?.indices.includes(i) ?? false) ||
+                      g.wrongCards.has(i) ||
                       wrongWashCards.has(i) ||
                       wrongFlashCards.has(i)
                     }
