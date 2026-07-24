@@ -201,6 +201,7 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     dieValues: values,
     wrongBy: emptyWrongBy(seatCount),
     skip: Array(seatCount).fill(false),
+    disconnected: Array(seatCount).fill(false),
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     drawEmpty: newDeck.length === 0,
