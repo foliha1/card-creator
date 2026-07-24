@@ -21,6 +21,9 @@ interface Props {
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
+  // Arbiter context — the view calls the claim-lock function directly on WHOOP.
+  roomId: string;
+  visitorId: string;
 }
 
 const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent, onLeave, mobile = false }) => {
