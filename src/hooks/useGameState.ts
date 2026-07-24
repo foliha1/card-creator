@@ -152,7 +152,7 @@ function initialState(slotCount: number): State {
     scores: [0, 0],
     rule,
     dieValues: values,
-    wrong: new Set(),
+    wrongBy: [new Set(), new Set()],
     skip: [false, false],
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
