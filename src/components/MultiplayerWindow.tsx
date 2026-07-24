@@ -77,6 +77,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     return hostP?.visitor_id ?? null;
   }, [isHostView, visitorId, participants]);
 
+  // Compute disconnected seats: seats in frozenSeats whose visitor_id is no
+  // longer present in the room. Skipped before game start (frozenSeats null).
+  const disconnectedSeats = useMemo(() => {
+    if (!frozenSeats) return [] as number[];
+    const present = new Set(participants.map((p) => p.visitor_id));
+    return frozenSeats.filter((e) => !present.has(e.visitor_id)).map((e) => e.seat);
+  }, [frozenSeats, participants]);
+
   // Host: game controller.
   const gameEnabled = isHostView && frozenSeats !== null;
   const host = useMultiplayerHost({
@@ -85,7 +93,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     hostVisitorId: visitorId,
     enabled: gameEnabled,
     gameId,
+    disconnectedSeats,
   });
+  const hostEvents = useTransientEvents(channelRef.current, gameEnabled);
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
