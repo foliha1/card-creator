@@ -14,6 +14,7 @@ import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY, TEXT, textStyle } from "@/l
 import type { PublicState } from "@/lib/publicState";
 import type { IntentAction } from "@/lib/multiplayer";
 import type { Card } from "@/cardData";
+import { callClaimLock } from "@/lib/claimLock";
 
 interface Props {
   publicState: PublicState;
