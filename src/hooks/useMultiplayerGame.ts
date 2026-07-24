@@ -13,6 +13,7 @@ import { useGameState, type Action } from "@/hooks/useGameState";
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
   PROTOCOL_VERSION,
+  type ClaimGrantEnvelope,
   type Envelope,
   type IntentAction,
   type IntentEnvelope,
@@ -26,6 +27,11 @@ export interface SeatMapEntry {
   display_name: string;
 }
 
+// Trailing throttle window for host broadcasts. Coalesces bursts (e.g. TUMBLE
+// ticks during dice animation) into at most one message per interval, while
+// always sending the LAST state of any burst so clients never desync.
+const BROADCAST_THROTTLE_MS = 70;
+
 // ---------- HOST ----------
 
 export function useMultiplayerHost(opts: {
@@ -37,50 +43,131 @@ export function useMultiplayerHost(opts: {
   const { channel, seatMap, hostVisitorId, enabled } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
-  const g = useGameState("3x2", { seatCount, botSeats: [], names });
-
+  // 3x3 = 9 cards for multiplayer.
+  const g = useGameState("3x3", { seatCount, botSeats: [], names });
 
   const seqRef = useRef(0);
   const seatMapRef = useRef(seatMap);
   seatMapRef.current = seatMap;
 
-  // Broadcast state after every reducer tick.
-  useEffect(() => {
-    if (!enabled || !channel) return;
+  // ---- claim window tracking ----
+  // Increments every time the claim state REOPENS: after a claim resolves
+  // (claimBy transitions non-null → null) OR after a round ends (roundNum
+  // increments). The claim-lock edge function's UNIQUE (room_id, claim_window)
+  // constraint keys on this value.
+  const claimWindowRef = useRef(0);
+  const prevClaimByRef = useRef<number | null>(null);
+  const prevRoundRef = useRef<number>(g.state.roundNum);
+  if (g.state.roundNum !== prevRoundRef.current) {
+    prevRoundRef.current = g.state.roundNum;
+    claimWindowRef.current += 1;
+  }
+  if (prevClaimByRef.current !== null && g.state.claimBy === null) {
+    claimWindowRef.current += 1;
+  }
+  prevClaimByRef.current = g.state.claimBy;
+
+  // ---- trailing throttle for state broadcasts ----
+  const latestStateRef = useRef(g.state);
+  latestStateRef.current = g.state;
+  const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSentAtRef = useRef(0);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  channelRef.current = channel;
+
+  const doSend = useCallback(() => {
+    const ch = channelRef.current;
+    if (!ch) return;
     seqRef.current += 1;
     const env: StateEnvelope = {
       v: PROTOCOL_VERSION,
       type: "state",
       seq: seqRef.current,
-      payload: toPublicState(g.state, seatMapRef.current),
+      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current),
     };
-    channel.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
-  }, [enabled, channel, g.state]);
+    lastSentAtRef.current = Date.now();
+    ch.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!enabled || !channel) return;
+    const now = Date.now();
+    const elapsed = now - lastSentAtRef.current;
+    if (elapsed >= BROADCAST_THROTTLE_MS) {
+      // Leading edge is fine as long as we STILL schedule a trailing send
+      // if any later state change lands inside the window. The pattern
+      // below guarantees the final state of a burst is always emitted:
+      // we always (re)arm a trailing timer, and cancel it after doSend.
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current);
+        throttleTimerRef.current = null;
+      }
+      doSend();
+      return;
+    }
+    // Inside the throttle window — arm/refresh a trailing send so the LAST
+    // state of the burst always ships.
+    if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
+    throttleTimerRef.current = setTimeout(() => {
+      throttleTimerRef.current = null;
+      doSend();
+    }, BROADCAST_THROTTLE_MS - elapsed);
+    return () => {
+      // No teardown on state change; only clear on unmount below.
+    };
+  }, [enabled, channel, g.state, doSend]);
+
+  useEffect(() => {
+    return () => {
+      if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
+    };
+  }, []);
 
   // Receive intents and inject as reducer actions.
   useEffect(() => {
     if (!enabled || !channel) return;
     const handler = (msg: { payload: Envelope }) => {
       const env = msg.payload;
-      if (!env || env.v !== PROTOCOL_VERSION || env.type !== "intent") return;
-      const intent: IntentPayload = env.payload;
-      // Validate sender matches claimed seat.
-      const seatEntry = seatMapRef.current.find((e) => e.seat === intent.seat);
-      if (!seatEntry) return;
-      if (seatEntry.visitor_id !== intent.visitor_id) return;
-      // Ignore intents from host's own seat over the wire — host acts locally.
-      if (seatEntry.visitor_id === hostVisitorId) return;
-      handleHostIntent(g.dispatch, g.doRollDice, intent.seat, intent.action);
+      if (!env || env.v !== PROTOCOL_VERSION) return;
+      if (env.type === "intent") {
+        const intent: IntentPayload = env.payload;
+        const seatEntry = seatMapRef.current.find((e) => e.seat === intent.seat);
+        if (!seatEntry) return;
+        if (seatEntry.visitor_id !== intent.visitor_id) return;
+        if (seatEntry.visitor_id === hostVisitorId) return;
+        handleHostIntent(g.dispatch, g.doRollDice, intent.seat, intent.action);
+      }
     };
-    const sub = channel.on("broadcast", { event: "msg" }, handler);
-    // The channel is subscribed by useRoomPresence; do not re-subscribe here.
-    return () => {
-      // Supabase's channel.on returns the channel itself; unsub via removing
-      // listener is not directly supported. Ignoring on teardown is safe
-      // because the entire channel is torn down by the presence hook.
-      void sub;
-    };
+    channel.on("broadcast", { event: "msg" }, handler);
   }, [enabled, channel, g.dispatch, g.doRollDice, hostVisitorId]);
+
+  // Listen for authoritative claim grants from the arbiter edge function.
+  // The host is the ONLY dispatcher of PLAYER_ENTER_CLAIM — even the host's
+  // own WHOOP goes through the arbiter, then arrives here as a grant.
+  const grantedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!enabled || !channel) return;
+    const handler = (msg: { payload: Envelope }) => {
+      const env = msg.payload;
+      if (!env || env.v !== PROTOCOL_VERSION || env.type !== "claim_grant") return;
+      const grant = (env as ClaimGrantEnvelope).payload;
+      // Only act on the current window — stale grants are ignored.
+      if (grant.claim_window !== claimWindowRef.current) return;
+      const dedupeKey = `${grant.claim_window}:${grant.seat}`;
+      if (grantedRef.current.has(dedupeKey)) return;
+      grantedRef.current.add(dedupeKey);
+      const phase = latestStateRef.current.phase;
+      if (phase === "AWAITING_ROLL") {
+        g.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: grant.seat });
+        // Kick the dice animation so the round proceeds into FLIPPING.
+        void g.doRollDice();
+      } else if (phase === "FLIPPING") {
+        g.dispatch({ type: "PLAYER_ENTER_CLAIM", by: grant.seat });
+      }
+      // Any other phase (CLAIM_SELECTING, LAST_CALL, GAME_OVER) — ignore.
+    };
+    channel.on("broadcast", { event: "msg" }, handler);
+  }, [enabled, channel, g.dispatch, g.doRollDice]);
 
   return g;
 }
@@ -88,6 +175,10 @@ export function useMultiplayerHost(opts: {
 // Intent → local reducer dispatch. Reducer's phase/seat guards are the final
 // authority; illegal intents (wrong turn, wrong phase, etc.) return the
 // unchanged state and are a no-op — not a crash.
+//
+// NOTE: PLAYER_ENTER_CLAIM* is NOT handled here anymore — WHOOP goes through
+// the claim-lock arbiter, which triggers PLAYER_ENTER_CLAIM via a server-side
+// broadcast handled by the grant listener above.
 function handleHostIntent(
   dispatch: (a: Action) => void,
   doRollDice: () => Promise<string[]>,
@@ -96,15 +187,11 @@ function handleHostIntent(
 ) {
   switch (action.type) {
     case "REQUEST_ROLL":
-      // Guard-checked inside runRollAnimation via ROLL_START phase check;
-      // this just triggers the host-side animation.
       void doRollDice();
       return;
     case "PLAYER_ENTER_CLAIM":
-      dispatch({ type: "PLAYER_ENTER_CLAIM", by: seat });
-      return;
     case "PLAYER_ENTER_CLAIM_DURING_ROLL":
-      dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: seat });
+      // Ignored — the arbiter is the only path into claim mode.
       return;
     case "PLAYER_SELECT_CARD":
       dispatch({ type: "PLAYER_SELECT_CARD", by: seat, idx: action.idx });
@@ -113,20 +200,10 @@ function handleHostIntent(
       dispatch({ type: "PLAYER_RESOLVE_MATCH", by: seat });
       return;
     case "FLIP_START":
-      dispatch({
-        type: "FLIP_START",
-        by: seat,
-        idx: action.idx,
-        token: action.token,
-      });
+      dispatch({ type: "FLIP_START", by: seat, idx: action.idx, token: action.token });
       return;
     case "LAST_CALL_CLAIM":
-      dispatch({
-        type: "LAST_CALL_CLAIM",
-        by: seat,
-        a: action.a,
-        b: action.b,
-      });
+      dispatch({ type: "LAST_CALL_CLAIM", by: seat, a: action.a, b: action.b });
       return;
   }
 }
@@ -149,7 +226,6 @@ export function useMultiplayerJoiner(opts: {
     const handler = (msg: { payload: Envelope }) => {
       const env = msg.payload;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "state") return;
-      // Out-of-order guard: never rewind.
       if (env.seq <= lastSeqRef.current) return;
       lastSeqRef.current = env.seq;
       setPublicState(env.payload);
