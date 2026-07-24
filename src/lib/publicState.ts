@@ -55,6 +55,10 @@ export interface PublicState {
   // Frozen seat map — host's authoritative visitor_id → seat mapping. Joiners
   // learn their own seat by looking themselves up here.
   seatMap: Array<{ seat: number; visitor_id: string; display_name: string }>;
+  // The current claim arbitration window. Incremented by the host every time
+  // the claim state REOPENS (after a claim resolves, or when a round ends).
+  // The claim-lock edge function keys UNIQUE (room_id, claim_window) on this.
+  claimWindow: number;
 }
 
 export function toPublicState(
