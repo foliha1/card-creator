@@ -14,6 +14,7 @@ import { COLORS, BORDER, RADIUS, SPACE, FONT_FAMILY, TEXT, textStyle } from "@/l
 import type { PublicState } from "@/lib/publicState";
 import type { IntentAction } from "@/lib/multiplayer";
 import type { Card } from "@/cardData";
+import { callClaimLock } from "@/lib/claimLock";
 
 interface Props {
   publicState: PublicState;
@@ -21,9 +22,12 @@ interface Props {
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
+  // Arbiter context — the view calls the claim-lock function directly on WHOOP.
+  roomId: string;
+  visitorId: string;
 }
 
-const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent, onLeave, mobile = false }) => {
+const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent, onLeave, mobile = false, roomId, visitorId }) => {
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   const canClaim =
@@ -33,9 +37,15 @@ const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
   const inLastCall = s.phase === "LAST_CALL";
   const [lastCallSel, setLastCallSel] = React.useState<number[]>([]);
+  const [claimBusy, setClaimBusy] = React.useState(false);
+  const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
   React.useEffect(() => {
     if (!inLastCall) setLastCallSel([]);
   }, [inLastCall]);
+  // Clear TOO SLOW when the claim window rotates (a new opportunity opens).
+  React.useEffect(() => {
+    setTooSlowAt(null);
+  }, [s.claimWindow]);
 
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
@@ -166,18 +176,29 @@ const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent
         {canClaim && !inClaimMode && !inLastCall && s.phase !== "GAME_OVER" && (
           <AppButton
             variant="primary"
-            tone={s.claimBy === mySeat ? "orange" : "red"}
+            tone={tooSlowAt !== null ? "ink" : "red"}
             size="md"
-            onClick={() => {
-              if (mySeat === null) return;
-              if (s.phase === "AWAITING_ROLL") {
-                onIntent({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: mySeat });
-              } else {
-                onIntent({ type: "PLAYER_ENTER_CLAIM", by: mySeat });
+            disabled={claimBusy}
+            onClick={async () => {
+              if (mySeat === null || claimBusy) return;
+              setClaimBusy(true);
+              const result = await callClaimLock({
+                room_id: roomId,
+                claim_window: s.claimWindow,
+                player_seat: mySeat,
+                visitor_id: visitorId,
+              });
+              setClaimBusy(false);
+              if (!result.won) {
+                // Local-only signal. The arbiter's response IS the signal
+                // — no broadcast, no event channel.
+                setTooSlowAt(Date.now());
               }
+              // If won: the host will dispatch PLAYER_ENTER_CLAIM on the
+              // server-side claim_grant broadcast. We just wait for state.
             }}
           >
-            WHOOP!
+            {claimBusy ? "…" : tooSlowAt !== null ? "TOO SLOW!" : "WHOOP!"}
           </AppButton>
         )}
       </div>
