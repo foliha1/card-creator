@@ -301,6 +301,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const leaveToIdle = useCallback(() => {
     setCodeInput("");
     setFrozenSeats(null);
+    setGameId("");
     setView({ kind: "idle" });
   }, []);
 
