@@ -16,6 +16,7 @@ export interface ClaimLockResult {
 
 export async function callClaimLock(input: {
   room_id: string;
+  game_id: string;
   claim_window: number;
   player_seat: number;
   visitor_id: string;
