@@ -28,42 +28,65 @@ export const ROOM_CODE_LENGTH = CODE_LEN;
 export interface RoomRow {
   id: string;
   room_code: string;
-  host_visitor_id: string;
   status: string;
+  is_host: boolean;
+}
+
+function errorCode(e: unknown): string | undefined {
+  if (e && typeof e === "object" && "code" in e) {
+    const c = (e as { code?: unknown }).code;
+    if (typeof c === "string") return c;
+  }
+  return undefined;
 }
 
 export async function createRoom(hostVisitorId: string): Promise<RoomRow> {
   let lastErr: unknown = null;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generateRoomCode();
-    const { data, error } = await supabase
-      .from("rooms")
-      .insert({ room_code: code, host_visitor_id: hostVisitorId })
-      .select("id, room_code, host_visitor_id, status")
-      .single();
-    if (!error && data) return data as RoomRow;
-    lastErr = error;
-    // 23505 = unique_violation. Retry only for that; otherwise bail.
-    if (error && (error as { code?: string }).code !== "23505") break;
+    try {
+      const { data, error } = await supabase.rpc("create_room", {
+        p_code: code,
+        p_visitor_id: hostVisitorId,
+      });
+      if (!error && data && Array.isArray(data) && data.length > 0) {
+        return data[0] as RoomRow;
+      }
+      lastErr = error;
+      // 23505 = unique_violation. Retry only for that; otherwise bail.
+      if (error && errorCode(error) !== "23505") break;
+    } catch (e) {
+      // Network / thrown failure — do not retry blindly.
+      lastErr = e;
+      break;
+    }
   }
-  throw new Error(
+  const msg =
     lastErr && typeof lastErr === "object" && "message" in lastErr
       ? String((lastErr as { message: string }).message)
-      : "Could not create a room. Please try again.",
-  );
+      : "Could not create a room. Please try again.";
+  throw new Error(msg);
 }
 
-export async function findRoomByCode(code: string): Promise<RoomRow | null> {
+export async function findRoomByCode(
+  code: string,
+  visitorId: string,
+): Promise<RoomRow | null> {
   const normalized = code.toUpperCase();
   if (!isValidRoomCode(normalized)) return null;
-  const { data, error } = await supabase
-    .from("rooms")
-    .select("id, room_code, host_visitor_id, status")
-    .eq("room_code", normalized)
-    .maybeSingle();
-  if (error) {
-    console.warn("[rooms] lookup failed", error.message);
+  try {
+    const { data, error } = await supabase.rpc("get_room_by_code", {
+      p_code: normalized,
+      p_visitor_id: visitorId,
+    });
+    if (error) {
+      console.warn("[rooms] lookup failed", error.message);
+      return null;
+    }
+    if (Array.isArray(data) && data.length > 0) return data[0] as RoomRow;
+    return null;
+  } catch (e) {
+    console.warn("[rooms] lookup threw", e);
     return null;
   }
-  return (data as RoomRow | null) ?? null;
 }
