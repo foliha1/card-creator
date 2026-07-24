@@ -35,9 +35,10 @@ export function useMultiplayerHost(opts: {
   enabled: boolean;
 }) {
   const { channel, seatMap, hostVisitorId, enabled } = opts;
-  const seatCount = seatMap.length;
-  const names = useMemo(() => seatMap.map((e) => e.display_name), [seatMap]);
-  const g = useGameState("3x2", enabled ? { seatCount, botSeats: [], names } : undefined);
+  const seatCount = Math.max(2, seatMap.length);
+  const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
+  const g = useGameState("3x2", { seatCount, botSeats: [], names });
+
 
   const seqRef = useRef(0);
   const seatMapRef = useRef(seatMap);
