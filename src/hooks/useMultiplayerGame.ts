@@ -331,7 +331,7 @@ export function useMultiplayerJoiner(opts: {
   visitorId: string;
   enabled: boolean;
 }) {
-  const { channel, onBroadcast, mySeat, visitorId, enabled } = opts;
+  const { channel, onBroadcast, mySeat: mySeatProp, visitorId, enabled } = opts;
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
@@ -349,6 +349,14 @@ export function useMultiplayerJoiner(opts: {
     return onBroadcast(handler);
   }, [enabled, channel, onBroadcast]);
 
+  // Resolve seat from prop first, then fall back to publicState's seatMap.
+  // Guests initially mount with mySeatProp=null; the seat is discovered from
+  // the first state broadcast that includes their visitor_id.
+  const mySeat =
+    mySeatProp ??
+    publicState?.seatMap.find((e) => e.visitor_id === visitorId)?.seat ??
+    null;
+
   const sendIntent = useCallback(
     (action: IntentAction) => {
       if (!channel || mySeat === null) return;
@@ -364,7 +372,8 @@ export function useMultiplayerJoiner(opts: {
     [channel, mySeat, visitorId],
   );
 
-  return { publicState, sendIntent, events };
+  return { publicState, sendIntent, events, mySeat };
 }
+
 
 export { useTransientEvents };
