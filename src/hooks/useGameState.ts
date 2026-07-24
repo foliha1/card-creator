@@ -98,7 +98,7 @@ interface State {
   scores: number[];
   rule: string[];
   dieValues: string[];
-  wrong: Set<number>;
+  wrongBy: [Set<number>, Set<number>];
   skip: boolean[];
   flippedThisCycle: Set<number>;
   claimedThisCycle: boolean;
