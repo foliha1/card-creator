@@ -116,7 +116,7 @@ export interface State {
   claimPending: boolean;
 }
 
-type Action =
+export type Action =
   | { type: "INIT"; slotCount: number }
   | { type: "TUMBLE"; values: string[] }
   | { type: "ROLL_START" }
