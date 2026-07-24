@@ -380,7 +380,8 @@ describe("HUMAN_RESOLVE_MATCH", () => {
     expect(next.roller).toBe(0);
     expect(next.flipper).toBe(0);
     expect(next.roundNum).toBe(4);
-    expect(next.matchedCards.size).toBe(2);
+    // startRound resets matchedCards; the interim matchedCards set is not observable here.
+    expect(next.matchedCards.size).toBe(0);
     // Refilled from deck (base deck had 2 cards, so slot 0 & 2 now non-null)
     expect(next.grid[0]).not.toBeNull();
     expect(next.grid[2]).not.toBeNull();
