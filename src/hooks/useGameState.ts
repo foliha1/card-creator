@@ -75,7 +75,7 @@ function computeRule(values: string[]): { rule: string[] } {
 // replaces the previous swarm of shadow-ref guards.
 // ============================================================================
 
-type Phase =
+export type Phase =
   | "AWAITING_ROLL"
   | "FLIPPING"
   | "CLAIM_SELECTING"
@@ -88,7 +88,7 @@ type InFlight =
   | { kind: "flip"; token: number; by: number; idx: number }
   | { kind: "claim"; token: number; by: number; a: number; b: number };
 
-interface State {
+export interface State {
   phase: Phase;
   slotCount: number;
   roller: number;
@@ -116,7 +116,7 @@ interface State {
   claimPending: boolean;
 }
 
-type Action =
+export type Action =
   | { type: "INIT"; slotCount: number }
   | { type: "TUMBLE"; values: string[] }
   | { type: "ROLL_START" }
@@ -136,7 +136,7 @@ type Action =
   | { type: "REMOVE_MATCHED" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
 
-function initialState(slotCount: number): State {
+export function initialState(slotCount: number): State {
   const newDeck = createDeck();
   const dealt = newDeck.splice(0, slotCount);
   const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
@@ -278,7 +278,7 @@ function cycleAdvance(s: State, addWho: number): State {
   };
 }
 
-function reducer(state: State, action: Action): State {
+export function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "INIT":
       return initialState(action.slotCount);
