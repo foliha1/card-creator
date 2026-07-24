@@ -276,6 +276,30 @@ function handleHostIntent(
   }
 }
 
+// Shared: subscribes to transient events on the channel, deduped by id.
+// Older events fall out after LIFETIME_MS so a stuck event never persists.
+const EVENT_LIFETIME_MS = 1400;
+function useTransientEvents(channel: RealtimeChannel | null, enabled: boolean): TransientEvent[] {
+  const [events, setEvents] = useState<TransientEvent[]>([]);
+  const seenRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!enabled || !channel) return;
+    const handler = (msg: { payload: Envelope }) => {
+      const env = msg.payload;
+      if (!env || env.v !== PROTOCOL_VERSION || env.type !== "event") return;
+      const ev = (env as EventEnvelope).payload;
+      if (seenRef.current.has(ev.id)) return;
+      seenRef.current.add(ev.id);
+      setEvents((prev) => [...prev, ev]);
+      setTimeout(() => {
+        setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+      }, EVENT_LIFETIME_MS);
+    };
+    channel.on("broadcast", { event: "msg" }, handler);
+  }, [channel, enabled]);
+  return events;
+}
+
 // ---------- JOINER ----------
 
 export function useMultiplayerJoiner(opts: {
@@ -288,6 +312,7 @@ export function useMultiplayerJoiner(opts: {
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
+  const events = useTransientEvents(channel, enabled);
 
   useEffect(() => {
     if (!enabled || !channel) return;
@@ -316,5 +341,7 @@ export function useMultiplayerJoiner(opts: {
     [channel, mySeat, visitorId],
   );
 
-  return { publicState, sendIntent };
+  return { publicState, sendIntent, events };
 }
+
+export { useTransientEvents };
