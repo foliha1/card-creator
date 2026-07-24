@@ -99,11 +99,30 @@ export function useMultiplayerHost(opts: {
       v: PROTOCOL_VERSION,
       type: "state",
       seq: seqRef.current,
-      payload: toPublicState(latestStateRef.current, seatMapRef.current, claimWindowRef.current, gameIdRef.current),
+      payload: toPublicState(
+        latestStateRef.current,
+        seatMapRef.current,
+        claimWindowRef.current,
+        gameIdRef.current,
+        disconnectedRef.current,
+      ),
     };
     lastSentAtRef.current = Date.now();
     ch.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
   }, []);
+
+  // Track disconnected seats via a ref (used in doSend) and re-mark skip
+  // whenever the reducer resets skip[] (round boundary). MARK_DISCONNECTED
+  // is idempotent — the reducer only sets skip=true where it isn't already.
+  const disconnectedRef = useRef<number[]>(disconnectedSeats);
+  disconnectedRef.current = disconnectedSeats;
+  useEffect(() => {
+    if (!enabled || disconnectedSeats.length === 0) return;
+    // Only dispatch if any listed seat is currently NOT flagged skip=true —
+    // avoids a dispatch storm during every state tick.
+    const needs = disconnectedSeats.some((s) => !g.state.skip[s]);
+    if (needs) g.dispatch({ type: "MARK_DISCONNECTED", seats: disconnectedSeats });
+  }, [enabled, disconnectedSeats, g.state.skip, g.state.roundNum, g.dispatch]);
 
   useEffect(() => {
     if (!enabled || !channel) return;
