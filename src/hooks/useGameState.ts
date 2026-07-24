@@ -78,6 +78,30 @@ function emptyWrongBy(seatCount: number): Set<number>[] {
   return Array.from({ length: seatCount }, () => new Set<number>());
 }
 
+// Advance to the next connected seat starting AFTER `from`. Bounded by
+// seatCount so all-disconnected / single-connected tables cannot spin. If no
+// other connected seat exists, returns the neighbouring seat — host-level
+// end-game policy handles the "table empty" case; the reducer must still
+// terminate.
+function nextConnected(
+  from: number,
+  seatCount: number,
+  disconnected: boolean[],
+): number {
+  let next = (from + 1) % seatCount;
+  for (let i = 0; i < seatCount; i++) {
+    if (!disconnected[next]) return next;
+    next = (next + 1) % seatCount;
+  }
+  return (from + 1) % seatCount;
+}
+
+function connectedCount(seatCount: number, disconnected: boolean[]): number {
+  let n = 0;
+  for (let i = 0; i < seatCount; i++) if (!disconnected[i]) n++;
+  return n;
+}
+
 // ============================================================================
 // Reducer-driven control flow
 // ============================================================================
