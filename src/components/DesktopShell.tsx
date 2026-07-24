@@ -9,12 +9,13 @@ const PreOrderWindow = React.lazy(() => import("@/components/PreOrderWindow"));
 const AboutWindow = React.lazy(() => import("@/components/AboutWindow"));
 const MusicWindow = React.lazy(() => import("@/components/MusicWindow"));
 const ThemeWindow = React.lazy(() => import("@/components/ThemeWindow"));
+const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 import BootScreen from "@/components/BootScreen";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { COLORS, MOTION, SPACE, textStyle } from "@/lib/tokens";
 import { useTheme } from "@/lib/theme-context";
 
-type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
+type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme" | "multiplayer";
 
 const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
   game: { x: 40, y: 20 },
@@ -23,6 +24,7 @@ const DEFAULT_POSITIONS: Record<WindowId, { x: number; y: number }> = {
   about: { x: 280, y: 100 },
   music: { x: 600, y: 500 },
   theme: { x: 400, y: 200 },
+  multiplayer: { x: 220, y: 40 },
 };
 
 const BASE_SIZES: Record<WindowId, { width: number; height: number; title: string }> = {
@@ -32,11 +34,18 @@ const BASE_SIZES: Record<WindowId, { width: number; height: number; title: strin
   about: { width: 400, height: 580, title: "ABOUT" },
   music: { width: 396, height: 340, title: "MUSIC" },
   theme: { width: 380, height: 150, title: "THEME" },
+  multiplayer: { width: 460, height: 620, title: "MULTIPLAYER" },
 };
 
-const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", "theme"];
+const ALL_IDS: WindowId[] = ["game", "howtoplay", "preorder", "about", "music", "theme", "multiplayer"];
 
-const DesktopShell: React.FC = () => {
+
+interface DesktopShellProps {
+  initialRoomCode?: string;
+}
+
+const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
+
   const mobile = useIsMobile();
   const { bgTheme, logoColor } = useTheme();
   const [booted, setBooted] = useState(false);
@@ -86,9 +95,10 @@ const DesktopShell: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => openWindow("game"), 300);
+    const t = setTimeout(() => openWindow(initialRoomCode ? "multiplayer" : "game"), 300);
     return () => clearTimeout(t);
-  }, [openWindow]);
+  }, [openWindow, initialRoomCode]);
+
 
   // On mobile, the active (visible) window is the last in windowOrder that's open
   const activeWindow = mobile
@@ -109,8 +119,10 @@ const DesktopShell: React.FC = () => {
       case "about": return <Suspense fallback={<WindowLoader />}><AboutWindow /></Suspense>;
       case "music": return <Suspense fallback={<WindowLoader />}><MusicWindow /></Suspense>;
       case "theme": return <Suspense fallback={<WindowLoader />}><ThemeWindow /></Suspense>;
+      case "multiplayer": return <Suspense fallback={<WindowLoader />}><MultiplayerWindow initialRoomCode={initialRoomCode} /></Suspense>;
     }
   };
+
 
   const isFocused = (id: WindowId) => {
     if (mobile) return activeWindow === id;

@@ -1,9 +1,9 @@
 import React, { useRef } from "react";
-import { Music, Palette, ChevronLeft, ChevronRight } from "lucide-react";
+import { Music, Palette, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { COLORS, BORDER, RADIUS, SPACE, TEXT } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
 
-type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme";
+type WindowId = "game" | "howtoplay" | "preorder" | "about" | "music" | "theme" | "multiplayer";
 
 interface TaskbarProps {
   openWindows: Set<string>;
@@ -15,12 +15,14 @@ interface TaskbarProps {
 
 const BUTTONS: { label: string; id: WindowId; icon?: React.ReactNode; tone?: "ink" | "muted" | "orange" | "blue" | "red" }[] = [
   { label: "Play Whoop! Whoop!", id: "game", tone: "red" },
+  { label: "Multiplayer", id: "multiplayer", icon: <Users size={16} />, tone: "ink" },
   { label: "How to Play", id: "howtoplay", tone: "muted" },
   { label: "Pre-Order", id: "preorder", tone: "muted" },
   { label: "About", id: "about", tone: "muted" },
   { label: "Theme", id: "theme", icon: <Palette size={16} />, tone: "orange" },
   { label: "Music", id: "music", icon: <Music size={16} />, tone: "blue" },
 ];
+
 
 let scWidgetPreloaded = false;
 
