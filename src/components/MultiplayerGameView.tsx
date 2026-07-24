@@ -26,7 +26,7 @@ interface Props {
   visitorId: string;
 }
 
-const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent, onLeave, mobile = false }) => {
+const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent, onLeave, mobile = false, roomId, visitorId }) => {
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   const canClaim =
@@ -36,9 +36,15 @@ const MultiplayerGameView: React.FC<Props> = ({ publicState: s, mySeat, onIntent
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
   const inLastCall = s.phase === "LAST_CALL";
   const [lastCallSel, setLastCallSel] = React.useState<number[]>([]);
+  const [claimBusy, setClaimBusy] = React.useState(false);
+  const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
   React.useEffect(() => {
     if (!inLastCall) setLastCallSel([]);
   }, [inLastCall]);
+  // Clear TOO SLOW when the claim window rotates (a new opportunity opens).
+  React.useEffect(() => {
+    setTooSlowAt(null);
+  }, [s.claimWindow]);
 
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
