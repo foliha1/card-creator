@@ -88,7 +88,7 @@ type InFlight =
   | { kind: "flip"; token: number; by: number; idx: number }
   | { kind: "claim"; token: number; by: number; a: number; b: number };
 
-interface State {
+export interface State {
   phase: Phase;
   slotCount: number;
   roller: number;
