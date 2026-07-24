@@ -114,13 +114,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     }
     setBusy(true);
     try {
-      const room = await findRoomByCode(normalized);
+      const visitorId = getVisitorId();
+      const room = await findRoomByCode(normalized, visitorId);
       if (!room) {
         setView({ kind: "idle", error: `Room "${normalized}" doesn't exist.` });
         return;
       }
-      const visitorId = getVisitorId();
-      if (room.host_visitor_id === visitorId) {
+      if (room.is_host) {
         setView({ kind: "host", room });
       } else {
         setView({ kind: "joiner", room });
