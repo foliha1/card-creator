@@ -515,14 +515,19 @@ const MultiplayerGameView: React.FC<Props> = ({
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
         <div style={{
-          display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
-          width: "100%", maxHeight: "100%",
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateRows: "repeat(3, 1fr)",
+          gap: 8,
+          aspectRatio: "328.99 / 454.21",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          margin: "auto",
         }}>
           {s.grid.map((slot, i) => {
             if (!slot.occupied) {
               return (
                 <div key={`empty-${i}`} style={{
-                  aspectRatio: "104.33 / 146.07",
                   border: `2px dashed rgba(35,31,32,0.13)`,
                   borderRadius: R_CARD,
                 }} />
