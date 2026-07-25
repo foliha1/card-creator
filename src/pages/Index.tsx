@@ -34,7 +34,7 @@ const Index = () => {
           url,
         })}</script>
       </Helmet>
-      <DesktopShell initialRoomCode={roomCode} />
+      <DesktopShell />
     </>
   );
 };
