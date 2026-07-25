@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import Window from "@/components/Window";
 import Taskbar from "@/components/Taskbar";
 import GameWindow from "@/components/GameWindow";
@@ -44,7 +45,9 @@ interface DesktopShellProps {
   initialRoomCode?: string;
 }
 
-const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
+const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode: _initialRoomCode }) => {
+  void _initialRoomCode;
+  const navigate = useNavigate();
 
   const mobile = useIsMobile();
   const { bgTheme, logoColor } = useTheme();
@@ -70,13 +73,17 @@ const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
   }, [viewW, viewH]);
 
   const openWindow = useCallback((id: WindowId) => {
+    if (id === "multiplayer") {
+      navigate("/play");
+      return;
+    }
     setOpenWindows((prev) => {
       const next = new Set(prev);
       next.add(id);
       return next;
     });
     setWindowOrder((prev) => (prev.includes(id) ? [...prev.filter((w) => w !== id), id] : [...prev, id]));
-  }, []);
+  }, [navigate]);
 
   const closeWindow = useCallback((id: WindowId) => {
     setOpenWindows((prev) => {
@@ -95,9 +102,9 @@ const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => openWindow(initialRoomCode ? "multiplayer" : "game"), 300);
+    const t = setTimeout(() => openWindow("game"), 300);
     return () => clearTimeout(t);
-  }, [openWindow, initialRoomCode]);
+  }, [openWindow]);
 
 
   // On mobile, the active (visible) window is the last in windowOrder that's open
@@ -119,7 +126,7 @@ const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
       case "about": return <Suspense fallback={<WindowLoader />}><AboutWindow /></Suspense>;
       case "music": return <Suspense fallback={<WindowLoader />}><MusicWindow /></Suspense>;
       case "theme": return <Suspense fallback={<WindowLoader />}><ThemeWindow /></Suspense>;
-      case "multiplayer": return <Suspense fallback={<WindowLoader />}><MultiplayerWindow initialRoomCode={initialRoomCode} /></Suspense>;
+      case "multiplayer": return <Suspense fallback={<WindowLoader />}><MultiplayerWindow /></Suspense>;
     }
   };
 
