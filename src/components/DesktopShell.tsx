@@ -145,6 +145,7 @@ const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
           defaultPosition={defaultPosition}
           width={cfg.width}
           height={cfg.height}
+          scale={cfg.scale}
           zIndex={10 + windowOrder.indexOf(id)}
           onClose={() => closeWindow(id)}
           onFocus={focusWindow}
