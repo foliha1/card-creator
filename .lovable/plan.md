@@ -1,49 +1,82 @@
-# Wrong-claim cards stay exposed until end of round
 
-## Behavior
+# Full-screen multiplayer route (branch experiment)
 
-When any player makes a wrong WHOOP:
+Multiplayer today renders inside a 440×900 DesktopShell window whose intrinsic content (~877px) exceeds usable space (~844px). Uniform scaling shrinks frame + content together, so it can't recover the clipped rows. This change moves multiplayer out of the window system entirely into a dedicated full-screen route. Solo, DesktopShell, and Window.tsx are untouched.
 
-- The two cards they picked stay **face-up** to everyone for the rest of the round.
-- The player who was wrong still gets their existing penalties (locked out of those two cards, skip next flip).
-- The **other** player (or Auntie O.) may include those exposed cards in their own WHOOP claim.
-- All exposed cards flip back down when the round ends — whether it ends by a correct match (winner rolls) or by a full flip cycle with no claim (roll passes clockwise).
-- Last Call is unaffected — everything is face-up there anyway, and `wrong` is already cleared on entry.
+## 1. Routing
 
-## Changes
+`src/App.tsx`
+- Add a new route: `<Route path="/play/:roomCode" element={<MultiplayerPage />} />` (replaces the current mapping of that path to `Index`).
+- Add `<Route path="/play" element={<MultiplayerPage />} />` for the no-code entry.
+- `/` still renders `Index` (DesktopShell) unchanged.
 
-### `src/hooks/useGameState.ts`
+`src/pages/Index.tsx`
+- Remove the `useParams` room-code read and the `initialRoomCode` prop passed to `DesktopShell` (it's now dead on `/`). Keep all Helmet/JSON-LD as-is.
 
-1. **Split `wrong` into two Sets on state.** Rename the current `wrong: Set<number>` to `wrongBy: [Set<number>, Set<number>]` (index 0 = you, 1 = opponent). Union = "exposed after wrong claim." Membership = "this player may not pick these."
-   - Wire the derived `wrongCards` export (used by the view) to be the union of both sets so existing "is exposed?" checks keep working.
-2. **HUMAN_RESOLVE_MATCH wrong branch** (L394): add `ia, ib` to `wrongBy[0]` instead of the shared `wrong`.
-3. **CLAIM_RESOLVE wrong branch** (L512): add `a, b` to `wrongBy[by]`.
-4. **Selection / claim guards** — allow picking cards the *other* player exposed:
-   - `HUMAN_SELECT_CARD` (L356): reject only if `wrongBy[0].has(idx)`, not the union.
-   - `CLAIM_START` (L462–463): reject only if `wrongBy[action.by].has(a|b)`.
-   - Opponent auto-flip candidate filter (L726): exclude only `wrongBy[1]`.
-   - Opponent memory `bestPair` excluded set (L876): exclude only `wrongBy[1]`.
-5. **Peek / flip guards** — a player also shouldn't be able to flip a card they themselves exposed, but *should* be able to flip one the opponent exposed:
-   - `peekCard` (L689) and `FLIP_START` guard (L419): reject only if `wrongBy[by].has(idx)`.
-6. **Round reset** — `startRound` (L220) already clears `wrong`; update to clear both sets in `wrongBy`. This is the mechanism that flips exposed cards back down at end of round, covering both round-end paths (winner rolls after correct match, and full no-claim cycle in `cycleAdvance` which calls `startRound`).
-7. **Last Call** — the transition in `cycleAdvance` (L257) already resets `wrong`; keep it clearing both sets.
+`src/components/DesktopShell.tsx`
+- Drop the `initialRoomCode` prop and the auto-open-multiplayer effect on line 98.
+- Change the taskbar/desktop MULTIPLAYER launcher so clicking it does `navigate("/play")` (via `react-router-dom`) instead of `openWindow("multiplayer")`.
+- Leave the `"multiplayer"` window id, size table, and lazy import in place but unreachable — or remove those entries. Either way, no other window changes.
 
-### `src/components/GameWindow.tsx`
+## 2. New full-screen page
 
-1. **Face-up rendering** (L848–855): extend the `faceUp` predicate on `<GameCard>` with `|| g.wrongCards.has(i)` so exposed cards render face-up until end of round (in addition to the transient `wrongFlash`/`wrongWash` animation).
-2. **Dim styling** (L835–837): drop the `opacity: 0.55, cursor: "default"` block — exposed cards should look normal (still face-up) and be tappable when the current player is allowed to pick them. Retain the existing flash/wash animations for the moment-of-wrong feedback.
-3. **Click handling** — replace the blanket `g.wrongCards.has(index)` short-circuit at L370 with a check keyed on the current player. Simplest: expose a new `wrongByMe` boolean helper from the hook (`wrongBy[0].has(idx)` from the human's perspective) and short-circuit on that. Selection during `claimMode` naturally falls through to `selectCard`, whose reducer guard now permits opponent-exposed indices.
-4. **No copy changes required** — existing "No match!" toasts still apply; no new message states.
+`src/pages/MultiplayerPage.tsx` (new)
+- Reads `roomCode` from `useParams`.
+- Root container:
+  ```
+  height: 100dvh
+  display: flex
+  flexDirection: column
+  overflow: hidden
+  boxSizing: border-box
+  background: COLORS.surface
+  ```
+- Renders the existing `MultiplayerWindow` component inside it (which already contains the nickname step, lobby, and `MultiplayerGameView`). Wraps with `Helmet` for a multiplayer-specific title/description.
+- Passes `initialRoomCode={roomCode}` through so the auto-join flow keeps working.
 
-## Return-surface impact
+## 3. Make MultiplayerWindow / MultiplayerGameView fill their parent
 
-`useGameState`'s exported `wrongCards` stays as a `Set<number>` (union of both). One new export: `wrongByMe: Set<number>` for the click-gate. All other exports unchanged, so no other component needs edits.
+`src/components/MultiplayerWindow.tsx`
+- Change the outer container from its current fixed-window layout to `flex: 1 1 auto; minHeight: 0; display: flex; flexDirection: column` so it fills the page.
+- Nickname step and lobby screens: keep their transcribed pixel values but center them inside the flex parent (`margin: auto`) so they sit sensibly at any viewport instead of hugging a 440-wide frame.
 
-## Verification
+`src/components/MultiplayerGameView.tsx`
+- Keep every transcribed row unchanged: RoundBar 40 + OpponentRow 64 + ScoreRow 65.32 + action row 110.94, all gaps 8, all colors/radii/borders exactly as-is. (Note: RoundBar is 40 in the transcribed constants; the 64 in the brief refers to OpponentRow — none of these numbers are being touched.)
+- Root already is `flex column` with `height: 100%`; leave that. The card-area wrapper (currently `flex: 1 1 auto`) stays.
+- Replace the inner grid:
+  - Remove per-card `aspectRatio: "104.33 / 146.07"` on both occupied and empty slots.
+  - Grid becomes:
+    ```
+    aspectRatio: "328.99 / 454.21"
+    maxWidth: 100%
+    maxHeight: 100%
+    margin: auto
+    gridTemplateColumns: repeat(3, 1fr)
+    gridTemplateRows: repeat(3, 1fr)
+    gap: 8
+    ```
+  - Cells derive card aspect automatically from the grid rows/cols.
+- No logic changes. No token changes.
 
-1. You wrong-claim → both cards stay visibly face-up, appear normal (not dimmed), you cannot re-select or flip them, Auntie O. can claim them.
-2. Auntie O. wrong-claims → both cards stay face-up, you can tap them in your next WHOOP claim, and normal-flip them if you're the flipper.
-3. Round ends via correct match → all exposed cards flip back down at the roll.
-4. Round ends via full no-claim cycle → same, exposed cards flip back at the passed roll.
-5. Last Call still works (`wrong`/`wrongBy` cleared, everything face-up).
-6. Skip-next-flip penalty for the wrong claimant still fires exactly once.
+## 4. Non-goals
+
+- No edits to `useGameState.ts`, `useMultiplayerGame.ts`, `publicState.ts`, `claim-lock`, or tests.
+- `Window.tsx`, `GameWindow.tsx`, `DesktopShell`'s window sizing/scaling logic all stay exactly as they are.
+- Solo mode remains a window inside DesktopShell.
+
+## 5. Verification
+
+Drive Playwright at 375×667, 390×844, 1440×750, 1440×1100. For each: navigate to `/play`, complete nickname, host a room, open a second context as joiner, start the game, screenshot. Confirm:
+- Full 3×3 board visible, centered, no clipping, no scrollbars.
+- RoundBar, OpponentRow, ScoreRow, DieBox, WHOOP/SELECT MATCH/YOUR ROLL button all fully on screen and clickable.
+- Cancel Match Selection banner reachable during a claim.
+- Nickname + lobby screens don't sit inside a tiny 440px column.
+- `/` (DesktopShell + solo) looks identical to before.
+- `bunx vitest run` — all 105 tests still green.
+
+## Technical notes
+
+- `100dvh` handles mobile URL-bar collapse correctly; do not use `100vh`.
+- The 3×3 grid uses `aspectRatio` + `maxWidth/maxHeight: 100%` so the browser picks whichever dimension is the binding constraint — this is what makes it fit both short-and-wide and tall-and-narrow viewports without JS measurement.
+- `MultiplayerWindow` currently assumes it lives inside a fixed-size Window; the only structural change it needs is its outermost wrapper switching to flex-fill. Internal panels keep their transcribed pixel values.
+- The `"multiplayer"` entry can remain in `DesktopShell`'s window tables without being opened; simplest safe change is to leave the tables and only rewire the launcher click handler.
