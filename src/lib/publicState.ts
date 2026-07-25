@@ -83,7 +83,12 @@ export function toPublicState(
   const exposed = new Set<number>();
   if (state.peekingCard !== null) exposed.add(state.peekingCard);
   state.matchedCards.forEach((i) => exposed.add(i));
-  state.selectedCards.forEach((i) => exposed.add(i));
+  // Only expose selected faces once the claim locks (second touch). Before
+  // that, the first-selected card is broadcast as face-down with a selection
+  // ring — touching one card must never leak its face (free-peek exploit).
+  if (state.selectedCards.length >= 2) {
+    state.selectedCards.forEach((i) => exposed.add(i));
+  }
   for (const s of state.wrongBy) s.forEach((i) => exposed.add(i));
 
   const grid: PublicSlot[] = state.grid.map((c, i) => {
