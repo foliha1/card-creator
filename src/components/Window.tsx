@@ -8,6 +8,7 @@ interface WindowProps {
   defaultPosition: { x: number; y: number };
   width: number;
   height: number;
+  scale?: number;
   onClose: () => void;
   onFocus: (id: string) => void;
   zIndex: number;
@@ -22,6 +23,7 @@ const Window: React.FC<WindowProps> = ({
   defaultPosition,
   width,
   height,
+  scale = 1,
   onClose,
   onFocus,
   zIndex,
@@ -36,12 +38,13 @@ const Window: React.FC<WindowProps> = ({
   const clamp = useCallback(
     (x: number, y: number) => {
       const minVisible = mobile ? 80 : 100;
+      const scaledWidth = width * scale;
       return {
-        x: Math.max(-(width - minVisible), Math.min(x, window.innerWidth - minVisible)),
+        x: Math.max(-(scaledWidth - minVisible), Math.min(x, window.innerWidth - minVisible)),
         y: Math.max(0, Math.min(y, window.innerHeight - minVisible)),
       };
     },
-    [width, height, mobile]
+    [width, height, mobile, scale]
   );
 
   const onDragStart = useCallback(
@@ -82,10 +85,11 @@ const Window: React.FC<WindowProps> = ({
         position: "absolute",
         left: 0,
         top: 0,
-        transform: `translate(${pos.x}px, ${pos.y}px)`,
+        transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+        transformOrigin: "top left",
         willChange: dragging ? "transform" : undefined,
-        width: Math.min(width, window.innerWidth - 32),
-        maxHeight: window.innerHeight - 120,
+        width,
+        height,
         background: COLORS.surface,
         border: BORDER.standard,
         borderRadius: RADIUS.md,
@@ -95,14 +99,14 @@ const Window: React.FC<WindowProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: SPACE[5],
-        overflow: "auto",
         userSelect: dragging ? "none" : undefined,
       }
     : {
         position: "absolute",
         left: 0,
         top: 0,
-        transform: `translate(${pos.x}px, ${pos.y}px)`,
+        transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
+        transformOrigin: "top left",
         willChange: dragging ? "transform" : undefined,
         width,
         height,

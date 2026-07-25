@@ -62,10 +62,10 @@ const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
 
   const getWindowSize = useCallback((id: WindowId) => {
     const base = BASE_SIZES[id];
+    const scale = Math.min(1, (viewW - 40) / base.width, (viewH - 120) / base.height);
     return {
       ...base,
-      width: Math.min(base.width, viewW - 40),
-      height: Math.min(base.height, viewH - 120),
+      scale,
     };
   }, [viewW, viewH]);
 
@@ -145,6 +145,7 @@ const DesktopShell: React.FC<DesktopShellProps> = ({ initialRoomCode }) => {
           defaultPosition={defaultPosition}
           width={cfg.width}
           height={cfg.height}
+          scale={cfg.scale}
           zIndex={10 + windowOrder.indexOf(id)}
           onClose={() => closeWindow(id)}
           onFocus={focusWindow}
