@@ -392,7 +392,7 @@ describe("PLAYER_RESOLVE_MATCH", () => {
     expect(next.grid[2]).not.toBeNull();
   });
 
-  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], stays in FLIPPING via cycleAdvance", () => {
+  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], stays in FLIPPING", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
       selectedCards: [1, 3], // unrelated cards, no shared SHAPE
@@ -405,8 +405,8 @@ describe("PLAYER_RESOLVE_MATCH", () => {
     expect(next.wrongBy[0].has(1)).toBe(true);
     expect(next.wrongBy[0].has(3)).toBe(true);
     expect(next.skip[0]).toBe(true);
-    // human already flipped this cycle → cycleAdvance passes flipper to opponent
-    expect(next.flipper).toBe(1);
+    // Wrong claim does NOT advance the cycle; flipper is unchanged.
+    expect(next.flipper).toBe(0);
     expect(next.phase).toBe("FLIPPING");
   });
 
