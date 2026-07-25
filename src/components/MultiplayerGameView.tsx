@@ -368,6 +368,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       const t = setTimeout(() => setIsAnimating(false), 500);
       return () => clearTimeout(t);
     }
+    if (s.peekingCard === null) setIsAnimating(false);
   }, [s.peekingCard]);
   const canClaim =
     mySeat !== null &&
@@ -474,6 +475,15 @@ const MultiplayerGameView: React.FC<Props> = ({
       if (!result.won) setTooSlowAt(Date.now());
     };
     if (claimBusy) { buttonLabel = "…"; buttonKind = "DISABLED"; buttonOnClick = undefined; }
+  } else if (
+    mySeat !== null &&
+    (s.phase === "FLIPPING" || s.phase === "AWAITING_ROLL") &&
+    s.claimBy === null &&
+    isAnimating
+  ) {
+    // Flip animation freeze: WHOOP stays red but is inert.
+    buttonKind = "WHOOP";
+    buttonOnClick = undefined;
   } else if (inLastCall && mySeat !== null) {
     buttonKind = "WHOOP";
     buttonLabel = "LAST CALL!";
@@ -559,7 +569,7 @@ const MultiplayerGameView: React.FC<Props> = ({
         <DieBox rule={rule} />
         <ActionButton
           kind={buttonKind}
-          disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH" && buttonKind !== "WHOOP")}
+          disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
           onClick={buttonOnClick}
           label={buttonLabel}
         />
