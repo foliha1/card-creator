@@ -8,6 +8,7 @@ interface WindowProps {
   defaultPosition: { x: number; y: number };
   width: number;
   height: number;
+  scale?: number;
   onClose: () => void;
   onFocus: (id: string) => void;
   zIndex: number;
