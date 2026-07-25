@@ -466,7 +466,7 @@ export function reducer(state: State, action: Action): State {
         message: `${state.names[by]} — no match. Skip next flip.`,
         messageType: "error",
       };
-      return cycleAdvance(post, by);
+      return post;
     }
 
     case "FLIP_START": {
@@ -578,7 +578,7 @@ export function reducer(state: State, action: Action): State {
         message: `${state.names[by]} — no match. Skip next flip.`,
         messageType: "info",
       };
-      return cycleAdvance(post, by);
+      return post;
     }
 
     case "LAST_CALL_CLAIM": {

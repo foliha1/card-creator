@@ -392,7 +392,7 @@ describe("PLAYER_RESOLVE_MATCH", () => {
     expect(next.grid[2]).not.toBeNull();
   });
 
-  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], stays in FLIPPING via cycleAdvance", () => {
+  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], stays in FLIPPING", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
       selectedCards: [1, 3], // unrelated cards, no shared SHAPE
@@ -405,8 +405,8 @@ describe("PLAYER_RESOLVE_MATCH", () => {
     expect(next.wrongBy[0].has(1)).toBe(true);
     expect(next.wrongBy[0].has(3)).toBe(true);
     expect(next.skip[0]).toBe(true);
-    // human already flipped this cycle → cycleAdvance passes flipper to opponent
-    expect(next.flipper).toBe(1);
+    // Wrong claim does NOT advance the cycle; flipper is unchanged.
+    expect(next.flipper).toBe(0);
     expect(next.phase).toBe("FLIPPING");
   });
 
@@ -521,22 +521,24 @@ describe("CLAIM_RESOLVE", () => {
     expect(next.roundNum).toBe(6);
   });
 
-  it("wrong opponent claim: adds to opponent wrongBy, sets skip[1], stays in FLIPPING", () => {
+  it("wrong opponent claim: retains wrongBy, keeps skip[1], flipper + roundNum unchanged, stays in FLIPPING", () => {
     const s = baseState({
       phase: "CLAIM_RESOLVING",
       inFlight: { kind: "claim", token: 7, by: 1, a: 1, b: 3 },
       rule: ["SHAPE"],
-      flippedThisCycle: new Set([0, 1]), // ensure cycle already complete → roll passes on cycleAdvance
+      flipper: 0,
+      roundNum: 3,
+      flippedThisCycle: new Set([0, 1]), // even with a "complete" cycle, wrong claim must NOT advance
       claimedThisCycle: false,
     });
     const next = reducer(s, { type: "CLAIM_RESOLVE", token: 7 });
     expect(next.scores).toEqual([0, 0]);
-    // Full cycle with no successful claim → cycleAdvance starts a new round
-    expect(next.phase).toBe("AWAITING_ROLL");
-    // wrongBy is reset by startRound at round transition
-    expect(next.wrongBy[1].has(1)).toBe(false);
-    // The skip that was just set gets cleared by startRound too.
-    expect(next.skip).toEqual([false, false]);
+    expect(next.phase).toBe("FLIPPING");
+    expect(next.wrongBy[1].has(1)).toBe(true);
+    expect(next.wrongBy[1].has(3)).toBe(true);
+    expect(next.skip[1]).toBe(true);
+    expect(next.flipper).toBe(0);
+    expect(next.roundNum).toBe(3);
   });
 
   it("wrong opponent claim mid-cycle: retains wrongBy + skip and stays in FLIPPING", () => {
