@@ -23,6 +23,7 @@ const Window: React.FC<WindowProps> = ({
   defaultPosition,
   width,
   height,
+  scale = 1,
   onClose,
   onFocus,
   zIndex,
@@ -37,12 +38,13 @@ const Window: React.FC<WindowProps> = ({
   const clamp = useCallback(
     (x: number, y: number) => {
       const minVisible = mobile ? 80 : 100;
+      const scaledWidth = width * scale;
       return {
-        x: Math.max(-(width - minVisible), Math.min(x, window.innerWidth - minVisible)),
+        x: Math.max(-(scaledWidth - minVisible), Math.min(x, window.innerWidth - minVisible)),
         y: Math.max(0, Math.min(y, window.innerHeight - minVisible)),
       };
     },
-    [width, height, mobile]
+    [width, height, mobile, scale]
   );
 
   const onDragStart = useCallback(
