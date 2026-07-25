@@ -109,6 +109,39 @@ describe("toPublicState — redaction", () => {
     }
   });
 
+  it("does NOT expose the first selected card's face (rulebook: touch does not reveal)", () => {
+    let s = initialState(6, { seatCount: 2 });
+    s = reducer(s, { type: "ROLL_START" });
+    s = reducer(s, { type: "ROLL_LAND", values: ["SHAPE"], rule: ["SHAPE"] });
+    s = reducer(s, { type: "ROLL_SETTLE" });
+    s = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 });
+    const nonNull = s.grid.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
+    const a = nonNull[0];
+    s = reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: a });
+    expect(s.selectedCards).toEqual([a]);
+    const pub = toPublicState(s, EMPTY_MAP);
+    // Still emitted so clients can render the highlight ring...
+    expect(pub.selectedCards).toEqual([a]);
+    // ...but the face is NOT revealed.
+    expect(pub.grid[a].occupied).toBe(true);
+    expect(pub.grid[a].card).toBeNull();
+  });
+
+  it("exposes BOTH faces only once the second touch locks the claim", () => {
+    let s = initialState(6, { seatCount: 2 });
+    s = reducer(s, { type: "ROLL_START" });
+    s = reducer(s, { type: "ROLL_LAND", values: ["SHAPE"], rule: ["SHAPE"] });
+    s = reducer(s, { type: "ROLL_SETTLE" });
+    s = reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 });
+    const nonNull = s.grid.map((c, i) => (c ? i : -1)).filter((i) => i >= 0);
+    const [a, b] = [nonNull[0], nonNull[1]];
+    s = reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: a });
+    s = reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: b });
+    const pub = toPublicState(s, EMPTY_MAP);
+    expect(pub.grid[a].card?.id).toBe(s.grid[a]!.id);
+    expect(pub.grid[b].card?.id).toBe(s.grid[b]!.id);
+  });
+
   it("Last Call flips everything face-up", () => {
     const s: State = { ...initialState(6, { seatCount: 2 }), allFaceUp: true };
     const pub = toPublicState(s, EMPTY_MAP);
