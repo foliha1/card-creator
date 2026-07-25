@@ -1,9 +1,7 @@
 import { Helmet } from "react-helmet-async";
-import { useParams } from "react-router-dom";
 import DesktopShell from "@/components/DesktopShell";
 
 const Index = () => {
-  const { roomCode } = useParams<{ roomCode?: string }>();
   const url = "https://whoop-whoop.lovable.app/";
   const title = "WHOOP! WHOOP! — A Memory Card Game by Oleeha & Co";
   const description =
