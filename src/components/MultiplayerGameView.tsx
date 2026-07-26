@@ -751,12 +751,22 @@ const MultiplayerGameView: React.FC<Props> = ({
   const bottomRow = (
     <div style={{ display: "flex", gap: 8, height: 110.94 }}>
       <DieBox rule={rule} heroActive={heroActive} homeRef={homeRef} />
-      <ActionButton
-        kind={buttonKind}
-        disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
-        onClick={buttonOnClick}
-        label={buttonLabel}
-      />
+      {/* Wrap the WHOOP button so ROLLING can dim it to 40% and physically
+          block taps. pointerEvents:none guarantees no tap ever reaches the
+          onClick — belt-and-braces on top of the cleared handler above. */}
+      <div style={{
+        flex: "1 1 auto", display: "flex", minWidth: 0,
+        opacity: isRolling ? 0.4 : 1,
+        pointerEvents: isRolling ? "none" : "auto",
+        transition: "opacity 250ms ease",
+      }}>
+        <ActionButton
+          kind={buttonKind}
+          disabled={isRolling || buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
+          onClick={isRolling ? undefined : buttonOnClick}
+          label={buttonLabel}
+        />
+      </div>
     </div>
   );
   const gameOverBtn = s.phase === "GAME_OVER" ? (
