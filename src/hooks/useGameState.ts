@@ -1,6 +1,7 @@
 import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 import { createOpponentMemory, OpponentMemory } from "@/lib/opponentMemory";
+import { ROLL_HERO_MS } from "@/lib/multiplayer";
 
 type MessageType = "info" | "success" | "error" | "warning";
 
