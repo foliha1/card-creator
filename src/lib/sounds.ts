@@ -60,38 +60,6 @@ export function unlockAudio(): void {
   } catch { /* ignore — no AudioContext available */ }
 }
 
-// ---------- Theme music (looping mp3) ----------
-let themeAudio: HTMLAudioElement | null = null;
-let themeWanted = false;
-
-function ensureThemeAudio(): HTMLAudioElement | null {
-  if (typeof Audio === "undefined") return null;
-  if (!themeAudio) {
-    themeAudio = new Audio("/whoop-theme.mp3");
-    themeAudio.loop = true;
-    themeAudio.preload = "auto";
-    themeAudio.volume = 0.4;
-  }
-  return themeAudio;
-}
-
-export function startThemeMusic(): void {
-  themeWanted = true;
-  if (!musicEnabled) return;
-  const a = ensureThemeAudio();
-  if (!a) return;
-  // .play() may reject if no user gesture yet — safe to swallow.
-  const p = a.play();
-  if (p && typeof p.catch === "function") p.catch(() => { /* awaiting gesture */ });
-}
-
-export function stopThemeMusic(): void {
-  themeWanted = false;
-  if (!themeAudio) return;
-  try { themeAudio.pause(); themeAudio.currentTime = 0; } catch { /* ignore */ }
-}
-
-
 function playTone(freq: number, duration: number, type: OscillatorType = "square", volume = 0.15) {
   if (!sfxEnabled) return;
   const ctx = getCtx();
