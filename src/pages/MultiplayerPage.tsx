@@ -26,16 +26,33 @@ const MultiplayerPage: React.FC = () => {
         aria-label="WHOOP! WHOOP! multiplayer"
         style={{
           height: "100dvh",
-          display: "flex",
-          flexDirection: "column",
+          width: "100%",
           overflow: "hidden",
-          boxSizing: "border-box",
           background: PAGE_BG,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxSizing: "border-box",
         }}
       >
-        <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
-          <MultiplayerWindow initialRoomCode={roomCode} />
-        </Suspense>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 420,
+            height: "100%",
+            maxHeight: 900,
+            margin: "auto",
+            padding: "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
+            <MultiplayerWindow initialRoomCode={roomCode} />
+          </Suspense>
+        </div>
       </div>
     </>
   );

@@ -14,6 +14,7 @@ interface GameCardProps {
   entering?: boolean;
   enterDelay?: number;
   shaking?: boolean;
+  fill?: boolean;
 }
 
 const GameCard = ({
@@ -28,6 +29,7 @@ const GameCard = ({
   entering,
   enterDelay = 0,
   shaking,
+  fill,
 }: GameCardProps) => {
   const [focusVis, setFocusVis] = useState(false);
 
@@ -66,7 +68,8 @@ const GameCard = ({
       style={{
         perspective: 600,
         width: "100%",
-        aspectRatio: "5/7",
+        height: fill ? "100%" : undefined,
+        aspectRatio: fill ? undefined : "5/7",
         cursor: "pointer",
         transform: shrinking ? outerTransform : undefined,
         opacity: shrinking ? outerOpacity : undefined,

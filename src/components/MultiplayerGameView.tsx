@@ -353,22 +353,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId,
 }) => {
   void _mobile;
-  // Landscape layout gate: viewport is landscape AND at least 900px wide.
-  const [isLandscape, setIsLandscape] = React.useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth >= 900 && window.innerWidth > window.innerHeight;
-  });
-  React.useEffect(() => {
-    const onResize = () => {
-      setIsLandscape(window.innerWidth >= 900 && window.innerWidth > window.innerHeight);
-    };
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
-    };
-  }, []);
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // Block WHOOP for ~500ms during the flip rotation itself (matches
@@ -507,62 +491,12 @@ const MultiplayerGameView: React.FC<Props> = ({
   }
 
   const chips = chipsForOpponents(s, mySeat, events);
-  // Landscape rail: up to 6 chips across all seats (self + opponents), same kind derivation.
-  const railChips: DerivedChip[] = (() => {
-    const nice = new Set<number>();
-    for (const e of events) if (e.kind === "GREAT_MATCH") nice.add(e.seat);
-    const MAX = 6;
-    const out: DerivedChip[] = s.seatMap.slice(0, MAX).map((entry) => {
-      const seat = entry.seat;
-      let kind: ChipKind = "IDLE";
-      if (s.claimBy === seat) kind = "WHOOP";
-      else if (nice.has(seat)) kind = "NICE";
-      else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
-      else if (s.skip[seat]) kind = "PENALTY";
-      else if (s.phase === "AWAITING_ROLL" && s.roller === seat) kind = "ROLLING";
-      else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
-      return { kind, name: entry.display_name, score: s.scores[seat] ?? 0 };
-    });
-    while (out.length < MAX) out.push({ kind: "EMPTY", name: "---", score: null });
-    return out;
-  })();
+
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
 
-  const cardAreaPadding = overlay ? 16 : `0px 16px`;
 
-  const renderGridCells = () =>
-    s.grid.map((slot, i) => {
-      if (!slot.occupied) {
-        return (
-          <div key={`empty-${i}`} style={{
-            border: `2px dashed rgba(35,31,32,0.13)`,
-            borderRadius: R_CARD,
-          }} />
-        );
-      }
-      const faceUp = slot.card !== null;
-      const cardForRender: Card =
-        slot.card ??
-        ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
-      const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
-      return (
-        <div key={i} style={{
-          borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
-        }}>
-          <GameCard
-            card={cardForRender}
-            faceUp={faceUp}
-            onClick={() => handleCardClick(i)}
-            highlighted={selected}
-            matched={s.matchedCards.includes(i)}
-            wrong={false}
-            wrongWash={false}
-            shaking={false}
-          />
-        </div>
-      );
-    });
+
 
   const roundBar = <RoundBar round={s.roundNum} />;
   const opponentRow = <OpponentRow chips={chips} />;
@@ -604,239 +538,42 @@ const MultiplayerGameView: React.FC<Props> = ({
     </button>
   ) : null;
 
-  if (isLandscape) {
-    return (
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        height: "100%", width: "100%", padding: 8, boxSizing: "border-box",
-        background: "#231F20", overflow: "hidden",
-      }}>
-        <div style={{
-          background: SURFACE, padding: 10, display: "flex",
-          flexDirection: "row", alignItems: "center", justifyContent: "center",
-          gap: 8, boxSizing: "border-box",
-          width: "100%", maxWidth: 1000, height: "100%", maxHeight: 720,
-          margin: "auto", borderRadius: R_BOX,
-        }}>
-          {/* LEFT — card area */}
-          <div style={{
-            flex: "1 1 auto", minWidth: 0, alignSelf: "stretch",
-            background: PANEL, border: BORDER_HEAVY, borderRadius: R_BOX,
-            padding: "0 16px", boxSizing: "border-box",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            containerType: "size",
-            position: "relative",
-          } as React.CSSProperties}>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gridTemplateRows: "repeat(3, 1fr)",
-              gap: 8,
-              width: "min(100cqw, calc(100cqh * 328.99 / 454.21))",
-              aspectRatio: "328.99 / 454.21",
-              margin: "auto",
-            }}>
-              {renderGridCells()}
-            </div>
-            {overlay && <GridOverlay kind={overlay} />}
-          </div>
+  // Measured card sizing: compute per-card dimensions from the card area's
+  // content box so 9 cards always fit both axes with padding + gaps.
+  const cardAreaRef = React.useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = React.useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  React.useEffect(() => {
+    const el = cardAreaRef.current;
+    if (!el) return;
+    const measure = () => {
+      const cs = getComputedStyle(el);
+      const pl = parseFloat(cs.paddingLeft) || 0;
+      const pr = parseFloat(cs.paddingRight) || 0;
+      const pt = parseFloat(cs.paddingTop) || 0;
+      const pb = parseFloat(cs.paddingBottom) || 0;
+      setBox({
+        w: el.clientWidth - pl - pr,
+        h: el.clientHeight - pt - pb,
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-          {/* RIGHT — side rail (wide spec) */}
-          <div style={{
-            flex: "0 0 252px", alignSelf: "stretch",
-            display: "flex", flexDirection: "column", gap: 8, minHeight: 0,
-          }}>
-            {/* 1. ROUND BAR */}
-            <div style={{
-              height: 40, padding: 8, background: INK,
-              border: `2px solid ${INK}`, borderRadius: 4,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxSizing: "border-box", flex: "0 0 auto",
-            }}>
-              <span style={{
-                fontFamily: FONT_FAMILY, fontWeight: 400,
-                fontSize: 20, lineHeight: "24px",
-                color: SURFACE, textAlign: "center",
-              }}>Round: {s.roundNum}</span>
-            </div>
-
-            {/* 2. OPPONENT CHIPS (6-slot grid) */}
-            <div style={{
-              height: 122, padding: 8, background: PANEL,
-              border: BORDER_HEAVY, borderRadius: 4,
-              boxSizing: "border-box", flex: "0 0 auto",
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 73.33px)",
-              gridTemplateRows: "repeat(2, 48px)",
-              columnGap: 8, rowGap: 9,
-              justifyContent: "center", alignContent: "center",
-            }}>
-              {railChips.map((chip, i) => {
-                const isRolling = chip.kind === "ROLLING";
-                const isFlipping = chip.kind === "FLIPPING";
-                const isClaim = chip.kind === "WHOOP";
-                const isPenalty = chip.kind === "PENALTY";
-                const chipBg =
-                  isRolling ? ORANGE :
-                  isFlipping ? BLUE :
-                  isClaim ? RED :
-                  isPenalty ? RED :
-                  PANEL;
-                const chipBorder = isPenalty ? RED : INK;
-                const topBg = isPenalty ? PANEL : SURFACE;
-                const topBorder = isPenalty ? RED : INK;
-                const nameColor = isPenalty ? RED : INK;
-                const statusText =
-                  isRolling ? "ROLLING!" :
-                  isFlipping ? "FLIPPING" :
-                  isClaim ? "WHOOP!" :
-                  isPenalty ? "PENALTY" :
-                  "";
-                const statusColor =
-                  isRolling ? INK :
-                  isFlipping ? SURFACE :
-                  isClaim ? SURFACE :
-                  isPenalty ? PANEL :
-                  INK;
-                return (
-                  <div key={i} style={{
-                    width: 73.33, height: 48,
-                    background: chipBg,
-                    border: `2px solid ${chipBorder}`,
-                    borderRadius: 8,
-                    display: "flex", flexDirection: "column",
-                    boxSizing: "border-box", overflow: "hidden",
-                  }}>
-                    <div style={{
-                      height: 25, padding: "4px 8px",
-                      background: topBg,
-                      border: `2px solid ${topBorder}`,
-                      borderRadius: 6.33043,
-                      display: "flex", flexDirection: "row",
-                      justifyContent: "space-between", alignItems: "center",
-                      boxSizing: "border-box",
-                    }}>
-                      <span style={{
-                        fontFamily: FONT_FAMILY, fontWeight: 400,
-                        fontSize: 14, lineHeight: "17px", color: nameColor,
-                        overflow: "hidden", textOverflow: "ellipsis",
-                        whiteSpace: "nowrap", flex: "1 1 auto", minWidth: 0,
-                      }}>{chip.name}</span>
-                      {chip.score !== null && (
-                        <span style={{
-                          fontFamily: FONT_FAMILY, fontWeight: 400,
-                          fontSize: 14, lineHeight: "17px", color: RED,
-                          marginLeft: 4, flex: "0 0 auto",
-                        }}>{chip.score}</span>
-                      )}
-                    </div>
-                    <div style={{
-                      height: 23, padding: "4px 8px",
-                      borderRadius: 6.33043,
-                      display: "flex", flexDirection: "row",
-                      justifyContent: "space-between", alignItems: "center",
-                      boxSizing: "border-box",
-                    }}>
-                      {statusText && (
-                        <span style={{
-                          fontFamily: FONT_FAMILY, fontWeight: 400,
-                          fontSize: 12, lineHeight: "15px", color: statusColor,
-                        }}>{statusText}</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* 3. SCORE ROW */}
-            <div style={{
-              height: 48, padding: 8, gap: 8, background: PANEL,
-              border: BORDER_HEAVY, borderRadius: 4,
-              display: "flex", flexDirection: "row", alignItems: "center",
-              boxSizing: "border-box", flex: "0 0 auto",
-            }}>
-              {[
-                `Cards Left: ${s.deckCount}`,
-                `Your Score: ${myScore}`,
-              ].map((label, i) => (
-                <div key={i} style={{
-                  flex: "1 1 0", height: 32, padding: 4,
-                  background: SURFACE, border: BORDER_HEAVY,
-                  borderRadius: 6.33043,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxSizing: "border-box",
-                  fontFamily: FONT_FAMILY, fontWeight: 400,
-                  fontSize: 20, lineHeight: "24px",
-                  color: INK, textAlign: "center",
-                }}>{label}</div>
-              ))}
-            </div>
-
-            {/* 4 + 5. DIE BOX + ACTION BUTTON */}
-            <div style={{
-              display: "flex", flexDirection: "row", gap: 8,
-              flex: "1 1 auto", minHeight: 0,
-            }}>
-              {/* DIE BOX */}
-              <div style={{
-                height: 110.94, flex: "0 0 auto",
-                padding: 8, gap: 16, background: ORANGE,
-                border: BORDER_HEAVY, borderRadius: 4,
-                display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center",
-                boxSizing: "border-box",
-              }}>
-                <div style={{
-                  width: 89.42, height: 89.42, background: SURFACE,
-                  borderRadius: 8, transform: "rotate(-3.65deg)",
-                  filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center",
-                  padding: 4, boxSizing: "border-box",
-                }}>
-                  <span style={{ fontFamily: FONT_FAMILY, fontSize: 11, color: INK, fontStyle: "italic" }}>
-                    Match the
-                  </span>
-                  <span style={{ fontFamily: FONT_FAMILY, fontSize: 20, color: INK, fontWeight: 700 }}>
-                    {rule}
-                  </span>
-                </div>
-              </div>
-              {/* ACTION BUTTON */}
-              {(() => {
-                const s2 = ButtonStyles[buttonKind];
-                const isDisabled = buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH");
-                return (
-                  <button
-                    type="button"
-                    onClick={isDisabled ? undefined : buttonOnClick}
-                    disabled={isDisabled}
-                    style={{
-                      all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
-                      flex: "1 1 auto", minHeight: 118.06,
-                      padding: 12.6609,
-                      background: s2.bg, color: s2.text,
-                      border: BORDER_HEAVY, borderRadius: 4,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      boxSizing: "border-box",
-                      fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
-                      fontSize: 32, lineHeight: "39px", textAlign: "center",
-                    }}
-                  >
-                    {buttonLabel ?? s2.label}
-                  </button>
-                );
-              })()}
-            </div>
-
-            {gameOverBtn}
-          </div>
-
-        </div>
-      </div>
-    );
-  }
+  const GAP = 8;
+  const RATIO = 146.07 / 104.33;
+  const MIN_CARD_W = 64;
+  const availW = Math.max(0, box.w);
+  const availH = Math.max(0, box.h);
+  const fromW = (availW - GAP * 2) / 3;
+  const fromH = ((availH - GAP * 2) / 3) / RATIO;
+  const rawCardW = Math.min(fromW, fromH);
+  const cardW = Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W);
+  const cardH = cardW * RATIO;
+  const gridHeightNeeded = cardH * 3 + GAP * 2;
+  const needsScroll = gridHeightNeeded > availH + 0.5;
 
   return (
     <div style={{
@@ -847,26 +584,60 @@ const MultiplayerGameView: React.FC<Props> = ({
       {roundBar}
       {opponentRow}
 
-      {/* Card area */}
-      <div style={{
-        position: "relative", background: PANEL, border: BORDER_HEAVY,
-        borderRadius: R_BOX,
-        padding: typeof cardAreaPadding === "string" ? cardAreaPadding : cardAreaPadding,
-        paddingTop: overlay ? 16 : 12, paddingBottom: overlay ? 16 : 12,
-        boxSizing: "border-box", flex: "1 1 auto", minHeight: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
+      {/* Card area — padding 8 (16 when overlay), measured card sizing */}
+      <div
+        ref={cardAreaRef}
+        style={{
+          position: "relative", background: PANEL, border: BORDER_HEAVY,
+          borderRadius: R_BOX,
+          padding: overlay ? 16 : 8,
+          boxSizing: "border-box", flex: "1 1 auto", minHeight: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          overflowY: needsScroll ? "auto" : "hidden",
+          overflowX: "hidden",
+        }}
+      >
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gridTemplateRows: "repeat(3, 1fr)",
-          gap: 8,
-          aspectRatio: "328.99 / 454.21",
-          maxWidth: "100%",
-          maxHeight: "100%",
+          gridTemplateColumns: `repeat(3, ${cardW}px)`,
+          gridTemplateRows: `repeat(3, ${cardH}px)`,
+          gap: GAP,
           margin: "auto",
         }}>
-          {renderGridCells()}
+          {s.grid.map((slot, i) => {
+            if (!slot.occupied) {
+              return (
+                <div key={`empty-${i}`} style={{
+                  width: cardW, height: cardH,
+                  border: `2px dashed rgba(35,31,32,0.13)`,
+                  borderRadius: R_CARD, boxSizing: "border-box",
+                }} />
+              );
+            }
+            const faceUp = slot.card !== null;
+            const cardForRender: Card =
+              slot.card ??
+              ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
+            const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
+            return (
+              <div key={i} style={{
+                width: cardW, height: cardH,
+                borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
+              }}>
+                <GameCard
+                  card={cardForRender}
+                  faceUp={faceUp}
+                  onClick={() => handleCardClick(i)}
+                  highlighted={selected}
+                  matched={s.matchedCards.includes(i)}
+                  wrong={false}
+                  wrongWash={false}
+                  shaking={false}
+                  fill
+                />
+              </div>
+            );
+          })}
         </div>
         {overlay && <GridOverlay kind={overlay} />}
       </div>
@@ -877,5 +648,6 @@ const MultiplayerGameView: React.FC<Props> = ({
     </div>
   );
 };
+
 
 export default MultiplayerGameView;
