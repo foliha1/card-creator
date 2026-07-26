@@ -844,6 +844,70 @@ const MultiplayerGameView: React.FC<Props> = ({
       {scoreRow}
       {bottomRow}
       {gameOverBtn}
+      </div>
+      {showSettings && (
+        <ModalShell titleId="mp-settings-title" onCancel={() => setShowSettings(false)}>
+          <h2 id="mp-settings-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: INK }}>
+            Settings
+          </h2>
+          <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, color: MUTED }}>
+            Coming soon.
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              style={{
+                all: "unset", cursor: "pointer",
+                padding: "8px 16px", background: INK, color: SURFACE,
+                border: BORDER_HEAVY, borderRadius: R_BOX,
+                fontFamily: FONT_FAMILY, fontSize: 16,
+              }}
+              aria-label="Close settings"
+            >
+              Close
+            </button>
+          </div>
+        </ModalShell>
+      )}
+      {showLeave && (
+        <ModalShell titleId="mp-leave-title" onCancel={() => setShowLeave(false)}>
+          <h2 id="mp-leave-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 22, fontWeight: 700, color: INK }}>
+            {isHost ? "End the game?" : "Leave the table?"}
+          </h2>
+          <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, lineHeight: 1.4, color: INK }}>
+            {isHost
+              ? "Leaving now ends the game for everyone. All players will be returned to the lobby and the game cannot be resumed."
+              : "Your seat and score stay visible to the table with your turns auto-skipped — you won't be removed."}
+          </p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => setShowLeave(false)}
+              style={{
+                all: "unset", cursor: "pointer",
+                padding: "8px 16px", background: SURFACE, color: INK,
+                border: BORDER_HEAVY, borderRadius: R_BOX,
+                fontFamily: FONT_FAMILY, fontSize: 16,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowLeave(false); onLeave(); }}
+              style={{
+                all: "unset", cursor: "pointer",
+                padding: "8px 16px", background: RED, color: SURFACE,
+                border: BORDER_HEAVY, borderRadius: R_BOX,
+                fontFamily: FONT_FAMILY, fontSize: 16, fontWeight: 700,
+              }}
+            >
+              {isHost ? "End game" : "Leave"}
+            </button>
+          </div>
+        </ModalShell>
+      )}
     </div>
   );
 };
