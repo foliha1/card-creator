@@ -790,9 +790,9 @@ describe("skip penalty end-to-end", () => {
     expect(afterTick.flippedThisCycle.has(0)).toBe(true);
   });
 
-  it("NEW_GAME clears all skip flags", () => {
+  it("NEW_GAME (INIT) clears all skip flags", () => {
     const s = baseState({ skip: [true, true] });
-    const next = reducer(s, { type: "NEW_GAME", slotCount: 6 });
+    const next = reducer(s, { type: "INIT", slotCount: 6 });
     expect(next.skip.every((v) => v === false)).toBe(true);
   });
 
