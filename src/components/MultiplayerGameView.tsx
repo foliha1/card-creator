@@ -843,7 +843,6 @@ const MultiplayerGameView: React.FC<Props> = ({
       {scoreRow}
       {bottomRow}
       {gameOverBtn}
-      </div>
       {showSettings && (
         <ModalShell titleId="mp-settings-title" onCancel={() => setShowSettings(false)}>
           <h2 id="mp-settings-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: INK }}>
