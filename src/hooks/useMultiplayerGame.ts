@@ -420,6 +420,7 @@ export function useMultiplayerJoiner(opts: {
 }) {
   const { channel, onBroadcast, mySeat: mySeatProp, visitorId, enabled } = opts;
   const [publicState, setPublicState] = useState<PublicState | null>(null);
+  const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
   const events = useTransientEvents(channel, onBroadcast, enabled);
@@ -428,10 +429,15 @@ export function useMultiplayerJoiner(opts: {
     if (!enabled || !channel) return;
     const handler = (msg: { payload: unknown }) => {
       const env = msg.payload as Envelope;
-      if (!env || env.v !== PROTOCOL_VERSION || env.type !== "state") return;
-      if (env.seq <= lastSeqRef.current) return;
-      lastSeqRef.current = env.seq;
-      setPublicState(env.payload);
+      if (!env || env.v !== PROTOCOL_VERSION) return;
+      if (env.type === "state") {
+        if (env.seq <= lastSeqRef.current) return;
+        lastSeqRef.current = env.seq;
+        setPublicState(env.payload);
+      } else if (env.type === "roll_committed") {
+        // Latest commit wins — game only ever has one pending roll.
+        setRollCommit(env.payload);
+      }
     };
     return onBroadcast(handler);
   }, [enabled, channel, onBroadcast]);
