@@ -30,7 +30,6 @@ const MultiplayerPage: React.FC = () => {
           width: "100%",
           overflow: "hidden",
           position: "relative",
-          isolation: "isolate",
           backgroundColor: PAGE_BG,
           display: "flex",
           alignItems: "center",
@@ -39,27 +38,37 @@ const MultiplayerPage: React.FC = () => {
         }}
       >
         <style>{`
-          .mp-page-root::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            background-image: url(/whoop-pattern-bg.svg);
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            opacity: 0.6;
-            pointer-events: none;
+          @keyframes whoopPulse {
+            0%, 100% { opacity: 0.65; }
+            50% { opacity: 1; }
           }
-          @media (max-width: 600px) {
-            .mp-page-root::before {
-              background-size: auto 100%;
-              background-position: center;
+          @media (prefers-reduced-motion: reduce) {
+            .mp-pulse-layer {
+              animation: none !important;
+              opacity: 0.85 !important;
             }
           }
         `}</style>
         <div
+          aria-hidden="true"
+          className="mp-pulse-layer"
           style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+            backgroundImage: "url(/whoop-pattern-bg.svg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            willChange: "opacity",
+            animation: "whoopPulse 14s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
             width: "100%",
             maxWidth: 420,
             height: "100%",
