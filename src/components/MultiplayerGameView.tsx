@@ -556,6 +556,22 @@ const MultiplayerGameView: React.FC<Props> = ({
     return () => clearTimeout(t);
   }, [claimErrAt]);
 
+  // Host-dropped claim grant (window mismatch): if the rejected seat is
+  // ours, we thought we won but the host discarded the grant. Surface the
+  // CONNECTION ISSUE banner instead of a silent hang. Also clears LOCKING…
+  // if we happen to still be mid-request.
+  const lastRejectKeyRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!lastClaimReject || mySeat === null) return;
+    if (lastClaimReject.seat !== mySeat) return;
+    const key = `${lastClaimReject.grant_claim_window}:${lastClaimReject.host_claim_window}:${lastClaimReject.reason}`;
+    if (lastRejectKeyRef.current === key) return;
+    lastRejectKeyRef.current = key;
+    console.warn("[claim_reject:self]", lastClaimReject);
+    setClaimBusy(false);
+    setClaimErrAt(Date.now());
+  }, [lastClaimReject, mySeat]);
+
   // Detect self outcome events (last ~1.4s) for the grid overlay.
   const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
   const myNope = mySeat !== null && events.some((e) => e.kind === "NOPE" && e.seat === mySeat);
