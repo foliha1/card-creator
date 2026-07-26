@@ -26,6 +26,7 @@
 // ============================================================================
 
 import React from "react";
+import { Settings, X } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
@@ -46,6 +47,7 @@ interface Props {
   mobile?: boolean;
   roomId: string;
   visitorId: string;
+  isHost: boolean;
 }
 
 // -------- Figma-transcribed constants --------
