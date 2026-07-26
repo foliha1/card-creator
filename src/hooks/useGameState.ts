@@ -748,14 +748,20 @@ export function useGameState(
   const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollSettleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const firstSlotRef = useRef(slotCount);
+  // Re-INIT when EITHER the grid size OR the seat count changes. Multiplayer
+  // mounts this hook with seatCount=2 (empty frozenSeats) before "Lets do it!"
+  // fills the seat map; on that transition we must re-init so the reducer's
+  // seat-indexed arrays (scores, skip, wrongBy, disconnected) grow to match.
+  const initKeyRef = useRef(`${slotCount}:${seatCount}`);
   useEffect(() => {
-    if (firstSlotRef.current === slotCount) return;
-    firstSlotRef.current = slotCount;
+    const key = `${slotCount}:${seatCount}`;
+    if (initKeyRef.current === key) return;
+    initKeyRef.current = key;
     memoryRef.current?.reset();
     prevPeekingRef.current = null;
     dispatch({ type: "INIT", slotCount, seatCount, names });
   }, [slotCount, seatCount, names]);
+
 
   const runRollAnimation = useCallback((): Promise<string[]> => {
     return new Promise((resolve) => {
