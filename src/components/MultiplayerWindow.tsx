@@ -503,6 +503,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         mobile={mobile}
         roomId={activeRoom.id}
         visitorId={visitorId}
+        isHost={true}
       />
     );
   }
@@ -519,6 +520,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         mobile={mobile}
         roomId={activeRoom.id}
         visitorId={visitorId}
+        isHost={false}
       />
     );
   }

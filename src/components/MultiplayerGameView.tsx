@@ -26,6 +26,7 @@
 // ============================================================================
 
 import React from "react";
+import { Settings, X } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
@@ -46,6 +47,7 @@ interface Props {
   mobile?: boolean;
   roomId: string;
   visitorId: string;
+  isHost: boolean;
 }
 
 // -------- Figma-transcribed constants --------
@@ -179,17 +181,112 @@ const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
   </div>
 );
 
-const RoundBar: React.FC<{ round: number }> = ({ round }) => (
+const Header: React.FC<{
+  round: number;
+  onSettings: () => void;
+  onClose: () => void;
+}> = ({ round, onSettings, onClose }) => (
   <div style={{
-    height: 40, background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    boxSizing: "border-box",
+    display: "flex", flexDirection: "column", justifyContent: "center",
+    alignItems: "center", padding: 8, gap: 8, height: 56,
+    background: SURFACE, alignSelf: "stretch", boxSizing: "border-box",
   }}>
-    <span style={{ fontFamily: FONT_FAMILY, fontSize: 20, lineHeight: "24px", color: SURFACE }}>
-      Round: {round}
-    </span>
+    <div style={{
+      display: "flex", flexDirection: "row", alignItems: "flex-start",
+      gap: 8, height: 40, width: "100%",
+    }}>
+      <button
+        type="button"
+        onClick={onSettings}
+        aria-label="Settings"
+        style={{
+          all: "unset", cursor: "pointer",
+          width: 40, height: 40, flex: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 8, boxSizing: "border-box",
+          background: BLUE, border: BORDER_HEAVY, borderRadius: R_BOX,
+        }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSettings(); } }}
+      >
+        <Settings size={24} color={SURFACE} aria-hidden="true" />
+      </button>
+      <div style={{
+        flex: "1 1 0", height: 40,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 8, gap: 7.91, boxSizing: "border-box",
+        background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
+      }}>
+        <span style={{
+          fontFamily: FONT_FAMILY, fontWeight: 400, fontSize: 20,
+          lineHeight: "24px", color: SURFACE, textAlign: "center",
+        }}>
+          Round: {round}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Leave game"
+        style={{
+          all: "unset", cursor: "pointer",
+          width: 40, height: 40, flex: "none", alignSelf: "stretch",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 12, boxSizing: "border-box",
+          background: RED, border: BORDER_HEAVY, borderRadius: R_BOX,
+        }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}
+      >
+        <X size={16} color={SURFACE} aria-hidden="true" />
+      </button>
+    </div>
   </div>
 );
+
+// Focus outline for keyboard users on the header buttons.
+const HEADER_FOCUS_CSS = `
+.mp-header-btn:focus-visible { outline: 2px solid ${ORANGE}; outline-offset: 2px; }
+`;
+
+const ModalShell: React.FC<{
+  titleId: string;
+  onCancel: () => void;
+  children: React.ReactNode;
+}> = ({ titleId, onCancel, children }) => {
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+  return (
+    <div
+      role="presentation"
+      onClick={onCancel}
+      style={{
+        position: "absolute", inset: 0, zIndex: 50,
+        background: "rgba(0,0,0,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: SURFACE, border: BORDER_HEAVY, borderRadius: R_BOX,
+          padding: 16, maxWidth: 340, width: "100%",
+          display: "flex", flexDirection: "column", gap: 12,
+          fontFamily: FONT_FAMILY, color: INK,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 type BannerKind = "YOUR_FLIP" | "TOO_SLOW" | "PENALTY" | "CANCEL" | null;
 
@@ -354,8 +451,12 @@ const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
 // -------- Main component --------
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId,
+  publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
 }) => {
+  void _mobile;
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [showLeave, setShowLeave] = React.useState(false);
+  const modalOpen = showSettings || showLeave;
   void _mobile;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
@@ -464,6 +565,7 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
+    if (modalOpen) return;
     if (inLastCall) {
       const slot = s.grid[i];
       if (!slot.occupied) return;
@@ -518,7 +620,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   } else if (canClaim && !inLastCall && s.phase !== "GAME_OVER") {
     buttonKind = "WHOOP";
     buttonOnClick = async () => {
-      if (mySeat === null || claimBusy) return;
+      if (mySeat === null || claimBusy || modalOpen) return;
       unlockAudio();
       setClaimBusy(true);
       const result = await callClaimLock({
@@ -555,7 +657,13 @@ const MultiplayerGameView: React.FC<Props> = ({
 
 
 
-  const roundBar = <RoundBar round={s.roundNum} />;
+  const header = (
+    <Header
+      round={s.roundNum}
+      onSettings={() => setShowSettings(true)}
+      onClose={() => setShowLeave(true)}
+    />
+  );
   const opponentRow = <OpponentRow chips={chips} />;
   const scoreRow = (
     <ScoreRow
@@ -645,9 +753,10 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div style={{
       display: "flex", flexDirection: "column", gap: 8,
       padding: 8, height: "100%", boxSizing: "border-box",
-      background: SURFACE, overflow: "hidden",
+      background: SURFACE, overflow: "hidden", position: "relative",
     }}>
-      {roundBar}
+      <style>{HEADER_FOCUS_CSS}</style>
+      {header}
       {opponentRow}
 
       {/* Card area — padding 8 (16 when overlay), measured card sizing */}
@@ -735,6 +844,69 @@ const MultiplayerGameView: React.FC<Props> = ({
       {scoreRow}
       {bottomRow}
       {gameOverBtn}
+      {showSettings && (
+        <ModalShell titleId="mp-settings-title" onCancel={() => setShowSettings(false)}>
+          <h2 id="mp-settings-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: INK }}>
+            Settings
+          </h2>
+          <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, color: MUTED }}>
+            Coming soon.
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              style={{
+                all: "unset", cursor: "pointer",
+                padding: "8px 16px", background: INK, color: SURFACE,
+                border: BORDER_HEAVY, borderRadius: R_BOX,
+                fontFamily: FONT_FAMILY, fontSize: 16,
+              }}
+              aria-label="Close settings"
+            >
+              Close
+            </button>
+          </div>
+        </ModalShell>
+      )}
+      {showLeave && (
+        <ModalShell titleId="mp-leave-title" onCancel={() => setShowLeave(false)}>
+          <h2 id="mp-leave-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 22, fontWeight: 700, color: INK }}>
+            {isHost ? "End the game?" : "Leave the table?"}
+          </h2>
+          <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, lineHeight: 1.4, color: INK }}>
+            {isHost
+              ? "Leaving now ends the game for everyone. All players will be returned to the lobby and the game cannot be resumed."
+              : "Your seat and score stay visible to the table with your turns auto-skipped — you won't be removed."}
+          </p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => setShowLeave(false)}
+              style={{
+                all: "unset", cursor: "pointer",
+                padding: "8px 16px", background: SURFACE, color: INK,
+                border: BORDER_HEAVY, borderRadius: R_BOX,
+                fontFamily: FONT_FAMILY, fontSize: 16,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowLeave(false); onLeave(); }}
+              style={{
+                all: "unset", cursor: "pointer",
+                padding: "8px 16px", background: RED, color: SURFACE,
+                border: BORDER_HEAVY, borderRadius: R_BOX,
+                fontFamily: FONT_FAMILY, fontSize: 16, fontWeight: 700,
+              }}
+            >
+              {isHost ? "End game" : "Leave"}
+            </button>
+          </div>
+        </ModalShell>
+      )}
     </div>
   );
 };
