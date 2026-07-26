@@ -14,6 +14,8 @@ import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
   PROTOCOL_VERSION,
   type ClaimGrantEnvelope,
+  type ClaimRejectEnvelope,
+  type ClaimRejectPayload,
   type Envelope,
   type EventEnvelope,
   type IntentAction,
