@@ -101,6 +101,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
+  const hiddenNameInputRef = useRef<HTMLInputElement | null>(null);
   const hostClaimWindowRef = useRef(0);
   const hostPrevClaimByRef = useRef<number | null>(null);
   const hostPrevRoundRef = useRef<number>(host.state.roundNum);
