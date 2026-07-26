@@ -656,7 +656,13 @@ const MultiplayerGameView: React.FC<Props> = ({
 
 
 
-  const roundBar = <RoundBar round={s.roundNum} />;
+  const header = (
+    <Header
+      round={s.roundNum}
+      onSettings={() => setShowSettings(true)}
+      onClose={() => setShowLeave(true)}
+    />
+  );
   const opponentRow = <OpponentRow chips={chips} />;
   const scoreRow = (
     <ScoreRow
