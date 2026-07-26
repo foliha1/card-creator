@@ -319,17 +319,51 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     setView({ kind: "idle" });
   }, []);
 
-  const containerStyle: React.CSSProperties = {
+  const shellStyle: React.CSSProperties = {
+    minHeight: "100dvh",
     display: "flex",
     flexDirection: "column",
-    gap: mobile ? SPACE[5] : SPACE[6],
-    padding: mobile ? SPACE[6] : SPACE[10],
-    height: "100%",
-    boxSizing: "border-box",
-    overflow: "auto",
     justifyContent: "center",
+    alignItems: "center",
+    padding: 8,
+    paddingTop: "calc(8px + env(safe-area-inset-top))",
+    paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
+    paddingLeft: "calc(8px + env(safe-area-inset-left))",
+    paddingRight: "calc(8px + env(safe-area-inset-right))",
+    boxSizing: "border-box",
+    overflowY: "auto",
+    background: "#0072B2",
   };
 
+  const innerColStyle: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 390,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  };
+
+  const cardStyle: React.CSSProperties = {
+    alignSelf: "stretch",
+    background: "#F8F2E9",
+    border: "2px solid #231F20",
+    borderRadius: 4,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 16,
+    height: "auto",
+    boxSizing: "border-box",
+  };
+
+  // Legacy card wrapper used by views not yet redesigned in this prompt
+  // (name-prompt, full, host-left, host/joiner lobby). Kept inside the shell.
+  const containerStyle: React.CSSProperties = {
+    ...cardStyle,
+    gap: mobile ? SPACE[5] : SPACE[6],
+    padding: mobile ? SPACE[6] : SPACE[10],
+  };
 
   const inputStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
@@ -343,6 +377,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     minWidth: 0,
     outline: "none",
   };
+
+  const wrapInShell = (
+    content: React.ReactNode,
+    opts?: { above?: React.ReactNode; gap?: number },
+  ) => (
+    <div style={shellStyle}>
+      <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
+        {opts?.above}
+        {content}
+      </div>
+    </div>
+  );
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
@@ -406,7 +452,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   }
 
   if (view.kind === "host-left") {
-    return (
+    return wrapInShell(
       <div style={containerStyle}>
         <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
           The host left the game.
@@ -417,14 +463,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         <AppButton variant="primary" tone="red" size="md" onClick={leaveToIdle} fullWidth>
           Back to lobby
         </AppButton>
-      </div>
+      </div>,
     );
   }
 
   if (view.kind === "name-prompt") {
     const pendingLabel =
       view.pending.kind === "create" ? "Starting a room" : `Joining ${view.pending.code}`;
-    return (
+    return wrapInShell(
       <div style={containerStyle}>
         <div>
           <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
@@ -456,10 +502,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           maxLength={8}
           autoFocus
           aria-label="Nickname"
-          style={{ ...inputStyle, textTransform: "none", letterSpacing: 0 }}
+          style={{ ...inputStyle, textTransform: "none", letterSpacing: 0, alignSelf: "stretch" }}
         />
 
-        <div style={{ display: "flex", gap: SPACE[3], flexDirection: mobile ? "column" : "row" }}>
+        <div style={{ display: "flex", gap: SPACE[3], flexDirection: mobile ? "column" : "row", alignSelf: "stretch" }}>
           <AppButton
             variant="primary"
             tone="red"
@@ -481,12 +527,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             Cancel
           </AppButton>
         </div>
-      </div>
+      </div>,
     );
   }
 
   if (view.kind === "full") {
-    return (
+    return wrapInShell(
       <div style={containerStyle}>
         <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
           Room "{view.code}" is full.
@@ -497,75 +543,162 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
           Back
         </AppButton>
-      </div>
+      </div>,
     );
   }
 
   if (view.kind === "idle") {
-    return (
-      <div style={containerStyle}>
-        <div>
-          <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
-            Play with friends.
-          </div>
-          <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, marginTop: SPACE[3] }}>
-            Start a room and share the link, or type a code someone gave you.
-          </div>
-        </div>
-
+    const codeEnabled = codeInput.length === ROOM_CODE_LENGTH;
+    const idleCard = (
+      <div style={{
+        alignSelf: "stretch",
+        background: "#F8F2E9",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 16,
+        height: "auto",
+        boxSizing: "border-box",
+      }}>
         {view.error && (
           <div role="alert" style={{
-            ...textStyle("caption", mobile),
-            color: COLORS.red,
-            border: `1.5px solid ${COLORS.red}`,
-            borderRadius: RADIUS.md,
-            padding: `${SPACE[3]}px ${SPACE[4]}px`,
-            background: COLORS.surface,
+            alignSelf: "stretch",
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 16,
+            lineHeight: "20px",
+            color: "#D72229",
+            border: "1.5px solid #D72229",
+            borderRadius: 4,
+            padding: "8px 12px",
+            background: "#F8F2E9",
           }}>
             {view.error}
           </div>
         )}
 
-        <AppButton
-          variant="primary"
-          tone="red"
-          size={mobile ? "md" : "lg"}
+        <button
+          type="button"
           onClick={handleStartRoom}
           disabled={busy}
-          fullWidth
+          style={{
+            alignSelf: "stretch",
+            height: 71,
+            background: "#D72229",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: 32,
+            lineHeight: "39px",
+            color: "#F8F2E9",
+            cursor: busy ? "default" : "pointer",
+            opacity: busy ? 0.7 : 1,
+            padding: 0,
+          }}
         >
-          Start a room
-        </AppButton>
+          Start a Table
+        </button>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-          <div style={{ ...textStyle("label", mobile), color: COLORS.ink }}>Got a code?</div>
-          <div style={{ display: "flex", gap: SPACE[3], flexDirection: mobile ? "column" : "row" }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 20,
+            lineHeight: "24px",
+            color: "#231F20",
+          }}>
+            Already have a code?
+          </div>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: 8,
+            height: 56,
+            background: "#D0C3AF",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            boxSizing: "border-box",
+          }}>
             <input
               value={codeInput}
               onChange={(e) => setCodeInput(sanitizeCodeInput(e.target.value))}
-              placeholder="ABC234"
+              placeholder="ABC123"
               inputMode="text"
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
               maxLength={ROOM_CODE_LENGTH}
               aria-label="Room code"
-              style={{ ...inputStyle, letterSpacing: 4, textTransform: "uppercase" }}
+              style={{
+                flexGrow: 1,
+                minWidth: 0,
+                height: 40,
+                padding: "8px 16px",
+                background: "#F8F2E9",
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                boxSizing: "border-box",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: "24px",
+                letterSpacing: "0.1em",
+                color: "#231F20",
+                textTransform: "uppercase",
+                outline: "none",
+              }}
             />
-            <AppButton
-              variant="primary"
-              tone="ink"
-              size="md"
+            <button
+              type="button"
               onClick={handleJoinByCode}
-              disabled={busy || codeInput.length !== ROOM_CODE_LENGTH}
+              disabled={busy || !codeEnabled}
+              style={{
+                width: 95,
+                height: 40,
+                flexShrink: 0,
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: "24px",
+                background: codeEnabled ? "#231F20" : "#544C4A",
+                color: codeEnabled ? "#F8F2E9" : "#D0C3AF",
+                cursor: codeEnabled && !busy ? "pointer" : "default",
+                padding: 0,
+              }}
             >
               Join
-            </AppButton>
+            </button>
           </div>
         </div>
       </div>
     );
+
+    return wrapInShell(idleCard, {
+      gap: 72,
+      above: (
+        <img
+          src="/WhoopWhoop_Dark_Logo.svg"
+          alt="WHOOP! WHOOP!"
+          width={210}
+          height={166}
+          style={{ width: 210, height: 166, display: "block" }}
+        />
+      ),
+    });
   }
+
 
   // Host/Joiner LOBBY view (game not yet started).
   const room = (view as { room: RoomRow }).room;
@@ -580,8 +713,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       ? "Connecting…"
       : "Connection lost — retrying";
 
-  return (
+  return wrapInShell(
     <div style={containerStyle}>
+
       <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
         <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, textTransform: "uppercase", letterSpacing: 2 }}>
           Room code
@@ -707,7 +841,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
         Leave room
       </AppButton>
-    </div>
+    </div>,
   );
 };
 
