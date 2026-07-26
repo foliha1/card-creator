@@ -84,7 +84,49 @@ export interface EventEnvelope {
   payload: TransientEvent;
 }
 
-export type Envelope = StateEnvelope | IntentEnvelope | ClaimGrantEnvelope | EventEnvelope;
+// Server-authoritative roll commit. The host decides the outcome and
+// broadcasts BEFORE any client (including itself) animates. `startAt` is a
+// host epoch millis timestamp set ~150ms in the future so subscribers can
+// align the tumble animation. `attribute` is the resolved rule; `faceIndex`
+// disambiguates which of the two cube faces bearing that attribute settles
+// up; `tumbleSeed` seeds any client-side visual jitter deterministically.
+export type RollAttribute = "SHAPE" | "NUMBER" | "COLOR";
+export interface RollCommitPayload {
+  roundId: string;
+  attribute: RollAttribute;
+  faceIndex: 0 | 1;
+  tumbleSeed: number;
+  startAt: number;
+}
+export interface RollCommittedEnvelope {
+  v: number;
+  type: "roll_committed";
+  seq: number;
+  payload: RollCommitPayload;
+}
+
+// Explicit rejection emitted by the host when a client action arrives during
+// the ROLLING window. NOT a silent no-op — subscribers can log/toast.
+export interface RollRejectPayload {
+  roundId: string;
+  seat: number;
+  action: string;
+  reason: "ROLLING";
+}
+export interface RollRejectEnvelope {
+  v: number;
+  type: "roll_reject";
+  seq: number;
+  payload: RollRejectPayload;
+}
+
+export type Envelope =
+  | StateEnvelope
+  | IntentEnvelope
+  | ClaimGrantEnvelope
+  | EventEnvelope
+  | RollCommittedEnvelope
+  | RollRejectEnvelope;
 
 export function jsonSerialize(payload: unknown): string {
   return JSON.stringify(payload);
