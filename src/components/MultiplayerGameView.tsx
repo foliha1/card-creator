@@ -353,6 +353,22 @@ const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId,
 }) => {
   void _mobile;
+  // Landscape layout gate: viewport is landscape AND at least 900px wide.
+  const [isLandscape, setIsLandscape] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth >= 900 && window.innerWidth > window.innerHeight;
+  });
+  React.useEffect(() => {
+    const onResize = () => {
+      setIsLandscape(window.innerWidth >= 900 && window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, []);
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // Block WHOOP for ~500ms during the flip rotation itself (matches
@@ -496,14 +512,140 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   const cardAreaPadding = overlay ? 16 : `0px 16px`;
 
+  const renderGridCells = () =>
+    s.grid.map((slot, i) => {
+      if (!slot.occupied) {
+        return (
+          <div key={`empty-${i}`} style={{
+            border: `2px dashed rgba(35,31,32,0.13)`,
+            borderRadius: R_CARD,
+          }} />
+        );
+      }
+      const faceUp = slot.card !== null;
+      const cardForRender: Card =
+        slot.card ??
+        ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
+      const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
+      return (
+        <div key={i} style={{
+          borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
+        }}>
+          <GameCard
+            card={cardForRender}
+            faceUp={faceUp}
+            onClick={() => handleCardClick(i)}
+            highlighted={selected}
+            matched={s.matchedCards.includes(i)}
+            wrong={false}
+            wrongWash={false}
+            shaking={false}
+          />
+        </div>
+      );
+    });
+
+  const roundBar = <RoundBar round={s.roundNum} />;
+  const opponentRow = <OpponentRow chips={chips} />;
+  const scoreRow = (
+    <ScoreRow
+      score={myScore}
+      cardsLeft={s.deckCount}
+      banner={banner}
+      onCancel={
+        canCancelClaim && mySeat !== null
+          ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
+          : undefined
+      }
+    />
+  );
+  const bottomRow = (
+    <div style={{ display: "flex", gap: 8, height: 110.94 }}>
+      <DieBox rule={rule} />
+      <ActionButton
+        kind={buttonKind}
+        disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
+        onClick={buttonOnClick}
+        label={buttonLabel}
+      />
+    </div>
+  );
+  const gameOverBtn = s.phase === "GAME_OVER" ? (
+    <button
+      type="button"
+      onClick={onLeave}
+      style={{
+        all: "unset", cursor: "pointer", textAlign: "center",
+        padding: 8, borderRadius: R_BOX, border: BORDER_HEAVY,
+        background: SURFACE, color: INK, fontFamily: FONT_FAMILY,
+        fontSize: 16,
+      }}
+    >
+      {s.message || "Game over"} — Leave
+    </button>
+  ) : null;
+
+  if (isLandscape) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        height: "100%", width: "100%", padding: 8, boxSizing: "border-box",
+        background: "#231F20", overflow: "hidden",
+      }}>
+        <div style={{
+          background: SURFACE, padding: 10, display: "flex",
+          flexDirection: "row", alignItems: "center", justifyContent: "center",
+          gap: 8, boxSizing: "border-box",
+          width: "100%", maxWidth: 1000, height: "100%", maxHeight: 720,
+          margin: "auto", borderRadius: R_BOX,
+        }}>
+          {/* LEFT — card area */}
+          <div style={{
+            flex: "1 1 auto", minWidth: 0, alignSelf: "stretch",
+            background: PANEL, border: BORDER_HEAVY, borderRadius: R_BOX,
+            padding: "0 16px", boxSizing: "border-box",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            containerType: "size",
+            position: "relative",
+          } as React.CSSProperties}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateRows: "repeat(3, 1fr)",
+              gap: 8,
+              width: "min(100cqw, calc(100cqh * 328.99 / 454.21))",
+              aspectRatio: "328.99 / 454.21",
+              margin: "auto",
+            }}>
+              {renderGridCells()}
+            </div>
+            {overlay && <GridOverlay kind={overlay} />}
+          </div>
+
+          {/* RIGHT — side rail */}
+          <div style={{
+            flex: "0 0 252px", alignSelf: "stretch",
+            display: "flex", flexDirection: "column", gap: 8, minHeight: 0,
+          }}>
+            {roundBar}
+            {opponentRow}
+            {scoreRow}
+            {bottomRow}
+            {gameOverBtn}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       display: "flex", flexDirection: "column", gap: 8,
       padding: 8, height: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden",
     }}>
-      <RoundBar round={s.roundNum} />
-      <OpponentRow chips={chips} />
+      {roundBar}
+      {opponentRow}
 
       {/* Card area */}
       <div style={{
@@ -524,76 +666,14 @@ const MultiplayerGameView: React.FC<Props> = ({
           maxHeight: "100%",
           margin: "auto",
         }}>
-          {s.grid.map((slot, i) => {
-            if (!slot.occupied) {
-              return (
-                <div key={`empty-${i}`} style={{
-                  border: `2px dashed rgba(35,31,32,0.13)`,
-                  borderRadius: R_CARD,
-                }} />
-              );
-            }
-            const faceUp = slot.card !== null;
-            const cardForRender: Card =
-              slot.card ??
-              ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
-            const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
-            return (
-              <div key={i} style={{
-                borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
-              }}>
-                <GameCard
-                  card={cardForRender}
-                  faceUp={faceUp}
-                  onClick={() => handleCardClick(i)}
-                  highlighted={selected}
-                  matched={s.matchedCards.includes(i)}
-                  wrong={false}
-                  wrongWash={false}
-                  shaking={false}
-                />
-              </div>
-            );
-          })}
+          {renderGridCells()}
         </div>
         {overlay && <GridOverlay kind={overlay} />}
       </div>
 
-      <ScoreRow
-        score={myScore}
-        cardsLeft={s.deckCount}
-        banner={banner}
-        onCancel={
-          canCancelClaim && mySeat !== null
-            ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
-            : undefined
-        }
-      />
-
-      <div style={{ display: "flex", gap: 8, height: 110.94 }}>
-        <DieBox rule={rule} />
-        <ActionButton
-          kind={buttonKind}
-          disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
-          onClick={buttonOnClick}
-          label={buttonLabel}
-        />
-      </div>
-
-      {s.phase === "GAME_OVER" && (
-        <button
-          type="button"
-          onClick={onLeave}
-          style={{
-            all: "unset", cursor: "pointer", textAlign: "center",
-            padding: 8, borderRadius: R_BOX, border: BORDER_HEAVY,
-            background: SURFACE, color: INK, fontFamily: FONT_FAMILY,
-            fontSize: 16,
-          }}
-        >
-          {s.message || "Game over"} — Leave
-        </button>
-      )}
+      {scoreRow}
+      {bottomRow}
+      {gameOverBtn}
     </div>
   );
 };

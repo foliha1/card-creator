@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import React, { Suspense } from "react";
 import { COLORS } from "@/lib/tokens";
 
+const PAGE_BG = "#231F20";
+
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
 const MultiplayerPage: React.FC = () => {
@@ -28,7 +30,7 @@ const MultiplayerPage: React.FC = () => {
           flexDirection: "column",
           overflow: "hidden",
           boxSizing: "border-box",
-          background: COLORS.surface,
+          background: PAGE_BG,
         }}
       >
         <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
