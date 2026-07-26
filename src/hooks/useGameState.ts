@@ -553,7 +553,7 @@ export function reducer(state: State, action: Action): State {
       const cardA = state.grid[a];
       const cardB = state.grid[b];
       if (cardA && cardB && cardsMatchRule(cardA, cardB, state.rule)) {
-        const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+        const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
         const { grid: newGrid, deck: newDeck } = refill(state.grid, state.deck, [a, b]);
         const draining = newDeck.length === 0;
         const post: State = {
@@ -570,12 +570,13 @@ export function reducer(state: State, action: Action): State {
         };
         return startRound(post, by);
       }
-      const wrongForBy = new Set(state.wrongBy[by]);
+      const wrongForBy = new Set(state.wrongBy[by] ?? []);
       wrongForBy.add(a);
       wrongForBy.add(b);
       const nextWrongBy = state.wrongBy.slice();
       nextWrongBy[by] = wrongForBy;
       const skip = replaceAt(state.skip, by, true);
+
       const post: State = {
         ...state,
         phase: "FLIPPING",
