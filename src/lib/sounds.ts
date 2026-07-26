@@ -91,16 +91,6 @@ export function stopThemeMusic(): void {
   try { themeAudio.pause(); themeAudio.currentTime = 0; } catch { /* ignore */ }
 }
 
-// Re-evaluate playback when musicEnabled toggles at runtime.
-const _origSetMusicEnabled = setMusicEnabled;
-export function setMusicEnabledAndSync(value: boolean): void {
-  _origSetMusicEnabled(value);
-  if (!value) {
-    if (themeAudio) { try { themeAudio.pause(); } catch { /* ignore */ } }
-  } else if (themeWanted) {
-    startThemeMusic();
-  }
-}
 
 function playTone(freq: number, duration: number, type: OscillatorType = "square", volume = 0.15) {
   if (!sfxEnabled) return;
