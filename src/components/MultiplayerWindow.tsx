@@ -713,8 +713,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       ? "Connecting…"
       : "Connection lost — retrying";
 
-  return (
+  return wrapInShell(
     <div style={containerStyle}>
+
       <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
         <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, textTransform: "uppercase", letterSpacing: 2 }}>
           Room code
