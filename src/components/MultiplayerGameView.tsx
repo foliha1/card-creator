@@ -565,6 +565,7 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
+    if (modalOpen) return;
     if (inLastCall) {
       const slot = s.grid[i];
       if (!slot.occupied) return;
