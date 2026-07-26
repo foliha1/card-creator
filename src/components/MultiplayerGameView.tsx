@@ -857,7 +857,7 @@ const MultiplayerGameView: React.FC<Props> = ({
         aria-hidden
         style={{
           position: "absolute", inset: 0,
-          background: "rgba(35,31,32,0.28)",
+          background: "rgba(35,31,32,0.6)",
           opacity: isRolling ? 1 : 0,
           pointerEvents: "none",
           transition: "opacity 250ms ease",
