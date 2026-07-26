@@ -478,7 +478,7 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.flipper !== action.by) return state;
       if (state.inFlight) return state;
-      if (state.wrongBy[action.by].has(action.idx)) return state;
+      if (state.wrongBy[action.by]?.has(action.idx)) return state;
       if (state.grid[action.idx] === null) return state;
       return {
         ...state,
@@ -491,6 +491,7 @@ export function reducer(state: State, action: Action): State {
         peekingCard: action.idx,
       };
     }
+
 
     case "FLIP_COMPLETE": {
       if (state.inFlight?.kind !== "flip") return state;
