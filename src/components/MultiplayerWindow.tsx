@@ -162,6 +162,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     }
   }, [view.kind, joinerPublicState, participants, hostVisitorId]);
 
+  // Theme music: play while in the lobby; stop when the game view takes over
+  // or the component unmounts. Autoplay requires a gesture, so start calls are
+  // also placed on Start/Join/Continue handlers above.
+  const inGameView =
+    (isHostView && frozenSeats !== null && !!activeRoom) ||
+    (view.kind === "joiner" && !!joinerPublicState && !!activeRoom);
+  useEffect(() => {
+    if (inGameView) stopThemeMusic();
+    else startThemeMusic();
+  }, [inGameView]);
+  useEffect(() => () => { stopThemeMusic(); }, []);
+
   // Fire game_completed once when host reaches GAME_OVER normally (not on
   // host departure).
   const completedFiredRef = useRef(false);
