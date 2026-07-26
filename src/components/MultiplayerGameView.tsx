@@ -507,6 +507,25 @@ const MultiplayerGameView: React.FC<Props> = ({
   }
 
   const chips = chipsForOpponents(s, mySeat, events);
+  // Landscape rail: up to 6 chips across all seats (self + opponents), same kind derivation.
+  const railChips: DerivedChip[] = (() => {
+    const nice = new Set<number>();
+    for (const e of events) if (e.kind === "GREAT_MATCH") nice.add(e.seat);
+    const MAX = 6;
+    const out: DerivedChip[] = s.seatMap.slice(0, MAX).map((entry) => {
+      const seat = entry.seat;
+      let kind: ChipKind = "IDLE";
+      if (s.claimBy === seat) kind = "WHOOP";
+      else if (nice.has(seat)) kind = "NICE";
+      else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
+      else if (s.skip[seat]) kind = "PENALTY";
+      else if (s.phase === "AWAITING_ROLL" && s.roller === seat) kind = "ROLLING";
+      else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
+      return { kind, name: entry.display_name, score: s.scores[seat] ?? 0 };
+    });
+    while (out.length < MAX) out.push({ kind: "EMPTY", name: "---", score: null });
+    return out;
+  })();
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
 
@@ -622,17 +641,198 @@ const MultiplayerGameView: React.FC<Props> = ({
             {overlay && <GridOverlay kind={overlay} />}
           </div>
 
-          {/* RIGHT — side rail */}
+          {/* RIGHT — side rail (wide spec) */}
           <div style={{
             flex: "0 0 252px", alignSelf: "stretch",
             display: "flex", flexDirection: "column", gap: 8, minHeight: 0,
           }}>
-            {roundBar}
-            {opponentRow}
-            {scoreRow}
-            {bottomRow}
+            {/* 1. ROUND BAR */}
+            <div style={{
+              height: 40, padding: 8, background: INK,
+              border: `2px solid ${INK}`, borderRadius: 4,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxSizing: "border-box", flex: "0 0 auto",
+            }}>
+              <span style={{
+                fontFamily: FONT_FAMILY, fontWeight: 400,
+                fontSize: 20, lineHeight: "24px",
+                color: SURFACE, textAlign: "center",
+              }}>Round: {s.roundNum}</span>
+            </div>
+
+            {/* 2. OPPONENT CHIPS (6-slot grid) */}
+            <div style={{
+              height: 122, padding: 8, background: PANEL,
+              border: BORDER_HEAVY, borderRadius: 4,
+              boxSizing: "border-box", flex: "0 0 auto",
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 73.33px)",
+              gridTemplateRows: "repeat(2, 48px)",
+              columnGap: 8, rowGap: 9,
+              justifyContent: "center", alignContent: "center",
+            }}>
+              {railChips.map((chip, i) => {
+                const isRolling = chip.kind === "ROLLING";
+                const isFlipping = chip.kind === "FLIPPING";
+                const isClaim = chip.kind === "WHOOP";
+                const isPenalty = chip.kind === "PENALTY";
+                const chipBg =
+                  isRolling ? ORANGE :
+                  isFlipping ? BLUE :
+                  isClaim ? RED :
+                  isPenalty ? RED :
+                  PANEL;
+                const chipBorder = isPenalty ? RED : INK;
+                const topBg = isPenalty ? PANEL : SURFACE;
+                const topBorder = isPenalty ? RED : INK;
+                const nameColor = isPenalty ? RED : INK;
+                const statusText =
+                  isRolling ? "ROLLING!" :
+                  isFlipping ? "FLIPPING" :
+                  isClaim ? "WHOOP!" :
+                  isPenalty ? "PENALTY" :
+                  "";
+                const statusColor =
+                  isRolling ? INK :
+                  isFlipping ? SURFACE :
+                  isClaim ? SURFACE :
+                  isPenalty ? PANEL :
+                  INK;
+                return (
+                  <div key={i} style={{
+                    width: 73.33, height: 48,
+                    background: chipBg,
+                    border: `2px solid ${chipBorder}`,
+                    borderRadius: 8,
+                    display: "flex", flexDirection: "column",
+                    boxSizing: "border-box", overflow: "hidden",
+                  }}>
+                    <div style={{
+                      height: 25, padding: "4px 8px",
+                      background: topBg,
+                      border: `2px solid ${topBorder}`,
+                      borderRadius: 6.33043,
+                      display: "flex", flexDirection: "row",
+                      justifyContent: "space-between", alignItems: "center",
+                      boxSizing: "border-box",
+                    }}>
+                      <span style={{
+                        fontFamily: FONT_FAMILY, fontWeight: 400,
+                        fontSize: 14, lineHeight: "17px", color: nameColor,
+                        overflow: "hidden", textOverflow: "ellipsis",
+                        whiteSpace: "nowrap", flex: "1 1 auto", minWidth: 0,
+                      }}>{chip.name}</span>
+                      {chip.score !== null && (
+                        <span style={{
+                          fontFamily: FONT_FAMILY, fontWeight: 400,
+                          fontSize: 14, lineHeight: "17px", color: RED,
+                          marginLeft: 4, flex: "0 0 auto",
+                        }}>{chip.score}</span>
+                      )}
+                    </div>
+                    <div style={{
+                      height: 23, padding: "4px 8px",
+                      borderRadius: 6.33043,
+                      display: "flex", flexDirection: "row",
+                      justifyContent: "space-between", alignItems: "center",
+                      boxSizing: "border-box",
+                    }}>
+                      {statusText && (
+                        <span style={{
+                          fontFamily: FONT_FAMILY, fontWeight: 400,
+                          fontSize: 12, lineHeight: "15px", color: statusColor,
+                        }}>{statusText}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 3. SCORE ROW */}
+            <div style={{
+              height: 48, padding: 8, gap: 8, background: PANEL,
+              border: BORDER_HEAVY, borderRadius: 4,
+              display: "flex", flexDirection: "row", alignItems: "center",
+              boxSizing: "border-box", flex: "0 0 auto",
+            }}>
+              {[
+                `Cards Left: ${s.deckCount}`,
+                `Your Score: ${myScore}`,
+              ].map((label, i) => (
+                <div key={i} style={{
+                  flex: "1 1 0", height: 32, padding: 4,
+                  background: SURFACE, border: BORDER_HEAVY,
+                  borderRadius: 6.33043,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxSizing: "border-box",
+                  fontFamily: FONT_FAMILY, fontWeight: 400,
+                  fontSize: 20, lineHeight: "24px",
+                  color: INK, textAlign: "center",
+                }}>{label}</div>
+              ))}
+            </div>
+
+            {/* 4 + 5. DIE BOX + ACTION BUTTON */}
+            <div style={{
+              display: "flex", flexDirection: "row", gap: 8,
+              flex: "1 1 auto", minHeight: 0,
+            }}>
+              {/* DIE BOX */}
+              <div style={{
+                height: 110.94, flex: "0 0 auto",
+                padding: 8, gap: 16, background: ORANGE,
+                border: BORDER_HEAVY, borderRadius: 4,
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center",
+                boxSizing: "border-box",
+              }}>
+                <div style={{
+                  width: 89.42, height: 89.42, background: SURFACE,
+                  borderRadius: 8, transform: "rotate(-3.65deg)",
+                  filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.25))",
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center",
+                  padding: 4, boxSizing: "border-box",
+                }}>
+                  <span style={{ fontFamily: FONT_FAMILY, fontSize: 11, color: INK, fontStyle: "italic" }}>
+                    Match the
+                  </span>
+                  <span style={{ fontFamily: FONT_FAMILY, fontSize: 20, color: INK, fontWeight: 700 }}>
+                    {rule}
+                  </span>
+                </div>
+              </div>
+              {/* ACTION BUTTON */}
+              {(() => {
+                const s2 = ButtonStyles[buttonKind];
+                const isDisabled = buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH");
+                return (
+                  <button
+                    type="button"
+                    onClick={isDisabled ? undefined : buttonOnClick}
+                    disabled={isDisabled}
+                    style={{
+                      all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
+                      flex: "1 1 auto", minHeight: 118.06,
+                      padding: 12.6609,
+                      background: s2.bg, color: s2.text,
+                      border: BORDER_HEAVY, borderRadius: 4,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxSizing: "border-box",
+                      fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
+                      fontSize: 32, lineHeight: "39px", textAlign: "center",
+                    }}
+                  >
+                    {buttonLabel ?? s2.label}
+                  </button>
+                );
+              })()}
+            </div>
+
             {gameOverBtn}
           </div>
+
         </div>
       </div>
     );
