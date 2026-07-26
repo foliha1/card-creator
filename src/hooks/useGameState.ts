@@ -844,9 +844,14 @@ export function useGameState(
   useEffect(() => {
     if (state.phase !== "FLIPPING") return;
     if (state.inFlight) return;
-    if (!state.skip[state.flipper]) return;
+    // Auto-tick when the current flipper is either skip-penalised OR
+    // disconnected. Both cases are handled inside the SKIP_TICK reducer:
+    // disconnection auto-advances without consuming skip; a served skip
+    // consumes the flag. Without this second condition the flipper lands
+    // on a disconnected seat and the round hard-stops.
+    if (!state.skip[state.flipper] && !state.disconnected[state.flipper]) return;
     dispatch({ type: "SKIP_TICK" });
-  }, [state.phase, state.flipper, state.inFlight, state.skip]);
+  }, [state.phase, state.flipper, state.inFlight, state.skip, state.disconnected]);
 
   // Bot auto-flip
   const inFlightNullMarker = state.inFlight === null;
