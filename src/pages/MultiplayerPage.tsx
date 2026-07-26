@@ -38,28 +38,25 @@ const MultiplayerPage: React.FC = () => {
           boxSizing: "border-box",
         }}
       >
-        <style>{`
-          .mp-page-root::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            background-image: url(/whoop-pattern-bg.svg);
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            opacity: 0.9;
-            pointer-events: none;
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            image-rendering: -webkit-optimize-contrast;
-          }
-          @media (max-width: 600px) {
-            .mp-page-root::before {
-              background-size: 100% 100%;
-            }
-          }
-        `}</style>
+        <img
+          src="/whoop-pattern-bg.svg"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          draggable={false}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center center",
+            opacity: 0.9,
+            zIndex: -1,
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        />
         <div
           style={{
             width: "100%",
