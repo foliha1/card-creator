@@ -295,13 +295,14 @@ const ModalShell: React.FC<{
   );
 };
 
-type BannerKind = "YOUR_FLIP" | "TOO_SLOW" | "PENALTY" | "CANCEL" | null;
+type BannerKind = "YOUR_FLIP" | "TOO_SLOW" | "CLAIM_ERROR" | "PENALTY" | "CANCEL" | null;
 
 const BannerStyles: Record<Exclude<BannerKind, null>, { bg: string; text: string; label: string; icon?: boolean }> = {
-  YOUR_FLIP: { bg: BLUE,    text: SURFACE, label: "YOUR FLIP!" },
-  TOO_SLOW:  { bg: INK,     text: SURFACE, label: "TOO SLOW!" },
-  PENALTY:   { bg: MUTED,   text: SURFACE, label: "PENALTY" },
-  CANCEL:    { bg: SURFACE, text: RED,     label: "Cancel Match Selection", icon: true },
+  YOUR_FLIP:   { bg: BLUE,    text: SURFACE, label: "YOUR FLIP!" },
+  TOO_SLOW:    { bg: INK,     text: SURFACE, label: "TOO SLOW!" },
+  CLAIM_ERROR: { bg: RED,     text: SURFACE, label: "CONNECTION ISSUE — TRY AGAIN" },
+  PENALTY:     { bg: MUTED,   text: SURFACE, label: "PENALTY" },
+  CANCEL:      { bg: SURFACE, text: RED,     label: "Cancel Match Selection", icon: true },
 };
 
 const CancelX: React.FC = () => (
@@ -534,15 +535,22 @@ const MultiplayerGameView: React.FC<Props> = ({
   const [lastCallSel, setLastCallSel] = React.useState<number[]>([]);
   const [claimBusy, setClaimBusy] = React.useState(false);
   const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
+  const [claimErrAt, setClaimErrAt] = React.useState<number | null>(null);
   React.useEffect(() => { if (!inLastCall) setLastCallSel([]); }, [inLastCall]);
-  // Clear TOO SLOW when the claim window rotates (a new opportunity opens).
-  React.useEffect(() => { setTooSlowAt(null); }, [s.claimWindow]);
+  // Clear transient claim feedback when the claim window rotates.
+  React.useEffect(() => { setTooSlowAt(null); setClaimErrAt(null); }, [s.claimWindow]);
   // Auto-clear TOO SLOW after a short interval so the banner doesn't stick.
   React.useEffect(() => {
     if (tooSlowAt === null) return;
     const t = setTimeout(() => setTooSlowAt(null), 1400);
     return () => clearTimeout(t);
   }, [tooSlowAt]);
+  // Auto-clear claim-error banner similarly.
+  React.useEffect(() => {
+    if (claimErrAt === null) return;
+    const t = setTimeout(() => setClaimErrAt(null), 1800);
+    return () => clearTimeout(t);
+  }, [claimErrAt]);
 
   // Detect self outcome events (last ~1.4s) for the grid overlay.
   const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
@@ -649,6 +657,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   const canCancelClaim = inClaimMode && s.selectedCards.length < 2;
   if (canCancelClaim) banner = "CANCEL";
   else if (mySeat !== null && s.skip[mySeat] && s.phase === "FLIPPING" && s.flipper === mySeat) banner = "PENALTY";
+  else if (claimErrAt !== null) banner = "CLAIM_ERROR";
   else if (tooSlowAt !== null) banner = "TOO_SLOW";
   else if (isMyTurnToFlip) banner = "YOUR_FLIP";
 
@@ -680,7 +689,17 @@ const MultiplayerGameView: React.FC<Props> = ({
         visitor_id: visitorId,
       });
       setClaimBusy(false);
-      if (!result.won) setTooSlowAt(Date.now());
+      // Tri-state: real lost race → TOO SLOW; transport/server error →
+      // distinct banner so players can tell "beaten to it" from "broken".
+      // Both fail closed — we never enter claim mode without a server win.
+      if (result.outcome === "won") {
+        // handled server-side via claim_grant broadcast
+      } else if (result.outcome === "error") {
+        console.error("[whoop] claim errored — see claim-lock log above", result.error);
+        setClaimErrAt(Date.now());
+      } else {
+        setTooSlowAt(Date.now());
+      }
     };
     if (claimBusy) { buttonKind = "DISABLED"; buttonOnClick = undefined; }
   } else if (
