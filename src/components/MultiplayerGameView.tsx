@@ -519,6 +519,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     buttonKind = "WHOOP";
     buttonOnClick = async () => {
       if (mySeat === null || claimBusy) return;
+      unlockAudio();
       setClaimBusy(true);
       const result = await callClaimLock({
         room_id: roomId,
