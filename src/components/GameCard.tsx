@@ -14,6 +14,7 @@ interface GameCardProps {
   entering?: boolean;
   enterDelay?: number;
   shaking?: boolean;
+  fill?: boolean;
 }
 
 const GameCard = ({
@@ -28,6 +29,7 @@ const GameCard = ({
   entering,
   enterDelay = 0,
   shaking,
+  fill,
 }: GameCardProps) => {
   const [focusVis, setFocusVis] = useState(false);
 
