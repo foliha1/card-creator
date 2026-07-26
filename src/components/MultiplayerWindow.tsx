@@ -385,7 +385,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
 
   const shellStyle: React.CSSProperties = {
-    minHeight: "100dvh",
+    minHeight: "100%",
+    height: "100%",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
