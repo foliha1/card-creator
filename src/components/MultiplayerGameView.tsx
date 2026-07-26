@@ -846,6 +846,20 @@ const MultiplayerGameView: React.FC<Props> = ({
           onComplete={() => { setActiveCommit(null); setHeroRects(null); }}
         />
       )}
+      {/* ROLLING scrim — beneath the die overlay (z=30), above the play
+          content. Pointer-events none so header controls stay reachable;
+          the card grid and WHOOP button are blocked independently. */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0,
+          background: "rgba(35,31,32,0.28)",
+          opacity: isRolling ? 1 : 0,
+          pointerEvents: "none",
+          transition: "opacity 250ms ease",
+          zIndex: 20,
+        }}
+      />
       {header}
       {opponentRow}
 
@@ -860,6 +874,9 @@ const MultiplayerGameView: React.FC<Props> = ({
           display: "flex", alignItems: "center", justifyContent: "center",
           overflowY: needsScroll ? "auto" : "hidden",
           overflowX: "hidden",
+          opacity: isRolling ? 0.35 : 1,
+          pointerEvents: isRolling ? "none" : "auto",
+          transition: "opacity 250ms ease",
         }}
       >
         <div style={{
