@@ -956,37 +956,45 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         gap: 8,
         padding: 8,
       }}>
-        <div style={{
-          alignSelf: "stretch",
-          height: 40,
-          padding: "8px 16px",
-          background: "#F8F2E9",
-          border: "2px solid #231F20",
-          borderRadius: 4,
-          boxSizing: "border-box",
-          display: "flex",
-          alignItems: "center",
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 20,
-          lineHeight: "24px",
-          color: "#231F20",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          userSelect: "all",
-        }}
-        title={link}
+        <div
+          ref={linkBoxRef}
+          tabIndex={0}
+          role="textbox"
+          aria-readonly="true"
+          aria-label="Room link"
+          style={{
+            alignSelf: "stretch",
+            height: 40,
+            padding: "8px 16px",
+            background: "#F8F2E9",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            boxSizing: "border-box",
+            display: "flex",
+            alignItems: "center",
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 20,
+            lineHeight: "24px",
+            color: "#231F20",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            userSelect: "all",
+            outline: "none",
+          }}
+          title={link}
         >
           {link}
         </div>
         <button
           type="button"
           onClick={() => handleCopy(room.room_code)}
+          aria-live="polite"
           style={{
             alignSelf: "stretch",
             height: 40,
-            background: "#0072B2",
+            background: copiedFlash ? "#231F20" : "#0072B2",
             border: "2px solid #231F20",
             borderRadius: 4,
             fontFamily: FONT_FAMILY,
@@ -996,13 +1004,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             color: "#F8F2E9",
             cursor: "pointer",
             padding: 0,
+            transition: "background 150ms ease",
           }}
         >
-          Copy link
+          {copiedFlash ? "Copied!" : "Copy link"}
         </button>
       </div>
     </div>
   ) : null;
+
 
   const seatSlots = Array.from({ length: ROOM_CAPACITY }, (_, i) => visibleParticipants[i] ?? null);
 
