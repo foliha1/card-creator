@@ -276,12 +276,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   }, [participants.length, activeRoom, view]);
 
   const handleStartGame = useCallback(() => {
-    if (!isHostView || participants.length < 2) return;
+    if (!isHostView || participants.length < 2 || starting) return;
     const seatMap: SeatMapEntry[] = participants.slice(0, ROOM_CAPACITY).map((p, i) => ({
       seat: i,
       visitor_id: p.visitor_id,
       display_name: p.display_name,
     }));
+    setStarting(true);
+    // Notify joiners so they can show a loading state immediately.
+    try {
+      channel?.send({ type: "broadcast", event: "msg", payload: { kind: "game_starting" } });
+    } catch {
+      /* non-fatal */
+    }
     setGameId(crypto.randomUUID());
     setFrozenSeats(seatMap);
     completedFiredRef.current = false;
@@ -289,10 +296,46 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       roomCode: activeRoom?.room_code,
       metadata: { player_count: seatMap.length },
     });
-  }, [isHostView, participants, activeRoom]);
+  }, [isHostView, participants, activeRoom, starting, channel]);
+
+  // Joiner: listen for host's game_starting notice to show loading state.
+  useEffect(() => {
+    if (view.kind !== "joiner") return;
+    const unsub = onBroadcast(({ payload }) => {
+      if (
+        payload &&
+        typeof payload === "object" &&
+        (payload as { kind?: string }).kind === "game_starting"
+      ) {
+        setStarting(true);
+      }
+    });
+    return unsub;
+  }, [view.kind, onBroadcast]);
 
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
+
+  const flashCopied = useCallback(() => {
+    setCopiedFlash(true);
+    // Keep URL box focused so keyboard users stay put.
+    const el = linkBoxRef.current;
+    if (el) {
+      el.focus({ preventScroll: true });
+      // Select the visible text for quick manual re-copy.
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      } catch {
+        /* non-fatal */
+      }
+    }
+    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = window.setTimeout(() => setCopiedFlash(false), 2000);
+  }, []);
 
   const handleCopy = useCallback(async (code: string) => {
     const url = shareUrl(code);
@@ -300,6 +343,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         toast.success("Link copied");
+        flashCopied();
         return;
       }
       throw new Error("no clipboard");
@@ -314,18 +358,26 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         document.execCommand("copy");
         document.body.removeChild(ta);
         toast.success("Link copied");
+        flashCopied();
       } catch {
         toast.error("Copy failed — select the link manually.");
       }
     }
+  }, [flashCopied]);
+
+  useEffect(() => () => {
+    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
   }, []);
 
   const leaveToIdle = useCallback(() => {
     setCodeInput("");
     setFrozenSeats(null);
     setGameId("");
+    setStarting(false);
+    setShowLeaveConfirm(false);
     setView({ kind: "idle" });
   }, []);
+
 
   const shellStyle: React.CSSProperties = {
     minHeight: "100dvh",
