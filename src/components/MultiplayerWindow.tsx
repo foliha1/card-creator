@@ -1317,6 +1317,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       boxSizing: "border-box",
     }}>
       {joinerStatusBar}
+      {startingBanner}
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
         {codeSection}
         {linkSection}
@@ -1327,7 +1328,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     </div>
   );
 
-  return wrapInShell(lobbyCard);
+  return wrapInShell(
+    <>
+      {lobbyCard}
+      {leaveConfirmDialog}
+    </>,
+  );
+
 };
 
 export default MultiplayerWindow;
