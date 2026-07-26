@@ -841,7 +841,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
         Leave room
       </AppButton>
-    </div>
+    </div>,
   );
 };
 
