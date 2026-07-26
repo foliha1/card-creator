@@ -495,40 +495,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
 
-  const cardAreaPadding = overlay ? 16 : `0px 16px`;
 
-  const renderGridCells = () =>
-    s.grid.map((slot, i) => {
-      if (!slot.occupied) {
-        return (
-          <div key={`empty-${i}`} style={{
-            border: `2px dashed rgba(35,31,32,0.13)`,
-            borderRadius: R_CARD,
-          }} />
-        );
-      }
-      const faceUp = slot.card !== null;
-      const cardForRender: Card =
-        slot.card ??
-        ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
-      const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
-      return (
-        <div key={i} style={{
-          borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
-        }}>
-          <GameCard
-            card={cardForRender}
-            faceUp={faceUp}
-            onClick={() => handleCardClick(i)}
-            highlighted={selected}
-            matched={s.matchedCards.includes(i)}
-            wrong={false}
-            wrongWash={false}
-            shaking={false}
-          />
-        </div>
-      );
-    });
+
 
   const roundBar = <RoundBar round={s.roundNum} />;
   const opponentRow = <OpponentRow chips={chips} />;
