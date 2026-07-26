@@ -119,7 +119,7 @@ function chipsForOpponents(
     else if (nice.has(seat)) kind = "NICE";
     else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
     else if (s.skip[seat]) kind = "PENALTY";
-    else if (s.phase === "AWAITING_ROLL" && s.roller === seat) kind = "ROLLING";
+    else if (((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat))) kind = "ROLLING";
     else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
     return { kind, name: entry.display_name, score: s.scores[seat] ?? 0 };
   });
@@ -708,6 +708,17 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }
 
+  // ROLLING presentation gate — presentation only, the server rejection is
+  // the actual authority. We force the button to appear as a dimmed WHOOP
+  // and strip its onClick so mashing during a roll can never register a
+  // wrong-claim penalty.
+  const isRolling = s.rolling;
+  if (isRolling) {
+    buttonKind = "WHOOP";
+    buttonOnClick = undefined;
+    buttonLabel = undefined;
+  }
+
 
   const chips = chipsForOpponents(s, mySeat, events);
 
@@ -740,12 +751,22 @@ const MultiplayerGameView: React.FC<Props> = ({
   const bottomRow = (
     <div style={{ display: "flex", gap: 8, height: 110.94 }}>
       <DieBox rule={rule} heroActive={heroActive} homeRef={homeRef} />
-      <ActionButton
-        kind={buttonKind}
-        disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
-        onClick={buttonOnClick}
-        label={buttonLabel}
-      />
+      {/* Wrap the WHOOP button so ROLLING can dim it to 40% and physically
+          block taps. pointerEvents:none guarantees no tap ever reaches the
+          onClick — belt-and-braces on top of the cleared handler above. */}
+      <div style={{
+        flex: "1 1 auto", display: "flex", minWidth: 0,
+        opacity: isRolling ? 0.4 : 1,
+        pointerEvents: isRolling ? "none" : "auto",
+        transition: "opacity 250ms ease",
+      }}>
+        <ActionButton
+          kind={buttonKind}
+          disabled={isRolling || buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
+          onClick={isRolling ? undefined : buttonOnClick}
+          label={buttonLabel}
+        />
+      </div>
     </div>
   );
   const gameOverBtn = s.phase === "GAME_OVER" ? (
@@ -825,6 +846,20 @@ const MultiplayerGameView: React.FC<Props> = ({
           onComplete={() => { setActiveCommit(null); setHeroRects(null); }}
         />
       )}
+      {/* ROLLING scrim — beneath the die overlay (z=30), above the play
+          content. Pointer-events none so header controls stay reachable;
+          the card grid and WHOOP button are blocked independently. */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0,
+          background: "rgba(35,31,32,0.28)",
+          opacity: isRolling ? 1 : 0,
+          pointerEvents: "none",
+          transition: "opacity 250ms ease",
+          zIndex: 20,
+        }}
+      />
       {header}
       {opponentRow}
 
@@ -839,6 +874,9 @@ const MultiplayerGameView: React.FC<Props> = ({
           display: "flex", alignItems: "center", justifyContent: "center",
           overflowY: needsScroll ? "auto" : "hidden",
           overflowX: "hidden",
+          opacity: isRolling ? 0.35 : 1,
+          pointerEvents: isRolling ? "none" : "auto",
+          transition: "opacity 250ms ease",
         }}
       >
         <div style={{
