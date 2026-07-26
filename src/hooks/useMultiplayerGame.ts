@@ -338,7 +338,7 @@ export function useMultiplayerHost(opts: {
     prevWrongCountRef.current = nextWrong;
   }, [enabled, channel, g.state.scores, g.state.wrongBy]);
 
-  return g;
+  return { ...g, rollCommit };
 }
 
 // Intent → local reducer dispatch. Reducer's phase/seat guards are the final
