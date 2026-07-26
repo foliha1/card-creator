@@ -600,7 +600,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           position: "relative", background: PANEL, border: BORDER_HEAVY,
           borderRadius: R_BOX,
           padding: overlay ? 16 : 8,
-          boxSizing: "border-box", flex: "1 1 auto", minHeight: 0,
+          boxSizing: "border-box", flex: "1 1 0", minHeight: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           overflowY: needsScroll ? "auto" : "hidden",
           overflowX: "hidden",
