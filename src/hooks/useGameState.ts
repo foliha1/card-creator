@@ -413,12 +413,13 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "CLAIM_SELECTING") return state;
       if (state.claimBy !== action.by) return state;
       const idx = action.idx;
-      if (state.wrongBy[action.by].has(idx)) return state;
+      if (state.wrongBy[action.by]?.has(idx)) return state;
       if (state.selectedCards.includes(idx)) return state;
       if (state.grid[idx] === null) return state;
       if (state.selectedCards.length >= 2) return state;
       return { ...state, selectedCards: [...state.selectedCards, idx] };
     }
+
 
     case "PLAYER_RESOLVE_MATCH": {
       if (state.phase !== "CLAIM_SELECTING") return state;
