@@ -108,8 +108,6 @@ export function MatchDie({ size, attribute, faceIndex, rotation, transition }: M
     alignItems: "center",
     justifyContent: "center",
     boxSizing: "border-box",
-    // ~8% inset so the outlined lettering doesn't crowd the border.
-    padding: "8%",
     userSelect: "none",
     overflow: "hidden",
   };
