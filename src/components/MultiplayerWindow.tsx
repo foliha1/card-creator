@@ -887,12 +887,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       gap: 72,
       above: (
         <img
-          src="/WhoopWhoop_Dark_Logo.svg"
+          src={whoopLightLogo.url}
           alt="WHOOP! WHOOP!"
-          width={210}
-          height={166}
-          style={{ width: 210, height: 166, display: "block" }}
+          width={252}
+          height={199}
+          style={{ width: 252, height: 199, display: "block" }}
         />
+
       ),
     });
   }
