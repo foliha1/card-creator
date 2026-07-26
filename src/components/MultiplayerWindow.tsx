@@ -17,6 +17,8 @@ import {
   ROOM_CODE_LENGTH,
   type RoomRow,
 } from "@/lib/rooms";
+import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+
 
 interface MultiplayerWindowProps {
   initialRoomCode?: string;
@@ -392,7 +394,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     paddingRight: "calc(8px + env(safe-area-inset-right))",
     boxSizing: "border-box",
     overflowY: "auto",
-    background: "#0072B2",
+    background: "#231F20",
   };
 
   const innerColStyle: React.CSSProperties = {
@@ -442,13 +444,20 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     content: React.ReactNode,
     opts?: { above?: React.ReactNode; gap?: number },
   ) => (
-    <div style={shellStyle}>
+    <div className="mp-shell" style={shellStyle}>
+      <style>{`
+        .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
+        .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
+        .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
+        .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+      `}</style>
       <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
         {opts?.above}
         {content}
       </div>
     </div>
   );
+
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
@@ -878,12 +887,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       gap: 72,
       above: (
         <img
-          src="/WhoopWhoop_Dark_Logo.svg"
+          src={whoopLightLogo.url}
           alt="WHOOP! WHOOP!"
-          width={210}
-          height={166}
-          style={{ width: 210, height: 166, display: "block" }}
+          width={252}
+          height={199}
+          style={{ width: 252, height: 199, display: "block" }}
         />
+
       ),
     });
   }
@@ -1104,7 +1114,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         padding: 0,
       }}
     >
-      Leave the Room
+      Leave the Table
     </button>
   );
 
@@ -1216,7 +1226,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             color: "#231F20",
           }}
         >
-          Leave the room?
+          Leave the table?
         </div>
         <div style={{
           fontFamily: FONT_FAMILY,
