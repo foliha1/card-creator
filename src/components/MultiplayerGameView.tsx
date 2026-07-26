@@ -649,6 +649,30 @@ const MultiplayerGameView: React.FC<Props> = ({
           })}
         </div>
         {overlay && <GridOverlay kind={overlay} />}
+
+        {import.meta.env.DEV && (
+          <div
+            style={{
+              position: "absolute",
+              top: 4,
+              left: 4,
+              zIndex: 1000,
+              background: "rgba(35,31,32,0.88)",
+              color: "#F8F2E9",
+              fontFamily: FONT_FAMILY,
+              fontSize: 11,
+              lineHeight: "14px",
+              padding: "6px 8px",
+              borderRadius: 4,
+              maxWidth: 180,
+              pointerEvents: "none",
+              whiteSpace: "pre-wrap",
+            }}
+            aria-hidden="true"
+          >
+            {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nfromW: ${fromW.toFixed(1)}\nfromH: ${fromH.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}`}
+          </div>
+        )}
       </div>
 
       {scoreRow}
