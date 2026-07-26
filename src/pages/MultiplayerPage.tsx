@@ -22,23 +22,42 @@ const MultiplayerPage: React.FC = () => {
         <meta property="og:type" content="website" />
       </Helmet>
       <div
+        className="mp-page-root"
         role="main"
         aria-label="WHOOP! WHOOP! multiplayer"
         style={{
           height: "100dvh",
           width: "100%",
           overflow: "hidden",
+          position: "relative",
+          isolation: "isolate",
           backgroundColor: PAGE_BG,
-          backgroundImage: "url(/whoop-pattern-bg.svg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           boxSizing: "border-box",
         }}
       >
+        <style>{`
+          .mp-page-root::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background-image: url(/whoop-pattern-bg.svg);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.6;
+            pointer-events: none;
+          }
+          @media (max-width: 600px) {
+            .mp-page-root::before {
+              background-size: auto 80%;
+              background-position: center;
+            }
+          }
+        `}</style>
         <div
           style={{
             width: "100%",
