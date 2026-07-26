@@ -657,6 +657,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   const canCancelClaim = inClaimMode && s.selectedCards.length < 2;
   if (canCancelClaim) banner = "CANCEL";
   else if (mySeat !== null && s.skip[mySeat] && s.phase === "FLIPPING" && s.flipper === mySeat) banner = "PENALTY";
+  else if (claimErrAt !== null) banner = "CLAIM_ERROR";
   else if (tooSlowAt !== null) banner = "TOO_SLOW";
   else if (isMyTurnToFlip) banner = "YOUR_FLIP";
 
