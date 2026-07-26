@@ -545,19 +545,27 @@ const MultiplayerGameView: React.FC<Props> = ({
   React.useEffect(() => {
     const el = cardAreaRef.current;
     if (!el) return;
-    const measure = () => {
-      const cs = getComputedStyle(el);
-      const pl = parseFloat(cs.paddingLeft) || 0;
-      const pr = parseFloat(cs.paddingRight) || 0;
-      const pt = parseFloat(cs.paddingTop) || 0;
-      const pb = parseFloat(cs.paddingBottom) || 0;
-      setBox({
-        w: el.clientWidth - pl - pr,
-        h: el.clientHeight - pt - pb,
+    const applyBox = (w: number, h: number) => {
+      setBox((prev) => {
+        if (Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5) return prev;
+        return { w, h };
       });
     };
-    measure();
-    const ro = new ResizeObserver(measure);
+    // Initial measure: read layout once for first paint.
+    const cs = getComputedStyle(el);
+    const pl = parseFloat(cs.paddingLeft) || 0;
+    const pr = parseFloat(cs.paddingRight) || 0;
+    const pt = parseFloat(cs.paddingTop) || 0;
+    const pb = parseFloat(cs.paddingBottom) || 0;
+    const rect = el.getBoundingClientRect();
+    applyBox(rect.width - pl - pr, rect.height - pt - pb);
+    // Subsequent updates come from contentRect (already excludes padding).
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        applyBox(cr.width, cr.height);
+      }
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -570,7 +578,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   const fromW = (availW - GAP * 2) / 3;
   const fromH = ((availH - GAP * 2) / 3) / RATIO;
   const rawCardW = Math.min(fromW, fromH);
-  const cardW = Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W);
+  const cardW = Math.floor(Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W));
+
   const cardH = cardW * RATIO;
   const gridHeightNeeded = cardH * 3 + GAP * 2;
   const needsScroll = gridHeightNeeded > availH + 0.5;
