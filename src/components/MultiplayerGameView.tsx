@@ -32,6 +32,10 @@ import type { PublicState } from "@/lib/publicState";
 import type { IntentAction, TransientEvent } from "@/lib/multiplayer";
 import type { Card } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
+import {
+  playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
+  unlockAudio,
+} from "@/lib/sounds";
 
 interface Props {
   publicState: PublicState;
