@@ -835,144 +835,283 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const isHost = view.kind === "host";
   const visibleParticipants = participants;
   const canStart = visibleParticipants.length >= 2;
+  const link = shareUrl(room.room_code);
 
-  const statusLabel =
-    presenceStatus === "connected"
-      ? null
-      : presenceStatus === "connecting"
-      ? "Connecting…"
-      : "Connection lost — retrying";
+  const sectionLabelStyle: React.CSSProperties = {
+    fontFamily: FONT_FAMILY,
+    fontWeight: 400,
+    fontSize: 20,
+    lineHeight: "24px",
+    color: "#231F20",
+  };
 
-  return wrapInShell(
-    <div style={containerStyle}>
+  const wrapperBase: React.CSSProperties = {
+    background: "#D0C3AF",
+    border: "2px solid #231F20",
+    borderRadius: 4,
+    boxSizing: "border-box",
+  };
 
-      <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-        <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, textTransform: "uppercase", letterSpacing: 2 }}>
-          Room code
-        </div>
+  const codeSection = (
+    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={sectionLabelStyle}>Your room code</div>
+      <div style={{
+        ...wrapperBase,
+        display: "flex",
+        alignItems: "center",
+        padding: 8,
+        height: 71,
+      }}>
         <div style={{
-          ...textStyle("display", mobile),
-          color: COLORS.ink,
-          letterSpacing: mobile ? 6 : 10,
-          fontVariantNumeric: "tabular-nums",
-          padding: `${SPACE[5]}px ${SPACE[6]}px`,
-          border: BORDER.heavy,
-          borderRadius: RADIUS.md,
-          background: COLORS.surface,
-          textAlign: "center",
+          flexGrow: 1,
+          height: 55,
+          padding: "8px 16px",
+          background: "#F8F2E9",
+          border: "2px solid #231F20",
+          borderRadius: 4,
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 32,
+          lineHeight: "39px",
+          letterSpacing: "0.1em",
+          color: "#231F20",
           userSelect: "all",
         }}>
           {room.room_code}
         </div>
       </div>
-
-      {isHost && (
-        <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-          <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>Share this link:</div>
-          <div style={{
-            ...textStyle("caption", mobile),
-            color: COLORS.ink,
-            padding: `${SPACE[3]}px ${SPACE[4]}px`,
-            border: BORDER.standard,
-            borderRadius: RADIUS.sm,
-            background: COLORS.surface,
-            wordBreak: "break-all",
-            userSelect: "all",
-          }}>
-            {shareUrl(room.room_code)}
-          </div>
-          <AppButton variant="primary" tone="blue" size="md" onClick={() => handleCopy(room.room_code)}>
-            Copy link
-          </AppButton>
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: SPACE[3] }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: SPACE[3] }}>
-          <div style={{ ...textStyle("label", mobile), color: COLORS.ink }}>
-            Players ({visibleParticipants.length}/{ROOM_CAPACITY})
-          </div>
-          {statusLabel && (
-            <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted, fontStyle: "italic" }}>
-              {statusLabel}
-            </div>
-          )}
-        </div>
-        <div style={{
-          border: BORDER.standard,
-          borderRadius: RADIUS.md,
-          background: COLORS.surface,
-          padding: SPACE[5],
-          minHeight: 72,
-          display: "flex",
-          flexDirection: "column",
-          gap: SPACE[3],
-        }}>
-          {visibleParticipants.length === 0 ? (
-            <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted }}>
-              Waiting for players…
-            </div>
-          ) : (
-            visibleParticipants.map((p, i) => {
-              const isYou = p.visitor_id === visitorId;
-              const seatLabel = p.is_host ? "Host" : `Seat ${i + 1}`;
-              return (
-                <div key={p.visitor_id} style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: SPACE[3],
-                }}>
-                  <div style={{ ...textStyle("body", mobile), color: COLORS.ink }}>
-                    {p.display_name || p.visitor_id.slice(0, 6)}
-                    {isYou && (
-                      <span style={{
-                        ...textStyle("caption", mobile),
-                        color: COLORS.inkMuted,
-                        marginLeft: SPACE[2],
-                        fontStyle: "italic",
-                      }}>(you)</span>
-                    )}
-                  </div>
-                  <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
-                    {seatLabel}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {isHost ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
-          <AppButton
-            variant="primary"
-            tone="red"
-            size={mobile ? "md" : "lg"}
-            onClick={handleStartGame}
-            disabled={!canStart}
-            fullWidth
-          >
-            Start game
-          </AppButton>
-          {!canStart && (
-            <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted, textAlign: "center" }}>
-              Needs at least 2 players.
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{ ...textStyle("captionItalic", mobile), color: COLORS.inkMuted, textAlign: "center" }}>
-          The host will start the game.
-        </div>
-      )}
-
-      <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
-        Leave room
-      </AppButton>
-    </div>,
+    </div>
   );
+
+  const linkSection = isHost ? (
+    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={sectionLabelStyle}>Your room link</div>
+      <div style={{
+        ...wrapperBase,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        padding: 8,
+      }}>
+        <div style={{
+          alignSelf: "stretch",
+          height: 40,
+          padding: "8px 16px",
+          background: "#F8F2E9",
+          border: "2px solid #231F20",
+          borderRadius: 4,
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 20,
+          lineHeight: "24px",
+          color: "#231F20",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          userSelect: "all",
+        }}
+        title={link}
+        >
+          {link}
+        </div>
+        <button
+          type="button"
+          onClick={() => handleCopy(room.room_code)}
+          style={{
+            alignSelf: "stretch",
+            height: 40,
+            background: "#0072B2",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 20,
+            lineHeight: "24px",
+            color: "#F8F2E9",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Copy link
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  const seatSlots = Array.from({ length: ROOM_CAPACITY }, (_, i) => visibleParticipants[i] ?? null);
+
+  const playersSection = (
+    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={sectionLabelStyle}>Players (must have at least 2)</div>
+      <div style={{
+        ...wrapperBase,
+        padding: 8,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gridTemplateRows: "repeat(3, auto)",
+        gap: 10,
+      }}>
+        {seatSlots.map((p, i) => {
+          const isYou = !!p && p.visitor_id === visitorId;
+          const name = p ? (p.display_name || p.visitor_id.slice(0, 6)) : "---";
+          const label = p ? (isYou ? `${name} (you)` : name) : "---";
+          return (
+            <div key={i} style={{
+              height: 32,
+              padding: 4,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#F8F2E9",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              boxSizing: "border-box",
+              minWidth: 0,
+            }}>
+              <div style={{
+                width: 16,
+                alignSelf: "stretch",
+                background: "#231F20",
+                borderRadius: 4,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 14,
+                lineHeight: "17px",
+                color: "#D0C3AF",
+                flexShrink: 0,
+              }}>
+                {i + 1}
+              </div>
+              <div style={{
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: "24px",
+                letterSpacing: "0.02em",
+                color: "#231F20",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                minWidth: 0,
+                flex: 1,
+              }}>
+                {label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const leaveButton = (
+    <button
+      type="button"
+      onClick={leaveToIdle}
+      style={{
+        alignSelf: "stretch",
+        height: 40,
+        background: "#231F20",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 20,
+        lineHeight: "24px",
+        color: "#F8F2E9",
+        cursor: "pointer",
+        padding: 0,
+      }}
+    >
+      Leave the Room
+    </button>
+  );
+
+  const startButton = isHost ? (
+    <button
+      type="button"
+      onClick={handleStartGame}
+      disabled={!canStart}
+      style={{
+        alignSelf: "stretch",
+        height: 80,
+        background: canStart ? "#D72229" : "#544C4A",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        fontFamily: FONT_FAMILY,
+        fontStyle: "italic",
+        fontWeight: 400,
+        fontSize: 32,
+        lineHeight: "39px",
+        color: canStart ? "#F8F2E9" : "#D0C3AF",
+        cursor: canStart ? "pointer" : "default",
+        padding: 0,
+      }}
+    >
+      Lets do it!
+    </button>
+  ) : null;
+
+  const joinerStatusBar = !isHost ? (
+    <div style={{
+      alignSelf: "stretch",
+      padding: 16,
+      height: 56,
+      background: "#D0C3AF",
+      border: "2px solid #231F20",
+      borderRadius: 4,
+      boxSizing: "border-box",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: FONT_FAMILY,
+      fontStyle: "italic",
+      fontWeight: 400,
+      fontSize: 20,
+      lineHeight: "24px",
+      color: "#231F20",
+      textAlign: "center",
+    }}>
+      Your host will start the game soon.
+    </div>
+  ) : null;
+
+  const lobbyCard = (
+    <div style={{
+      alignSelf: "stretch",
+      background: "#F8F2E9",
+      border: "2px solid #231F20",
+      borderRadius: 4,
+      padding: 16,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: 24,
+      height: "auto",
+      boxSizing: "border-box",
+    }}>
+      {joinerStatusBar}
+      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
+        {codeSection}
+        {linkSection}
+        {playersSection}
+        {startButton}
+        {leaveButton}
+      </div>
+    </div>
+  );
+
+  return wrapInShell(lobbyCard);
 };
 
 export default MultiplayerWindow;
