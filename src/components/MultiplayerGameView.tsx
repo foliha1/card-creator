@@ -535,15 +535,22 @@ const MultiplayerGameView: React.FC<Props> = ({
   const [lastCallSel, setLastCallSel] = React.useState<number[]>([]);
   const [claimBusy, setClaimBusy] = React.useState(false);
   const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
+  const [claimErrAt, setClaimErrAt] = React.useState<number | null>(null);
   React.useEffect(() => { if (!inLastCall) setLastCallSel([]); }, [inLastCall]);
-  // Clear TOO SLOW when the claim window rotates (a new opportunity opens).
-  React.useEffect(() => { setTooSlowAt(null); }, [s.claimWindow]);
+  // Clear transient claim feedback when the claim window rotates.
+  React.useEffect(() => { setTooSlowAt(null); setClaimErrAt(null); }, [s.claimWindow]);
   // Auto-clear TOO SLOW after a short interval so the banner doesn't stick.
   React.useEffect(() => {
     if (tooSlowAt === null) return;
     const t = setTimeout(() => setTooSlowAt(null), 1400);
     return () => clearTimeout(t);
   }, [tooSlowAt]);
+  // Auto-clear claim-error banner similarly.
+  React.useEffect(() => {
+    if (claimErrAt === null) return;
+    const t = setTimeout(() => setClaimErrAt(null), 1800);
+    return () => clearTimeout(t);
+  }, [claimErrAt]);
 
   // Detect self outcome events (last ~1.4s) for the grid overlay.
   const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
