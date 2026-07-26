@@ -18,6 +18,7 @@ import {
   type RoomRow,
 } from "@/lib/rooms";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+import { unlockAudio } from "@/lib/sounds";
 
 
 interface MultiplayerWindowProps {
