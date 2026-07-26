@@ -281,6 +281,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const handleStartGame = useCallback(() => {
     if (!isHostView || participants.length < 2 || starting) return;
+    unlockAudio();
     const seatMap: SeatMapEntry[] = participants.slice(0, ROOM_CAPACITY).map((p, i) => ({
       seat: i,
       visitor_id: p.visitor_id,
