@@ -22,6 +22,12 @@ export interface MatchDieProps {
   size: number;
   attribute: RollAttribute;
   faceIndex: 0 | 1;
+  // Optional override for the cube transform. When provided, replaces the
+  // derived landed rotation — used by the roll-hero overlay to drive tumble.
+  rotation?: string;
+  // Optional CSS transition applied to the cube. Only used by the overlay;
+  // for static renders leave undefined to keep the die inert.
+  transition?: string;
 }
 
 type FaceKey = "front" | "back" | "right" | "left" | "top" | "bottom";
@@ -40,11 +46,21 @@ function facePlacement(key: FaceKey, size: number): string {
   }
 }
 
+// Landed cube rotation as (x,y) degrees — decomposed so callers can add full
+// spin turns without CSS matrix decomposition collapsing them.
+export function landedComponentsFor(
+  attribute: RollAttribute,
+  faceIndex: 0 | 1,
+): { x: number; y: number } {
+  if (attribute === "SHAPE")  return { x: 0,   y: faceIndex === 0 ? 0   : -180 };
+  if (attribute === "NUMBER") return { x: 0,   y: faceIndex === 0 ? -90 :   90 };
+  /* COLOR */                 return { x: faceIndex === 0 ? -90 : 90, y: 0 };
+}
+
 // Landed cube rotation — chosen so the target face ends up facing the camera.
-function landedRotation(attribute: RollAttribute, faceIndex: 0 | 1): string {
-  if (attribute === "SHAPE")  return faceIndex === 0 ? "rotateY(0deg)"     : "rotateY(-180deg)";
-  if (attribute === "NUMBER") return faceIndex === 0 ? "rotateY(-90deg)"   : "rotateY(90deg)";
-  /* COLOR */                 return faceIndex === 0 ? "rotateX(-90deg)"   : "rotateX(90deg)";
+export function landedRotationFor(attribute: RollAttribute, faceIndex: 0 | 1): string {
+  const { x, y } = landedComponentsFor(attribute, faceIndex);
+  return `rotateX(${x}deg) rotateY(${y}deg)`;
 }
 
 // What each face reads. Opposite faces share an attribute; the label is the
@@ -57,14 +73,11 @@ const FACE_LABEL: Record<FaceKey, RollAttribute> = {
 
 const FACES: FaceKey[] = ["front", "back", "right", "left", "top", "bottom"];
 
-export function MatchDie({ size, attribute, faceIndex }: MatchDieProps) {
+export function MatchDie({ size, attribute, faceIndex, rotation, transition }: MatchDieProps) {
   const sceneStyle: CSSProperties = {
     width: size,
     height: size,
     perspective: 420,
-    // Slight tilt off-axis makes the 3D form legible even when landed square-
-    // on. Applied on the scene (not the cube) so the "landed" rotation stays
-    // clean and predictable.
     perspectiveOrigin: "50% 50%",
   };
 
@@ -73,8 +86,9 @@ export function MatchDie({ size, attribute, faceIndex }: MatchDieProps) {
     width: size,
     height: size,
     transformStyle: "preserve-3d",
-    transform: `${landedRotation(attribute, faceIndex)}`,
-    // No transition here — animation is a later prompt.
+    transform: rotation ?? landedRotationFor(attribute, faceIndex),
+    transition,
+    willChange: transition ? "transform" : undefined,
   };
 
   const faceBaseStyle: CSSProperties = {

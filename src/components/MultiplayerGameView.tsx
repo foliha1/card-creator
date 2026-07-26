@@ -30,7 +30,10 @@ import { Settings, X } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
-import type { IntentAction, TransientEvent } from "@/lib/multiplayer";
+import type { IntentAction, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
+import { ROLL_HERO_MS } from "@/lib/multiplayer";
+import { serverNow } from "@/hooks/useServerClock";
+import RollHeroOverlay from "@/components/RollHeroOverlay";
 import type { Card } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
@@ -42,6 +45,9 @@ interface Props {
   publicState: PublicState;
   mySeat: number | null; // null = spectator
   events?: TransientEvent[];
+  // Latest server-committed roll. Drives the hero overlay when its window
+  // ([startAt, startAt + ROLL_HERO_MS]) is still live on the server clock.
+  rollCommit?: RollCommitPayload | null;
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
@@ -377,19 +383,29 @@ const ButtonStyles: Record<ButtonKind, { bg: string; text: string; label: string
   DISABLED:     { bg: PANEL,  text: MUTED,   label: "WAIT" },
 };
 
-const DieBox: React.FC<{ rule: string }> = ({ rule }) => (
+const DieBox: React.FC<{
+  rule: string;
+  heroActive: boolean;
+  homeRef?: React.Ref<HTMLDivElement>;
+}> = ({ rule, heroActive, homeRef }) => (
   <div style={{
     width: 111.07, height: 110.94, background: ORANGE,
     border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8, gap: 16,
     display: "flex", flexDirection: "column", alignItems: "center",
     justifyContent: "center", boxSizing: "border-box", flex: "0 0 auto",
   }}>
-    <div style={{
-      width: 89.42, height: 89.42, background: SURFACE, borderRadius: 8,
-      transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
-      display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", padding: 4, boxSizing: "border-box",
-    }}>
+    {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
+        the overlay is live we hide the text so the animation lands cleanly. */}
+    <div
+      ref={homeRef}
+      style={{
+        width: 80, height: 80, background: SURFACE, borderRadius: 8,
+        transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: 4, boxSizing: "border-box",
+        opacity: heroActive ? 0 : 1,
+      }}
+    >
       <span style={{ fontFamily: FONT_FAMILY, fontSize: 11, color: INK, fontStyle: "italic" }}>
         Match the
       </span>
@@ -451,13 +467,42 @@ const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
 // -------- Main component --------
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
+  publicState: s, mySeat, events = [], rollCommit = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
   const [showLeave, setShowLeave] = React.useState(false);
   const modalOpen = showSettings || showLeave;
   void _mobile;
+
+  // ---- roll-hero overlay wiring ----------------------------------------
+  // Root of the play area — the overlay is absolutely positioned inside it.
+  // Home ref points at the 80×80 cream box inside the dice tray.
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const homeRef = React.useRef<HTMLDivElement | null>(null);
+  // `activeCommit` is the commit we're CURRENTLY animating. It becomes null
+  // when the 1100ms window expires (or is skipped if we arrived too late).
+  const [activeCommit, setActiveCommit] = React.useState<RollCommitPayload | null>(null);
+  const [heroRects, setHeroRects] = React.useState<{
+    home: DOMRect; target: DOMRect; parent: DOMRect;
+  } | null>(null);
+  React.useEffect(() => {
+    if (!rollCommit) return;
+    // Ignore repeats of the same commit (state updates after we've completed).
+    if (activeCommit && activeCommit.startAt === rollCommit.startAt) return;
+    const elapsed = serverNow() - rollCommit.startAt;
+    if (elapsed >= ROLL_HERO_MS) return; // arrived too late — skip animation
+    const home = homeRef.current?.getBoundingClientRect() ?? null;
+    const target = cardAreaRef.current?.getBoundingClientRect() ?? null;
+    const parent = rootRef.current?.getBoundingClientRect() ?? null;
+    if (!home || !target || !parent) return;
+    setHeroRects({ home, target, parent });
+    setActiveCommit(rollCommit);
+    // cardAreaRef is declared below; the ref itself is stable so eslint's
+    // dependency check is not helpful here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rollCommit]);
+  const heroActive = activeCommit !== null;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // Block WHOOP for ~500ms during the flip rotation itself (matches
@@ -694,7 +739,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   );
   const bottomRow = (
     <div style={{ display: "flex", gap: 8, height: 110.94 }}>
-      <DieBox rule={rule} />
+      <DieBox rule={rule} heroActive={heroActive} homeRef={homeRef} />
       <ActionButton
         kind={buttonKind}
         disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
@@ -765,12 +810,21 @@ const MultiplayerGameView: React.FC<Props> = ({
   const needsScroll = gridHeightNeeded > availH + 0.5;
 
   return (
-    <div style={{
+    <div ref={rootRef} style={{
       display: "flex", flexDirection: "column", gap: 8,
       padding: 8, height: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>
+      {activeCommit && heroRects && (
+        <RollHeroOverlay
+          commit={activeCommit}
+          homeRect={heroRects.home}
+          targetRect={heroRects.target}
+          parentRect={heroRects.parent}
+          onComplete={() => { setActiveCommit(null); setHeroRects(null); }}
+        />
+      )}
       {header}
       {opponentRow}
 
