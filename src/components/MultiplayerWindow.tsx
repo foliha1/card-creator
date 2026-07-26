@@ -101,6 +101,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // Track claimWindow on the host in parallel to what useMultiplayerHost
   // broadcasts, so the local toPublicState render matches the wire payload.
+  const hiddenNameInputRef = useRef<HTMLInputElement | null>(null);
   const hostClaimWindowRef = useRef(0);
   const hostPrevClaimByRef = useRef<number | null>(null);
   const hostPrevRoundRef = useRef<number>(host.state.roundNum);
@@ -468,67 +469,196 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   }
 
   if (view.kind === "name-prompt") {
-    const pendingLabel =
-      view.pending.kind === "create" ? "Starting a room" : `Joining ${view.pending.code}`;
-    return wrapInShell(
-      <div style={containerStyle}>
-        <div>
-          <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
+    const NAME_CAP = 6;
+    const chars = nameInput.slice(0, NAME_CAP).split("");
+    const boxes = Array.from({ length: NAME_CAP }, (_, i) => chars[i] ?? "");
+    const canContinue = !busy && nameInput.trim().length > 0;
+
+    const focusHiddenInput = () => {
+      hiddenNameInputRef.current?.focus();
+    };
+
+    const nameCard = (
+      <div style={{
+        alignSelf: "stretch",
+        background: "#F8F2E9",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: 24,
+        height: "auto",
+        boxSizing: "border-box",
+      }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: 36,
+            lineHeight: "44px",
+            color: "#231F20",
+          }}>
             Pick a nickname
           </div>
-          <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, marginTop: SPACE[3] }}>
-            {pendingLabel}. Up to 8 characters so it fits on the chip.
+          <div style={{
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 14,
+            lineHeight: "17px",
+            color: "#231F20",
+          }}>
+            Your nickname will be shown during game play. Up to 6 characters.
           </div>
         </div>
 
         {view.error && (
           <div role="alert" style={{
-            ...textStyle("caption", mobile),
-            color: COLORS.red,
-            border: `1.5px solid ${COLORS.red}`,
-            borderRadius: RADIUS.md,
-            padding: `${SPACE[3]}px ${SPACE[4]}px`,
-            background: COLORS.surface,
+            alignSelf: "stretch",
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 16,
+            lineHeight: "20px",
+            color: "#D72229",
+            border: "1.5px solid #D72229",
+            borderRadius: 4,
+            padding: "8px 12px",
+            background: "#F8F2E9",
           }}>
             {view.error}
           </div>
         )}
 
-        <input
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value.slice(0, 8))}
-          onKeyDown={(e) => { if (e.key === "Enter") handleConfirmName(); }}
-          placeholder="Nickname"
-          maxLength={8}
-          autoFocus
-          aria-label="Nickname"
-          style={{ ...inputStyle, textTransform: "none", letterSpacing: 0, alignSelf: "stretch" }}
-        />
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Character display row — single overlaid input for real keyboard/paste/autofill */}
+          <div
+            onMouseDown={(e) => { e.preventDefault(); focusHiddenInput(); }}
+            onTouchStart={() => { focusHiddenInput(); }}
+            style={{
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: 8,
+              height: 72,
+              background: "#D0C3AF",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              boxSizing: "border-box",
+              cursor: "text",
+            }}
+          >
+            {boxes.map((ch, i) => (
+              <div
+                key={i}
+                style={{
+                  flexGrow: 1,
+                  flexBasis: 0,
+                  minWidth: 0,
+                  height: 56,
+                  background: "#F8F2E9",
+                  border: "2px solid #231F20",
+                  borderRadius: 6.33043,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxSizing: "border-box",
+                  fontFamily: FONT_FAMILY,
+                  fontWeight: 400,
+                  fontSize: 20,
+                  lineHeight: "24px",
+                  color: ch ? "#231F20" : "#D0C3AF",
+                  textAlign: "center",
+                }}
+              >
+                {ch || "•"}
+              </div>
+            ))}
+            <input
+              ref={hiddenNameInputRef}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value.slice(0, NAME_CAP))}
+              onKeyDown={(e) => { if (e.key === "Enter" && canContinue) handleConfirmName(); }}
+              maxLength={NAME_CAP}
+              autoFocus
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label="Nickname"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                opacity: 0,
+                border: 0,
+                padding: 0,
+                margin: 0,
+                background: "transparent",
+                color: "transparent",
+                caretColor: "transparent",
+                outline: "none",
+                fontSize: 16, // prevents iOS zoom on focus
+                cursor: "text",
+              }}
+            />
+          </div>
 
-        <div style={{ display: "flex", gap: SPACE[3], flexDirection: mobile ? "column" : "row", alignSelf: "stretch" }}>
-          <AppButton
-            variant="primary"
-            tone="red"
-            size={mobile ? "md" : "lg"}
-            onClick={handleConfirmName}
-            disabled={busy || !nameInput.trim()}
-            fullWidth
-          >
-            {busy ? "Connecting…" : "Continue"}
-          </AppButton>
-          <AppButton
-            variant="secondary"
-            tone="ink"
-            size={mobile ? "md" : "lg"}
-            onClick={leaveToIdle}
-            disabled={busy}
-            fullWidth={mobile}
-          >
-            Cancel
-          </AppButton>
+          {/* Button row */}
+          <div style={{ alignSelf: "stretch", display: "flex", gap: 10, height: 71 }}>
+            <button
+              type="button"
+              onClick={leaveToIdle}
+              disabled={busy}
+              style={{
+                width: 87,
+                height: 71,
+                flexShrink: 0,
+                background: "#231F20",
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: "24px",
+                color: "#F8F2E9",
+                cursor: busy ? "default" : "pointer",
+                padding: 0,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmName}
+              disabled={!canContinue}
+              style={{
+                flexGrow: 1,
+                height: 71,
+                background: "#D72229",
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: 32,
+                lineHeight: "39px",
+                color: "#F8F2E9",
+                cursor: canContinue ? "pointer" : "default",
+                opacity: canContinue ? 1 : 0.7,
+                padding: 0,
+              }}
+            >
+              {busy ? "Connecting…" : "Continue"}
+            </button>
+          </div>
         </div>
-      </div>,
+      </div>
     );
+
+    return wrapInShell(nameCard);
   }
 
   if (view.kind === "full") {
