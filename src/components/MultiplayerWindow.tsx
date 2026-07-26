@@ -519,6 +519,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         mySeat={joinerSeat}
         events={joiner.events}
         rollCommit={joiner.rollCommit ?? null}
+        lastClaimReject={joiner.lastClaimReject ?? null}
         onIntent={joiner.sendIntent}
         onLeave={leaveToIdle}
         mobile={mobile}
