@@ -374,7 +374,7 @@ const ButtonStyles: Record<ButtonKind, { bg: string; text: string; label: string
   WHOOP:        { bg: RED,    text: SURFACE, label: "WHOOP! WHOOP!" },
   YOUR_ROLL:    { bg: ORANGE, text: INK,     label: "YOUR ROLL!" },
   SELECT_MATCH: { bg: BLUE,   text: SURFACE, label: "SELECT MATCH" },
-  DISABLED:     { bg: PANEL,  text: MUTED,   label: "…" },
+  DISABLED:     { bg: PANEL,  text: MUTED,   label: "WAIT" },
 };
 
 const DieBox: React.FC<{ rule: string }> = ({ rule }) => (
