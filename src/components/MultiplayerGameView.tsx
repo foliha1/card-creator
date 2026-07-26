@@ -30,7 +30,10 @@ import { Settings, X } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
-import type { IntentAction, TransientEvent } from "@/lib/multiplayer";
+import type { IntentAction, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
+import { ROLL_HERO_MS } from "@/lib/multiplayer";
+import { serverNow } from "@/hooks/useServerClock";
+import RollHeroOverlay from "@/components/RollHeroOverlay";
 import type { Card } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
@@ -42,6 +45,9 @@ interface Props {
   publicState: PublicState;
   mySeat: number | null; // null = spectator
   events?: TransientEvent[];
+  // Latest server-committed roll. Drives the hero overlay when its window
+  // ([startAt, startAt + ROLL_HERO_MS]) is still live on the server clock.
+  rollCommit?: RollCommitPayload | null;
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
