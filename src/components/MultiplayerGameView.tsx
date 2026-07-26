@@ -374,7 +374,7 @@ const ButtonStyles: Record<ButtonKind, { bg: string; text: string; label: string
   WHOOP:        { bg: RED,    text: SURFACE, label: "WHOOP! WHOOP!" },
   YOUR_ROLL:    { bg: ORANGE, text: INK,     label: "YOUR ROLL!" },
   SELECT_MATCH: { bg: BLUE,   text: SURFACE, label: "SELECT MATCH" },
-  DISABLED:     { bg: PANEL,  text: MUTED,   label: "…" },
+  DISABLED:     { bg: PANEL,  text: MUTED,   label: "WAIT" },
 };
 
 const DieBox: React.FC<{ rule: string }> = ({ rule }) => (
@@ -633,7 +633,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       setClaimBusy(false);
       if (!result.won) setTooSlowAt(Date.now());
     };
-    if (claimBusy) { buttonLabel = "…"; buttonKind = "DISABLED"; buttonOnClick = undefined; }
+    if (claimBusy) { buttonKind = "DISABLED"; buttonOnClick = undefined; }
   } else if (
     mySeat !== null &&
     (s.phase === "FLIPPING" || s.phase === "AWAITING_ROLL") &&
@@ -648,6 +648,21 @@ const MultiplayerGameView: React.FC<Props> = ({
     buttonLabel = "LAST CALL!";
     buttonOnClick = undefined;
   }
+
+  // Derive a descriptive label for the muted disabled state so players can
+  // tell waiting, rolling, and another player's claim apart from a broken UI.
+  if (buttonKind === "DISABLED") {
+    if (claimBusy) {
+      buttonLabel = "LOCKING…";
+    } else if (mySeat !== null && s.claimBy !== null && s.claimBy !== mySeat) {
+      buttonLabel = "CLAIMING…";
+    } else if (s.rolling) {
+      buttonLabel = "ROLLING…";
+    } else {
+      buttonLabel = "WAIT";
+    }
+  }
+
 
   const chips = chipsForOpponents(s, mySeat, events);
 
