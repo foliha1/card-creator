@@ -337,13 +337,13 @@ export function useMultiplayerHost(opts: {
 // broadcast handled by the grant listener above.
 function handleHostIntent(
   dispatch: (a: Action) => void,
-  doRollDice: () => Promise<string[]>,
+  commitAndRoll: () => void,
   seat: number,
   action: IntentAction,
 ) {
   switch (action.type) {
     case "REQUEST_ROLL":
-      void doRollDice();
+      commitAndRoll();
       return;
     case "PLAYER_ENTER_CLAIM":
     case "PLAYER_ENTER_CLAIM_DURING_ROLL":
