@@ -452,7 +452,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   }
 
   if (view.kind === "host-left") {
-    return (
+    return wrapInShell(
       <div style={containerStyle}>
         <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
           The host left the game.
@@ -463,7 +463,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         <AppButton variant="primary" tone="red" size="md" onClick={leaveToIdle} fullWidth>
           Back to lobby
         </AppButton>
-      </div>
+      </div>,
     );
   }
 
