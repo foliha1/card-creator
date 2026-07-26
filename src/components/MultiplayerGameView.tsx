@@ -392,8 +392,9 @@ const ButtonStyles: Record<ButtonKind, { bg: string; text: string; label: string
 const DieBox: React.FC<{
   rule: string;
   heroActive: boolean;
+  waiting: boolean;
   homeRef?: React.Ref<HTMLDivElement>;
-}> = ({ rule, heroActive, homeRef }) => (
+}> = ({ rule, heroActive, waiting, homeRef }) => (
   <div style={{
     width: 111.07, height: 110.94, background: ORANGE,
     border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8, gap: 16,
@@ -401,10 +402,10 @@ const DieBox: React.FC<{
     justifyContent: "center", boxSizing: "border-box", flex: "0 0 auto",
   }}>
     {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
-        the overlay is live we hide the text so the animation lands cleanly. */}
-    {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
         the overlay is live we hide the art so the animation lands cleanly.
-        Resting state and landed face use the identical SVG asset. */}
+        While AWAITING_ROLL (and not mid-hero) the face is blank — the prior
+        round's rule must not read as current. Size stays fixed so layout
+        does not shift when the rule appears on settle. */}
     <div
       ref={homeRef}
       style={{
@@ -415,12 +416,14 @@ const DieBox: React.FC<{
         opacity: heroActive ? 0 : 1, overflow: "hidden",
       }}
     >
-      <img
-        src={MATCH_ART_SRC[rule as RollAttribute]}
-        alt={`Match the ${rule}`}
-        draggable={false}
-        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
-      />
+      {!waiting && (
+        <img
+          src={MATCH_ART_SRC[rule as RollAttribute]}
+          alt={`Match the ${rule}`}
+          draggable={false}
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+        />
+      )}
     </div>
   </div>
 );
@@ -793,7 +796,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   );
   const bottomRow = (
     <div style={{ display: "flex", gap: 8, height: 110.94 }}>
-      <DieBox rule={rule} heroActive={heroActive} homeRef={homeRef} />
+      <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
       {/* Wrap the WHOOP button so ROLLING can dim it to 40% and physically
           block taps. pointerEvents:none guarantees no tap ever reaches the
           onClick — belt-and-braces on top of the cleared handler above. */}
