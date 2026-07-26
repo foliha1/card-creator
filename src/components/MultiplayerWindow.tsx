@@ -59,6 +59,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Host-minted game id. Scopes the arbiter's UNIQUE (room, game, window)
   // constraint so consecutive games in the same room don't collide.
   const [gameId, setGameId] = useState<string>("");
+  const [starting, setStarting] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [copiedFlash, setCopiedFlash] = useState(false);
+  const linkBoxRef = useRef<HTMLDivElement | null>(null);
+  const copiedTimerRef = useRef<number | null>(null);
+
+
 
   const visitorId = useMemo(() => getVisitorId(), []);
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
@@ -269,12 +276,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   }, [participants.length, activeRoom, view]);
 
   const handleStartGame = useCallback(() => {
-    if (!isHostView || participants.length < 2) return;
+    if (!isHostView || participants.length < 2 || starting) return;
     const seatMap: SeatMapEntry[] = participants.slice(0, ROOM_CAPACITY).map((p, i) => ({
       seat: i,
       visitor_id: p.visitor_id,
       display_name: p.display_name,
     }));
+    setStarting(true);
+    // Notify joiners so they can show a loading state immediately.
+    try {
+      channel?.send({ type: "broadcast", event: "msg", payload: { kind: "game_starting" } });
+    } catch {
+      /* non-fatal */
+    }
     setGameId(crypto.randomUUID());
     setFrozenSeats(seatMap);
     completedFiredRef.current = false;
@@ -282,10 +296,46 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       roomCode: activeRoom?.room_code,
       metadata: { player_count: seatMap.length },
     });
-  }, [isHostView, participants, activeRoom]);
+  }, [isHostView, participants, activeRoom, starting, channel]);
+
+  // Joiner: listen for host's game_starting notice to show loading state.
+  useEffect(() => {
+    if (view.kind !== "joiner") return;
+    const unsub = onBroadcast(({ payload }) => {
+      if (
+        payload &&
+        typeof payload === "object" &&
+        (payload as { kind?: string }).kind === "game_starting"
+      ) {
+        setStarting(true);
+      }
+    });
+    return unsub;
+  }, [view.kind, onBroadcast]);
 
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
+
+  const flashCopied = useCallback(() => {
+    setCopiedFlash(true);
+    // Keep URL box focused so keyboard users stay put.
+    const el = linkBoxRef.current;
+    if (el) {
+      el.focus({ preventScroll: true });
+      // Select the visible text for quick manual re-copy.
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      } catch {
+        /* non-fatal */
+      }
+    }
+    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = window.setTimeout(() => setCopiedFlash(false), 2000);
+  }, []);
 
   const handleCopy = useCallback(async (code: string) => {
     const url = shareUrl(code);
@@ -293,6 +343,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         toast.success("Link copied");
+        flashCopied();
         return;
       }
       throw new Error("no clipboard");
@@ -307,18 +358,26 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         document.execCommand("copy");
         document.body.removeChild(ta);
         toast.success("Link copied");
+        flashCopied();
       } catch {
         toast.error("Copy failed — select the link manually.");
       }
     }
+  }, [flashCopied]);
+
+  useEffect(() => () => {
+    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
   }, []);
 
   const leaveToIdle = useCallback(() => {
     setCodeInput("");
     setFrozenSeats(null);
     setGameId("");
+    setStarting(false);
+    setShowLeaveConfirm(false);
     setView({ kind: "idle" });
   }, []);
+
 
   const shellStyle: React.CSSProperties = {
     minHeight: "100dvh",
@@ -897,37 +956,45 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         gap: 8,
         padding: 8,
       }}>
-        <div style={{
-          alignSelf: "stretch",
-          height: 40,
-          padding: "8px 16px",
-          background: "#F8F2E9",
-          border: "2px solid #231F20",
-          borderRadius: 4,
-          boxSizing: "border-box",
-          display: "flex",
-          alignItems: "center",
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 20,
-          lineHeight: "24px",
-          color: "#231F20",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          userSelect: "all",
-        }}
-        title={link}
+        <div
+          ref={linkBoxRef}
+          tabIndex={0}
+          role="textbox"
+          aria-readonly="true"
+          aria-label="Room link"
+          style={{
+            alignSelf: "stretch",
+            height: 40,
+            padding: "8px 16px",
+            background: "#F8F2E9",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            boxSizing: "border-box",
+            display: "flex",
+            alignItems: "center",
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 20,
+            lineHeight: "24px",
+            color: "#231F20",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            userSelect: "all",
+            outline: "none",
+          }}
+          title={link}
         >
           {link}
         </div>
         <button
           type="button"
           onClick={() => handleCopy(room.room_code)}
+          aria-live="polite"
           style={{
             alignSelf: "stretch",
             height: 40,
-            background: "#0072B2",
+            background: copiedFlash ? "#231F20" : "#0072B2",
             border: "2px solid #231F20",
             borderRadius: 4,
             fontFamily: FONT_FAMILY,
@@ -937,13 +1004,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             color: "#F8F2E9",
             cursor: "pointer",
             padding: 0,
+            transition: "background 150ms ease",
           }}
         >
-          Copy link
+          {copiedFlash ? "Copied!" : "Copy link"}
         </button>
       </div>
     </div>
   ) : null;
+
 
   const seatSlots = Array.from({ length: ROOM_CAPACITY }, (_, i) => visibleParticipants[i] ?? null);
 
@@ -1017,7 +1086,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const leaveButton = (
     <button
       type="button"
-      onClick={leaveToIdle}
+      onClick={() => setShowLeaveConfirm(true)}
+      disabled={starting}
       style={{
         alignSelf: "stretch",
         height: 40,
@@ -1029,7 +1099,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         fontSize: 20,
         lineHeight: "24px",
         color: "#F8F2E9",
-        cursor: "pointer",
+        cursor: starting ? "default" : "pointer",
+        opacity: starting ? 0.6 : 1,
         padding: 0,
       }}
     >
@@ -1037,15 +1108,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     </button>
   );
 
+  const startDisabled = !canStart || starting;
   const startButton = isHost ? (
     <button
       type="button"
       onClick={handleStartGame}
-      disabled={!canStart}
+      disabled={startDisabled}
+      aria-busy={starting}
       style={{
         alignSelf: "stretch",
         height: 80,
-        background: canStart ? "#D72229" : "#544C4A",
+        background: startDisabled ? "#544C4A" : "#D72229",
         border: "2px solid #231F20",
         borderRadius: 4,
         fontFamily: FONT_FAMILY,
@@ -1053,14 +1126,157 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         fontWeight: 400,
         fontSize: 32,
         lineHeight: "39px",
-        color: canStart ? "#F8F2E9" : "#D0C3AF",
-        cursor: canStart ? "pointer" : "default",
+        color: startDisabled ? "#D0C3AF" : "#F8F2E9",
+        cursor: startDisabled ? "default" : "pointer",
         padding: 0,
       }}
     >
-      Lets do it!
+      {starting ? "Starting…" : "Lets do it!"}
     </button>
   ) : null;
+
+  const startingBanner = starting ? (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        alignSelf: "stretch",
+        padding: 16,
+        background: "#D0C3AF",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        fontFamily: FONT_FAMILY,
+        fontStyle: "italic",
+        fontWeight: 400,
+        fontSize: 20,
+        lineHeight: "24px",
+        color: "#231F20",
+        textAlign: "center",
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          border: "2px solid #231F20",
+          borderTopColor: "transparent",
+          animation: "spin 0.8s linear infinite",
+          display: "inline-block",
+        }}
+      />
+      Starting game…
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  ) : null;
+
+  const leaveConfirmDialog = showLeaveConfirm ? (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="leave-confirm-title"
+      onClick={(e) => { if (e.target === e.currentTarget) setShowLeaveConfirm(false); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(35, 31, 32, 0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        zIndex: 1000,
+      }}
+    >
+      <div style={{
+        width: "100%",
+        maxWidth: 340,
+        background: "#F8F2E9",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        boxSizing: "border-box",
+      }}>
+        <div
+          id="leave-confirm-title"
+          style={{
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: 24,
+            lineHeight: "30px",
+            color: "#231F20",
+          }}
+        >
+          Leave the room?
+        </div>
+        <div style={{
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 16,
+          lineHeight: "20px",
+          color: "#231F20",
+        }}>
+          {isHost
+            ? "The room will end for everyone if you leave."
+            : "You'll drop out of this lobby."}
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setShowLeaveConfirm(false)}
+            autoFocus
+            style={{
+              flexGrow: 1,
+              height: 56,
+              background: "#F8F2E9",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 20,
+              lineHeight: "24px",
+              color: "#231F20",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Stay
+          </button>
+          <button
+            type="button"
+            onClick={leaveToIdle}
+            style={{
+              flexGrow: 1,
+              height: 56,
+              background: "#D72229",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              fontFamily: FONT_FAMILY,
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: 20,
+              lineHeight: "24px",
+              color: "#F8F2E9",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Leave
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
 
   const joinerStatusBar = !isHost ? (
     <div style={{
@@ -1101,6 +1317,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       boxSizing: "border-box",
     }}>
       {joinerStatusBar}
+      {startingBanner}
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
         {codeSection}
         {linkSection}
@@ -1111,7 +1328,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     </div>
   );
 
-  return wrapInShell(lobbyCard);
+  return wrapInShell(
+    <>
+      {lobbyCard}
+      {leaveConfirmDialog}
+    </>,
+  );
+
 };
 
 export default MultiplayerWindow;
