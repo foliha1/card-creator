@@ -11,7 +11,7 @@ const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
   const title = "Multiplayer — WHOOP! WHOOP!";
   const description =
-    "Play WHOOP! WHOOP! online with friends. Start a room, share the link, and match cards under the die.";
+    "Play WHOOP! WHOOP! online with friends. Start a table, share the link, and match cards under the die.";
   return (
     <>
       <Helmet>
@@ -51,7 +51,7 @@ const MultiplayerPage: React.FC = () => {
             height: "100%",
             objectFit: "cover",
             objectPosition: "center center",
-            opacity: 0.9,
+            opacity: 1,
             zIndex: -1,
             pointerEvents: "none",
             userSelect: "none",

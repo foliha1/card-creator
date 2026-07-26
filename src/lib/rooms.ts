@@ -64,7 +64,7 @@ export async function createRoom(hostVisitorId: string): Promise<RoomRow> {
   const msg =
     lastErr && typeof lastErr === "object" && "message" in lastErr
       ? String((lastErr as { message: string }).message)
-      : "Could not create a room. Please try again.";
+      : "Could not create a table. Please try again.";
   throw new Error(msg);
 }
 
