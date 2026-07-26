@@ -206,8 +206,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             kind: "idle",
             error:
               action.kind === "join-link"
-                ? `Room "${code}" doesn't exist or has ended.`
-                : `Room "${code}" doesn't exist.`,
+                ? `Table "${code}" doesn't exist or has ended.`
+                : `Table "${code}" doesn't exist.`,
           });
           if (action.kind === "join-link") {
             trackEvent("invite_link_clicked", { roomCode: code, metadata: { room_found: false } });
@@ -231,7 +231,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         if (action.kind === "join-link") {
           trackEvent("invite_link_clicked", { roomCode: action.code, metadata: { room_found: false, error: true } });
         }
-        setView({ kind: "idle", error: "Couldn't reach the room. Check your connection and try again." });
+        setView({ kind: "idle", error: "Couldn't reach the table. Check your connection and try again." });
       } finally {
         setBusy(false);
       }
@@ -533,7 +533,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           The host left the game.
         </div>
         <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted }}>
-          Games end when the host leaves. Start your own room to play again.
+          Games end when the host leaves. Start your own table to play again.
         </div>
         <AppButton variant="primary" tone="red" size="md" onClick={leaveToIdle} fullWidth>
           Back to lobby
@@ -739,10 +739,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     return wrapInShell(
       <div style={containerStyle}>
         <div style={{ ...textStyle("subhead", mobile), fontStyle: "italic", color: COLORS.ink }}>
-          Room "{view.code}" is full.
+          Table "{view.code}" is full.
         </div>
         <div style={{ ...textStyle("body", mobile), color: COLORS.inkMuted }}>
-          Rooms hold up to {ROOM_CAPACITY} players.
+          Tables hold up to {ROOM_CAPACITY} players.
         </div>
         <AppButton variant="secondary" tone="ink" size="md" onClick={leaveToIdle} fullWidth>
           Back
@@ -841,7 +841,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
               autoCorrect="off"
               spellCheck={false}
               maxLength={ROOM_CODE_LENGTH}
-              aria-label="Room code"
+              aria-label="Table code"
               style={{
                 flexGrow: 1,
                 minWidth: 0,
@@ -929,7 +929,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const codeSection = (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Your room code</div>
+      <div style={sectionLabelStyle}>Your table code</div>
       <div style={{
         ...wrapperBase,
         display: "flex",
@@ -964,7 +964,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const linkSection = isHost ? (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Your room link</div>
+      <div style={sectionLabelStyle}>Your table link</div>
       <div style={{
         ...wrapperBase,
         display: "flex",
@@ -977,7 +977,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           tabIndex={0}
           role="textbox"
           aria-readonly="true"
-          aria-label="Room link"
+          aria-label="Table link"
           style={{
             alignSelf: "stretch",
             height: 40,
@@ -1242,7 +1242,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           color: "#231F20",
         }}>
           {isHost
-            ? "The room will end for everyone if you leave."
+            ? "The table will end for everyone if you leave."
             : "You'll drop out of this lobby."}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
