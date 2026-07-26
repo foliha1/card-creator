@@ -1114,7 +1114,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         padding: 0,
       }}
     >
-      Leave the Room
+      Leave the Table
     </button>
   );
 
@@ -1226,7 +1226,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             color: "#231F20",
           }}
         >
-          Leave the room?
+          Leave the table?
         </div>
         <div style={{
           fontFamily: FONT_FAMILY,
