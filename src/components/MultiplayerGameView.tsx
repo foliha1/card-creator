@@ -399,6 +399,58 @@ const MultiplayerGameView: React.FC<Props> = ({
   const myNope = mySeat !== null && events.some((e) => e.kind === "NOPE" && e.seat === mySeat);
   const overlay: "GREAT_MATCH" | "NOPE" | null = myGreat ? "GREAT_MATCH" : myNope ? "NOPE" : null;
 
+  // -------- Sound effects --------
+  // Each fires once per event using refs to remember previous values / seen
+  // event ids. Do not derive from render — refs survive re-renders and dedupe
+  // re-broadcasts of the same PublicState snapshot.
+  const prevPeekForSoundRef = React.useRef<number | null>(s.peekingCard);
+  React.useEffect(() => {
+    const prev = prevPeekForSoundRef.current;
+    prevPeekForSoundRef.current = s.peekingCard;
+    if (prev === null && s.peekingCard !== null) playFlip();
+  }, [s.peekingCard]);
+
+  const prevRollingRef = React.useRef<boolean>(s.rolling);
+  React.useEffect(() => {
+    const prev = prevRollingRef.current;
+    prevRollingRef.current = s.rolling;
+    // Roll resolves when the rolling animation flag drops from true → false.
+    if (prev && !s.rolling) playDiceRoll();
+  }, [s.rolling]);
+
+  const prevClaimByRef = React.useRef<number | null>(s.claimBy);
+  React.useEffect(() => {
+    const prev = prevClaimByRef.current;
+    prevClaimByRef.current = s.claimBy;
+    if (prev === null && s.claimBy !== null) playWhoopCall();
+  }, [s.claimBy]);
+
+  const seenEventIdsRef = React.useRef<Set<string>>(new Set());
+  React.useEffect(() => {
+    for (const e of events) {
+      if (seenEventIdsRef.current.has(e.id)) continue;
+      seenEventIdsRef.current.add(e.id);
+      if (e.kind === "GREAT_MATCH") playCorrect();
+      else if (e.kind === "NOPE") playWrong();
+    }
+    // Bound the dedup set so it doesn't grow forever across a long session.
+    if (seenEventIdsRef.current.size > 256) {
+      const arr = Array.from(seenEventIdsRef.current);
+      seenEventIdsRef.current = new Set(arr.slice(-128));
+    }
+  }, [events]);
+
+  // Deal sound when the grid refills after a claim. Watch occupied count
+  // rising — a claim removes cards then the deck deals to fill the gaps.
+  const occupiedCount = s.grid.reduce((n, slot) => n + (slot.occupied ? 1 : 0), 0);
+  const prevOccupiedRef = React.useRef<number>(occupiedCount);
+  React.useEffect(() => {
+    const prev = prevOccupiedRef.current;
+    prevOccupiedRef.current = occupiedCount;
+    if (occupiedCount > prev) playDeal(occupiedCount - prev);
+  }, [occupiedCount]);
+
+
   // Auto-resolve match once two cards are selected during a claim.
   React.useEffect(() => {
     if (!inClaimMode) return;
