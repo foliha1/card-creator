@@ -878,7 +878,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           display: "flex", alignItems: "center", justifyContent: "center",
           overflowY: needsScroll ? "auto" : "hidden",
           overflowX: "hidden",
-          opacity: isRolling ? 0.35 : 1,
+          opacity: 1,
           pointerEvents: isRolling ? "none" : "auto",
           transition: "opacity 250ms ease",
         }}
