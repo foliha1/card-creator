@@ -9,26 +9,28 @@
 // via `transform: translate(dx, dy) scale(2.5)`. Transform ONLY — never
 // animate `left/top` (would fight the parent's layout and repaint constantly).
 //
-// Timeline (offsets from startAt, total ROLL_HERO_MS = 1100):
-//   0     → 450  cube tumbles from spin(seed) → landed rotation
-//   450   → 600  crossfade: cube → cream instruction card (150ms)
-//   600   → 850  hold on instruction card (250ms)
-//   850   → 1100 transform back to home: translate(0,0) scale(1) (250ms)
-//   1100  →      overlay hidden; dice box shows the instruction natively
+// Timeline (offsets from startAt, total ROLL_HERO_MS = 1600):
+//   0     → 450   cube tumbles from spin(seed) → landed rotation
+//   450   → 1350  hold on landed cube at lifted scale (900ms)
+//   1350  → 1600  transform back to home: translate(0,0) scale(1) (250ms)
+//   1600  →       overlay hidden; dice box shows the instruction natively
+//
+// The landed die faces carry the instruction lettering in their artwork, so
+// no separate instruction card / crossfade is needed — the cube itself is
+// what shrinks into the dice box.
 //
 // Guards (never shorten the phase — onComplete always fires at ROLL_HERO_MS):
-//   • prefers-reduced-motion: skip tumble + fly; render instruction in-box.
+//   • prefers-reduced-motion: skip tumble + fly; render landed cube in-box.
 //   • Tap-to-skip: overlay is clickable; jumps to landed state locally.
 //   • Late arrival (elapsed > 450ms on mount): skip the truncated tumble and
-//     jump straight to the landed instruction.
+//     jump straight to the landed state. Threshold stays tied to the end of
+//     the tumble, NOT the new total.
 // ============================================================================
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { COLORS } from "@/lib/tokens";
 import {
   MatchDie,
   landedComponentsFor,
-  MATCH_ART_SRC,
 } from "@/components/MatchDie";
 import type { RollCommitPayload } from "@/lib/multiplayer";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
@@ -37,9 +39,7 @@ import { serverNow } from "@/hooks/useServerClock";
 const HOME_SIZE = 80;         // 80×80 cream home box
 const LIFT_SCALE = 2.5;
 const TUMBLE_MS = 450;
-const CROSSFADE_START = 450;
-const CROSSFADE_MS = 150;
-const LAND_START = 850;
+const LAND_START = ROLL_HERO_MS - 250; // 1350
 const LAND_MS = 250;
 
 // Ease-out cubic — snappy start, gentle settle onto landed rotation.
@@ -98,7 +98,8 @@ export const RollHeroOverlay: React.FC<Props> = ({
   // on mount so React state stays stable across re-renders. Any of:
   //   • the user prefers reduced motion,
   //   • the tumble window has already ended when we mounted (late join /
-  //     event arrived after startAt + 450ms).
+  //     event arrived after startAt + 450ms — threshold stays at the end of
+  //     the tumble, not the new total phase length).
   const initialSkip = React.useMemo(() => {
     if (prefersReducedMotion()) return true;
     const elapsed = serverNow() - startAt;
@@ -110,10 +111,9 @@ export const RollHeroOverlay: React.FC<Props> = ({
 
   // `skipped` may also flip on tap. Once true it stays true for this commit.
   const [skipped, setSkipped] = useState(initialSkip);
-  // Stage flags. When skipped we start at the landed instruction card. The
+  // Stage flag. When skipped we start already-landing (at home). The
   // phase-length onComplete timer still fires at ROLL_HERO_MS.
   const [landing, setLanding] = useState(initialSkip);
-  const [showInstruction, setShowInstruction] = useState(initialSkip);
   const [cubeRot, setCubeRot] = useState<{ x: number; y: number }>(
     initialSkip ? { x: landed.x, y: landed.y } : { x: initialX, y: initialY }
   );
@@ -164,7 +164,6 @@ export const RollHeroOverlay: React.FC<Props> = ({
       timers.push(setTimeout(fn, delay));
     };
     if (!skipped) {
-      at(CROSSFADE_START, () => setShowInstruction(true));
       at(LAND_START, () => setLanding(true));
     }
     at(ROLL_HERO_MS, onComplete);
@@ -178,7 +177,6 @@ export const RollHeroOverlay: React.FC<Props> = ({
     if (skipped) return;
     setSkipped(true);
     setLanding(true);
-    setShowInstruction(true);
     setCubeRot({ x: landed.x, y: landed.y });
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -193,11 +191,10 @@ export const RollHeroOverlay: React.FC<Props> = ({
 
   // When we're skipping (reduced-motion, late arrival, or tap), disable all
   // CSS transitions so the jump is instant. Otherwise use the normal bezier
-  // land transition and linear opacity crossfade.
+  // land transition.
   const outerTransition = skipped
     ? "none"
     : (landing ? `transform ${LAND_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)` : "none");
-  const crossfadeTransition = skipped ? "none" : `opacity ${CROSSFADE_MS}ms linear`;
 
   const cubeRotationStr = `rotateX(${cubeRot.x}deg) rotateY(${cubeRot.y}deg)`;
 
@@ -225,7 +222,6 @@ export const RollHeroOverlay: React.FC<Props> = ({
         willChange: "transform",
       }}
     >
-      {/* Cube layer — fades out during crossfade. */}
       <div
         style={{
           position: "absolute",
@@ -233,8 +229,6 @@ export const RollHeroOverlay: React.FC<Props> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          opacity: showInstruction ? 0 : 1,
-          transition: crossfadeTransition,
         }}
       >
         <MatchDie
@@ -242,33 +236,6 @@ export const RollHeroOverlay: React.FC<Props> = ({
           attribute={attribute}
           faceIndex={faceIndex}
           rotation={cubeRotationStr}
-        />
-      </div>
-      {/* Instruction card layer — fades in during crossfade. */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: COLORS.surface,
-          border: `2px solid ${COLORS.ink}`,
-          borderRadius: 8,
-          boxShadow: "0px 4px 4px rgba(0,0,0,0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "8%",
-          boxSizing: "border-box",
-          opacity: showInstruction ? 1 : 0,
-          transition: crossfadeTransition,
-          transform: "rotate(-3.65deg)",
-          overflow: "hidden",
-        }}
-      >
-        <img
-          src={MATCH_ART_SRC[attribute]}
-          alt={`Match the ${attribute}`}
-          draggable={false}
-          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
         />
       </div>
     </div>

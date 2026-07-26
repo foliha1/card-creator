@@ -1,6 +1,7 @@
 import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 import { createOpponentMemory, OpponentMemory } from "@/lib/opponentMemory";
+import { ROLL_HERO_MS } from "@/lib/multiplayer";
 
 type MessageType = "info" | "success" | "error" | "warning";
 
@@ -791,12 +792,15 @@ export function useGameState(
         }
         dispatch({ type: "ROLL_LAND", values: finalValues, rule });
         if (rollSettleRef.current) clearTimeout(rollSettleRef.current);
+        // Total ROLLING-phase duration (tumble + hold + land) is
+        // ROLL_HERO_MS. The reducer must match the overlay so the server
+        // does not unlock flips/claims before the die has visually landed.
         rollSettleRef.current = setTimeout(() => {
           rollSettleRef.current = null;
           dispatch({ type: "ROLL_SETTLE" });
           resolve(rule);
-        }, 300);
-      }, 800);
+        }, ROLL_HERO_MS - 450);
+      }, 450);
     });
   }, []);
 
