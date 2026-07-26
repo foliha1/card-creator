@@ -273,8 +273,11 @@ function startRound(s: State, winnerIndex: number | null): State {
     roller: nextRoller,
     flipper: nextRoller,
     wrongBy: emptyWrongBy(s.seatCount),
-    skip: Array(s.seatCount).fill(false),
-    // NOTE: disconnected is persistent across rounds — do NOT reset it here.
+    // NOTE: `skip` PERSISTS across round boundaries (v6.2). A wrong-claim
+    // penalty is forfeited when that player's flip turn next comes around —
+    // not when the current round ends. It is cleared only by SKIP_TICK
+    // consumption, on NEW_GAME (via initialState), and on LAST_CALL entry.
+    // `disconnected` is likewise persistent — do NOT reset it here.
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     selectedCards: [],
