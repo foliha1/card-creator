@@ -258,6 +258,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const handleConfirmName = useCallback(() => {
     if (view.kind !== "name-prompt" || busy) return;
+    unlockAudio();
     const trimmed = nameInput.trim();
     if (!trimmed) {
       setView({ ...view, error: "Enter a name so others can see who you are." });
