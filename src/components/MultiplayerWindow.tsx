@@ -17,6 +17,8 @@ import {
   ROOM_CODE_LENGTH,
   type RoomRow,
 } from "@/lib/rooms";
+import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+
 
 interface MultiplayerWindowProps {
   initialRoomCode?: string;
