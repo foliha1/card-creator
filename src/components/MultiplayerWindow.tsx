@@ -444,13 +444,20 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     content: React.ReactNode,
     opts?: { above?: React.ReactNode; gap?: number },
   ) => (
-    <div style={shellStyle}>
+    <div className="mp-shell" style={shellStyle}>
+      <style>{`
+        .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
+        .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
+        .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
+        .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+      `}</style>
       <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
         {opts?.above}
         {content}
       </div>
     </div>
   );
+
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
