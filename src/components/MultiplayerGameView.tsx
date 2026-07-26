@@ -708,6 +708,17 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }
 
+  // ROLLING presentation gate — presentation only, the server rejection is
+  // the actual authority. We force the button to appear as a dimmed WHOOP
+  // and strip its onClick so mashing during a roll can never register a
+  // wrong-claim penalty.
+  const isRolling = s.rolling;
+  if (isRolling) {
+    buttonKind = "WHOOP";
+    buttonOnClick = undefined;
+    buttonLabel = undefined;
+  }
+
 
   const chips = chipsForOpponents(s, mySeat, events);
 
