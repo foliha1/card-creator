@@ -15,6 +15,12 @@
 //   600   → 850  hold on instruction card (250ms)
 //   850   → 1100 transform back to home: translate(0,0) scale(1) (250ms)
 //   1100  →      overlay hidden; dice box shows the instruction natively
+//
+// Guards (never shorten the phase — onComplete always fires at ROLL_HERO_MS):
+//   • prefers-reduced-motion: skip tumble + fly; render instruction in-box.
+//   • Tap-to-skip: overlay is clickable; jumps to landed state locally.
+//   • Late arrival (elapsed > 450ms on mount): skip the truncated tumble and
+//     jump straight to the landed instruction.
 // ============================================================================
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -37,6 +43,14 @@ const LAND_MS = 250;
 
 // Ease-out cubic — snappy start, gentle settle onto landed rotation.
 const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
+
+// Feature detect — SSR-safe. `matchMedia` is not defined during Vitest jsdom
+// smoke reads in some environments, so we defensively fall back to `false`.
+const prefersReducedMotion = (): boolean => {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  catch { return false; }
+};
 
 interface Props {
   commit: RollCommitPayload;
@@ -79,16 +93,37 @@ export const RollHeroOverlay: React.FC<Props> = ({
   const initialX = landed.x + spinDirX * spinsX * 360;
   const initialY = landed.y + spinDirY * spinsY * 360;
 
-  // Stage flags. Landed = final scale/translate applied; Instruction = crossfade done.
-  const [landing, setLanding] = useState(false);
-  const [showInstruction, setShowInstruction] = useState(false);
-  const [cubeRot, setCubeRot] = useState<{ x: number; y: number }>({ x: initialX, y: initialY });
+  // Decide up-front if we should skip the animation entirely. This runs once
+  // on mount so React state stays stable across re-renders. Any of:
+  //   • the user prefers reduced motion,
+  //   • the tumble window has already ended when we mounted (late join /
+  //     event arrived after startAt + 450ms).
+  const initialSkip = React.useMemo(() => {
+    if (prefersReducedMotion()) return true;
+    const elapsed = serverNow() - startAt;
+    return elapsed > TUMBLE_MS;
+    // Decision is one-shot per commit; recomputing would let a delayed
+    // media-query response retroactively unmount mid-animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // `skipped` may also flip on tap. Once true it stays true for this commit.
+  const [skipped, setSkipped] = useState(initialSkip);
+  // Stage flags. When skipped we start at the landed instruction card. The
+  // phase-length onComplete timer still fires at ROLL_HERO_MS.
+  const [landing, setLanding] = useState(initialSkip);
+  const [showInstruction, setShowInstruction] = useState(initialSkip);
+  const [cubeRot, setCubeRot] = useState<{ x: number; y: number }>(
+    initialSkip ? { x: landed.x, y: landed.y } : { x: initialX, y: initialY }
+  );
   const rafRef = useRef<number | null>(null);
 
   // rAF loop drives the cube tumble against serverNow(). Kicks off on mount;
   // if the joiner arrived mid-tumble, `elapsed` is already > 0 and we skip
-  // straight to the current interpolated frame.
+  // straight to the current interpolated frame. When `skipped` is true we
+  // never start — the cube is already at its landed rotation.
   useLayoutEffect(() => {
+    if (skipped) return;
     let cancelled = false;
     const tick = () => {
       if (cancelled) return;
@@ -113,9 +148,12 @@ export const RollHeroOverlay: React.FC<Props> = ({
     };
     // Rotation targets are derived from immutable commit fields.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [skipped]);
 
   // Schedule stage transitions off serverNow so late arrivals still land.
+  // `onComplete` is ALWAYS scheduled at absolute time startAt + ROLL_HERO_MS
+  // — every guard preserves the full phase length so game timing is
+  // identical on every client regardless of animation cost.
   useEffect(() => {
     const now = serverNow();
     const elapsed = now - startAt;
@@ -124,23 +162,51 @@ export const RollHeroOverlay: React.FC<Props> = ({
       const delay = Math.max(0, t - elapsed);
       timers.push(setTimeout(fn, delay));
     };
-    at(CROSSFADE_START, () => setShowInstruction(true));
-    at(LAND_START, () => setLanding(true));
+    if (!skipped) {
+      at(CROSSFADE_START, () => setShowInstruction(true));
+      at(LAND_START, () => setLanding(true));
+    }
     at(ROLL_HERO_MS, onComplete);
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [skipped]);
+
+  // Tap-to-skip: jump locally to the landed state. Phase length unchanged —
+  // the onComplete scheduled in the effect above still fires at ROLL_HERO_MS.
+  const handleSkip = () => {
+    if (skipped) return;
+    setSkipped(true);
+    setLanding(true);
+    setShowInstruction(true);
+    setCubeRot({ x: landed.x, y: landed.y });
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  };
 
   // Outer transform: lifted → home. Only the transform animates, never left/top.
   const outerTransform = landing
     ? "translate(0px, 0px) scale(1)"
     : `translate(${dx}px, ${dy}px) scale(${LIFT_SCALE})`;
 
+  // When we're skipping (reduced-motion, late arrival, or tap), disable all
+  // CSS transitions so the jump is instant. Otherwise use the normal bezier
+  // land transition and linear opacity crossfade.
+  const outerTransition = skipped
+    ? "none"
+    : (landing ? `transform ${LAND_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)` : "none");
+  const crossfadeTransition = skipped ? "none" : `opacity ${CROSSFADE_MS}ms linear`;
+
   const cubeRotationStr = `rotateX(${cubeRot.x}deg) rotateY(${cubeRot.y}deg)`;
 
   return (
     <div
-      aria-hidden="true"
+      role="button"
+      aria-label="Skip roll animation"
+      tabIndex={-1}
+      onClick={handleSkip}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSkip(); }}
       style={{
         position: "absolute",
         left: localLeft,
@@ -149,8 +215,11 @@ export const RollHeroOverlay: React.FC<Props> = ({
         height: HOME_SIZE,
         transform: outerTransform,
         transformOrigin: "50% 50%",
-        transition: landing ? `transform ${LAND_MS}ms cubic-bezier(0.34, 1.56, 0.64, 1)` : "none",
-        pointerEvents: "none",
+        transition: outerTransition,
+        // Tappable: intercept taps to allow skipping. The scrim underneath
+        // stays pointer-events:none, so this doesn't fight the header.
+        pointerEvents: skipped ? "none" : "auto",
+        cursor: skipped ? "default" : "pointer",
         zIndex: 30,
         willChange: "transform",
       }}
@@ -164,7 +233,7 @@ export const RollHeroOverlay: React.FC<Props> = ({
           alignItems: "center",
           justifyContent: "center",
           opacity: showInstruction ? 0 : 1,
-          transition: `opacity ${CROSSFADE_MS}ms linear`,
+          transition: crossfadeTransition,
         }}
       >
         <MatchDie
@@ -190,7 +259,7 @@ export const RollHeroOverlay: React.FC<Props> = ({
           padding: 4,
           boxSizing: "border-box",
           opacity: showInstruction ? 1 : 0,
-          transition: `opacity ${CROSSFADE_MS}ms linear`,
+          transition: crossfadeTransition,
           transform: "rotate(-3.65deg)",
         }}
       >
