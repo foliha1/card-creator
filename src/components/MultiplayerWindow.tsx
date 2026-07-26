@@ -18,7 +18,7 @@ import {
   type RoomRow,
 } from "@/lib/rooms";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
-import { unlockAudio } from "@/lib/sounds";
+import { unlockAudio, startThemeMusic, stopThemeMusic } from "@/lib/sounds";
 
 
 interface MultiplayerWindowProps {
@@ -162,6 +162,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     }
   }, [view.kind, joinerPublicState, participants, hostVisitorId]);
 
+  // Theme music: play while in the lobby; stop when the game view takes over
+  // or the component unmounts. Autoplay requires a gesture, so start calls are
+  // also placed on Start/Join/Continue handlers above.
+  const inGameView =
+    (isHostView && frozenSeats !== null && !!activeRoom) ||
+    (view.kind === "joiner" && !!joinerPublicState && !!activeRoom);
+  useEffect(() => {
+    if (inGameView) stopThemeMusic();
+    else startThemeMusic();
+  }, [inGameView]);
+  useEffect(() => () => { stopThemeMusic(); }, []);
+
   // Fire game_completed once when host reaches GAME_OVER normally (not on
   // host departure).
   const completedFiredRef = useRef(false);
@@ -241,12 +253,16 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const handleStartRoom = useCallback(() => {
     if (busy) return;
+    unlockAudio();
+    startThemeMusic();
     setNameInput(getDisplayName());
     setView({ kind: "name-prompt", pending: { kind: "create" } });
   }, [busy]);
 
   const handleJoinByCode = useCallback(() => {
     if (busy) return;
+    unlockAudio();
+    startThemeMusic();
     const normalized = codeInput.toUpperCase();
     if (!isValidRoomCode(normalized)) {
       setView({ kind: "idle", error: "That doesn't look like a valid code." });
@@ -259,6 +275,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const handleConfirmName = useCallback(() => {
     if (view.kind !== "name-prompt" || busy) return;
     unlockAudio();
+    startThemeMusic();
     const trimmed = nameInput.trim();
     if (!trimmed) {
       setView({ ...view, error: "Enter a name so others can see who you are." });
