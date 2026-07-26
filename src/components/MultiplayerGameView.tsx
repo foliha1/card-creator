@@ -830,7 +830,7 @@ const MultiplayerGameView: React.FC<Props> = ({
               lineHeight: "14px",
               padding: "6px 8px",
               borderRadius: 4,
-              maxWidth: 180,
+              maxWidth: 280,
               pointerEvents: "none",
               whiteSpace: "pre-wrap",
             }}
