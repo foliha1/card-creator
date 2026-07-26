@@ -491,25 +491,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   }
 
   const chips = chipsForOpponents(s, mySeat, events);
-  // Landscape rail: up to 6 chips across all seats (self + opponents), same kind derivation.
-  const railChips: DerivedChip[] = (() => {
-    const nice = new Set<number>();
-    for (const e of events) if (e.kind === "GREAT_MATCH") nice.add(e.seat);
-    const MAX = 6;
-    const out: DerivedChip[] = s.seatMap.slice(0, MAX).map((entry) => {
-      const seat = entry.seat;
-      let kind: ChipKind = "IDLE";
-      if (s.claimBy === seat) kind = "WHOOP";
-      else if (nice.has(seat)) kind = "NICE";
-      else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
-      else if (s.skip[seat]) kind = "PENALTY";
-      else if (s.phase === "AWAITING_ROLL" && s.roller === seat) kind = "ROLLING";
-      else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
-      return { kind, name: entry.display_name, score: s.scores[seat] ?? 0 };
-    });
-    while (out.length < MAX) out.push({ kind: "EMPTY", name: "---", score: null });
-    return out;
-  })();
+
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
 
