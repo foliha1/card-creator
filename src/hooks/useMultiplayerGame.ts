@@ -402,7 +402,7 @@ export function useMultiplayerHost(opts: {
       }
     };
     return onBroadcast(handler);
-  }, [enabled, channel, onBroadcast, g.dispatch, commitAndRoll]);
+  }, [enabled, channel, onBroadcast, g.dispatch, commitAndRoll, roomId]);
 
   // ---- transient event emission ----
   // The host observes reducer transitions and emits transient events on the
