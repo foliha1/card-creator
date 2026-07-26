@@ -49,6 +49,10 @@ interface Props {
   // Latest server-committed roll. Drives the hero overlay when its window
   // ([startAt, startAt + ROLL_HERO_MS]) is still live on the server clock.
   rollCommit?: RollCommitPayload | null;
+  // Latest host-emitted claim rejection (window mismatch). When its seat
+  // matches mySeat, the pressing player sees CONNECTION ISSUE — TRY AGAIN
+  // instead of a silently stuck LOCKING… state.
+  lastClaimReject?: { seat: number; grant_claim_window: number; host_claim_window: number; reason: string } | null;
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
