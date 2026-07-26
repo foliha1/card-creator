@@ -1264,3 +1264,113 @@ describe("SET_DISCONNECTED", () => {
     expect(next.phase).toBe("AWAITING_ROLL");
   });
 });
+
+// ===========================================================================
+// N=3 seat coverage — regression for stale reducer seatCount.
+// ===========================================================================
+describe("N=3 seats", () => {
+  it("initialState allocates seat-indexed arrays at length 3", () => {
+    const s = initialState(9, { seatCount: 3 });
+    expect(s.seatCount).toBe(3);
+    expect(s.scores).toHaveLength(3);
+    expect(s.skip).toHaveLength(3);
+    expect(s.wrongBy).toHaveLength(3);
+    expect(s.disconnected).toHaveLength(3);
+  });
+
+  it("flipper cycles through all three seats before ending the round", () => {
+    // Rule = SHAPE, but grid has no matching pair by SHAPE for the seats we
+    // flip (we use idx 1/3/4 — square/tri/star — no share). Nobody claims.
+    let s = baseState({
+      seatCount: 3,
+      scores: [0, 0, 0],
+      skip: [false, false, false],
+      wrongBy: [new Set(), new Set(), new Set()],
+      disconnected: [false, false, false],
+      phase: "FLIPPING",
+      roller: 0,
+      flipper: 0,
+      roundNum: 5,
+    });
+    // Flip 1 — seat 0
+    s = reducer(s, { type: "FLIP_START", by: 0, idx: 1, token: 1 });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 1 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.flipper).toBe(1);
+    expect(s.roundNum).toBe(5);
+    // Flip 2 — seat 1
+    s = reducer(s, { type: "FLIP_START", by: 1, idx: 3, token: 2 });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 2 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.flipper).toBe(2);
+    expect(s.roundNum).toBe(5);
+    // Flip 3 — seat 2 completes the rotation → round ends → new AWAITING_ROLL
+    s = reducer(s, { type: "FLIP_START", by: 2, idx: 4, token: 3 });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 3 });
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roundNum).toBe(6);
+    // The next roller is seat 1 ((roller 0 + 1) mod 3).
+    expect(s.roller).toBe(1);
+    expect(s.flipper).toBe(1);
+  });
+
+  it("seat 2 can become the roller across successive rounds", () => {
+    // Start at roller=1. After a no-claim rotation the next roller is 2.
+    let s = baseState({
+      seatCount: 3,
+      scores: [0, 0, 0],
+      skip: [false, false, false],
+      wrongBy: [new Set(), new Set(), new Set()],
+      disconnected: [false, false, false],
+      phase: "FLIPPING",
+      roller: 1,
+      flipper: 1,
+    });
+    s = reducer(s, { type: "FLIP_START", by: 1, idx: 1, token: 1 });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 1 });
+    s = reducer(s, { type: "FLIP_START", by: 2, idx: 3, token: 2 });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 2 });
+    s = reducer(s, { type: "FLIP_START", by: 0, idx: 4, token: 3 });
+    s = reducer(s, { type: "FLIP_COMPLETE", token: 3 });
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roller).toBe(2);
+  });
+
+  it("seat 2 can score a match without crashing (wrongBy/scores index into seat 2)", () => {
+    // Grid[0] and grid[2] share SHAPE=circle. Seat 2 claims them.
+    let s = baseState({
+      seatCount: 3,
+      scores: [0, 0, 0],
+      skip: [false, false, false],
+      wrongBy: [new Set(), new Set(), new Set()],
+      disconnected: [false, false, false],
+      phase: "CLAIM_SELECTING",
+      claimBy: 2,
+      selectedCards: [0, 2],
+      rule: ["SHAPE"],
+    });
+    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 2 });
+    expect(s.scores[2]).toBe(2);
+  });
+
+  it("seat 2 wrong claim applies penalty and does not throw", () => {
+    // Grid[1] (square) and grid[3] (tri) don't share SHAPE. Seat 2 claims wrong.
+    let s = baseState({
+      seatCount: 3,
+      scores: [0, 0, 0],
+      skip: [false, false, false],
+      wrongBy: [new Set(), new Set(), new Set()],
+      disconnected: [false, false, false],
+      phase: "CLAIM_SELECTING",
+      claimBy: 2,
+      selectedCards: [1, 3],
+      rule: ["SHAPE"],
+    });
+    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 2 });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.skip[2]).toBe(true);
+    expect(s.wrongBy[2].has(1)).toBe(true);
+    expect(s.wrongBy[2].has(3)).toBe(true);
+    expect(s.scores[2]).toBe(0);
+  });
+});
