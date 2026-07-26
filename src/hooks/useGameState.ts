@@ -430,7 +430,7 @@ export function reducer(state: State, action: Action): State {
       const a = state.grid[ia];
       const b = state.grid[ib];
       if (a && b && cardsMatchRule(a, b, state.rule)) {
-        const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+        const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
         const { grid: newGrid, deck: newDeck } = refill(
           state.grid,
           state.deck,
@@ -453,12 +453,13 @@ export function reducer(state: State, action: Action): State {
         return startRound(post, by);
       }
       // Wrong claim
-      const wrongForBy = new Set(state.wrongBy[by]);
+      const wrongForBy = new Set(state.wrongBy[by] ?? []);
       wrongForBy.add(ia);
       wrongForBy.add(ib);
       const nextWrongBy = state.wrongBy.slice();
       nextWrongBy[by] = wrongForBy;
       const skip = replaceAt(state.skip, by, true);
+
       const post: State = {
         ...state,
         phase: "FLIPPING",
