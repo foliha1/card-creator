@@ -383,19 +383,29 @@ const ButtonStyles: Record<ButtonKind, { bg: string; text: string; label: string
   DISABLED:     { bg: PANEL,  text: MUTED,   label: "WAIT" },
 };
 
-const DieBox: React.FC<{ rule: string }> = ({ rule }) => (
+const DieBox: React.FC<{
+  rule: string;
+  heroActive: boolean;
+  homeRef?: React.Ref<HTMLDivElement>;
+}> = ({ rule, heroActive, homeRef }) => (
   <div style={{
     width: 111.07, height: 110.94, background: ORANGE,
     border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8, gap: 16,
     display: "flex", flexDirection: "column", alignItems: "center",
     justifyContent: "center", boxSizing: "border-box", flex: "0 0 auto",
   }}>
-    <div style={{
-      width: 89.42, height: 89.42, background: SURFACE, borderRadius: 8,
-      transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
-      display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", padding: 4, boxSizing: "border-box",
-    }}>
+    {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
+        the overlay is live we hide the text so the animation lands cleanly. */}
+    <div
+      ref={homeRef}
+      style={{
+        width: 80, height: 80, background: SURFACE, borderRadius: 8,
+        transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", padding: 4, boxSizing: "border-box",
+        opacity: heroActive ? 0 : 1,
+      }}
+    >
       <span style={{ fontFamily: FONT_FAMILY, fontSize: 11, color: INK, fontStyle: "italic" }}>
         Match the
       </span>
