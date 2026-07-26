@@ -181,17 +181,112 @@ const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
   </div>
 );
 
-const RoundBar: React.FC<{ round: number }> = ({ round }) => (
+const Header: React.FC<{
+  round: number;
+  onSettings: () => void;
+  onClose: () => void;
+}> = ({ round, onSettings, onClose }) => (
   <div style={{
-    height: 40, background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    boxSizing: "border-box",
+    display: "flex", flexDirection: "column", justifyContent: "center",
+    alignItems: "center", padding: 8, gap: 8, height: 56,
+    background: SURFACE, alignSelf: "stretch", boxSizing: "border-box",
   }}>
-    <span style={{ fontFamily: FONT_FAMILY, fontSize: 20, lineHeight: "24px", color: SURFACE }}>
-      Round: {round}
-    </span>
+    <div style={{
+      display: "flex", flexDirection: "row", alignItems: "flex-start",
+      gap: 8, height: 40, width: "100%",
+    }}>
+      <button
+        type="button"
+        onClick={onSettings}
+        aria-label="Settings"
+        style={{
+          all: "unset", cursor: "pointer",
+          width: 40, height: 40, flex: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 8, boxSizing: "border-box",
+          background: BLUE, border: BORDER_HEAVY, borderRadius: R_BOX,
+        }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSettings(); } }}
+      >
+        <Settings size={24} color={SURFACE} aria-hidden="true" />
+      </button>
+      <div style={{
+        flex: "1 1 0", height: 40,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 8, gap: 7.91, boxSizing: "border-box",
+        background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
+      }}>
+        <span style={{
+          fontFamily: FONT_FAMILY, fontWeight: 400, fontSize: 20,
+          lineHeight: "24px", color: SURFACE, textAlign: "center",
+        }}>
+          Round: {round}
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Leave game"
+        style={{
+          all: "unset", cursor: "pointer",
+          width: 40, height: 40, flex: "none", alignSelf: "stretch",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 12, boxSizing: "border-box",
+          background: RED, border: BORDER_HEAVY, borderRadius: R_BOX,
+        }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}
+      >
+        <X size={16} color={SURFACE} aria-hidden="true" />
+      </button>
+    </div>
   </div>
 );
+
+// Focus outline for keyboard users on the header buttons.
+const HEADER_FOCUS_CSS = `
+.mp-header-btn:focus-visible { outline: 2px solid ${ORANGE}; outline-offset: 2px; }
+`;
+
+const ModalShell: React.FC<{
+  titleId: string;
+  onCancel: () => void;
+  children: React.ReactNode;
+}> = ({ titleId, onCancel, children }) => {
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+  return (
+    <div
+      role="presentation"
+      onClick={onCancel}
+      style={{
+        position: "absolute", inset: 0, zIndex: 50,
+        background: "rgba(0,0,0,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: SURFACE, border: BORDER_HEAVY, borderRadius: R_BOX,
+          padding: 16, maxWidth: 340, width: "100%",
+          display: "flex", flexDirection: "column", gap: 12,
+          fontFamily: FONT_FAMILY, color: INK,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 type BannerKind = "YOUR_FLIP" | "TOO_SLOW" | "PENALTY" | "CANCEL" | null;
 
