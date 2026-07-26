@@ -4,7 +4,7 @@
 <rect width="2000" height="1999" transform="translate(2000) rotate(90)" fill="url(#paint0_radial_149_9884)"/>
 </g>
 <defs>
-<radialGradient id="paint0_radial_149_9884" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1000 999.5) scale(1300 1299.35)">
+<radialGradient id="paint0_radial_149_9884" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1000 999.5) scale(1600 1599.2)">
 <stop offset="0.264423" stop-color="#231F20"/>
 <stop offset="0.629808" stop-color="#231F20" stop-opacity="0.552885"/>
 <stop offset="1" stop-color="#231F20" stop-opacity="0"/>

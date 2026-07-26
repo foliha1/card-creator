@@ -48,7 +48,7 @@ const MultiplayerPage: React.FC = () => {
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            opacity: 0.6;
+            opacity: 0.8;
             pointer-events: none;
           }
           @media (max-width: 600px) {
