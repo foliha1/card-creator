@@ -68,7 +68,8 @@ const GameCard = ({
       style={{
         perspective: 600,
         width: "100%",
-        aspectRatio: "5/7",
+        height: fill ? "100%" : undefined,
+        aspectRatio: fill ? undefined : "5/7",
         cursor: "pointer",
         transform: shrinking ? outerTransform : undefined,
         opacity: shrinking ? outerOpacity : undefined,
