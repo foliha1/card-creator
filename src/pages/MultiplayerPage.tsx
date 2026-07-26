@@ -25,29 +25,15 @@ const MultiplayerPage: React.FC = () => {
         style={{
           height: "100dvh",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: "column",
           overflow: "hidden",
           boxSizing: "border-box",
-          background: "#0072B2",
-          padding: "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
+          background: COLORS.surface,
         }}
       >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 420,
-            height: "100%",
-            maxHeight: 900,
-            display: "flex",
-            flexDirection: "column",
-            background: COLORS.surface,
-          }}
-        >
-          <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
-            <MultiplayerWindow initialRoomCode={roomCode} />
-          </Suspense>
-        </div>
+        <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
+          <MultiplayerWindow initialRoomCode={roomCode} />
+        </Suspense>
       </div>
     </>
   );
