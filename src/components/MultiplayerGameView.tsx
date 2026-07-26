@@ -739,7 +739,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   );
   const bottomRow = (
     <div style={{ display: "flex", gap: 8, height: 110.94 }}>
-      <DieBox rule={rule} />
+      <DieBox rule={rule} heroActive={heroActive} homeRef={homeRef} />
       <ActionButton
         kind={buttonKind}
         disabled={buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
