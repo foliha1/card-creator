@@ -752,6 +752,65 @@ describe("skip penalty end-to-end", () => {
     const afterSecond = reducer(afterFirst, { type: "SKIP_TICK" });
     expect(afterSecond).toBe(afterFirst);
   });
+
+  it("skip persists across a round transition when another player ends the round with a correct claim", () => {
+    // Human (seat 0) makes a wrong claim → skip[0] = true, still in FLIPPING.
+    let s = baseState({
+      phase: "CLAIM_SELECTING",
+      selectedCards: [1, 3], // wrong pair
+      rule: ["SHAPE"],
+      flipper: 0,
+      flippedThisCycle: new Set(),
+    });
+    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    expect(s.skip[0]).toBe(true);
+    const roundBefore = s.roundNum;
+
+    // Opponent (seat 1) now makes a correct claim, ending the round.
+    s = {
+      ...s,
+      phase: "CLAIM_RESOLVING",
+      inFlight: { kind: "claim", token: 99, by: 1, a: 0, b: 2 },
+      rule: ["SHAPE"],
+    };
+    s = reducer(s, { type: "CLAIM_RESOLVE", token: 99 });
+    // New round started, opponent rolls next.
+    expect(s.phase).toBe("AWAITING_ROLL");
+    expect(s.roundNum).toBe(roundBefore + 1);
+    expect(s.roller).toBe(1);
+    // Skip penalty on the human MUST survive into the new round.
+    expect(s.skip[0]).toBe(true);
+    // Wrongly-claimed cards flip back face-down: wrongBy is cleared.
+    expect(s.wrongBy[0].size).toBe(0);
+
+    // When human's flip turn comes back around, SKIP_TICK consumes the penalty.
+    s = { ...s, phase: "FLIPPING", flipper: 0, flippedThisCycle: new Set() };
+    const afterTick = reducer(s, { type: "SKIP_TICK" });
+    expect(afterTick.skip[0]).toBe(false);
+    expect(afterTick.flippedThisCycle.has(0)).toBe(true);
+  });
+
+  it("NEW_GAME clears all skip flags", () => {
+    const s = baseState({ skip: [true, true] });
+    const next = reducer(s, { type: "NEW_GAME", slotCount: 6 });
+    expect(next.skip.every((v) => v === false)).toBe(true);
+  });
+
+  it("LAST_CALL entry clears all skip flags", () => {
+    const s = baseState({
+      phase: "FLIPPING",
+      flipper: 1,
+      drawEmpty: true,
+      claimedThisCycle: false,
+      flippedThisCycle: new Set([0]),
+      inFlight: { kind: "flip", token: 4, by: 1, idx: 3 },
+      peekingCard: 3,
+      skip: [true, true],
+    });
+    const next = reducer(s, { type: "FLIP_COMPLETE", token: 4 });
+    expect(next.phase).toBe("LAST_CALL");
+    expect(next.skip).toEqual([false, false]);
+  });
 });
 
 describe("cycle advancement in a 2-player game", () => {
