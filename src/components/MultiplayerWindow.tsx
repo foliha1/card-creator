@@ -1086,7 +1086,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const leaveButton = (
     <button
       type="button"
-      onClick={leaveToIdle}
+      onClick={() => setShowLeaveConfirm(true)}
+      disabled={starting}
       style={{
         alignSelf: "stretch",
         height: 40,
@@ -1098,7 +1099,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         fontSize: 20,
         lineHeight: "24px",
         color: "#F8F2E9",
-        cursor: "pointer",
+        cursor: starting ? "default" : "pointer",
+        opacity: starting ? 0.6 : 1,
         padding: 0,
       }}
     >
@@ -1106,15 +1108,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     </button>
   );
 
+  const startDisabled = !canStart || starting;
   const startButton = isHost ? (
     <button
       type="button"
       onClick={handleStartGame}
-      disabled={!canStart}
+      disabled={startDisabled}
+      aria-busy={starting}
       style={{
         alignSelf: "stretch",
         height: 80,
-        background: canStart ? "#D72229" : "#544C4A",
+        background: startDisabled ? "#544C4A" : "#D72229",
         border: "2px solid #231F20",
         borderRadius: 4,
         fontFamily: FONT_FAMILY,
@@ -1122,14 +1126,157 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         fontWeight: 400,
         fontSize: 32,
         lineHeight: "39px",
-        color: canStart ? "#F8F2E9" : "#D0C3AF",
-        cursor: canStart ? "pointer" : "default",
+        color: startDisabled ? "#D0C3AF" : "#F8F2E9",
+        cursor: startDisabled ? "default" : "pointer",
         padding: 0,
       }}
     >
-      Lets do it!
+      {starting ? "Starting…" : "Lets do it!"}
     </button>
   ) : null;
+
+  const startingBanner = starting ? (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        alignSelf: "stretch",
+        padding: 16,
+        background: "#D0C3AF",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        fontFamily: FONT_FAMILY,
+        fontStyle: "italic",
+        fontWeight: 400,
+        fontSize: 20,
+        lineHeight: "24px",
+        color: "#231F20",
+        textAlign: "center",
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          border: "2px solid #231F20",
+          borderTopColor: "transparent",
+          animation: "spin 0.8s linear infinite",
+          display: "inline-block",
+        }}
+      />
+      Starting game…
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  ) : null;
+
+  const leaveConfirmDialog = showLeaveConfirm ? (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="leave-confirm-title"
+      onClick={(e) => { if (e.target === e.currentTarget) setShowLeaveConfirm(false); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(35, 31, 32, 0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        zIndex: 1000,
+      }}
+    >
+      <div style={{
+        width: "100%",
+        maxWidth: 340,
+        background: "#F8F2E9",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        boxSizing: "border-box",
+      }}>
+        <div
+          id="leave-confirm-title"
+          style={{
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: 24,
+            lineHeight: "30px",
+            color: "#231F20",
+          }}
+        >
+          Leave the room?
+        </div>
+        <div style={{
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 16,
+          lineHeight: "20px",
+          color: "#231F20",
+        }}>
+          {isHost
+            ? "The room will end for everyone if you leave."
+            : "You'll drop out of this lobby."}
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setShowLeaveConfirm(false)}
+            autoFocus
+            style={{
+              flexGrow: 1,
+              height: 56,
+              background: "#F8F2E9",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 20,
+              lineHeight: "24px",
+              color: "#231F20",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Stay
+          </button>
+          <button
+            type="button"
+            onClick={leaveToIdle}
+            style={{
+              flexGrow: 1,
+              height: 56,
+              background: "#D72229",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              fontFamily: FONT_FAMILY,
+              fontStyle: "italic",
+              fontWeight: 400,
+              fontSize: 20,
+              lineHeight: "24px",
+              color: "#F8F2E9",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Leave
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
 
   const joinerStatusBar = !isHost ? (
     <div style={{
