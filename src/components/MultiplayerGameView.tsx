@@ -30,10 +30,11 @@ import { Settings, X } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
-import type { IntentAction, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
+import type { IntentAction, RollAttribute, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
 import { serverNow } from "@/hooks/useServerClock";
 import RollHeroOverlay from "@/components/RollHeroOverlay";
+import { MATCH_ART_SRC } from "@/components/MatchDie";
 import type { Card } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
