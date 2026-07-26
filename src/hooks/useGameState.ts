@@ -601,7 +601,7 @@ export function reducer(state: State, action: Action): State {
       const newGrid = [...state.grid];
       newGrid[a] = null;
       newGrid[b] = null;
-      const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+      const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
       const hasCards = newGrid.some((c) => c !== null);
       const stillPlayable = hasValidPair(newGrid, state.rule);
       const post: State = {
