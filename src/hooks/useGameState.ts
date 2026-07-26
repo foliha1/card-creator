@@ -523,10 +523,11 @@ export function reducer(state: State, action: Action): State {
       if (state.phase === "CLAIM_SELECTING") return state;
       if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
       if (
-        state.wrongBy[action.by].has(action.a) ||
-        state.wrongBy[action.by].has(action.b)
+        state.wrongBy[action.by]?.has(action.a) ||
+        state.wrongBy[action.by]?.has(action.b)
       )
         return state;
+
       const flipped = new Set(state.flippedThisCycle);
       flipped.add(action.by);
       return {
