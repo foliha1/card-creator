@@ -477,6 +477,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         publicState={publicState}
         mySeat={0}
         events={hostEvents}
+        rollCommit={host.rollCommit ?? null}
         onIntent={(action) => {
           if (action.type === "REQUEST_ROLL") {
             void host.doRollDice();
@@ -516,6 +517,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         publicState={joinerPublicState}
         mySeat={joinerSeat}
         events={joiner.events}
+        rollCommit={joiner.rollCommit ?? null}
         onIntent={joiner.sendIntent}
         onLeave={leaveToIdle}
         mobile={mobile}
