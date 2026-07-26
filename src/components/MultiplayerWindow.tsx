@@ -394,7 +394,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     paddingRight: "calc(8px + env(safe-area-inset-right))",
     boxSizing: "border-box",
     overflowY: "auto",
-    background: "#231F20",
+    background: "transparent",
   };
 
   const innerColStyle: React.CSSProperties = {
