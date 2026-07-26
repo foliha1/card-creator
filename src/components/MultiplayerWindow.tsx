@@ -18,6 +18,7 @@ import {
   type RoomRow,
 } from "@/lib/rooms";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+import { unlockAudio } from "@/lib/sounds";
 
 
 interface MultiplayerWindowProps {
@@ -257,6 +258,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const handleConfirmName = useCallback(() => {
     if (view.kind !== "name-prompt" || busy) return;
+    unlockAudio();
     const trimmed = nameInput.trim();
     if (!trimmed) {
       setView({ ...view, error: "Enter a name so others can see who you are." });
@@ -279,6 +281,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const handleStartGame = useCallback(() => {
     if (!isHostView || participants.length < 2 || starting) return;
+    unlockAudio();
     const seatMap: SeatMapEntry[] = participants.slice(0, ROOM_CAPACITY).map((p, i) => ({
       seat: i,
       visitor_id: p.visitor_id,
