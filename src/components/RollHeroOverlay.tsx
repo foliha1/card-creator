@@ -24,10 +24,11 @@
 // ============================================================================
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { COLORS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS } from "@/lib/tokens";
 import {
   MatchDie,
   landedComponentsFor,
+  MATCH_ART_SRC,
 } from "@/components/MatchDie";
 import type { RollCommitPayload } from "@/lib/multiplayer";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
@@ -253,22 +254,22 @@ export const RollHeroOverlay: React.FC<Props> = ({
           borderRadius: 8,
           boxShadow: "0px 4px 4px rgba(0,0,0,0.25)",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: 4,
+          padding: "8%",
           boxSizing: "border-box",
           opacity: showInstruction ? 1 : 0,
           transition: crossfadeTransition,
           transform: "rotate(-3.65deg)",
+          overflow: "hidden",
         }}
       >
-        <span style={{ fontFamily: FONT_FAMILY, fontSize: 11, color: COLORS.ink, fontStyle: "italic" }}>
-          Match the
-        </span>
-        <span style={{ fontFamily: FONT_FAMILY, fontSize: 20, color: COLORS.ink, fontWeight: 700 }}>
-          {attribute}
-        </span>
+        <img
+          src={MATCH_ART_SRC[attribute]}
+          alt={`Match the ${attribute}`}
+          draggable={false}
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+        />
       </div>
     </div>
   );

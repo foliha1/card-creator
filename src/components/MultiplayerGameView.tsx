@@ -30,10 +30,11 @@ import { Settings, X } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
-import type { IntentAction, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
+import type { IntentAction, RollAttribute, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
 import { serverNow } from "@/hooks/useServerClock";
 import RollHeroOverlay from "@/components/RollHeroOverlay";
+import { MATCH_ART_SRC } from "@/components/MatchDie";
 import type { Card } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
@@ -396,22 +397,25 @@ const DieBox: React.FC<{
   }}>
     {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
         the overlay is live we hide the text so the animation lands cleanly. */}
+    {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
+        the overlay is live we hide the art so the animation lands cleanly.
+        Resting state and landed face use the identical SVG asset. */}
     <div
       ref={homeRef}
       style={{
         width: 80, height: 80, background: SURFACE, borderRadius: 8,
         transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
-        display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", padding: 4, boxSizing: "border-box",
-        opacity: heroActive ? 0 : 1,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "8%", boxSizing: "border-box",
+        opacity: heroActive ? 0 : 1, overflow: "hidden",
       }}
     >
-      <span style={{ fontFamily: FONT_FAMILY, fontSize: 11, color: INK, fontStyle: "italic" }}>
-        Match the
-      </span>
-      <span style={{ fontFamily: FONT_FAMILY, fontSize: 20, color: INK, fontWeight: 700 }}>
-        {rule}
-      </span>
+      <img
+        src={MATCH_ART_SRC[rule as RollAttribute]}
+        alt={`Match the ${rule}`}
+        draggable={false}
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
+      />
     </div>
   </div>
 );

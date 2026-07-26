@@ -1,21 +1,19 @@
 // ============================================================================
 // MatchDie — a CSS 3D cube representing the match die. Six faces on a
-// preserve-3d wrapper with perspective. No Three.js, no physics. This prompt
-// renders statically at the correct landed rotation; animation lands later.
+// preserve-3d wrapper with perspective. No Three.js, no physics.
 //
-// Face pairing (opposite faces share an attribute so each attribute has
-// exactly two clean landing rotations):
-//   SHAPE   → front (faceIndex 0) / back (faceIndex 1)
-//   NUMBER  → right (faceIndex 0) / left (faceIndex 1)
-//   COLOR   → top   (faceIndex 0) / bottom (faceIndex 1)
+// Face pairing (opposite faces share an attribute — each attribute has
+// exactly two clean landing rotations, both showing the SAME artwork):
+//   SHAPE   → front (faceIndex 0) / back (faceIndex 1)   → match-shape.svg
+//   NUMBER  → right (faceIndex 0) / left (faceIndex 1)   → match-number.svg
+//   COLOR   → top   (faceIndex 0) / bottom (faceIndex 1) → match-color.svg
 //
-// Rotation math: each face is placed with translateZ(size/2) and its own
-// orientation. The cube's overall transform is the INVERSE of the target
-// face's placement, so that face ends up parallel to the screen (landed).
+// Face artwork is a supplied SVG with the "Match the …" lettering already
+// outlined into the paths. The die no longer depends on the Friend font.
 // ============================================================================
 
 import { CSSProperties } from "react";
-import { COLORS, FONT_FAMILY } from "@/lib/tokens";
+import { COLORS } from "@/lib/tokens";
 import type { RollAttribute } from "@/lib/multiplayer";
 
 export interface MatchDieProps {
@@ -63,12 +61,17 @@ export function landedRotationFor(attribute: RollAttribute, faceIndex: 0 | 1): s
   return `rotateX(${x}deg) rotateY(${y}deg)`;
 }
 
-// What each face reads. Opposite faces share an attribute; the label is the
-// attribute name in the game's typographic voice.
-const FACE_LABEL: Record<FaceKey, RollAttribute> = {
+// Which artwork each face shows. Opposite faces share an attribute AND asset.
+const FACE_ATTR: Record<FaceKey, RollAttribute> = {
   front: "SHAPE",  back:   "SHAPE",
   right: "NUMBER", left:   "NUMBER",
   top:   "COLOR",  bottom: "COLOR",
+};
+
+export const MATCH_ART_SRC: Record<RollAttribute, string> = {
+  SHAPE:  "/dice/match-shape.svg",
+  NUMBER: "/dice/match-number.svg",
+  COLOR:  "/dice/match-color.svg",
 };
 
 const FACES: FaceKey[] = ["front", "back", "right", "left", "top", "bottom"];
@@ -104,31 +107,41 @@ export function MatchDie({ size, attribute, faceIndex, rotation, transition }: M
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: COLORS.ink,
-    fontFamily: FONT_FAMILY,
-    fontWeight: 400,
-    fontStyle: "italic",
-    // Text scales with face size so the die reads at any size.
-    fontSize: Math.round(size * 0.18),
-    letterSpacing: "0.02em",
-    textTransform: "uppercase",
+    boxSizing: "border-box",
+    // ~8% inset so the outlined lettering doesn't crowd the border.
+    padding: "8%",
     userSelect: "none",
+    overflow: "hidden",
   };
 
   return (
     <div style={sceneStyle} aria-label={`Match die showing ${attribute}`}>
       <div style={cubeStyle}>
-        {FACES.map((key) => (
-          <div
-            key={key}
-            style={{
-              ...faceBaseStyle,
-              transform: facePlacement(key, size),
-            }}
-          >
-            {FACE_LABEL[key]}
-          </div>
-        ))}
+        {FACES.map((key) => {
+          const attr = FACE_ATTR[key];
+          return (
+            <div
+              key={key}
+              style={{
+                ...faceBaseStyle,
+                transform: facePlacement(key, size),
+              }}
+            >
+              <img
+                src={MATCH_ART_SRC[attr]}
+                alt=""
+                draggable={false}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
