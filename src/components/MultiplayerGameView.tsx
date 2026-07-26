@@ -295,13 +295,14 @@ const ModalShell: React.FC<{
   );
 };
 
-type BannerKind = "YOUR_FLIP" | "TOO_SLOW" | "PENALTY" | "CANCEL" | null;
+type BannerKind = "YOUR_FLIP" | "TOO_SLOW" | "CLAIM_ERROR" | "PENALTY" | "CANCEL" | null;
 
 const BannerStyles: Record<Exclude<BannerKind, null>, { bg: string; text: string; label: string; icon?: boolean }> = {
-  YOUR_FLIP: { bg: BLUE,    text: SURFACE, label: "YOUR FLIP!" },
-  TOO_SLOW:  { bg: INK,     text: SURFACE, label: "TOO SLOW!" },
-  PENALTY:   { bg: MUTED,   text: SURFACE, label: "PENALTY" },
-  CANCEL:    { bg: SURFACE, text: RED,     label: "Cancel Match Selection", icon: true },
+  YOUR_FLIP:   { bg: BLUE,    text: SURFACE, label: "YOUR FLIP!" },
+  TOO_SLOW:    { bg: INK,     text: SURFACE, label: "TOO SLOW!" },
+  CLAIM_ERROR: { bg: RED,     text: SURFACE, label: "CONNECTION ISSUE — TRY AGAIN" },
+  PENALTY:     { bg: MUTED,   text: SURFACE, label: "PENALTY" },
+  CANCEL:      { bg: SURFACE, text: RED,     label: "Cancel Match Selection", icon: true },
 };
 
 const CancelX: React.FC = () => (
