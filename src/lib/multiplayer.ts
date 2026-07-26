@@ -18,6 +18,11 @@ import type { Action } from "@/hooks/useGameState";
 
 export const PROTOCOL_VERSION = 1;
 
+// Total duration of the hero roll animation, in milliseconds. Shared across
+// the wire: the host schedules `ROLL_SETTLE` at `startAt + ROLL_HERO_MS`, and
+// every client's overlay animates on the same 1100ms budget.
+export const ROLL_HERO_MS = 1100;
+
 // Intent actions a joiner may request. Roll is a special intent because the
 // host owns dice animation; the joiner just asks. All other intents map
 // 1:1 onto seat-generic reducer actions.
