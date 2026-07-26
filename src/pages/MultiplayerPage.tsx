@@ -46,15 +46,17 @@ const MultiplayerPage: React.FC = () => {
             z-index: -1;
             background-image: url(/whoop-pattern-bg.svg);
             background-size: cover;
-            background-position: center;
+            background-position: center center;
             background-repeat: no-repeat;
-            opacity: 0.8;
+            opacity: 0.9;
             pointer-events: none;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            image-rendering: -webkit-optimize-contrast;
           }
           @media (max-width: 600px) {
             .mp-page-root::before {
-              background-size: auto 100%;
-              background-position: center;
+              background-size: 100% 100%;
             }
           }
         `}</style>
