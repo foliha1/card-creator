@@ -339,12 +339,65 @@ export function useMultiplayerHost(opts: {
       }
       const dedupeKey = `${grant.claim_window}:${grant.seat}`;
       if (grantedRef.current.has(dedupeKey)) return;
-      grantedRef.current.add(dedupeKey);
       const phase = latestStateRef.current.phase;
-      if (phase === "AWAITING_ROLL") {
+      const s = latestStateRef.current;
+      // Pre-check reducer acceptance guards. Reducer returns the SAME state
+      // reference on refusal (e.g. `if (state.phase !== "FLIPPING") return state;`),
+      // so refusal is NOT distinguishable post-dispatch from a legal no-op.
+      // We therefore replicate the guards here to detect refusal deterministically.
+      // PLAYER_ENTER_CLAIM accepts iff phase === "FLIPPING".
+      // PLAYER_ENTER_CLAIM_DURING_ROLL accepts iff phase === "AWAITING_ROLL"
+      //   && roller === seat && !claimPending.
+      const acceptedFlipping = phase === "FLIPPING";
+      const acceptedAwaiting =
+        phase === "AWAITING_ROLL" && s.roller === grant.seat && !s.claimPending;
+      if (!acceptedFlipping && !acceptedAwaiting) {
+        // Orphaned lock — the arbiter granted but the reducer refuses. Release
+        // the row so the (room, game, claim_window) key reopens, and surface
+        // a reject to the pressing player so they exit LOCKING….
+        console.warn("[claim_grant:refused-by-reducer] releasing lock", {
+          claim_window: grant.claim_window,
+          seat: grant.seat,
+          visitor_id: grant.visitor_id,
+          phase,
+          roller: s.roller,
+          claimPending: s.claimPending,
+        });
+        grantedRef.current.add(dedupeKey);
+        const rejectPayload: ClaimRejectPayload = {
+          grant_claim_window: grant.claim_window,
+          host_claim_window: hostWindow,
+          seat: grant.seat,
+          visitor_id: grant.visitor_id,
+          reason: "STALE_WINDOW",
+        };
+        setLastClaimReject(rejectPayload);
+        if (roomId) {
+          void (async () => {
+            try {
+              const { supabase } = await import("@/integrations/supabase/client");
+              await supabase.functions.invoke("release-lock", {
+                body: {
+                  room_id: roomId,
+                  game_id: gameIdRef.current,
+                  claim_window: grant.claim_window,
+                  seat: grant.seat,
+                  visitor_id: grant.visitor_id,
+                  reason: "STALE_WINDOW",
+                },
+              });
+            } catch (e) {
+              console.error("[release-lock] invoke failed", e);
+            }
+          })();
+        }
+        return;
+      }
+      grantedRef.current.add(dedupeKey);
+      if (acceptedAwaiting) {
         g.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: grant.seat });
         commitAndRoll();
-      } else if (phase === "FLIPPING") {
+      } else if (acceptedFlipping) {
         g.dispatch({ type: "PLAYER_ENTER_CLAIM", by: grant.seat });
       }
     };
