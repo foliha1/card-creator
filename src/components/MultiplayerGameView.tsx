@@ -810,12 +810,21 @@ const MultiplayerGameView: React.FC<Props> = ({
   const needsScroll = gridHeightNeeded > availH + 0.5;
 
   return (
-    <div style={{
+    <div ref={rootRef} style={{
       display: "flex", flexDirection: "column", gap: 8,
       padding: 8, height: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>
+      {activeCommit && heroRects && (
+        <RollHeroOverlay
+          commit={activeCommit}
+          homeRect={heroRects.home}
+          targetRect={heroRects.target}
+          parentRect={heroRects.parent}
+          onComplete={() => { setActiveCommit(null); setHeroRects(null); }}
+        />
+      )}
       {header}
       {opponentRow}
 
