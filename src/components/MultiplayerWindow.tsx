@@ -105,6 +105,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     hostVisitorId: visitorId,
     enabled: gameEnabled,
     gameId,
+    roomId: activeRoom?.id ?? "",
     disconnectedSeats,
   });
   const hostEvents = useTransientEvents(channel, onBroadcast, gameEnabled);
