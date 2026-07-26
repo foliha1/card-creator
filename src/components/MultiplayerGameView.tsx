@@ -689,7 +689,17 @@ const MultiplayerGameView: React.FC<Props> = ({
         visitor_id: visitorId,
       });
       setClaimBusy(false);
-      if (!result.won) setTooSlowAt(Date.now());
+      // Tri-state: real lost race → TOO SLOW; transport/server error →
+      // distinct banner so players can tell "beaten to it" from "broken".
+      // Both fail closed — we never enter claim mode without a server win.
+      if (result.outcome === "won") {
+        // handled server-side via claim_grant broadcast
+      } else if (result.outcome === "error") {
+        console.error("[whoop] claim errored — see claim-lock log above", result.error);
+        setClaimErrAt(Date.now());
+      } else {
+        setTooSlowAt(Date.now());
+      }
     };
     if (claimBusy) { buttonKind = "DISABLED"; buttonOnClick = undefined; }
   } else if (
