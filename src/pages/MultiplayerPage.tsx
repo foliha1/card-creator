@@ -53,7 +53,7 @@ const MultiplayerPage: React.FC = () => {
           }
           @media (max-width: 600px) {
             .mp-page-root::before {
-              background-size: auto 80%;
+              background-size: auto 100%;
               background-position: center;
             }
           }
