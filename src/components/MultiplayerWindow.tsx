@@ -478,6 +478,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         mySeat={0}
         events={hostEvents}
         rollCommit={host.rollCommit ?? null}
+        lastClaimReject={host.lastClaimReject ?? null}
         onIntent={(action) => {
           if (action.type === "REQUEST_ROLL") {
             host.commitAndRoll();
@@ -518,6 +519,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         mySeat={joinerSeat}
         events={joiner.events}
         rollCommit={joiner.rollCommit ?? null}
+        lastClaimReject={joiner.lastClaimReject ?? null}
         onIntent={joiner.sendIntent}
         onLeave={leaveToIdle}
         mobile={mobile}

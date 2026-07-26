@@ -14,6 +14,8 @@ import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
   PROTOCOL_VERSION,
   type ClaimGrantEnvelope,
+  type ClaimRejectEnvelope,
+  type ClaimRejectPayload,
   type Envelope,
   type EventEnvelope,
   type IntentAction,
@@ -286,14 +288,54 @@ export function useMultiplayerHost(opts: {
   // Listen for authoritative claim grants from the arbiter edge function.
   // The host is the ONLY dispatcher of PLAYER_ENTER_CLAIM — even the host's
   // own WHOOP goes through the arbiter, then arrives here as a grant.
+  //
+  // claim_window guard: honoring a grant for a window ≠ current would apply
+  // a claim to a window that already resolved (round advanced or another
+  // claim resolved), corrupting state. So mismatches are ALWAYS rejected —
+  // but loudly: logged with both windows + seat + phase, and broadcast as
+  // `claim_reject` so the pressing player sees the CONNECTION ISSUE banner
+  // instead of a silently stuck "won-but-nothing-happens" state.
   const grantedRef = useRef<Set<string>>(new Set());
+  const [lastClaimReject, setLastClaimReject] = useState<ClaimRejectPayload | null>(null);
+  useEffect(() => { setLastClaimReject(null); }, [gameId]);
   useEffect(() => {
     if (!enabled || !channel) return;
     const handler = (msg: { payload: unknown }) => {
       const env = msg.payload as Envelope;
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "claim_grant") return;
       const grant = (env as ClaimGrantEnvelope).payload;
-      if (grant.claim_window !== claimWindowRef.current) return;
+      const hostWindow = claimWindowRef.current;
+      if (grant.claim_window !== hostWindow) {
+        const reason: ClaimRejectPayload["reason"] =
+          grant.claim_window < hostWindow ? "STALE_WINDOW" : "FUTURE_WINDOW";
+        console.warn("[claim_grant:drop]", {
+          reason,
+          grant_claim_window: grant.claim_window,
+          host_claim_window: hostWindow,
+          seat: grant.seat,
+          visitor_id: grant.visitor_id,
+          phase: latestStateRef.current.phase,
+          claimBy: latestStateRef.current.claimBy,
+        });
+        const rejectPayload: ClaimRejectPayload = {
+          grant_claim_window: grant.claim_window,
+          host_claim_window: hostWindow,
+          seat: grant.seat,
+          visitor_id: grant.visitor_id,
+          reason,
+        };
+        seqRef.current += 1;
+        const rejectEnv: ClaimRejectEnvelope = {
+          v: PROTOCOL_VERSION,
+          type: "claim_reject",
+          seq: seqRef.current,
+          payload: rejectPayload,
+        };
+        channelRef.current?.send({ type: "broadcast", event: "msg", payload: rejectEnv }).catch(() => {});
+        // Host surfaces locally too — host doesn't receive its own broadcasts.
+        setLastClaimReject(rejectPayload);
+        return;
+      }
       const dedupeKey = `${grant.claim_window}:${grant.seat}`;
       if (grantedRef.current.has(dedupeKey)) return;
       grantedRef.current.add(dedupeKey);
@@ -338,7 +380,7 @@ export function useMultiplayerHost(opts: {
     prevWrongCountRef.current = nextWrong;
   }, [enabled, channel, g.state.scores, g.state.wrongBy]);
 
-  return { ...g, rollCommit, commitAndRoll };
+  return { ...g, rollCommit, commitAndRoll, lastClaimReject };
 }
 
 // Intent → local reducer dispatch. Reducer's phase/seat guards are the final
@@ -421,6 +463,7 @@ export function useMultiplayerJoiner(opts: {
   const { channel, onBroadcast, mySeat: mySeatProp, visitorId, enabled } = opts;
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
+  const [lastClaimReject, setLastClaimReject] = useState<ClaimRejectPayload | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
   const events = useTransientEvents(channel, onBroadcast, enabled);
@@ -437,6 +480,10 @@ export function useMultiplayerJoiner(opts: {
       } else if (env.type === "roll_committed") {
         // Latest commit wins — game only ever has one pending roll.
         setRollCommit(env.payload);
+      } else if (env.type === "claim_reject") {
+        // Host dropped a claim grant due to a claim_window mismatch.
+        // Surface locally; MultiplayerGameView filters by seat===mySeat.
+        setLastClaimReject((env as ClaimRejectEnvelope).payload);
       }
     };
     return onBroadcast(handler);
@@ -465,7 +512,7 @@ export function useMultiplayerJoiner(opts: {
     [channel, mySeat, visitorId],
   );
 
-  return { publicState, sendIntent, events, mySeat, rollCommit };
+  return { publicState, sendIntent, events, mySeat, rollCommit, lastClaimReject };
 }
 
 

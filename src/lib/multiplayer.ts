@@ -126,13 +126,35 @@ export interface RollRejectEnvelope {
   payload: RollRejectPayload;
 }
 
+// Host-emitted rejection of a claim grant whose claim_window doesn't match
+// the host's current window. Sent so the pressing player can distinguish a
+// dropped-grant race from a stuck "LOCKING…" state. reason describes why:
+//   STALE_WINDOW  — grant.claim_window < host's current (window already
+//                   closed by a resolution or round advance)
+//   FUTURE_WINDOW — grant.claim_window > host's current (should not happen;
+//                   surfaced explicitly rather than swallowed)
+export interface ClaimRejectPayload {
+  grant_claim_window: number;
+  host_claim_window: number;
+  seat: number;
+  visitor_id: string;
+  reason: "STALE_WINDOW" | "FUTURE_WINDOW";
+}
+export interface ClaimRejectEnvelope {
+  v: number;
+  type: "claim_reject";
+  seq: number;
+  payload: ClaimRejectPayload;
+}
+
 export type Envelope =
   | StateEnvelope
   | IntentEnvelope
   | ClaimGrantEnvelope
   | EventEnvelope
   | RollCommittedEnvelope
-  | RollRejectEnvelope;
+  | RollRejectEnvelope
+  | ClaimRejectEnvelope;
 
 export function jsonSerialize(payload: unknown): string {
   return JSON.stringify(payload);

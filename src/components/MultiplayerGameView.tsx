@@ -49,6 +49,10 @@ interface Props {
   // Latest server-committed roll. Drives the hero overlay when its window
   // ([startAt, startAt + ROLL_HERO_MS]) is still live on the server clock.
   rollCommit?: RollCommitPayload | null;
+  // Latest host-emitted claim rejection (window mismatch). When its seat
+  // matches mySeat, the pressing player sees CONNECTION ISSUE — TRY AGAIN
+  // instead of a silently stuck LOCKING… state.
+  lastClaimReject?: { seat: number; grant_claim_window: number; host_claim_window: number; reason: string } | null;
   onIntent: (a: IntentAction) => void;
   onLeave: () => void;
   mobile?: boolean;
@@ -472,7 +476,7 @@ const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
 // -------- Main component --------
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], rollCommit = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
+  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
@@ -551,6 +555,22 @@ const MultiplayerGameView: React.FC<Props> = ({
     const t = setTimeout(() => setClaimErrAt(null), 1800);
     return () => clearTimeout(t);
   }, [claimErrAt]);
+
+  // Host-dropped claim grant (window mismatch): if the rejected seat is
+  // ours, we thought we won but the host discarded the grant. Surface the
+  // CONNECTION ISSUE banner instead of a silent hang. Also clears LOCKING…
+  // if we happen to still be mid-request.
+  const lastRejectKeyRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!lastClaimReject || mySeat === null) return;
+    if (lastClaimReject.seat !== mySeat) return;
+    const key = `${lastClaimReject.grant_claim_window}:${lastClaimReject.host_claim_window}:${lastClaimReject.reason}`;
+    if (lastRejectKeyRef.current === key) return;
+    lastRejectKeyRef.current = key;
+    console.warn("[claim_reject:self]", lastClaimReject);
+    setClaimBusy(false);
+    setClaimErrAt(Date.now());
+  }, [lastClaimReject, mySeat]);
 
   // Detect self outcome events (last ~1.4s) for the grid overlay.
   const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
