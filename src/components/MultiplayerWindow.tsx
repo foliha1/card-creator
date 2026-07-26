@@ -480,7 +480,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         rollCommit={host.rollCommit ?? null}
         onIntent={(action) => {
           if (action.type === "REQUEST_ROLL") {
-            void host.doRollDice();
+            host.commitAndRoll();
             return;
           }
           if (action.type === "PLAYER_ENTER_CLAIM" || action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
