@@ -413,12 +413,13 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "CLAIM_SELECTING") return state;
       if (state.claimBy !== action.by) return state;
       const idx = action.idx;
-      if (state.wrongBy[action.by].has(idx)) return state;
+      if (state.wrongBy[action.by]?.has(idx)) return state;
       if (state.selectedCards.includes(idx)) return state;
       if (state.grid[idx] === null) return state;
       if (state.selectedCards.length >= 2) return state;
       return { ...state, selectedCards: [...state.selectedCards, idx] };
     }
+
 
     case "PLAYER_RESOLVE_MATCH": {
       if (state.phase !== "CLAIM_SELECTING") return state;
@@ -429,7 +430,7 @@ export function reducer(state: State, action: Action): State {
       const a = state.grid[ia];
       const b = state.grid[ib];
       if (a && b && cardsMatchRule(a, b, state.rule)) {
-        const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+        const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
         const { grid: newGrid, deck: newDeck } = refill(
           state.grid,
           state.deck,
@@ -452,12 +453,13 @@ export function reducer(state: State, action: Action): State {
         return startRound(post, by);
       }
       // Wrong claim
-      const wrongForBy = new Set(state.wrongBy[by]);
+      const wrongForBy = new Set(state.wrongBy[by] ?? []);
       wrongForBy.add(ia);
       wrongForBy.add(ib);
       const nextWrongBy = state.wrongBy.slice();
       nextWrongBy[by] = wrongForBy;
       const skip = replaceAt(state.skip, by, true);
+
       const post: State = {
         ...state,
         phase: "FLIPPING",
@@ -476,7 +478,7 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.flipper !== action.by) return state;
       if (state.inFlight) return state;
-      if (state.wrongBy[action.by].has(action.idx)) return state;
+      if (state.wrongBy[action.by]?.has(action.idx)) return state;
       if (state.grid[action.idx] === null) return state;
       return {
         ...state,
@@ -489,6 +491,7 @@ export function reducer(state: State, action: Action): State {
         peekingCard: action.idx,
       };
     }
+
 
     case "FLIP_COMPLETE": {
       if (state.inFlight?.kind !== "flip") return state;
@@ -512,6 +515,7 @@ export function reducer(state: State, action: Action): State {
       if (!state.skip[who]) return state;
       const skip = replaceAt(state.skip, who, false);
       return cycleAdvance({ ...state, skip }, who);
+
     }
 
     case "CLAIM_START": {
@@ -519,10 +523,11 @@ export function reducer(state: State, action: Action): State {
       if (state.phase === "CLAIM_SELECTING") return state;
       if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
       if (
-        state.wrongBy[action.by].has(action.a) ||
-        state.wrongBy[action.by].has(action.b)
+        state.wrongBy[action.by]?.has(action.a) ||
+        state.wrongBy[action.by]?.has(action.b)
       )
         return state;
+
       const flipped = new Set(state.flippedThisCycle);
       flipped.add(action.by);
       return {
@@ -548,7 +553,7 @@ export function reducer(state: State, action: Action): State {
       const cardA = state.grid[a];
       const cardB = state.grid[b];
       if (cardA && cardB && cardsMatchRule(cardA, cardB, state.rule)) {
-        const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+        const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
         const { grid: newGrid, deck: newDeck } = refill(state.grid, state.deck, [a, b]);
         const draining = newDeck.length === 0;
         const post: State = {
@@ -565,12 +570,13 @@ export function reducer(state: State, action: Action): State {
         };
         return startRound(post, by);
       }
-      const wrongForBy = new Set(state.wrongBy[by]);
+      const wrongForBy = new Set(state.wrongBy[by] ?? []);
       wrongForBy.add(a);
       wrongForBy.add(b);
       const nextWrongBy = state.wrongBy.slice();
       nextWrongBy[by] = wrongForBy;
       const skip = replaceAt(state.skip, by, true);
+
       const post: State = {
         ...state,
         phase: "FLIPPING",
@@ -595,7 +601,7 @@ export function reducer(state: State, action: Action): State {
       const newGrid = [...state.grid];
       newGrid[a] = null;
       newGrid[b] = null;
-      const scores = replaceAt(state.scores, by, state.scores[by] + 2);
+      const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
       const hasCards = newGrid.some((c) => c !== null);
       const stillPlayable = hasValidPair(newGrid, state.rule);
       const post: State = {
@@ -748,14 +754,20 @@ export function useGameState(
   const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollSettleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const firstSlotRef = useRef(slotCount);
+  // Re-INIT when EITHER the grid size OR the seat count changes. Multiplayer
+  // mounts this hook with seatCount=2 (empty frozenSeats) before "Lets do it!"
+  // fills the seat map; on that transition we must re-init so the reducer's
+  // seat-indexed arrays (scores, skip, wrongBy, disconnected) grow to match.
+  const initKeyRef = useRef(`${slotCount}:${seatCount}`);
   useEffect(() => {
-    if (firstSlotRef.current === slotCount) return;
-    firstSlotRef.current = slotCount;
+    const key = `${slotCount}:${seatCount}`;
+    if (initKeyRef.current === key) return;
+    initKeyRef.current = key;
     memoryRef.current?.reset();
     prevPeekingRef.current = null;
     dispatch({ type: "INIT", slotCount, seatCount, names });
   }, [slotCount, seatCount, names]);
+
 
   const runRollAnimation = useCallback((): Promise<string[]> => {
     return new Promise((resolve) => {
