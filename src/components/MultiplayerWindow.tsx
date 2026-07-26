@@ -241,12 +241,16 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   const handleStartRoom = useCallback(() => {
     if (busy) return;
+    unlockAudio();
+    startThemeMusic();
     setNameInput(getDisplayName());
     setView({ kind: "name-prompt", pending: { kind: "create" } });
   }, [busy]);
 
   const handleJoinByCode = useCallback(() => {
     if (busy) return;
+    unlockAudio();
+    startThemeMusic();
     const normalized = codeInput.toUpperCase();
     if (!isValidRoomCode(normalized)) {
       setView({ kind: "idle", error: "That doesn't look like a valid code." });
@@ -259,6 +263,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const handleConfirmName = useCallback(() => {
     if (view.kind !== "name-prompt" || busy) return;
     unlockAudio();
+    startThemeMusic();
     const trimmed = nameInput.trim();
     if (!trimmed) {
       setView({ ...view, error: "Enter a name so others can see who you are." });
