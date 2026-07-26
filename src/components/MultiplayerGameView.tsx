@@ -353,22 +353,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId,
 }) => {
   void _mobile;
-  // Landscape layout gate: viewport is landscape AND at least 900px wide.
-  const [isLandscape, setIsLandscape] = React.useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth >= 900 && window.innerWidth > window.innerHeight;
-  });
-  React.useEffect(() => {
-    const onResize = () => {
-      setIsLandscape(window.innerWidth >= 900 && window.innerWidth > window.innerHeight);
-    };
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
-    };
-  }, []);
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // Block WHOOP for ~500ms during the flip rotation itself (matches
