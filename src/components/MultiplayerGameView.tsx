@@ -474,6 +474,35 @@ const MultiplayerGameView: React.FC<Props> = ({
   const [showLeave, setShowLeave] = React.useState(false);
   const modalOpen = showSettings || showLeave;
   void _mobile;
+
+  // ---- roll-hero overlay wiring ----------------------------------------
+  // Root of the play area — the overlay is absolutely positioned inside it.
+  // Home ref points at the 80×80 cream box inside the dice tray.
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const homeRef = React.useRef<HTMLDivElement | null>(null);
+  // `activeCommit` is the commit we're CURRENTLY animating. It becomes null
+  // when the 1100ms window expires (or is skipped if we arrived too late).
+  const [activeCommit, setActiveCommit] = React.useState<RollCommitPayload | null>(null);
+  const [heroRects, setHeroRects] = React.useState<{
+    home: DOMRect; target: DOMRect; parent: DOMRect;
+  } | null>(null);
+  React.useEffect(() => {
+    if (!rollCommit) return;
+    // Ignore repeats of the same commit (state updates after we've completed).
+    if (activeCommit && activeCommit.startAt === rollCommit.startAt) return;
+    const elapsed = serverNow() - rollCommit.startAt;
+    if (elapsed >= ROLL_HERO_MS) return; // arrived too late — skip animation
+    const home = homeRef.current?.getBoundingClientRect() ?? null;
+    const target = cardAreaRef.current?.getBoundingClientRect() ?? null;
+    const parent = rootRef.current?.getBoundingClientRect() ?? null;
+    if (!home || !target || !parent) return;
+    setHeroRects({ home, target, parent });
+    setActiveCommit(rollCommit);
+    // cardAreaRef is declared below; the ref itself is stable so eslint's
+    // dependency check is not helpful here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rollCommit]);
+  const heroActive = activeCommit !== null;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // Block WHOOP for ~500ms during the flip rotation itself (matches
