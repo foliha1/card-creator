@@ -769,11 +769,14 @@ export function useGameState(
   }, [slotCount, seatCount, names]);
 
 
-  const runRollAnimation = useCallback((): Promise<string[]> => {
+  const runRollAnimation = useCallback((predetermined?: string[]): Promise<string[]> => {
     return new Promise((resolve) => {
       dispatch({ type: "ROLL_START" });
       const count = getDieCount();
-      const finalValues = rollRandomAttributes(count);
+      const finalValues =
+        predetermined && predetermined.length === count
+          ? predetermined
+          : rollRandomAttributes(count);
       const { rule } = computeRule(finalValues);
       if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
       rollIntervalRef.current = setInterval(() => {

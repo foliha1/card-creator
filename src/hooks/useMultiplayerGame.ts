@@ -19,6 +19,10 @@ import {
   type IntentAction,
   type IntentEnvelope,
   type IntentPayload,
+  type RollAttribute,
+  type RollCommitPayload,
+  type RollCommittedEnvelope,
+  type RollRejectEnvelope,
   type StateEnvelope,
   type TransientEvent,
   type TransientEventKind,
@@ -178,6 +182,63 @@ export function useMultiplayerHost(opts: {
     };
   }, []);
 
+  // ---- server-authoritative roll commit ----
+  // The host decides the die outcome and BROADCASTS it before any client
+  // (including itself) animates. The reducer's `rolling` flag is the ROLLING
+  // phase gate: while true, flip/claim/select intents are explicitly rejected
+  // rather than silently no-oped by reducer guards.
+  const rollAttrs: readonly RollAttribute[] = ["SHAPE", "NUMBER", "COLOR"] as const;
+  const commitAndRoll = useCallback(() => {
+    const s = latestStateRef.current;
+    if (s.phase !== "AWAITING_ROLL" || s.rolling) return;
+    const attribute = rollAttrs[Math.floor(Math.random() * rollAttrs.length)];
+    const faceIndex = (Math.floor(Math.random() * 2) as 0 | 1);
+    const tumbleSeed = Math.floor(Math.random() * 2 ** 31);
+    const startAt = Date.now() + 150;
+    const payload: RollCommitPayload = {
+      roundId: `${gameIdRef.current}:${s.roundNum}`,
+      attribute,
+      faceIndex,
+      tumbleSeed,
+      startAt,
+    };
+    console.log("[roll:committed]", payload);
+    seqRef.current += 1;
+    const env: RollCommittedEnvelope = {
+      v: PROTOCOL_VERSION,
+      type: "roll_committed",
+      seq: seqRef.current,
+      payload,
+    };
+    channelRef.current?.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
+    const delay = Math.max(0, startAt - Date.now());
+    setTimeout(() => {
+      // Drives ROLL_START → TUMBLE → ROLL_LAND → ROLL_SETTLE, ~1100ms total.
+      // Reducer transitions to FLIPPING on settle, matching startAt+1100ms.
+      void g.doRollDice([attribute]);
+    }, delay);
+  }, [g.doRollDice]);
+
+  // Explicit rejection for actions arriving during the ROLLING window.
+  const rejectDuringRoll = useCallback((seat: number, actionType: string) => {
+    const s = latestStateRef.current;
+    const payload = {
+      roundId: `${gameIdRef.current}:${s.roundNum}`,
+      seat,
+      action: actionType,
+      reason: "ROLLING" as const,
+    };
+    console.warn("[roll:reject]", payload);
+    seqRef.current += 1;
+    const env: RollRejectEnvelope = {
+      v: PROTOCOL_VERSION,
+      type: "roll_reject",
+      seq: seqRef.current,
+      payload,
+    };
+    channelRef.current?.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
+  }, []);
+
   // Receive intents and inject as reducer actions.
   useEffect(() => {
     if (!enabled || !channel) return;
@@ -190,11 +251,24 @@ export function useMultiplayerHost(opts: {
         if (!seatEntry) return;
         if (seatEntry.visitor_id !== intent.visitor_id) return;
         if (seatEntry.visitor_id === hostVisitorId) return;
-        handleHostIntent(g.dispatch, g.doRollDice, intent.seat, intent.action);
+        // ROLLING gate: reject board-affecting intents while a roll is
+        // resolving. Reducer would drop these anyway; we surface the reason
+        // so callers see an explicit rejection.
+        const rolling = latestStateRef.current.rolling;
+        const boardAction =
+          intent.action.type === "FLIP_START" ||
+          intent.action.type === "PLAYER_SELECT_CARD" ||
+          intent.action.type === "PLAYER_RESOLVE_MATCH" ||
+          intent.action.type === "LAST_CALL_CLAIM";
+        if (rolling && boardAction) {
+          rejectDuringRoll(intent.seat, intent.action.type);
+          return;
+        }
+        handleHostIntent(g.dispatch, commitAndRoll, intent.seat, intent.action);
       }
     };
     return onBroadcast(handler);
-  }, [enabled, channel, onBroadcast, g.dispatch, g.doRollDice, hostVisitorId]);
+  }, [enabled, channel, onBroadcast, g.dispatch, commitAndRoll, rejectDuringRoll, hostVisitorId]);
 
   // Listen for authoritative claim grants from the arbiter edge function.
   // The host is the ONLY dispatcher of PLAYER_ENTER_CLAIM — even the host's
@@ -213,13 +287,13 @@ export function useMultiplayerHost(opts: {
       const phase = latestStateRef.current.phase;
       if (phase === "AWAITING_ROLL") {
         g.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: grant.seat });
-        void g.doRollDice();
+        commitAndRoll();
       } else if (phase === "FLIPPING") {
         g.dispatch({ type: "PLAYER_ENTER_CLAIM", by: grant.seat });
       }
     };
     return onBroadcast(handler);
-  }, [enabled, channel, onBroadcast, g.dispatch, g.doRollDice]);
+  }, [enabled, channel, onBroadcast, g.dispatch, commitAndRoll]);
 
   // ---- transient event emission ----
   // The host observes reducer transitions and emits transient events on the
@@ -263,13 +337,13 @@ export function useMultiplayerHost(opts: {
 // broadcast handled by the grant listener above.
 function handleHostIntent(
   dispatch: (a: Action) => void,
-  doRollDice: () => Promise<string[]>,
+  commitAndRoll: () => void,
   seat: number,
   action: IntentAction,
 ) {
   switch (action.type) {
     case "REQUEST_ROLL":
-      void doRollDice();
+      commitAndRoll();
       return;
     case "PLAYER_ENTER_CLAIM":
     case "PLAYER_ENTER_CLAIM_DURING_ROLL":
