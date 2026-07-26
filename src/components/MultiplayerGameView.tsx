@@ -451,8 +451,12 @@ const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
 // -------- Main component --------
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId,
+  publicState: s, mySeat, events = [], onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
 }) => {
+  void _mobile;
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [showLeave, setShowLeave] = React.useState(false);
+  const modalOpen = showSettings || showLeave;
   void _mobile;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
