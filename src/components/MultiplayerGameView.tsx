@@ -755,9 +755,8 @@ const MultiplayerGameView: React.FC<Props> = ({
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>
-      <div style={{ pointerEvents: modalOpen ? "none" : "auto", display: "contents" }}>
-        {header}
-        {opponentRow}
+      {header}
+      {opponentRow}
 
       {/* Card area — padding 8 (16 when overlay), measured card sizing */}
       <div
