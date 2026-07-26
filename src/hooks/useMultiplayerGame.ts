@@ -27,6 +27,7 @@ import {
   type TransientEvent,
   type TransientEventKind,
 } from "@/lib/multiplayer";
+import { serverNow } from "@/hooks/useServerClock";
 
 export interface SeatMapEntry {
   seat: number;
