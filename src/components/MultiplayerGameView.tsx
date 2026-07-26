@@ -620,7 +620,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   } else if (canClaim && !inLastCall && s.phase !== "GAME_OVER") {
     buttonKind = "WHOOP";
     buttonOnClick = async () => {
-      if (mySeat === null || claimBusy) return;
+      if (mySeat === null || claimBusy || modalOpen) return;
       unlockAudio();
       setClaimBusy(true);
       const result = await callClaimLock({
