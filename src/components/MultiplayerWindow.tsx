@@ -319,17 +319,51 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     setView({ kind: "idle" });
   }, []);
 
-  const containerStyle: React.CSSProperties = {
+  const shellStyle: React.CSSProperties = {
+    minHeight: "100dvh",
     display: "flex",
     flexDirection: "column",
-    gap: mobile ? SPACE[5] : SPACE[6],
-    padding: mobile ? SPACE[6] : SPACE[10],
-    height: "100%",
-    boxSizing: "border-box",
-    overflow: "auto",
     justifyContent: "center",
+    alignItems: "center",
+    padding: 8,
+    paddingTop: "calc(8px + env(safe-area-inset-top))",
+    paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
+    paddingLeft: "calc(8px + env(safe-area-inset-left))",
+    paddingRight: "calc(8px + env(safe-area-inset-right))",
+    boxSizing: "border-box",
+    overflowY: "auto",
+    background: "#0072B2",
   };
 
+  const innerColStyle: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 390,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  };
+
+  const cardStyle: React.CSSProperties = {
+    alignSelf: "stretch",
+    background: "#F8F2E9",
+    border: "2px solid #231F20",
+    borderRadius: 4,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 16,
+    height: "auto",
+    boxSizing: "border-box",
+  };
+
+  // Legacy card wrapper used by views not yet redesigned in this prompt
+  // (name-prompt, full, host-left, host/joiner lobby). Kept inside the shell.
+  const containerStyle: React.CSSProperties = {
+    ...cardStyle,
+    gap: mobile ? SPACE[5] : SPACE[6],
+    padding: mobile ? SPACE[6] : SPACE[10],
+  };
 
   const inputStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
@@ -343,6 +377,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     minWidth: 0,
     outline: "none",
   };
+
+  const wrapInShell = (
+    content: React.ReactNode,
+    opts?: { above?: React.ReactNode; gap?: number },
+  ) => (
+    <div style={shellStyle}>
+      <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
+        {opts?.above}
+        {content}
+      </div>
+    </div>
+  );
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
