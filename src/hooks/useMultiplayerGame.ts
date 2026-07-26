@@ -463,6 +463,7 @@ export function useMultiplayerJoiner(opts: {
   const { channel, onBroadcast, mySeat: mySeatProp, visitorId, enabled } = opts;
   const [publicState, setPublicState] = useState<PublicState | null>(null);
   const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
+  const [lastClaimReject, setLastClaimReject] = useState<ClaimRejectPayload | null>(null);
   const lastSeqRef = useRef(0);
   const seqRef = useRef(0);
   const events = useTransientEvents(channel, onBroadcast, enabled);
@@ -479,6 +480,10 @@ export function useMultiplayerJoiner(opts: {
       } else if (env.type === "roll_committed") {
         // Latest commit wins — game only ever has one pending roll.
         setRollCommit(env.payload);
+      } else if (env.type === "claim_reject") {
+        // Host dropped a claim grant due to a claim_window mismatch.
+        // Surface locally; MultiplayerGameView filters by seat===mySeat.
+        setLastClaimReject((env as ClaimRejectEnvelope).payload);
       }
     };
     return onBroadcast(handler);
