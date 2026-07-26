@@ -512,7 +512,7 @@ export function useMultiplayerJoiner(opts: {
     [channel, mySeat, visitorId],
   );
 
-  return { publicState, sendIntent, events, mySeat, rollCommit };
+  return { publicState, sendIntent, events, mySeat, rollCommit, lastClaimReject };
 }
 
 
