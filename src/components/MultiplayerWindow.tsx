@@ -59,6 +59,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Host-minted game id. Scopes the arbiter's UNIQUE (room, game, window)
   // constraint so consecutive games in the same room don't collide.
   const [gameId, setGameId] = useState<string>("");
+  const [starting, setStarting] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [copiedFlash, setCopiedFlash] = useState(false);
+  const linkBoxRef = useRef<HTMLDivElement | null>(null);
+  const copiedTimerRef = useRef<number | null>(null);
+
+
 
   const visitorId = useMemo(() => getVisitorId(), []);
   const activeRoom = view.kind === "host" || view.kind === "joiner" ? view.room : null;
