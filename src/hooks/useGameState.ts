@@ -515,6 +515,7 @@ export function reducer(state: State, action: Action): State {
       if (!state.skip[who]) return state;
       const skip = replaceAt(state.skip, who, false);
       return cycleAdvance({ ...state, skip }, who);
+
     }
 
     case "CLAIM_START": {
