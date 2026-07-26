@@ -588,7 +588,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div style={{
       display: "flex", flexDirection: "column", gap: 8,
       padding: 8, height: "100%", boxSizing: "border-box",
-      background: "transparent", overflow: "hidden",
+      background: SURFACE, overflow: "hidden",
     }}>
       {roundBar}
       {opponentRow}
