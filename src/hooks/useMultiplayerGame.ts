@@ -188,6 +188,12 @@ export function useMultiplayerHost(opts: {
   // (including itself) animates. The reducer's `rolling` flag is the ROLLING
   // phase gate: while true, flip/claim/select intents are explicitly rejected
   // rather than silently no-oped by reducer guards.
+  // Latest committed roll — mirrored locally so the host UI drives the same
+  // hero animation joiners get from the wire. Cleared per-game so a stale
+  // commit from a previous game never re-triggers.
+  const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
+  useEffect(() => { setRollCommit(null); }, [gameId]);
+
   const rollAttrs: readonly RollAttribute[] = ["SHAPE", "NUMBER", "COLOR"] as const;
   const commitAndRoll = useCallback(() => {
     const s = latestStateRef.current;
@@ -195,7 +201,9 @@ export function useMultiplayerHost(opts: {
     const attribute = rollAttrs[Math.floor(Math.random() * rollAttrs.length)];
     const faceIndex = (Math.floor(Math.random() * 2) as 0 | 1);
     const tumbleSeed = Math.floor(Math.random() * 2 ** 31);
-    const startAt = Date.now() + 150;
+    // startAt is a SERVER-clock timestamp so every client can time the
+    // animation against serverNow(), not against message arrival latency.
+    const startAt = serverNow() + 150;
     const payload: RollCommitPayload = {
       roundId: `${gameIdRef.current}:${s.roundNum}`,
       attribute,
@@ -212,9 +220,13 @@ export function useMultiplayerHost(opts: {
       payload,
     };
     channelRef.current?.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
-    const delay = Math.max(0, startAt - Date.now());
+    // Host doesn't receive its own broadcast — set locally so the host UI's
+    // overlay triggers on the same commit joiners animate from the wire.
+    setRollCommit(payload);
+    // Drive the reducer animation off local wall clock; serverNow() offset
+    // is applied when scheduling so the ROLL_SETTLE lands at startAt + 1100.
+    const delay = Math.max(0, startAt - serverNow());
     setTimeout(() => {
-      // Drives ROLL_START → TUMBLE → ROLL_LAND → ROLL_SETTLE, ~1100ms total.
       // Reducer transitions to FLIPPING on settle, matching startAt+1100ms.
       void g.doRollDice([attribute]);
     }, delay);
