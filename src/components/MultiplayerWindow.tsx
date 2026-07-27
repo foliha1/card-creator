@@ -88,13 +88,36 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     return hostP?.visitor_id ?? null;
   }, [isHostView, visitorId, participants]);
 
-  // Compute disconnected seats: seats in frozenSeats whose visitor_id is no
-  // longer present in the room. Skipped before game start (frozenSeats null).
+  // Heartbeat: EVERY client (host + joiner) sends. The host also monitors
+  // inbound heartbeats to detect crashed/slept peers that presence never
+  // reports as gone. Merged into disconnectedSeats below via UNION with the
+  // presence-derived set — either signal is sufficient.
+  useHeartbeatSender(channel, visitorId, !!activeRoom);
+  const watchedVisitorIds = useMemo(
+    () => (frozenSeats ? frozenSeats.map((e) => e.visitor_id) : []),
+    [frozenSeats],
+  );
+  const heartbeatStaleVisitors = useHeartbeatMonitor({
+    channel,
+    onBroadcast,
+    enabled: isHostView && frozenSeats !== null,
+    watchedVisitorIds,
+    hostVisitorId: visitorId,
+  });
+
+  // Compute disconnected seats: union of
+  //   (a) seats whose visitor_id is no longer in the presence roster, and
+  //   (b) seats whose heartbeat has gone stale (>15s since last).
+  // Both signals feed SET_DISCONNECTED, which uses REPLACE semantics —
+  // resuming heartbeats OR presence rejoin automatically un-marks a seat.
   const disconnectedSeats = useMemo(() => {
     if (!frozenSeats) return [] as number[];
     const present = new Set(participants.map((p) => p.visitor_id));
-    return frozenSeats.filter((e) => !present.has(e.visitor_id)).map((e) => e.seat);
-  }, [frozenSeats, participants]);
+    const stale = new Set(heartbeatStaleVisitors);
+    return frozenSeats
+      .filter((e) => !present.has(e.visitor_id) || stale.has(e.visitor_id))
+      .map((e) => e.seat);
+  }, [frozenSeats, participants, heartbeatStaleVisitors]);
 
   // Host: game controller.
   const gameEnabled = isHostView && frozenSeats !== null;
