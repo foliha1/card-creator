@@ -128,5 +128,6 @@ export function toPublicState(
     claimWindow,
     gameId,
     disconnectedSeats: disconnectedSeats.slice(),
+    awaySeats: awaySeats.slice(),
   };
 }
