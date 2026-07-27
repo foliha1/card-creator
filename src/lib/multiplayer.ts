@@ -33,7 +33,7 @@ export type IntentAction =
   | Extract<
       Action,
       | { type: "PLAYER_ENTER_CLAIM" }
-      | { type: "PLAYER_ENTER_CLAIM_DURING_ROLL" }
+      
       | { type: "PLAYER_SELECT_CARD" }
       | { type: "PLAYER_RESOLVE_MATCH" }
       | { type: "FLIP_START" }

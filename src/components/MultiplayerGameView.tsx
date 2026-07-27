@@ -534,7 +534,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   }, [s.peekingCard]);
   const canClaim =
     mySeat !== null &&
-    (s.phase === "FLIPPING" || s.phase === "AWAITING_ROLL") &&
+    s.phase === "FLIPPING" &&
     s.claimBy === null &&
     !isAnimating;
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
@@ -727,7 +727,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (claimBusy) { buttonKind = "DISABLED"; buttonOnClick = undefined; }
   } else if (
     mySeat !== null &&
-    (s.phase === "FLIPPING" || s.phase === "AWAITING_ROLL") &&
+    s.phase === "FLIPPING" &&
     s.claimBy === null &&
     isAnimating
   ) {
@@ -754,12 +754,13 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }
 
-  // ROLLING presentation gate — presentation only, the server rejection is
-  // the actual authority. We force the button to appear as a dimmed WHOOP
-  // and strip its onClick so mashing during a roll can never register a
-  // wrong-claim penalty.
-  const isRolling = s.rolling;
-  if (isRolling) {
+  // AWAITING_ROLL / ROLLING presentation gate — the WHOOP button is dimmed
+  // and taps are physically blocked from the moment the round enters
+  // AWAITING_ROLL through the end of ROLLING, so a player mashing during a
+  // roll can never fire a claim or earn a wrong-claim penalty. The roller's
+  // YOUR_ROLL button is preserved (they need to tap to roll).
+  const dimForRoll = s.phase === "AWAITING_ROLL" && !isMyTurnToRoll;
+  if (dimForRoll) {
     buttonKind = "WHOOP";
     buttonOnClick = undefined;
     buttonLabel = undefined;
@@ -797,19 +798,20 @@ const MultiplayerGameView: React.FC<Props> = ({
   const bottomRow = (
     <div style={{ display: "flex", gap: 8, height: 110.94 }}>
       <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
-      {/* Wrap the WHOOP button so ROLLING can dim it to 40% and physically
-          block taps. pointerEvents:none guarantees no tap ever reaches the
-          onClick — belt-and-braces on top of the cleared handler above. */}
+      {/* Wrap the WHOOP button so AWAITING_ROLL/ROLLING dims it to 40% and
+          physically blocks taps. pointerEvents:none guarantees no tap ever
+          reaches the onClick — belt-and-braces on top of the cleared
+          handler above. */}
       <div style={{
         flex: "1 1 auto", display: "flex", minWidth: 0,
-        opacity: isRolling ? 0.4 : 1,
-        pointerEvents: isRolling ? "none" : "auto",
+        opacity: dimForRoll ? 0.4 : 1,
+        pointerEvents: dimForRoll ? "none" : "auto",
         transition: "opacity 250ms ease",
       }}>
         <ActionButton
           kind={buttonKind}
-          disabled={isRolling || buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
-          onClick={isRolling ? undefined : buttonOnClick}
+          disabled={dimForRoll || buttonKind === "DISABLED" || (!buttonOnClick && buttonKind !== "SELECT_MATCH")}
+          onClick={dimForRoll ? undefined : buttonOnClick}
           label={buttonLabel}
         />
       </div>

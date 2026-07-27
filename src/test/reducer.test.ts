@@ -79,7 +79,6 @@ function baseState(overrides: Partial<State> = {}): State {
     message: "",
     messageType: "info",
     inFlight: null,
-    claimPending: false,
     claimBy: 0,
     ...overrides,
   };
@@ -168,14 +167,6 @@ describe("ROLL_SETTLE", () => {
     expect(next.rolling).toBe(false);
     expect(next.phase).toBe("FLIPPING");
     expect(next.flipper).toBe(1);
-  });
-
-  it("routes into CLAIM_SELECTING when claimPending was set", () => {
-    const s = baseState({ phase: "AWAITING_ROLL", rolling: true, claimPending: true });
-    const next = reducer(s, { type: "ROLL_SETTLE" });
-    expect(next.phase).toBe("CLAIM_SELECTING");
-    expect(next.claimPending).toBe(false);
-    expect(next.selectedCards).toEqual([]);
   });
 
   it("is a NO-OP when not rolling", () => {
@@ -298,31 +289,6 @@ describe("PLAYER_ENTER_CLAIM", () => {
   });
 });
 
-// ===========================================================================
-// PLAYER_ENTER_CLAIM_DURING_ROLL
-// ===========================================================================
-describe("PLAYER_ENTER_CLAIM_DURING_ROLL", () => {
-  it("sets claimPending in AWAITING_ROLL when human is roller", () => {
-    const s = baseState({ phase: "AWAITING_ROLL", roller: 0 });
-    const next = reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 });
-    expect(next.claimPending).toBe(true);
-  });
-
-  it("is a NO-OP outside AWAITING_ROLL", () => {
-    const s = baseState({ phase: "FLIPPING", roller: 0 });
-    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
-  });
-
-  it("is a NO-OP when human is not the roller", () => {
-    const s = baseState({ phase: "AWAITING_ROLL", roller: 1 });
-    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
-  });
-
-  it("is a NO-OP when already pending", () => {
-    const s = baseState({ phase: "AWAITING_ROLL", roller: 0, claimPending: true });
-    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: 0 })).toBe(s);
-  });
-});
 
 // ===========================================================================
 // PLAYER_SELECT_CARD

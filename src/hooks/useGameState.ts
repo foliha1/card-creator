@@ -148,7 +148,6 @@ export interface State {
   message: string;
   messageType: MessageType;
   inFlight: InFlight;
-  claimPending: boolean;
   claimBy: number | null;
 }
 
@@ -164,7 +163,6 @@ export type Action =
   | { type: "ROLL_LAND"; values: string[]; rule: string[] }
   | { type: "ROLL_SETTLE" }
   | { type: "PLAYER_ENTER_CLAIM"; by: number }
-  | { type: "PLAYER_ENTER_CLAIM_DURING_ROLL"; by: number }
   | { type: "PLAYER_SELECT_CARD"; by: number; idx: number }
   | { type: "PLAYER_RESOLVE_MATCH"; by: number }
   | { type: "FLIP_START"; by: number; idx: number; token: number }
@@ -216,7 +214,6 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     message: "",
     messageType: "info",
     inFlight: null,
-    claimPending: false,
     claimBy: null,
   };
 }
@@ -287,7 +284,6 @@ function startRound(s: State, winnerIndex: number | null): State {
     peekingCard: null,
     roundNum: s.roundNum + 1,
     roundsSinceClaim: winnerIndex !== null ? 0 : s.roundsSinceClaim,
-    claimPending: false,
     claimBy: null,
   };
 }
@@ -369,19 +365,7 @@ export function reducer(state: State, action: Action): State {
 
     case "ROLL_SETTLE": {
       if (!state.rolling) return state;
-      const base = { ...state, rolling: false };
-      if (state.claimPending) {
-        return {
-          ...base,
-          phase: "CLAIM_SELECTING",
-          claimPending: false,
-          selectedCards: [],
-          matchedCards: new Set(),
-          message: "Select 2 cards that match the rule.",
-          messageType: "info",
-        };
-      }
-      return { ...base, phase: "FLIPPING", flipper: state.roller };
+      return { ...state, rolling: false, phase: "FLIPPING", flipper: state.roller };
     }
 
     case "PLAYER_ENTER_CLAIM": {
@@ -401,13 +385,6 @@ export function reducer(state: State, action: Action): State {
         message: "Select 2 cards that match the rule.",
         messageType: "info",
       };
-    }
-
-    case "PLAYER_ENTER_CLAIM_DURING_ROLL": {
-      if (state.phase !== "AWAITING_ROLL") return state;
-      if (state.roller !== action.by) return state;
-      if (state.claimPending) return state;
-      return { ...state, claimPending: true, claimBy: action.by };
     }
 
     case "PLAYER_SELECT_CARD": {
@@ -902,12 +879,7 @@ export function useGameState(
       clearTimeout(peekTimerRef.current);
       peekTimerRef.current = null;
     }
-    if (s.phase === "AWAITING_ROLL") {
-      if (s.roller !== humanSeat) return;
-      dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: humanSeat });
-      runRollAnimation();
-      return;
-    }
+    if (s.phase === "AWAITING_ROLL") return;
     dispatch({ type: "PLAYER_ENTER_CLAIM", by: humanSeat });
   }, [runRollAnimation, humanSeat]);
 
@@ -1112,6 +1084,5 @@ export function useGameState(
     drawEmpty: state.drawEmpty,
     roundsSinceClaim: state.roundsSinceClaim,
     claimLastCall,
-    claimPending: state.claimPending,
   };
 }
