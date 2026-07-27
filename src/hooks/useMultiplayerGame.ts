@@ -183,7 +183,7 @@ export function useMultiplayerHost(opts: {
     return () => {
       // No teardown on state change; only clear on unmount below.
     };
-  }, [enabled, channel, g.state, doSend]);
+  }, [enabled, channel, g.state, doSend, awaySeats, disconnectedSeats]);
 
   useEffect(() => {
     return () => {
