@@ -152,20 +152,28 @@ export function useMultiplayerHost(opts: {
     g.dispatch({ type: "SET_DISCONNECTED", seats: disconnectedSeats });
   }, [enabled, disconnectedSeats, g.dispatch]);
 
-  // Host end-game policy: fewer than 2 connected seats → end the game with a
-  // clear message. This is deliberate — a lone player staring at a live board
-  // is worse than a clean ending. Not fired as a normal completion.
+  // Host end-game policy: fewer than 2 seats confirmed dead-quiet for the
+  // long window → end the game. IRREVERSIBLE, so the signal is deliberately
+  // stricter than SET_DISCONNECTED / turn-skip:
+  //   - counts a seat ONLY if endGameDisconnectedSeats includes it (no
+  //     heartbeat for the long window, hidden-agnostic — a hidden client
+  //     that is still pinging is NOT counted);
+  //   - never counts an AWAY seat (proof-of-life is still arriving).
+  // A lone remaining player staring at a live board is worse than a clean
+  // ending, but a false positive is worse still — hence the guard.
   const endedForEmptyRef = useRef(false);
   useEffect(() => {
     if (!enabled) return;
     const total = seatMap.length;
     if (total < 2) return;
-    const connected = total - disconnectedSeats.length;
+    const away = new Set(awaySeats);
+    const deadQuiet = effectiveEndGameDisconnected.filter((s) => !away.has(s));
+    const connected = total - deadQuiet.length;
     if (connected < 2 && !endedForEmptyRef.current && g.state.phase !== "GAME_OVER") {
       endedForEmptyRef.current = true;
       g.dispatch({ type: "END_GAME_TABLE_EMPTY" });
     }
-  }, [enabled, seatMap.length, disconnectedSeats, g.state.phase, g.dispatch]);
+  }, [enabled, seatMap.length, effectiveEndGameDisconnected, awaySeats, g.state.phase, g.dispatch]);
 
   useEffect(() => {
     if (!enabled || !channel) return;
