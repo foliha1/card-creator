@@ -139,7 +139,17 @@ export function useRoomPresence(
         }
       });
 
+    // pagehide fires reliably on mobile Safari (unlike beforeunload) when the
+    // tab is closed, backgrounded to bfcache, or the browser is quit. Untrack
+    // synchronously so the server broadcasts a leave to remaining peers
+    // instead of waiting for the socket heartbeat to time out.
+    const onPageHide = () => {
+      try { ch.untrack(); } catch { /* ignore */ }
+    };
+    window.addEventListener("pagehide", onPageHide);
+
     return () => {
+      window.removeEventListener("pagehide", onPageHide);
       try {
         ch.untrack();
       } catch {
