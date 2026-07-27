@@ -7,23 +7,30 @@
 // flip rotation to hard-lock on the ghost seat.
 //
 // Every mounted room client broadcasts a heartbeat every HEARTBEAT_INTERVAL_MS
-// on the shared channel. The host consumes these to build a live set of
-// visitor_ids that have gone stale (last heartbeat older than
-// HEARTBEAT_STALE_MS) — including visitor_ids we have NEVER heard from
-// after a grace period equal to the stale threshold from the host's mount.
+// on the shared channel. Each heartbeat carries a `hidden` flag sourced from
+// document.hidden — flipped explicitly on visibilitychange with an immediate
+// broadcast so the host does not have to wait for the next interval (which,
+// on hidden tabs, browsers throttle to ~1/minute). The host consumes these
+// to build TWO sets:
+//   - stale  → visitors past HEARTBEAT_STALE_MS with no recent visible ping
+//              AND past HEARTBEAT_HIDDEN_STALE_MS if they last reported hidden.
+//              This is the GONE set.
+//   - away   → visitors currently reporting hidden but still within the
+//              hidden-stale window. AWAY, not GONE.
 //
-// The host merges this set with the presence-based one; either signal is
-// sufficient to mark a seat disconnected. SET_DISCONNECTED uses REPLACE
-// semantics on the reducer, so resuming heartbeats automatically un-mark a
-// seat — no explicit reconnect action required.
-//
-// Not solved here: if the HOST itself is the client that drops, no one is
-// running the monitor. See return note at bottom of this file.
+// The host merges stale with the presence-based disconnected set; either
+// signal is sufficient to mark a seat disconnected. SET_DISCONNECTED uses
+// REPLACE semantics on the reducer, so resuming heartbeats automatically
+// un-marks a seat — no explicit reconnect action required. AWAY is a UI-only
+// signal; it does not feed the reducer, so the flip rotation does not skip
+// a merely-backgrounded seat and the "fewer than 2 connected" end-game
+// backstop does not fire on transient hides.
 // ============================================================================
 
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
+  HEARTBEAT_HIDDEN_STALE_MS,
   HEARTBEAT_INTERVAL_MS,
   HEARTBEAT_STALE_MS,
   PROTOCOL_VERSION,
@@ -34,6 +41,9 @@ import type { BroadcastSubscribe } from "@/hooks/useMultiplayerGame";
 
 // EVERY client (host and joiner) calls this. Sends heartbeats on a fixed
 // cadence for the lifetime of the channel. Cheap: one broadcast every 5s.
+// Additionally sends immediately on visibilitychange so hide→show and
+// show→hide transitions do not have to wait for the throttled interval on
+// hidden tabs.
 export function useHeartbeatSender(
   channel: RealtimeChannel | null,
   visitorId: string,
@@ -48,7 +58,11 @@ export function useHeartbeatSender(
         v: PROTOCOL_VERSION,
         type: "heartbeat",
         seq: seqRef.current,
-        payload: { visitor_id: visitorId, at: Date.now() },
+        payload: {
+          visitor_id: visitorId,
+          at: Date.now(),
+          hidden: typeof document !== "undefined" ? document.hidden : false,
+        },
       };
       channel.send({ type: "broadcast", event: "msg", payload: env }).catch(() => {});
     };
@@ -56,28 +70,49 @@ export function useHeartbeatSender(
     // interval to see us. Then on the fixed cadence.
     send();
     const id = window.setInterval(send, HEARTBEAT_INTERVAL_MS);
-    return () => window.clearInterval(id);
+    // visibilitychange fires reliably on both hide and show, including on
+    // mobile Safari (unlike pagehide/beforeunload for the hide case). Send
+    // immediately on either edge — the show-edge send is the critical one:
+    // it un-marks an AWAY chip the moment the tab returns without waiting
+    // for the throttled interval to catch up.
+    const onVis = () => send();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [channel, visitorId, enabled]);
 }
 
-// HOST-ONLY. Watches inbound heartbeats and derives the set of visitor_ids
-// that have gone stale. Only visitor_ids in `watchedVisitorIds` are tracked
-// — that's the frozen seatMap post-start; before that we don't care.
+export interface HeartbeatMonitorResult {
+  staleVisitors: string[];
+  awayVisitors: string[];
+}
+
+// HOST-ONLY. Watches inbound heartbeats and derives:
+//   - staleVisitors: visitor_ids past their applicable stale threshold
+//     (HEARTBEAT_STALE_MS if last seen visible, HEARTBEAT_HIDDEN_STALE_MS if
+//     last seen hidden). Feeds SET_DISCONNECTED → GONE.
+//   - awayVisitors: visitor_ids that last reported hidden and are within the
+//     hidden-stale window. UI-only → AWAY.
 //
-// The host is treated as always-live (its own heartbeat is authoritative and
-// its clock IS the reference). We still record it, but it can never appear
-// in the stale set — the host cannot mark itself disconnected.
+// Only visitor_ids in `watchedVisitorIds` are tracked — that's the frozen
+// seatMap post-start. The host is treated as always-live and never appears
+// in either set.
 export function useHeartbeatMonitor(opts: {
   channel: RealtimeChannel | null;
   onBroadcast: BroadcastSubscribe;
   enabled: boolean;
   watchedVisitorIds: string[];
   hostVisitorId: string;
-}): string[] {
+}): HeartbeatMonitorResult {
   const { channel, onBroadcast, enabled, watchedVisitorIds, hostVisitorId } = opts;
   const [staleVisitors, setStaleVisitors] = useState<string[]>([]);
+  const [awayVisitors, setAwayVisitors] = useState<string[]>([]);
 
+  // Last local receive time + last-known hidden flag, per visitor.
   const lastSeenRef = useRef<Map<string, number>>(new Map());
+  const hiddenRef = useRef<Map<string, boolean>>(new Map());
   const monitorStartRef = useRef<number>(Date.now());
   const watchedRef = useRef<string[]>(watchedVisitorIds);
   watchedRef.current = watchedVisitorIds;
@@ -90,7 +125,9 @@ export function useHeartbeatMonitor(opts: {
     if (!enabled) return;
     monitorStartRef.current = Date.now();
     lastSeenRef.current = new Map();
+    hiddenRef.current = new Map();
     setStaleVisitors([]);
+    setAwayVisitors([]);
   }, [enabled]);
 
   // Ingest heartbeats. Uses LOCAL receive time — sender clocks are untrusted.
@@ -102,11 +139,12 @@ export function useHeartbeatMonitor(opts: {
       const hb = (env as HeartbeatEnvelope).payload;
       if (!hb?.visitor_id) return;
       lastSeenRef.current.set(hb.visitor_id, Date.now());
+      hiddenRef.current.set(hb.visitor_id, !!hb.hidden);
     };
     return onBroadcast(handler);
   }, [enabled, channel, onBroadcast]);
 
-  // Recompute stale set on a poll. Cheap — bounded by seat count (≤ 6).
+  // Recompute sets on a poll. Cheap — bounded by seat count (≤ 6).
   useEffect(() => {
     if (!enabled) return;
     const tick = () => {
@@ -114,31 +152,40 @@ export function useHeartbeatMonitor(opts: {
       const started = monitorStartRef.current;
       const graceExpired = now - started > HEARTBEAT_STALE_MS;
       const stale: string[] = [];
+      const away: string[] = [];
       for (const vid of watchedRef.current) {
         if (vid === hostRef.current) continue; // host is authoritative
         const last = lastSeenRef.current.get(vid);
+        const hidden = hiddenRef.current.get(vid) === true;
         if (last == null) {
           // Never heard from — only count as stale AFTER the grace period,
           // so a fresh host mount doesn't ghost every peer for the first
           // 15 seconds while we wait for their first heartbeat.
           if (graceExpired) stale.push(vid);
-        } else if (now - last > HEARTBEAT_STALE_MS) {
+          continue;
+        }
+        const age = now - last;
+        // Apply the extended threshold if the LAST heartbeat we got said the
+        // client was hidden — that heartbeat is our only evidence the tab
+        // still exists, so trust it until the long threshold expires.
+        const threshold = hidden ? HEARTBEAT_HIDDEN_STALE_MS : HEARTBEAT_STALE_MS;
+        if (age > threshold) {
           stale.push(vid);
+        } else if (hidden) {
+          away.push(vid);
         }
       }
-      setStaleVisitors((prev) => {
-        // Stable identity when membership unchanged — prevents needless
-        // downstream memo invalidation.
-        if (prev.length === stale.length && prev.every((v, i) => v === stale[i])) return prev;
-        return stale;
-      });
+      const same = (prev: string[], next: string[]) =>
+        prev.length === next.length && prev.every((v, i) => v === next[i]);
+      setStaleVisitors((prev) => (same(prev, stale) ? prev : stale));
+      setAwayVisitors((prev) => (same(prev, away) ? prev : away));
     };
     tick();
     const id = window.setInterval(tick, 2000);
     return () => window.clearInterval(id);
   }, [enabled]);
 
-  return staleVisitors;
+  return { staleVisitors, awayVisitors };
 }
 
 // Host-drop note: if the host tab is the one that dies, no one is running
