@@ -131,6 +131,7 @@ function chipsForOpponents(
     if (s.claimBy === seat) kind = "WHOOP";
     else if (nice.has(seat)) kind = "NICE";
     else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
+    else if (s.awaySeats?.includes(seat)) kind = "AWAY";
     else if (s.skip[seat]) kind = "PENALTY";
     else if (((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat))) kind = "ROLLING";
     else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
