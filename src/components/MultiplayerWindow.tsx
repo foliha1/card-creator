@@ -508,6 +508,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         roomId={activeRoom.id}
         visitorId={visitorId}
         isHost={true}
+        presenceVisitorIds={participants.map((p) => p.visitor_id)}
       />
     );
   }
@@ -527,6 +528,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         roomId={activeRoom.id}
         visitorId={visitorId}
         isHost={false}
+        presenceVisitorIds={participants.map((p) => p.visitor_id)}
       />
     );
   }

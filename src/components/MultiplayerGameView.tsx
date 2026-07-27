@@ -59,6 +59,10 @@ interface Props {
   roomId: string;
   visitorId: string;
   isHost: boolean;
+  // Live list of visitor_ids currently present via Realtime Presence.
+  // Diagnostic-only: used by the ?debug=1 overlay to compute the client's
+  // view of disconnectedSeats independent of the reducer.
+  presenceVisitorIds?: string[];
 }
 
 // -------- Figma-transcribed constants --------
@@ -488,10 +492,80 @@ const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
   );
 };
 
+// -------- Diagnostic overlay (?debug=1) --------
+//
+// Inert unless window.location.search contains debug=1. Values are read
+// live from props on every render — no snapshots. Never mutates state or
+// intercepts pointer events.
+const useDebugFlag = (): boolean => {
+  const read = () =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("debug") === "1";
+  const [on, setOn] = React.useState<boolean>(read);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => setOn(read());
+    window.addEventListener("popstate", handler);
+    window.addEventListener("hashchange", handler);
+    return () => {
+      window.removeEventListener("popstate", handler);
+      window.removeEventListener("hashchange", handler);
+    };
+  }, []);
+  return on;
+};
+
+const PresenceDebugOverlay: React.FC<{
+  mySeat: number | null;
+  visitorId: string;
+  seatMap: PublicState["seatMap"];
+  reducerDisconnectedSeats: number[];
+  presenceVisitorIds?: string[];
+}> = ({ mySeat, visitorId, seatMap, reducerDisconnectedSeats, presenceVisitorIds }) => {
+  const on = useDebugFlag();
+  if (!on) return null;
+  const present = new Set(presenceVisitorIds ?? []);
+  const total = seatMap.length;
+  const computedDisconnected = seatMap
+    .filter((e) => !present.has(e.visitor_id))
+    .map((e) => e.seat);
+  const connected = total - computedDisconnected.length;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: 4,
+        left: 4,
+        zIndex: 1000,
+        background: "rgba(35,31,32,0.88)",
+        color: "#F8F2E9",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 11,
+        lineHeight: "14px",
+        padding: "6px 8px",
+        borderRadius: 4,
+        maxWidth: 320,
+        pointerEvents: "none",
+        whiteSpace: "pre-wrap",
+      }}
+      aria-hidden="true"
+      data-testid="presence-debug-overlay"
+    >
+      {`mySeat: ${mySeat ?? "-"}
+visitor_id: ${visitorId}
+connected: ${connected}/${total}
+computedDisconnectedSeats: [${computedDisconnected.join(",")}]
+reducer.disconnected: [${reducerDisconnectedSeats.join(",")}]
+presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
+    </div>
+  );
+};
+
 // -------- Main component --------
 
+
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
+  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
@@ -1007,6 +1081,14 @@ const MultiplayerGameView: React.FC<Props> = ({
             {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nfromW: ${fromW.toFixed(1)}\nfromH: ${fromH.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}\nseatCount: ${s.seatCount} | connected: ${s.seatMap.length - s.disconnectedSeats.length}/${s.seatMap.length}\nflipper: ${s.flipper ?? "-"} | roller: ${s.roller ?? "-"}\nlens scores:${s.scores.length} skip:${s.skip.length} wrongBy:${s.wrongBy.length} disc:${s.disconnectedSeats.length}\nskip:[${s.skip.map(b => b ? 1 : 0).join(",")}] scores:[${s.scores.join(",")}]`}
           </div>
         )}
+
+        <PresenceDebugOverlay
+          mySeat={mySeat}
+          visitorId={visitorId}
+          seatMap={s.seatMap}
+          reducerDisconnectedSeats={s.disconnectedSeats}
+          presenceVisitorIds={presenceVisitorIds}
+        />
       </div>
 
       {scoreRow}
