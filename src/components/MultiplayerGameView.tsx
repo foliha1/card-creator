@@ -416,7 +416,19 @@ const DieBox: React.FC<{
         opacity: heroActive ? 0 : 1, overflow: "hidden",
       }}
     >
-      {!waiting && (
+      {waiting ? (
+        <span
+          aria-label="Waiting for roll"
+          style={{
+            fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
+            fontSize: 18, lineHeight: "18px", color: INK, opacity: 0.55,
+            textAlign: "center", transform: "rotate(3.65deg)",
+            userSelect: "none", pointerEvents: "none",
+          }}
+        >
+          waiting<br/>for roll…
+        </span>
+      ) : (
         <img
           src={MATCH_ART_SRC[rule as RollAttribute]}
           alt={`Match the ${rule}`}
