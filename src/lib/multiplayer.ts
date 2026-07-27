@@ -147,6 +147,26 @@ export interface ClaimRejectEnvelope {
   payload: ClaimRejectPayload;
 }
 
+// Application-level liveness heartbeat. Presence leave events cannot be
+// relied on — a crashed or backgrounded client never untracks, and server
+// reap can take well over a minute. Every client broadcasts this on the
+// room channel on a fixed cadence; the host tracks last-seen per visitor
+// and marks a seat disconnected when its last heartbeat is stale. A seat
+// is un-marked the moment its heartbeat resumes (SET_DISCONNECTED uses
+// REPLACE semantics on the reducer).
+export const HEARTBEAT_INTERVAL_MS = 5000;
+export const HEARTBEAT_STALE_MS = 15000;
+export interface HeartbeatPayload {
+  visitor_id: string;
+  at: number; // sender wall clock — informational; host uses local receive time
+}
+export interface HeartbeatEnvelope {
+  v: number;
+  type: "heartbeat";
+  seq: number;
+  payload: HeartbeatPayload;
+}
+
 export type Envelope =
   | StateEnvelope
   | IntentEnvelope
@@ -154,7 +174,8 @@ export type Envelope =
   | EventEnvelope
   | RollCommittedEnvelope
   | RollRejectEnvelope
-  | ClaimRejectEnvelope;
+  | ClaimRejectEnvelope
+  | HeartbeatEnvelope;
 
 export function jsonSerialize(payload: unknown): string {
   return JSON.stringify(payload);
