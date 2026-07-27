@@ -341,17 +341,15 @@ export function useMultiplayerHost(opts: {
       if (grantedRef.current.has(dedupeKey)) return;
       const phase = latestStateRef.current.phase;
       const s = latestStateRef.current;
-      // Pre-check reducer acceptance guards. Reducer returns the SAME state
-      // reference on refusal (e.g. `if (state.phase !== "FLIPPING") return state;`),
-      // so refusal is NOT distinguishable post-dispatch from a legal no-op.
-      // We therefore replicate the guards here to detect refusal deterministically.
-      // PLAYER_ENTER_CLAIM accepts iff phase === "FLIPPING".
-      // PLAYER_ENTER_CLAIM_DURING_ROLL accepts iff phase === "AWAITING_ROLL"
-      //   && roller === seat && !claimPending.
+      // Pre-check reducer acceptance guard. Reducer returns the SAME state
+      // reference on refusal, so refusal is NOT distinguishable post-dispatch
+      // from a legal no-op. Replicate the guard here to detect refusal
+      // deterministically. PLAYER_ENTER_CLAIM accepts iff phase === "FLIPPING".
+      // The WHOOP button is UI-disabled during AWAITING_ROLL/ROLLING, but a
+      // claim can still be in flight when the phase changes — this safety
+      // net stays so any refused grant releases its lock.
       const acceptedFlipping = phase === "FLIPPING";
-      const acceptedAwaiting =
-        phase === "AWAITING_ROLL" && s.roller === grant.seat && !s.claimPending;
-      if (!acceptedFlipping && !acceptedAwaiting) {
+      if (!acceptedFlipping) {
         // Orphaned lock — the arbiter granted but the reducer refuses. Release
         // the row so the (room, game, claim_window) key reopens, and surface
         // a reject to the pressing player so they exit LOCKING….
@@ -361,7 +359,6 @@ export function useMultiplayerHost(opts: {
           visitor_id: grant.visitor_id,
           phase,
           roller: s.roller,
-          claimPending: s.claimPending,
         });
         grantedRef.current.add(dedupeKey);
         const rejectPayload: ClaimRejectPayload = {
@@ -394,12 +391,7 @@ export function useMultiplayerHost(opts: {
         return;
       }
       grantedRef.current.add(dedupeKey);
-      if (acceptedAwaiting) {
-        g.dispatch({ type: "PLAYER_ENTER_CLAIM_DURING_ROLL", by: grant.seat });
-        commitAndRoll();
-      } else if (acceptedFlipping) {
-        g.dispatch({ type: "PLAYER_ENTER_CLAIM", by: grant.seat });
-      }
+      g.dispatch({ type: "PLAYER_ENTER_CLAIM", by: grant.seat });
     };
     return onBroadcast(handler);
   }, [enabled, channel, onBroadcast, g.dispatch, commitAndRoll, roomId]);
@@ -455,7 +447,6 @@ function handleHostIntent(
       commitAndRoll();
       return;
     case "PLAYER_ENTER_CLAIM":
-    case "PLAYER_ENTER_CLAIM_DURING_ROLL":
       // Ignored — the arbiter is the only path into claim mode.
       return;
     case "CANCEL_CLAIM":
