@@ -7,6 +7,7 @@ import { getVisitorId, getDisplayName, setDisplayName } from "@/lib/visitor";
 import { trackEvent } from "@/lib/analytics";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
+import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { toPublicState } from "@/lib/publicState";
 import {
