@@ -156,9 +156,19 @@ export interface ClaimRejectEnvelope {
 // REPLACE semantics on the reducer).
 export const HEARTBEAT_INTERVAL_MS = 5000;
 export const HEARTBEAT_STALE_MS = 15000;
+// Backgrounded (document.hidden) clients get a much longer grace window before
+// the host counts them disconnected. Browsers throttle timers on hidden tabs
+// aggressively — Chrome drops to ~1 timer/minute after ~5min hidden — so a
+// 15s threshold produces false positives on healthy sleeping tabs. A hidden
+// client is surfaced as AWAY (not GONE) until this longer threshold trips.
+export const HEARTBEAT_HIDDEN_STALE_MS = 180000; // 3 minutes
 export interface HeartbeatPayload {
   visitor_id: string;
   at: number; // sender wall clock — informational; host uses local receive time
+  // Set on visibilitychange transitions AND every regular tick so the host
+  // does not need to correlate events with intervals. Absent (undefined) is
+  // treated as visible for backward compatibility.
+  hidden?: boolean;
 }
 export interface HeartbeatEnvelope {
   v: number;
