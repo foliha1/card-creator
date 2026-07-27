@@ -495,7 +495,7 @@ const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
 // -------- Main component --------
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost,
+  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
