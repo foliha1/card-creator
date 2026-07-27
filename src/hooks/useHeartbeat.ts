@@ -30,6 +30,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
+  HEARTBEAT_END_GAME_STALE_MS,
   HEARTBEAT_HIDDEN_STALE_MS,
   HEARTBEAT_INTERVAL_MS,
   HEARTBEAT_STALE_MS,
@@ -87,6 +88,12 @@ export function useHeartbeatSender(
 export interface HeartbeatMonitorResult {
   staleVisitors: string[];
   awayVisitors: string[];
+  // Visitors whose LAST heartbeat (any state, hidden or visible) arrived more
+  // than HEARTBEAT_END_GAME_STALE_MS ago, OR who were never heard from past
+  // the same grace window. This is the stricter "table empty" signal — a
+  // hidden-but-still-pinging client is NOT in this set. Used ONLY by the
+  // irreversible end-game guard, never by SET_DISCONNECTED or turn skipping.
+  endGameVisitors: string[];
 }
 
 // HOST-ONLY. Watches inbound heartbeats and derives:
@@ -109,6 +116,7 @@ export function useHeartbeatMonitor(opts: {
   const { channel, onBroadcast, enabled, watchedVisitorIds, hostVisitorId } = opts;
   const [staleVisitors, setStaleVisitors] = useState<string[]>([]);
   const [awayVisitors, setAwayVisitors] = useState<string[]>([]);
+  const [endGameVisitors, setEndGameVisitors] = useState<string[]>([]);
 
   // Last local receive time + last-known hidden flag, per visitor.
   const lastSeenRef = useRef<Map<string, number>>(new Map());
@@ -128,6 +136,7 @@ export function useHeartbeatMonitor(opts: {
     hiddenRef.current = new Map();
     setStaleVisitors([]);
     setAwayVisitors([]);
+    setEndGameVisitors([]);
   }, [enabled]);
 
   // Ingest heartbeats. Uses LOCAL receive time — sender clocks are untrusted.
@@ -151,17 +160,20 @@ export function useHeartbeatMonitor(opts: {
       const now = Date.now();
       const started = monitorStartRef.current;
       const graceExpired = now - started > HEARTBEAT_STALE_MS;
+      const endGameGraceExpired = now - started > HEARTBEAT_END_GAME_STALE_MS;
       const stale: string[] = [];
       const away: string[] = [];
+      const endGame: string[] = [];
       for (const vid of watchedRef.current) {
         if (vid === hostRef.current) continue; // host is authoritative
         const last = lastSeenRef.current.get(vid);
         const hidden = hiddenRef.current.get(vid) === true;
         if (last == null) {
-          // Never heard from — only count as stale AFTER the grace period,
-          // so a fresh host mount doesn't ghost every peer for the first
-          // 15 seconds while we wait for their first heartbeat.
+          // Never heard from. Stale after the normal grace, end-game only
+          // after the much longer grace — so a slow-joining peer can't tip
+          // the table below the end-game floor on the host's first minute.
           if (graceExpired) stale.push(vid);
+          if (endGameGraceExpired) endGame.push(vid);
           continue;
         }
         const age = now - last;
@@ -174,18 +186,23 @@ export function useHeartbeatMonitor(opts: {
         } else if (hidden) {
           away.push(vid);
         }
+        // End-game set is intentionally hidden-agnostic: only a total
+        // heartbeat blackout for the long window counts. A hidden client
+        // that is still pinging is proof-of-life and stays OUT of this set.
+        if (age > HEARTBEAT_END_GAME_STALE_MS) endGame.push(vid);
       }
       const same = (prev: string[], next: string[]) =>
         prev.length === next.length && prev.every((v, i) => v === next[i]);
       setStaleVisitors((prev) => (same(prev, stale) ? prev : stale));
       setAwayVisitors((prev) => (same(prev, away) ? prev : away));
+      setEndGameVisitors((prev) => (same(prev, endGame) ? prev : endGame));
     };
     tick();
     const id = window.setInterval(tick, 2000);
     return () => window.clearInterval(id);
   }, [enabled]);
 
-  return { staleVisitors, awayVisitors };
+  return { staleVisitors, awayVisitors, endGameVisitors };
 }
 
 // Host-drop note: if the host tab is the one that dies, no one is running

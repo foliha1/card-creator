@@ -98,14 +98,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     () => (frozenSeats ? frozenSeats.map((e) => e.visitor_id) : []),
     [frozenSeats],
   );
-  const { staleVisitors: heartbeatStaleVisitors, awayVisitors: heartbeatAwayVisitors } =
-    useHeartbeatMonitor({
-      channel,
-      onBroadcast,
-      enabled: isHostView && frozenSeats !== null,
-      watchedVisitorIds,
-      hostVisitorId: visitorId,
-    });
+  const {
+    staleVisitors: heartbeatStaleVisitors,
+    awayVisitors: heartbeatAwayVisitors,
+    endGameVisitors: heartbeatEndGameVisitors,
+  } = useHeartbeatMonitor({
+    channel,
+    onBroadcast,
+    enabled: isHostView && frozenSeats !== null,
+    watchedVisitorIds,
+    hostVisitorId: visitorId,
+  });
 
   // Compute disconnected seats: union of
   //   (a) seats whose visitor_id is no longer in the presence roster, and
@@ -137,6 +140,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       .map((e) => e.seat);
   }, [frozenSeats, heartbeatAwayVisitors, disconnectedSeats]);
 
+  // Stricter set for the IRREVERSIBLE end-game guard. A seat is in here only
+  // when we've heard NOTHING (visible or hidden) from it for the long window.
+  // Presence-absent alone is NOT sufficient — presence has been observed to
+  // hold ghost keys for over a minute, so relying on it to trigger a game
+  // end would reproduce the very false-positive this fix exists to prevent.
+  const endGameDisconnectedSeats = useMemo(() => {
+    if (!frozenSeats) return [] as number[];
+    const dead = new Set(heartbeatEndGameVisitors);
+    return frozenSeats.filter((e) => dead.has(e.visitor_id)).map((e) => e.seat);
+  }, [frozenSeats, heartbeatEndGameVisitors]);
+
   // Host: game controller.
   const gameEnabled = isHostView && frozenSeats !== null;
   const host = useMultiplayerHost({
@@ -149,6 +163,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     roomId: activeRoom?.id ?? "",
     disconnectedSeats,
     awaySeats,
+    endGameDisconnectedSeats,
   });
   const hostEvents = useTransientEvents(channel, onBroadcast, gameEnabled);
 
