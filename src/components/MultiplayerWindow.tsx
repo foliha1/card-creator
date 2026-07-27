@@ -514,6 +514,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       hostClaimWindowRef.current,
       gameId,
       disconnectedSeats,
+      awaySeats,
     );
     return (
       <MultiplayerGameView
