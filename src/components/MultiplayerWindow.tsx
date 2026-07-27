@@ -485,7 +485,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
             host.commitAndRoll();
             return;
           }
-          if (action.type === "PLAYER_ENTER_CLAIM" || action.type === "PLAYER_ENTER_CLAIM_DURING_ROLL") {
+          if (action.type === "PLAYER_ENTER_CLAIM") {
             return;
           }
           if (action.type === "CANCEL_CLAIM") {

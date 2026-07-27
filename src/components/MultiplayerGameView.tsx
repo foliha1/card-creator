@@ -759,6 +759,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   // AWAITING_ROLL through the end of ROLLING, so a player mashing during a
   // roll can never fire a claim or earn a wrong-claim penalty. The roller's
   // YOUR_ROLL button is preserved (they need to tap to roll).
+  const isRolling = s.rolling;
   const dimForRoll = s.phase === "AWAITING_ROLL" && !isMyTurnToRoll;
   if (dimForRoll) {
     buttonKind = "WHOOP";
