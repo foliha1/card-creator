@@ -98,19 +98,27 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     () => (frozenSeats ? frozenSeats.map((e) => e.visitor_id) : []),
     [frozenSeats],
   );
-  const heartbeatStaleVisitors = useHeartbeatMonitor({
-    channel,
-    onBroadcast,
-    enabled: isHostView && frozenSeats !== null,
-    watchedVisitorIds,
-    hostVisitorId: visitorId,
-  });
+  const { staleVisitors: heartbeatStaleVisitors, awayVisitors: heartbeatAwayVisitors } =
+    useHeartbeatMonitor({
+      channel,
+      onBroadcast,
+      enabled: isHostView && frozenSeats !== null,
+      watchedVisitorIds,
+      hostVisitorId: visitorId,
+    });
 
   // Compute disconnected seats: union of
   //   (a) seats whose visitor_id is no longer in the presence roster, and
-  //   (b) seats whose heartbeat has gone stale (>15s since last).
+  //   (b) seats whose heartbeat has gone stale past its applicable threshold.
   // Both signals feed SET_DISCONNECTED, which uses REPLACE semantics —
   // resuming heartbeats OR presence rejoin automatically un-marks a seat.
+  //
+  // AWAY is separate: a visitor whose latest heartbeat says `hidden:true` and
+  // is still within the (much longer) hidden-stale window is surfaced as
+  // AWAY in the chip strip but is NOT considered disconnected. The reducer
+  // does not skip AWAY seats and the empty-table end-game does not fire on
+  // transient hides. Hidden → stale eventually promotes to disconnected via
+  // the stale set above.
   const disconnectedSeats = useMemo(() => {
     if (!frozenSeats) return [] as number[];
     const present = new Set(participants.map((p) => p.visitor_id));
@@ -119,6 +127,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       .filter((e) => !present.has(e.visitor_id) || stale.has(e.visitor_id))
       .map((e) => e.seat);
   }, [frozenSeats, participants, heartbeatStaleVisitors]);
+
+  const awaySeats = useMemo(() => {
+    if (!frozenSeats) return [] as number[];
+    const away = new Set(heartbeatAwayVisitors);
+    const disc = new Set(disconnectedSeats);
+    return frozenSeats
+      .filter((e) => away.has(e.visitor_id) && !disc.has(e.seat))
+      .map((e) => e.seat);
+  }, [frozenSeats, heartbeatAwayVisitors, disconnectedSeats]);
 
   // Host: game controller.
   const gameEnabled = isHostView && frozenSeats !== null;
@@ -131,6 +148,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     gameId,
     roomId: activeRoom?.id ?? "",
     disconnectedSeats,
+    awaySeats,
   });
   const hostEvents = useTransientEvents(channel, onBroadcast, gameEnabled);
 
@@ -496,6 +514,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       hostClaimWindowRef.current,
       gameId,
       disconnectedSeats,
+      awaySeats,
     );
     return (
       <MultiplayerGameView

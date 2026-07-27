@@ -55,8 +55,9 @@ export function useMultiplayerHost(opts: {
   gameId: string;
   roomId: string;
   disconnectedSeats: number[];
+  awaySeats?: number[];
 }) {
-  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId, disconnectedSeats } = opts;
+  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId, disconnectedSeats, awaySeats = [] } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
@@ -102,6 +103,9 @@ export function useMultiplayerHost(opts: {
     claimWindowRef.current = 0;
   }
 
+  const awayRef = useRef<number[]>(awaySeats);
+  awayRef.current = awaySeats;
+
   const doSend = useCallback(() => {
     const ch = channelRef.current;
     if (!ch) return;
@@ -116,6 +120,7 @@ export function useMultiplayerHost(opts: {
         claimWindowRef.current,
         gameIdRef.current,
         disconnectedRef.current,
+        awayRef.current,
       ),
     };
     lastSentAtRef.current = Date.now();
@@ -178,7 +183,7 @@ export function useMultiplayerHost(opts: {
     return () => {
       // No teardown on state change; only clear on unmount below.
     };
-  }, [enabled, channel, g.state, doSend]);
+  }, [enabled, channel, g.state, doSend, awaySeats, disconnectedSeats]);
 
   useEffect(() => {
     return () => {

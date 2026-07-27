@@ -66,11 +66,15 @@ export interface PublicState {
   // UNIQUE (room_id, game_id, claim_window) constraint so a second game in
   // the same room does not collide with the first game's rows.
   gameId: string;
-  // Seats whose visitor_id is no longer in room presence. The seat is kept —
-  // score, seat index and seatMap position stay valid — but the host
-  // auto-advances past the seat when it becomes flipper. More urgent than
-  // PENALTY in the UI.
+  // Seats whose visitor_id is no longer in room presence, or whose heartbeat
+  // has gone stale past its applicable threshold. The seat is kept — score,
+  // seat index and seatMap position stay valid — but the host auto-advances
+  // past the seat when it becomes flipper. More urgent than PENALTY in the UI.
   disconnectedSeats: number[];
+  // Seats whose latest heartbeat reported document.hidden=true and are still
+  // within the (much longer) hidden-stale grace window. UI-only — reducer
+  // does NOT skip these, so a briefly backgrounded player isn't ghosted.
+  awaySeats: number[];
 }
 
 export function toPublicState(
@@ -79,6 +83,7 @@ export function toPublicState(
   claimWindow: number = 0,
   gameId: string = "",
   disconnectedSeats: number[] = [],
+  awaySeats: number[] = [],
 ): PublicState {
   const exposed = new Set<number>();
   if (state.peekingCard !== null) exposed.add(state.peekingCard);
@@ -123,5 +128,6 @@ export function toPublicState(
     claimWindow,
     gameId,
     disconnectedSeats: disconnectedSeats.slice(),
+    awaySeats: awaySeats.slice(),
   };
 }
