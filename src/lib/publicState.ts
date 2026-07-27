@@ -83,6 +83,7 @@ export function toPublicState(
   claimWindow: number = 0,
   gameId: string = "",
   disconnectedSeats: number[] = [],
+  awaySeats: number[] = [],
 ): PublicState {
   const exposed = new Set<number>();
   if (state.peekingCard !== null) exposed.add(state.peekingCard);
