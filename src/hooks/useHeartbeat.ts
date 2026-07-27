@@ -30,6 +30,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
+  HEARTBEAT_END_GAME_STALE_MS,
   HEARTBEAT_HIDDEN_STALE_MS,
   HEARTBEAT_INTERVAL_MS,
   HEARTBEAT_STALE_MS,
