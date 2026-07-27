@@ -162,6 +162,12 @@ export const HEARTBEAT_STALE_MS = 15000;
 // 15s threshold produces false positives on healthy sleeping tabs. A hidden
 // client is surfaced as AWAY (not GONE) until this longer threshold trips.
 export const HEARTBEAT_HIDDEN_STALE_MS = 180000; // 3 minutes
+// End-game guard threshold. Fewer than 2 connected → END_GAME_TABLE_EMPTY is
+// IRREVERSIBLE, so it demands a much stricter signal than the per-turn skip.
+// A seat only counts toward the end-condition if we've heard NOTHING from it
+// for this long — regardless of whether its last heartbeat said hidden. A
+// still-arriving "hidden" heartbeat is proof-of-life and does NOT count.
+export const HEARTBEAT_END_GAME_STALE_MS = 60000; // 60s, 4x the skip threshold
 export interface HeartbeatPayload {
   visitor_id: string;
   at: number; // sender wall clock — informational; host uses local receive time
