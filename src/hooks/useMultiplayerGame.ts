@@ -56,8 +56,18 @@ export function useMultiplayerHost(opts: {
   roomId: string;
   disconnectedSeats: number[];
   awaySeats?: number[];
+  // A STRICTER disconnect set — visitors we've heard nothing from for a
+  // much longer window than the per-turn skip threshold. Used ONLY for the
+  // irreversible END_GAME_TABLE_EMPTY trigger. Defaults to the regular
+  // disconnectedSeats if the caller doesn't supply it, so older wiring is
+  // safe — but new code should always pass it.
+  endGameDisconnectedSeats?: number[];
 }) {
-  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId, disconnectedSeats, awaySeats = [] } = opts;
+  const {
+    channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId,
+    disconnectedSeats, awaySeats = [], endGameDisconnectedSeats,
+  } = opts;
+  const effectiveEndGameDisconnected = endGameDisconnectedSeats ?? disconnectedSeats;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
