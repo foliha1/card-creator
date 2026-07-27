@@ -88,6 +88,12 @@ export function useHeartbeatSender(
 export interface HeartbeatMonitorResult {
   staleVisitors: string[];
   awayVisitors: string[];
+  // Visitors whose LAST heartbeat (any state, hidden or visible) arrived more
+  // than HEARTBEAT_END_GAME_STALE_MS ago, OR who were never heard from past
+  // the same grace window. This is the stricter "table empty" signal — a
+  // hidden-but-still-pinging client is NOT in this set. Used ONLY by the
+  // irreversible end-game guard, never by SET_DISCONNECTED or turn skipping.
+  endGameVisitors: string[];
 }
 
 // HOST-ONLY. Watches inbound heartbeats and derives:
