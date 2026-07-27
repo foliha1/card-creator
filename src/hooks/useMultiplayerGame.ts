@@ -55,8 +55,9 @@ export function useMultiplayerHost(opts: {
   gameId: string;
   roomId: string;
   disconnectedSeats: number[];
+  awaySeats?: number[];
 }) {
-  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId, disconnectedSeats } = opts;
+  const { channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId, disconnectedSeats, awaySeats = [] } = opts;
   const seatCount = Math.max(2, seatMap.length);
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
