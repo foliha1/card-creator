@@ -772,7 +772,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   // roll can never fire a claim or earn a wrong-claim penalty. The roller's
   // YOUR_ROLL button is preserved (they need to tap to roll).
   const isRolling = s.rolling;
-  const dimForRoll = s.phase === "AWAITING_ROLL" && !isMyTurnToRoll;
+  const dimForRoll = (s.phase === "AWAITING_ROLL" || isRolling) && !isMyTurnToRoll;
   if (dimForRoll) {
     buttonKind = "WHOOP";
     buttonOnClick = undefined;
