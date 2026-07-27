@@ -103,6 +103,9 @@ export function useMultiplayerHost(opts: {
     claimWindowRef.current = 0;
   }
 
+  const awayRef = useRef<number[]>(awaySeats);
+  awayRef.current = awaySeats;
+
   const doSend = useCallback(() => {
     const ch = channelRef.current;
     if (!ch) return;
@@ -117,6 +120,7 @@ export function useMultiplayerHost(opts: {
         claimWindowRef.current,
         gameIdRef.current,
         disconnectedRef.current,
+        awayRef.current,
       ),
     };
     lastSentAtRef.current = Date.now();
