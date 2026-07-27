@@ -59,6 +59,10 @@ interface Props {
   roomId: string;
   visitorId: string;
   isHost: boolean;
+  // Live list of visitor_ids currently present via Realtime Presence.
+  // Diagnostic-only: used by the ?debug=1 overlay to compute the client's
+  // view of disconnectedSeats independent of the reducer.
+  presenceVisitorIds?: string[];
 }
 
 // -------- Figma-transcribed constants --------
