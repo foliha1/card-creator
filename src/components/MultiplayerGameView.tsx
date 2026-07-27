@@ -81,7 +81,7 @@ const R_STRIP = 6.33043;
 const BORDER_HEAVY = `2px solid ${INK}`;
 const CARD_SHADOW = "0px 4px 4px rgba(0,0,0,0.25)";
 
-type ChipKind = "ROLLING" | "WHOOP" | "NICE" | "FLIPPING" | "TOO_SLOW" | "PENALTY" | "GONE" | "IDLE" | "EMPTY";
+type ChipKind = "ROLLING" | "WHOOP" | "NICE" | "FLIPPING" | "TOO_SLOW" | "PENALTY" | "GONE" | "AWAY" | "IDLE" | "EMPTY";
 
 interface ChipStyle {
   bg: string; border: string; nameBg: string; nameBorder: string;
