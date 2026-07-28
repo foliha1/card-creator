@@ -990,6 +990,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           alt="WHOOP! WHOOP!"
           width={252}
           height={199}
+          data-lobby-logo="true"
           style={{ width: 252, height: 199, display: "block" }}
         />
 
