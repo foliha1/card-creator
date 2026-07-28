@@ -143,6 +143,22 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
       .map((e) => e.seat);
   }, [frozenSeats, heartbeatAwayVisitors]);
 
+  // Diagnostic-only seat-number mirrors of the visitor-id sets the heartbeat
+  // hook returns. Passed to the debug overlay so testers can see the
+  // breakdown between presence-only absence, stale heartbeat, and away-skip
+  // dwell before comparing with reducer.disconnected.
+  const heartbeatStaleSeats = useMemo(() => {
+    if (!frozenSeats) return [] as number[];
+    const stale = new Set(heartbeatStaleVisitors);
+    return frozenSeats.filter((e) => stale.has(e.visitor_id)).map((e) => e.seat);
+  }, [frozenSeats, heartbeatStaleVisitors]);
+
+  const awaySkipSeats = useMemo(() => {
+    if (!frozenSeats) return [] as number[];
+    const away = new Set(heartbeatAwaySkipVisitors);
+    return frozenSeats.filter((e) => away.has(e.visitor_id)).map((e) => e.seat);
+  }, [frozenSeats, heartbeatAwaySkipVisitors]);
+
 
   // Stricter set for the IRREVERSIBLE end-game guard. A seat is in here only
   // when we've heard NOTHING (visible or hidden) from it for the long window.
@@ -571,6 +587,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         visitorId={visitorId}
         isHost={true}
         presenceVisitorIds={participants.map((p) => p.visitor_id)}
+        heartbeatStale={heartbeatStaleSeats}
+        awaySkip={awaySkipSeats}
+        hostDisconnectedSeats={disconnectedSeats}
       />
     );
   }

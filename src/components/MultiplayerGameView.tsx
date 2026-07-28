@@ -63,6 +63,12 @@ interface Props {
   // Diagnostic-only: used by the ?debug=1 overlay to compute the client's
   // view of disconnectedSeats independent of the reducer.
   presenceVisitorIds?: string[];
+  // Diagnostic-only: heartbeat-derived seat sets. The overlay displays the
+  // breakdown so testers do not confuse presence-only absence with the union
+  // the host actually dispatches to the reducer.
+  heartbeatStale?: number[];
+  awaySkip?: number[];
+  hostDisconnectedSeats?: number[];
 }
 
 // -------- Figma-transcribed constants --------
@@ -530,15 +536,27 @@ const PresenceDebugOverlay: React.FC<{
   seatMap: PublicState["seatMap"];
   reducerDisconnectedSeats: number[];
   presenceVisitorIds?: string[];
-}> = ({ mySeat, visitorId, seatMap, reducerDisconnectedSeats, presenceVisitorIds }) => {
+  heartbeatStale?: number[];
+  awaySkip?: number[];
+  hostDisconnectedSeats?: number[];
+}> = ({
+  mySeat,
+  visitorId,
+  seatMap,
+  reducerDisconnectedSeats,
+  presenceVisitorIds,
+  heartbeatStale = [],
+  awaySkip = [],
+  hostDisconnectedSeats = [],
+}) => {
   const on = useDebugFlag();
   if (!on) return null;
   const present = new Set(presenceVisitorIds ?? []);
   const total = seatMap.length;
-  const computedDisconnected = seatMap
+  const presenceOnlyMissing = seatMap
     .filter((e) => !present.has(e.visitor_id))
     .map((e) => e.seat);
-  const connected = total - computedDisconnected.length;
+  const connected = total - presenceOnlyMissing.length;
   return (
     <div
       style={{
@@ -563,7 +581,10 @@ const PresenceDebugOverlay: React.FC<{
       {`mySeat: ${mySeat ?? "-"}
 visitor_id: ${visitorId}
 connected: ${connected}/${total}
-computedDisconnectedSeats: [${computedDisconnected.join(",")}]
+presenceOnlyMissing: [${presenceOnlyMissing.join(",")}]
+heartbeatStale: [${heartbeatStale.join(",")}]
+awaySkip: [${awaySkip.join(",")}]
+hostDisconnectedSeats: [${hostDisconnectedSeats.join(",")}]
 reducer.disconnected: [${reducerDisconnectedSeats.join(",")}]
 presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
     </div>
@@ -575,6 +596,7 @@ presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
 
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
+  heartbeatStale, awaySkip, hostDisconnectedSeats,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
@@ -1097,6 +1119,9 @@ const MultiplayerGameView: React.FC<Props> = ({
           seatMap={s.seatMap}
           reducerDisconnectedSeats={s.disconnectedSeats}
           presenceVisitorIds={presenceVisitorIds}
+          heartbeatStale={heartbeatStale}
+          awaySkip={awaySkip}
+          hostDisconnectedSeats={hostDisconnectedSeats}
         />
       </div>
 
