@@ -34,8 +34,10 @@ const prefersReducedMotion = (): boolean => {
   }
 };
 
+export type IntroDoneReason = "complete" | "skip";
+
 interface IntroAnimationProps {
-  onDone: () => void;
+  onDone: (reason: IntroDoneReason) => void;
 }
 
 type Phase = "playing" | "matchcut";
