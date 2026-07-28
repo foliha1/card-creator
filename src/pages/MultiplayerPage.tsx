@@ -1,7 +1,8 @@
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { COLORS } from "@/lib/tokens";
+import IntroAnimation, { hasSeenIntro } from "@/components/IntroAnimation";
 
 const PAGE_BG = "#231F20";
 
@@ -9,6 +10,7 @@ const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindo
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
+  const [showIntro, setShowIntro] = useState<boolean>(() => !hasSeenIntro());
   const title = "Multiplayer — WHOOP! WHOOP!";
   const description =
     "Play WHOOP! WHOOP! online with friends. Start a table, share the link, and match cards under the die.";
