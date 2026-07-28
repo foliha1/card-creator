@@ -59,15 +59,15 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   const doneRef = useRef(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
 
-  const finish = React.useCallback(() => {
+  const finish = React.useCallback((reason: IntroDoneReason) => {
     if (doneRef.current) return;
     doneRef.current = true;
     markSeen();
-    onDone();
+    onDone(reason);
   }, [onDone]);
 
   const skip = React.useCallback(() => {
-    finish();
+    finish("skip");
   }, [finish]);
 
   const startMatchCut = React.useCallback(() => {
