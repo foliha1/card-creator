@@ -89,6 +89,11 @@ export function useHeartbeatSender(
 export interface HeartbeatMonitorResult {
   staleVisitors: string[];
   awayVisitors: string[];
+  // Subset of awayVisitors whose FIRST hidden heartbeat arrived more than
+  // AWAY_SKIP_MS ago. These have dwelt in the hidden state long enough that
+  // it is safe to feed them into the turn-skip path — a momentary hide→show
+  // will not have flipped a turn. awayVisitors (chip label) is unchanged.
+  awaySkipVisitors: string[];
   // Visitors whose LAST heartbeat (any state, hidden or visible) arrived more
   // than HEARTBEAT_END_GAME_STALE_MS ago, OR who were never heard from past
   // the same grace window. This is the stricter "table empty" signal — a
