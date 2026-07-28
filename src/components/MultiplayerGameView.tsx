@@ -596,6 +596,7 @@ presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
 
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
+  heartbeatStale, awaySkip, hostDisconnectedSeats,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
