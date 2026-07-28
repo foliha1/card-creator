@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
-import IntroAnimation from "@/components/IntroAnimation";
+const IntroAnimation = React.lazy(() => import("@/components/IntroAnimation"));
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
@@ -97,9 +97,11 @@ const MultiplayerPage: React.FC = () => {
         </div>
       </div>
       {introStatus === "running" && (
-        <IntroAnimation
-          onDone={(reason) => setIntroStatus(reason === "complete" ? "complete" : "skipped")}
-        />
+        <Suspense fallback={null}>
+          <IntroAnimation
+            onDone={(reason) => setIntroStatus(reason === "complete" ? "complete" : "skipped")}
+          />
+        </Suspense>
       )}
     </>
   );
