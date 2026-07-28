@@ -173,6 +173,12 @@ export const HEARTBEAT_END_GAME_STALE_MS = 60000; // 60s, 4x the skip threshold
 // player has backgrounded), but we do not want a momentary tab switch to
 // steal a turn — the reducer only skips AWAY seats after this dwell.
 export const AWAY_SKIP_MS = 15000;
+// If every watched seat's last-seen heartbeat falls within this window, the
+// silence is almost certainly caused by the HOST'S own socket dropping (all
+// peers went quiet simultaneously) rather than every peer leaving one at a
+// time. Used to gate the irreversible END_GAME_TABLE_EMPTY dispatch. Set to
+// the sender interval plus a small buffer for jitter.
+export const ISOLATION_SPREAD_MS = HEARTBEAT_INTERVAL_MS + 2000;
 export interface HeartbeatPayload {
   visitor_id: string;
   at: number; // sender wall clock — informational; host uses local receive time

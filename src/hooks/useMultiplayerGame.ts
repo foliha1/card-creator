@@ -12,6 +12,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useGameState, type Action } from "@/hooks/useGameState";
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
+  ISOLATION_SPREAD_MS,
   PROTOCOL_VERSION,
   type ClaimGrantEnvelope,
   type ClaimRejectEnvelope,
@@ -62,10 +63,19 @@ export function useMultiplayerHost(opts: {
   // disconnectedSeats if the caller doesn't supply it, so older wiring is
   // safe — but new code should always pass it.
   endGameDisconnectedSeats?: number[];
+  // Host-side socket health from useRoomPresence. When the host's own
+  // subscription is not "connected", the end-game guard MUST NOT fire — the
+  // silence is our socket, not the table emptying.
+  presenceStatus?: "connecting" | "connected" | "error";
+  // Spread across watched last-seen heartbeat timestamps. A tight cluster
+  // (below ISOLATION_SPREAD_MS) indicates simultaneous silence → host
+  // self-isolation, not staggered departures.
+  lastSeenSpreadMs?: number | null;
 }) {
   const {
     channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId,
     disconnectedSeats, awaySeats = [], endGameDisconnectedSeats,
+    presenceStatus, lastSeenSpreadMs = null,
   } = opts;
   const effectiveEndGameDisconnected = endGameDisconnectedSeats ?? disconnectedSeats;
   const seatCount = Math.max(2, seatMap.length);
@@ -166,6 +176,12 @@ export function useMultiplayerHost(opts: {
     if (!enabled) return;
     const total = seatMap.length;
     if (total < 2) return;
+    // Refuse to fire when the host's own socket is unhealthy. Silence from
+    // every seat at once is our connection, not the table.
+    if (presenceStatus !== undefined && presenceStatus !== "connected") return;
+    // Refuse to fire when watched last-seen timestamps cluster tightly —
+    // simultaneous silence is host self-isolation, not staggered departures.
+    if (lastSeenSpreadMs !== null && lastSeenSpreadMs < ISOLATION_SPREAD_MS) return;
     const away = new Set(awaySeats);
     const deadQuiet = effectiveEndGameDisconnected.filter((s) => !away.has(s));
     const connected = total - deadQuiet.length;
@@ -173,7 +189,7 @@ export function useMultiplayerHost(opts: {
       endedForEmptyRef.current = true;
       g.dispatch({ type: "END_GAME_TABLE_EMPTY" });
     }
-  }, [enabled, seatMap.length, effectiveEndGameDisconnected, awaySeats, g.state.phase, g.dispatch]);
+  }, [enabled, seatMap.length, effectiveEndGameDisconnected, awaySeats, g.state.phase, g.dispatch, presenceStatus, lastSeenSpreadMs]);
 
   useEffect(() => {
     if (!enabled || !channel) return;

@@ -103,6 +103,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     awayVisitors: heartbeatAwayVisitors,
     awaySkipVisitors: heartbeatAwaySkipVisitors,
     endGameVisitors: heartbeatEndGameVisitors,
+    lastSeenSpreadMs,
   } = useHeartbeatMonitor({
     channel,
     onBroadcast,
@@ -184,6 +185,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     disconnectedSeats,
     awaySeats,
     endGameDisconnectedSeats,
+    presenceStatus,
+    lastSeenSpreadMs,
   });
   const hostEvents = useTransientEvents(channel, onBroadcast, gameEnabled);
 
@@ -590,6 +593,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         heartbeatStale={heartbeatStaleSeats}
         awaySkip={awaySkipSeats}
         hostDisconnectedSeats={disconnectedSeats}
+        presenceStatus={presenceStatus}
       />
     );
   }
@@ -610,6 +614,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         visitorId={visitorId}
         isHost={false}
         presenceVisitorIds={participants.map((p) => p.visitor_id)}
+        presenceStatus={presenceStatus}
       />
     );
   }

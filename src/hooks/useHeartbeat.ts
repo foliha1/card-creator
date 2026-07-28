@@ -100,6 +100,11 @@ export interface HeartbeatMonitorResult {
   // hidden-but-still-pinging client is NOT in this set. Used ONLY by the
   // irreversible end-game guard, never by SET_DISCONNECTED or turn skipping.
   endGameVisitors: string[];
+  // max(lastSeen) − min(lastSeen) across watched non-host visitors. null if
+  // any watched visitor has not yet produced a heartbeat (spread is undefined
+  // in that case). Consumers gate the irreversible end-game dispatch on a
+  // large-enough spread — a tightly-clustered silence is host self-isolation.
+  lastSeenSpreadMs: number | null;
 }
 
 // HOST-ONLY. Watches inbound heartbeats and derives:
@@ -124,6 +129,7 @@ export function useHeartbeatMonitor(opts: {
   const [awayVisitors, setAwayVisitors] = useState<string[]>([]);
   const [awaySkipVisitors, setAwaySkipVisitors] = useState<string[]>([]);
   const [endGameVisitors, setEndGameVisitors] = useState<string[]>([]);
+  const [lastSeenSpreadMs, setLastSeenSpreadMs] = useState<number | null>(null);
 
   // Last local receive time + last-known hidden flag, per visitor. Also the
   // local time at which the current hidden run BEGAN — used to gate the
@@ -149,6 +155,7 @@ export function useHeartbeatMonitor(opts: {
     setAwayVisitors([]);
     setAwaySkipVisitors([]);
     setEndGameVisitors([]);
+    setLastSeenSpreadMs(null);
   }, [enabled]);
 
   // Ingest heartbeats. Uses LOCAL receive time — sender clocks are untrusted.
@@ -211,19 +218,36 @@ export function useHeartbeatMonitor(opts: {
         }
         if (age > HEARTBEAT_END_GAME_STALE_MS) endGame.push(vid);
       }
+      // Spread across watched non-host visitors' last-seen times. Null if any
+      // watched visitor has not produced a heartbeat yet.
+      let spread: number | null = null;
+      let minSeen = Infinity;
+      let maxSeen = -Infinity;
+      let missing = false;
+      for (const vid of watchedRef.current) {
+        if (vid === hostRef.current) continue;
+        const last = lastSeenRef.current.get(vid);
+        if (last == null) { missing = true; break; }
+        if (last < minSeen) minSeen = last;
+        if (last > maxSeen) maxSeen = last;
+      }
+      if (!missing && maxSeen >= minSeen && maxSeen !== -Infinity) {
+        spread = maxSeen - minSeen;
+      }
       const same = (prev: string[], next: string[]) =>
         prev.length === next.length && prev.every((v, i) => v === next[i]);
       setStaleVisitors((prev) => (same(prev, stale) ? prev : stale));
       setAwayVisitors((prev) => (same(prev, away) ? prev : away));
       setAwaySkipVisitors((prev) => (same(prev, awaySkip) ? prev : awaySkip));
       setEndGameVisitors((prev) => (same(prev, endGame) ? prev : endGame));
+      setLastSeenSpreadMs((prev) => (prev === spread ? prev : spread));
     };
     tick();
     const id = window.setInterval(tick, 2000);
     return () => window.clearInterval(id);
   }, [enabled]);
 
-  return { staleVisitors, awayVisitors, awaySkipVisitors, endGameVisitors };
+  return { staleVisitors, awayVisitors, awaySkipVisitors, endGameVisitors, lastSeenSpreadMs };
 }
 
 // Host-drop note: if the host tab is the one that dies, no one is running

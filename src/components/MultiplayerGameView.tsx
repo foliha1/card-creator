@@ -69,6 +69,9 @@ interface Props {
   heartbeatStale?: number[];
   awaySkip?: number[];
   hostDisconnectedSeats?: number[];
+  // When not "connected" AND a game is in progress, an overlay Reconnecting…
+  // banner covers the board. Purely visual — no phase change, no gate.
+  presenceStatus?: "connecting" | "connected" | "error";
 }
 
 // -------- Figma-transcribed constants --------
@@ -596,7 +599,7 @@ presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
 
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
-  heartbeatStale, awaySkip, hostDisconnectedSeats,
+  heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
@@ -1011,6 +1014,27 @@ const MultiplayerGameView: React.FC<Props> = ({
           parentRect={heroRects.parent}
           onComplete={() => { setActiveCommit(null); setHeroRects(null); }}
         />
+      )}
+      {presenceStatus !== undefined && presenceStatus !== "connected" && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "absolute", inset: 0, zIndex: 900,
+            background: "rgba(35,31,32,0.85)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24, pointerEvents: "auto",
+          }}
+        >
+          <div style={{
+            background: INK, color: SURFACE, border: `2px solid ${SURFACE}`,
+            borderRadius: R_BOX, padding: "14px 22px",
+            fontFamily: FONT_FAMILY, fontSize: 18, fontWeight: 700,
+            letterSpacing: 0.5, textAlign: "center",
+          }}>
+            Reconnecting…
+          </div>
+        </div>
       )}
       {/* ROLLING scrim — beneath the die overlay (z=30), above the play
           content. Pointer-events none so header controls stay reachable;
