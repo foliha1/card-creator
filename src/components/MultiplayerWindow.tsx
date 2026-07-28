@@ -116,29 +116,31 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   // Both signals feed SET_DISCONNECTED, which uses REPLACE semantics —
   // resuming heartbeats OR presence rejoin automatically un-marks a seat.
   //
-  // AWAY is separate: a visitor whose latest heartbeat says `hidden:true` and
-  // is still within the (much longer) hidden-stale window is surfaced as
-  // AWAY in the chip strip but is NOT considered disconnected. The reducer
-  // does not skip AWAY seats and the empty-table end-game does not fire on
-  // transient hides. Hidden → stale eventually promotes to disconnected via
-  // the stale set above.
+  // AWAY is a UI label — a visitor whose latest heartbeat says `hidden:true`
+  // and is still within the (much longer) hidden-stale window. AWAY seats
+  // ARE included in disconnectedSeats so the reducer skips their turn on the
+  // same 15s threshold as a silent seat (a backgrounded player can't take
+  // their turn either way, and SET_DISCONNECTED is reversible when the
+  // heartbeat resumes). AWAY is intentionally excluded from the stricter
+  // end-game set below — a still-pinging hidden client is proof-of-life.
   const disconnectedSeats = useMemo(() => {
     if (!frozenSeats) return [] as number[];
     const present = new Set(participants.map((p) => p.visitor_id));
     const stale = new Set(heartbeatStaleVisitors);
+    const away = new Set(heartbeatAwayVisitors);
     return frozenSeats
-      .filter((e) => !present.has(e.visitor_id) || stale.has(e.visitor_id))
+      .filter((e) => !present.has(e.visitor_id) || stale.has(e.visitor_id) || away.has(e.visitor_id))
       .map((e) => e.seat);
-  }, [frozenSeats, participants, heartbeatStaleVisitors]);
+  }, [frozenSeats, participants, heartbeatStaleVisitors, heartbeatAwayVisitors]);
 
   const awaySeats = useMemo(() => {
     if (!frozenSeats) return [] as number[];
     const away = new Set(heartbeatAwayVisitors);
-    const disc = new Set(disconnectedSeats);
     return frozenSeats
-      .filter((e) => away.has(e.visitor_id) && !disc.has(e.seat))
+      .filter((e) => away.has(e.visitor_id))
       .map((e) => e.seat);
-  }, [frozenSeats, heartbeatAwayVisitors, disconnectedSeats]);
+  }, [frozenSeats, heartbeatAwayVisitors]);
+
 
   // Stricter set for the IRREVERSIBLE end-game guard. A seat is in here only
   // when we've heard NOTHING (visible or hidden) from it for the long window.
