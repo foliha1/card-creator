@@ -587,6 +587,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         visitorId={visitorId}
         isHost={true}
         presenceVisitorIds={participants.map((p) => p.visitor_id)}
+        heartbeatStale={heartbeatStaleSeats}
+        awaySkip={awaySkipSeats}
+        hostDisconnectedSeats={disconnectedSeats}
       />
     );
   }
