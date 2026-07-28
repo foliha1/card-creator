@@ -172,19 +172,21 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
       }}
     >
       {phase === "playing" && data && (
-        <Lottie
-          lottieRef={lottieRef}
-          animationData={data}
-          loop={false}
-          autoplay
-          onComplete={startMatchCut}
-          onDOMLoaded={() => {
-            const total = lottieRef.current?.getDuration?.(true);
-            if (total !== undefined && total <= 0) finish("skip");
-          }}
-          rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
-          style={{ width: "100%", height: "100%" }}
-        />
+        <Suspense fallback={null}>
+          <Lottie
+            lottieRef={lottieRef}
+            animationData={data}
+            loop={false}
+            autoplay
+            onComplete={startMatchCut}
+            onDOMLoaded={() => {
+              const total = lottieRef.current?.getDuration?.(true);
+              if (total !== undefined && total <= 0) finish("skip");
+            }}
+            rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
+            style={{ width: "100%", height: "100%" }}
+          />
+        </Suspense>
       )}
       {phase === "matchcut" && cut && (() => {
         const aspect = 199 / 252;
