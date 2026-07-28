@@ -69,6 +69,9 @@ interface Props {
   heartbeatStale?: number[];
   awaySkip?: number[];
   hostDisconnectedSeats?: number[];
+  // When not "connected" AND a game is in progress, an overlay Reconnecting…
+  // banner covers the board. Purely visual — no phase change, no gate.
+  presenceStatus?: "connecting" | "connected" | "error";
 }
 
 // -------- Figma-transcribed constants --------
