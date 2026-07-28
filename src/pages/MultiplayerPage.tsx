@@ -92,11 +92,15 @@ const MultiplayerPage: React.FC = () => {
           }}
         >
           <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
-            <MultiplayerWindow initialRoomCode={roomCode} />
+            <MultiplayerWindow initialRoomCode={roomCode} introStatus={introStatus} />
           </Suspense>
         </div>
       </div>
-      {showIntro && <IntroAnimation onDone={() => setShowIntro(false)} />}
+      {introStatus === "running" && (
+        <IntroAnimation
+          onDone={(reason) => setIntroStatus(reason === "complete" ? "complete" : "skipped")}
+        />
+      )}
     </>
   );
 };
