@@ -100,6 +100,11 @@ export interface HeartbeatMonitorResult {
   // hidden-but-still-pinging client is NOT in this set. Used ONLY by the
   // irreversible end-game guard, never by SET_DISCONNECTED or turn skipping.
   endGameVisitors: string[];
+  // max(lastSeen) − min(lastSeen) across watched non-host visitors. null if
+  // any watched visitor has not yet produced a heartbeat (spread is undefined
+  // in that case). Consumers gate the irreversible end-game dispatch on a
+  // large-enough spread — a tightly-clustered silence is host self-isolation.
+  lastSeenSpreadMs: number | null;
 }
 
 // HOST-ONLY. Watches inbound heartbeats and derives:
