@@ -1,6 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import Lottie, { type LottieRefCurrentProps } from "lottie-react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
+import type { LottieRefCurrentProps } from "lottie-react";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+
+const Lottie = React.lazy(() =>
+  import("lottie-react").then((m) => ({ default: m.default })),
+);
 
 const STORAGE_KEY = "ww_intro_seen";
 const ASSET_URL = "/intro/whoop-intro.json";
