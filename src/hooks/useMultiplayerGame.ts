@@ -62,10 +62,19 @@ export function useMultiplayerHost(opts: {
   // disconnectedSeats if the caller doesn't supply it, so older wiring is
   // safe — but new code should always pass it.
   endGameDisconnectedSeats?: number[];
+  // Host-side socket health from useRoomPresence. When the host's own
+  // subscription is not "connected", the end-game guard MUST NOT fire — the
+  // silence is our socket, not the table emptying.
+  presenceStatus?: "connecting" | "connected" | "error";
+  // Spread across watched last-seen heartbeat timestamps. A tight cluster
+  // (below ISOLATION_SPREAD_MS) indicates simultaneous silence → host
+  // self-isolation, not staggered departures.
+  lastSeenSpreadMs?: number | null;
 }) {
   const {
     channel, onBroadcast, seatMap, hostVisitorId, enabled, gameId, roomId,
     disconnectedSeats, awaySeats = [], endGameDisconnectedSeats,
+    presenceStatus, lastSeenSpreadMs = null,
   } = opts;
   const effectiveEndGameDisconnected = endGameDisconnectedSeats ?? disconnectedSeats;
   const seatCount = Math.max(2, seatMap.length);
