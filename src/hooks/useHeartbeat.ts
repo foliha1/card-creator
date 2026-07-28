@@ -217,19 +217,36 @@ export function useHeartbeatMonitor(opts: {
         }
         if (age > HEARTBEAT_END_GAME_STALE_MS) endGame.push(vid);
       }
+      // Spread across watched non-host visitors' last-seen times. Null if any
+      // watched visitor has not produced a heartbeat yet.
+      let spread: number | null = null;
+      let minSeen = Infinity;
+      let maxSeen = -Infinity;
+      let missing = false;
+      for (const vid of watchedRef.current) {
+        if (vid === hostRef.current) continue;
+        const last = lastSeenRef.current.get(vid);
+        if (last == null) { missing = true; break; }
+        if (last < minSeen) minSeen = last;
+        if (last > maxSeen) maxSeen = last;
+      }
+      if (!missing && maxSeen >= minSeen && maxSeen !== -Infinity) {
+        spread = maxSeen - minSeen;
+      }
       const same = (prev: string[], next: string[]) =>
         prev.length === next.length && prev.every((v, i) => v === next[i]);
       setStaleVisitors((prev) => (same(prev, stale) ? prev : stale));
       setAwayVisitors((prev) => (same(prev, away) ? prev : away));
       setAwaySkipVisitors((prev) => (same(prev, awaySkip) ? prev : awaySkip));
       setEndGameVisitors((prev) => (same(prev, endGame) ? prev : endGame));
+      setLastSeenSpreadMs((prev) => (prev === spread ? prev : spread));
     };
     tick();
     const id = window.setInterval(tick, 2000);
     return () => window.clearInterval(id);
   }, [enabled]);
 
-  return { staleVisitors, awayVisitors, awaySkipVisitors, endGameVisitors };
+  return { staleVisitors, awayVisitors, awaySkipVisitors, endGameVisitors, lastSeenSpreadMs };
 }
 
 // Host-drop note: if the host tab is the one that dies, no one is running
