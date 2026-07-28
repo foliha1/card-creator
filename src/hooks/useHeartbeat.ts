@@ -155,6 +155,7 @@ export function useHeartbeatMonitor(opts: {
     setAwayVisitors([]);
     setAwaySkipVisitors([]);
     setEndGameVisitors([]);
+    setLastSeenSpreadMs(null);
   }, [enabled]);
 
   // Ingest heartbeats. Uses LOCAL receive time — sender clocks are untrusted.
