@@ -78,6 +78,7 @@ const MultiplayerPage: React.FC = () => {
           </Suspense>
         </div>
       </div>
+      {showIntro && <IntroAnimation onDone={() => setShowIntro(false)} />}
     </>
   );
 };
