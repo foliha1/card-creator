@@ -176,6 +176,12 @@ export function useMultiplayerHost(opts: {
     if (!enabled) return;
     const total = seatMap.length;
     if (total < 2) return;
+    // Refuse to fire when the host's own socket is unhealthy. Silence from
+    // every seat at once is our connection, not the table.
+    if (presenceStatus !== undefined && presenceStatus !== "connected") return;
+    // Refuse to fire when watched last-seen timestamps cluster tightly —
+    // simultaneous silence is host self-isolation, not staggered departures.
+    if (lastSeenSpreadMs !== null && lastSeenSpreadMs < ISOLATION_SPREAD_MS) return;
     const away = new Set(awaySeats);
     const deadQuiet = effectiveEndGameDisconnected.filter((s) => !away.has(s));
     const connected = total - deadQuiet.length;
@@ -183,7 +189,7 @@ export function useMultiplayerHost(opts: {
       endedForEmptyRef.current = true;
       g.dispatch({ type: "END_GAME_TABLE_EMPTY" });
     }
-  }, [enabled, seatMap.length, effectiveEndGameDisconnected, awaySeats, g.state.phase, g.dispatch]);
+  }, [enabled, seatMap.length, effectiveEndGameDisconnected, awaySeats, g.state.phase, g.dispatch, presenceStatus, lastSeenSpreadMs]);
 
   useEffect(() => {
     if (!enabled || !channel) return;
