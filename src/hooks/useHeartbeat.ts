@@ -122,11 +122,15 @@ export function useHeartbeatMonitor(opts: {
   const { channel, onBroadcast, enabled, watchedVisitorIds, hostVisitorId } = opts;
   const [staleVisitors, setStaleVisitors] = useState<string[]>([]);
   const [awayVisitors, setAwayVisitors] = useState<string[]>([]);
+  const [awaySkipVisitors, setAwaySkipVisitors] = useState<string[]>([]);
   const [endGameVisitors, setEndGameVisitors] = useState<string[]>([]);
 
-  // Last local receive time + last-known hidden flag, per visitor.
+  // Last local receive time + last-known hidden flag, per visitor. Also the
+  // local time at which the current hidden run BEGAN — used to gate the
+  // turn-skip dwell so a momentary hide→show never steals a turn.
   const lastSeenRef = useRef<Map<string, number>>(new Map());
   const hiddenRef = useRef<Map<string, boolean>>(new Map());
+  const hiddenSinceRef = useRef<Map<string, number>>(new Map());
   const monitorStartRef = useRef<number>(Date.now());
   const watchedRef = useRef<string[]>(watchedVisitorIds);
   watchedRef.current = watchedVisitorIds;
@@ -140,8 +144,10 @@ export function useHeartbeatMonitor(opts: {
     monitorStartRef.current = Date.now();
     lastSeenRef.current = new Map();
     hiddenRef.current = new Map();
+    hiddenSinceRef.current = new Map();
     setStaleVisitors([]);
     setAwayVisitors([]);
+    setAwaySkipVisitors([]);
     setEndGameVisitors([]);
   }, [enabled]);
 
@@ -153,8 +159,20 @@ export function useHeartbeatMonitor(opts: {
       if (!env || env.v !== PROTOCOL_VERSION || env.type !== "heartbeat") return;
       const hb = (env as HeartbeatEnvelope).payload;
       if (!hb?.visitor_id) return;
-      lastSeenRef.current.set(hb.visitor_id, Date.now());
-      hiddenRef.current.set(hb.visitor_id, !!hb.hidden);
+      const now = Date.now();
+      lastSeenRef.current.set(hb.visitor_id, now);
+      const isHidden = !!hb.hidden;
+      hiddenRef.current.set(hb.visitor_id, isHidden);
+      // Track when the CURRENT hidden run began. First hidden heartbeat
+      // starts the clock; a visible heartbeat clears it. Subsequent hidden
+      // heartbeats leave the existing start-time intact.
+      if (isHidden) {
+        if (!hiddenSinceRef.current.has(hb.visitor_id)) {
+          hiddenSinceRef.current.set(hb.visitor_id, now);
+        }
+      } else {
+        hiddenSinceRef.current.delete(hb.visitor_id);
+      }
     };
     return onBroadcast(handler);
   }, [enabled, channel, onBroadcast]);
@@ -169,38 +187,35 @@ export function useHeartbeatMonitor(opts: {
       const endGameGraceExpired = now - started > HEARTBEAT_END_GAME_STALE_MS;
       const stale: string[] = [];
       const away: string[] = [];
+      const awaySkip: string[] = [];
       const endGame: string[] = [];
       for (const vid of watchedRef.current) {
         if (vid === hostRef.current) continue; // host is authoritative
         const last = lastSeenRef.current.get(vid);
         const hidden = hiddenRef.current.get(vid) === true;
         if (last == null) {
-          // Never heard from. Stale after the normal grace, end-game only
-          // after the much longer grace — so a slow-joining peer can't tip
-          // the table below the end-game floor on the host's first minute.
           if (graceExpired) stale.push(vid);
           if (endGameGraceExpired) endGame.push(vid);
           continue;
         }
         const age = now - last;
-        // Apply the extended threshold if the LAST heartbeat we got said the
-        // client was hidden — that heartbeat is our only evidence the tab
-        // still exists, so trust it until the long threshold expires.
         const threshold = hidden ? HEARTBEAT_HIDDEN_STALE_MS : HEARTBEAT_STALE_MS;
         if (age > threshold) {
           stale.push(vid);
         } else if (hidden) {
           away.push(vid);
+          const hiddenSince = hiddenSinceRef.current.get(vid);
+          if (hiddenSince != null && now - hiddenSince > AWAY_SKIP_MS) {
+            awaySkip.push(vid);
+          }
         }
-        // End-game set is intentionally hidden-agnostic: only a total
-        // heartbeat blackout for the long window counts. A hidden client
-        // that is still pinging is proof-of-life and stays OUT of this set.
         if (age > HEARTBEAT_END_GAME_STALE_MS) endGame.push(vid);
       }
       const same = (prev: string[], next: string[]) =>
         prev.length === next.length && prev.every((v, i) => v === next[i]);
       setStaleVisitors((prev) => (same(prev, stale) ? prev : stale));
       setAwayVisitors((prev) => (same(prev, away) ? prev : away));
+      setAwaySkipVisitors((prev) => (same(prev, awaySkip) ? prev : awaySkip));
       setEndGameVisitors((prev) => (same(prev, endGame) ? prev : endGame));
     };
     tick();
@@ -208,7 +223,7 @@ export function useHeartbeatMonitor(opts: {
     return () => window.clearInterval(id);
   }, [enabled]);
 
-  return { staleVisitors, awayVisitors, endGameVisitors };
+  return { staleVisitors, awayVisitors, awaySkipVisitors, endGameVisitors };
 }
 
 // Host-drop note: if the host tab is the one that dies, no one is running
