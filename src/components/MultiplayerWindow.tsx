@@ -101,6 +101,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
   const {
     staleVisitors: heartbeatStaleVisitors,
     awayVisitors: heartbeatAwayVisitors,
+    awaySkipVisitors: heartbeatAwaySkipVisitors,
     endGameVisitors: heartbeatEndGameVisitors,
   } = useHeartbeatMonitor({
     channel,
@@ -112,26 +113,27 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   // Compute disconnected seats: union of
   //   (a) seats whose visitor_id is no longer in the presence roster, and
-  //   (b) seats whose heartbeat has gone stale past its applicable threshold.
-  // Both signals feed SET_DISCONNECTED, which uses REPLACE semantics —
-  // resuming heartbeats OR presence rejoin automatically un-marks a seat.
-  //
-  // AWAY is a UI label — a visitor whose latest heartbeat says `hidden:true`
-  // and is still within the (much longer) hidden-stale window. AWAY seats
-  // ARE included in disconnectedSeats so the reducer skips their turn on the
-  // same 15s threshold as a silent seat (a backgrounded player can't take
-  // their turn either way, and SET_DISCONNECTED is reversible when the
-  // heartbeat resumes). AWAY is intentionally excluded from the stricter
-  // end-game set below — a still-pinging hidden client is proof-of-life.
+  //   (b) seats whose heartbeat has gone stale past its applicable threshold,
+  //       and
+  //   (c) seats that have been reporting hidden for longer than the AWAY
+  //       skip dwell (AWAY_SKIP_MS). The AWAY chip appears immediately on
+  //       the first hidden heartbeat (see awaySeats below), but the reducer
+  //       only sees a seat as skippable AFTER the dwell — this keeps a
+  //       momentary tab switch from silently forfeiting a turn while still
+  //       skipping a genuinely backgrounded player on the same 15s budget
+  //       as a silent seat.
+  // All three signals feed SET_DISCONNECTED, which uses REPLACE semantics —
+  // resuming heartbeats or presence rejoin automatically un-marks a seat.
+  // The stricter end-game set below is unchanged and still excludes AWAY.
   const disconnectedSeats = useMemo(() => {
     if (!frozenSeats) return [] as number[];
     const present = new Set(participants.map((p) => p.visitor_id));
     const stale = new Set(heartbeatStaleVisitors);
-    const away = new Set(heartbeatAwayVisitors);
+    const awaySkip = new Set(heartbeatAwaySkipVisitors);
     return frozenSeats
-      .filter((e) => !present.has(e.visitor_id) || stale.has(e.visitor_id) || away.has(e.visitor_id))
+      .filter((e) => !present.has(e.visitor_id) || stale.has(e.visitor_id) || awaySkip.has(e.visitor_id))
       .map((e) => e.seat);
-  }, [frozenSeats, participants, heartbeatStaleVisitors, heartbeatAwayVisitors]);
+  }, [frozenSeats, participants, heartbeatStaleVisitors, heartbeatAwaySkipVisitors]);
 
   const awaySeats = useMemo(() => {
     if (!frozenSeats) return [] as number[];

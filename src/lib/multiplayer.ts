@@ -168,6 +168,11 @@ export const HEARTBEAT_HIDDEN_STALE_MS = 180000; // 3 minutes
 // for this long — regardless of whether its last heartbeat said hidden. A
 // still-arriving "hidden" heartbeat is proof-of-life and does NOT count.
 export const HEARTBEAT_END_GAME_STALE_MS = 60000; // 60s, 4x the skip threshold
+// Dwell time before a seat that is reporting hidden becomes turn-skippable.
+// AWAY chip shows immediately on the first hidden:true heartbeat (proof the
+// player has backgrounded), but we do not want a momentary tab switch to
+// steal a turn — the reducer only skips AWAY seats after this dwell.
+export const AWAY_SKIP_MS = 15000;
 export interface HeartbeatPayload {
   visitor_id: string;
   at: number; // sender wall clock — informational; host uses local receive time
