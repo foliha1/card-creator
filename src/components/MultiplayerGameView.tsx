@@ -1119,6 +1119,9 @@ const MultiplayerGameView: React.FC<Props> = ({
           seatMap={s.seatMap}
           reducerDisconnectedSeats={s.disconnectedSeats}
           presenceVisitorIds={presenceVisitorIds}
+          heartbeatStale={heartbeatStale}
+          awaySkip={awaySkip}
+          hostDisconnectedSeats={hostDisconnectedSeats}
         />
       </div>
 
