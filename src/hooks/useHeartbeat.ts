@@ -127,6 +127,7 @@ export function useHeartbeatMonitor(opts: {
   const { channel, onBroadcast, enabled, watchedVisitorIds, hostVisitorId } = opts;
   const [staleVisitors, setStaleVisitors] = useState<string[]>([]);
   const [awayVisitors, setAwayVisitors] = useState<string[]>([]);
+  const [awaySkipVisitors, setAwaySkipVisitors] = useState<string[]>([]);
   const [endGameVisitors, setEndGameVisitors] = useState<string[]>([]);
   const [lastSeenSpreadMs, setLastSeenSpreadMs] = useState<number | null>(null);
 
