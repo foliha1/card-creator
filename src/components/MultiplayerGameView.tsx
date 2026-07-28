@@ -101,9 +101,12 @@ const CHIP: Record<ChipKind, ChipStyle> = {
   // earned score stays visible. Distinct from EMPTY (which uses muted ink to
   // read as "never here").
   GONE:     { bg: PANEL,  border: RED,   nameBg: SURFACE, nameBorder: RED,   name: INK,   score: RED, label: RED,     labelText: "GONE" },
-  // AWAY — the tab is backgrounded but heartbeat still ticking. Not a fault:
-  // ink border, not red. Reducer does NOT skip AWAY seats, so this chip is
-  // just a courtesy so the table knows why someone hasn't flipped yet.
+  // AWAY — the tab is backgrounded but heartbeat still ticking. Ink border,
+  // not red — the seat IS skipped by the reducer on the normal 15s threshold
+  // (they can't flip either way), but the skip is reversible when they
+  // return. AWAY takes precedence over GONE in chip labeling so a
+  // self-reported hidden seat shows AWAY rather than the harsher GONE.
+
   AWAY:     { bg: PANEL,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: MUTED, score: MUTED, label: INK,   labelText: "AWAY" },
   IDLE:     { bg: PANEL,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: INK,     labelText: null },
   EMPTY:    { bg: PANEL,  border: MUTED, nameBg: PANEL,   nameBorder: MUTED, name: MUTED, score: MUTED, label: MUTED, labelText: null },
