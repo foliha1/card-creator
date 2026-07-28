@@ -12,6 +12,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useGameState, type Action } from "@/hooks/useGameState";
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
+  ISOLATION_SPREAD_MS,
   PROTOCOL_VERSION,
   type ClaimGrantEnvelope,
   type ClaimRejectEnvelope,
