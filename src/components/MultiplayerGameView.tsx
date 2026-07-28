@@ -536,15 +536,27 @@ const PresenceDebugOverlay: React.FC<{
   seatMap: PublicState["seatMap"];
   reducerDisconnectedSeats: number[];
   presenceVisitorIds?: string[];
-}> = ({ mySeat, visitorId, seatMap, reducerDisconnectedSeats, presenceVisitorIds }) => {
+  heartbeatStale?: number[];
+  awaySkip?: number[];
+  hostDisconnectedSeats?: number[];
+}> = ({
+  mySeat,
+  visitorId,
+  seatMap,
+  reducerDisconnectedSeats,
+  presenceVisitorIds,
+  heartbeatStale = [],
+  awaySkip = [],
+  hostDisconnectedSeats = [],
+}) => {
   const on = useDebugFlag();
   if (!on) return null;
   const present = new Set(presenceVisitorIds ?? []);
   const total = seatMap.length;
-  const computedDisconnected = seatMap
+  const presenceOnlyMissing = seatMap
     .filter((e) => !present.has(e.visitor_id))
     .map((e) => e.seat);
-  const connected = total - computedDisconnected.length;
+  const connected = total - presenceOnlyMissing.length;
   return (
     <div
       style={{
@@ -569,7 +581,10 @@ const PresenceDebugOverlay: React.FC<{
       {`mySeat: ${mySeat ?? "-"}
 visitor_id: ${visitorId}
 connected: ${connected}/${total}
-computedDisconnectedSeats: [${computedDisconnected.join(",")}]
+presenceOnlyMissing: [${presenceOnlyMissing.join(",")}]
+heartbeatStale: [${heartbeatStale.join(",")}]
+awaySkip: [${awaySkip.join(",")}]
+hostDisconnectedSeats: [${hostDisconnectedSeats.join(",")}]
 reducer.disconnected: [${reducerDisconnectedSeats.join(",")}]
 presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
     </div>
