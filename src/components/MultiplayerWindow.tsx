@@ -52,7 +52,7 @@ const sanitizeCodeInput = (raw: string): string => {
   return out;
 };
 
-const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }) => {
+const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, introStatus = "none" }) => {
   const mobile = useIsMobile();
   const [view, setView] = useState<View>({ kind: "idle" });
   const [busy, setBusy] = useState(false);
