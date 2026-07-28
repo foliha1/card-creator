@@ -97,9 +97,11 @@ const MultiplayerPage: React.FC = () => {
         </div>
       </div>
       {introStatus === "running" && (
-        <IntroAnimation
-          onDone={(reason) => setIntroStatus(reason === "complete" ? "complete" : "skipped")}
-        />
+        <Suspense fallback={null}>
+          <IntroAnimation
+            onDone={(reason) => setIntroStatus(reason === "complete" ? "complete" : "skipped")}
+          />
+        </Suspense>
       )}
     </>
   );
