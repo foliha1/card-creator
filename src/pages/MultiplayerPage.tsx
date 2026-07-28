@@ -1,16 +1,34 @@
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
-import IntroAnimation, { hasSeenIntro } from "@/components/IntroAnimation";
+import IntroAnimation from "@/components/IntroAnimation";
+import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
+const INTRO_JSON_URL = "/intro/whoop-intro.json";
 
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
-  const [showIntro, setShowIntro] = useState<boolean>(() => !hasSeenIntro());
+  // TEMP: always show intro for testing (was: !hasSeenIntro()).
+  const [showIntro, setShowIntro] = useState<boolean>(true);
+
+  // Preload intro JSON and logo image to reduce first-frame flicker.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(INTRO_JSON_URL, { cache: "force-cache" }).catch(() => {
+      /* ignore, IntroAnimation handles failure */
+    });
+    const img = new Image();
+    img.src = whoopLightLogo.url;
+    return () => {
+      cancelled = true;
+      void cancelled;
+    };
+  }, []);
+
   const title = "Multiplayer — WHOOP! WHOOP!";
   const description =
     "Play WHOOP! WHOOP! online with friends. Start a table, share the link, and match cards under the die.";
