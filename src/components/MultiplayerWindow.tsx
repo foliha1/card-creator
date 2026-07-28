@@ -24,6 +24,7 @@ import { unlockAudio } from "@/lib/sounds";
 
 interface MultiplayerWindowProps {
   initialRoomCode?: string;
+  introStatus?: "running" | "skipped" | "complete" | "none";
 }
 
 const ROOM_CAPACITY = 6;
@@ -51,7 +52,7 @@ const sanitizeCodeInput = (raw: string): string => {
   return out;
 };
 
-const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }) => {
+const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, introStatus = "none" }) => {
   const mobile = useIsMobile();
   const [view, setView] = useState<View>({ kind: "idle" });
   const [busy, setBusy] = useState(false);
@@ -846,6 +847,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
 
   if (view.kind === "idle") {
     const codeEnabled = codeInput.length === ROOM_CODE_LENGTH;
+    const introRunning = introStatus === "running";
+    const introComplete = introStatus === "complete";
+    const cardStyleIntro: React.CSSProperties = introRunning
+      ? { opacity: 0, transform: "translateY(12px)", pointerEvents: "none" }
+      : introComplete
+      ? {
+          opacity: 1,
+          transform: "translateY(0)",
+          transition: "opacity 300ms ease 120ms, transform 300ms ease 120ms",
+        }
+      : { opacity: 1, transform: "translateY(0)" };
     const idleCard = (
       <div style={{
         alignSelf: "stretch",
@@ -859,6 +871,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         gap: 16,
         height: "auto",
         boxSizing: "border-box",
+        ...cardStyleIntro,
       }}>
         {view.error && (
           <div role="alert" style={{
@@ -991,7 +1004,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
           width={252}
           height={199}
           data-lobby-logo="true"
-          style={{ width: 252, height: 199, display: "block" }}
+          style={{
+            width: 252,
+            height: 199,
+            display: "block",
+            opacity: introRunning ? 0 : 1,
+            pointerEvents: introRunning ? "none" : "auto",
+          }}
         />
 
       ),

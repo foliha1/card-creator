@@ -34,8 +34,10 @@ const prefersReducedMotion = (): boolean => {
   }
 };
 
+export type IntroDoneReason = "complete" | "skip";
+
 interface IntroAnimationProps {
-  onDone: () => void;
+  onDone: (reason: IntroDoneReason) => void;
 }
 
 type Phase = "playing" | "matchcut";
@@ -57,15 +59,15 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   const doneRef = useRef(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
 
-  const finish = React.useCallback(() => {
+  const finish = React.useCallback((reason: IntroDoneReason) => {
     if (doneRef.current) return;
     doneRef.current = true;
     markSeen();
-    onDone();
+    onDone(reason);
   }, [onDone]);
 
   const skip = React.useCallback(() => {
-    finish();
+    finish("skip");
   }, [finish]);
 
   const startMatchCut = React.useCallback(() => {
@@ -84,12 +86,12 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
     // Measure lobby logo.
     const el = document.querySelector<HTMLImageElement>('[data-lobby-logo="true"]');
     if (!el) {
-      finish();
+      finish("skip");
       return;
     }
     const r = el.getBoundingClientRect();
     if (r.width <= 0 || r.height <= 0) {
-      finish();
+      finish("skip");
       return;
     }
 
@@ -110,7 +112,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setTransformed(true));
     });
-    const to = window.setTimeout(finish, MATCH_CUT_MS + 40);
+    const to = window.setTimeout(() => finish("complete"), MATCH_CUT_MS + 40);
     return () => {
       cancelAnimationFrame(id);
       window.clearTimeout(to);
@@ -121,7 +123,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   useEffect(() => {
     let cancelled = false;
     if (prefersReducedMotion()) {
-      finish();
+      finish("skip");
       return;
     }
     fetch(ASSET_URL)
@@ -134,7 +136,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
         setData(json);
       })
       .catch(() => {
-        if (!cancelled) finish();
+        if (!cancelled) finish("skip");
       });
     return () => {
       cancelled = true;
@@ -174,7 +176,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
           onComplete={startMatchCut}
           onDOMLoaded={() => {
             const total = lottieRef.current?.getDuration?.(true);
-            if (total !== undefined && total <= 0) finish();
+            if (total !== undefined && total <= 0) finish("skip");
           }}
           rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
           style={{ width: "100%", height: "100%" }}
