@@ -63,6 +63,12 @@ interface Props {
   // Diagnostic-only: used by the ?debug=1 overlay to compute the client's
   // view of disconnectedSeats independent of the reducer.
   presenceVisitorIds?: string[];
+  // Diagnostic-only: heartbeat-derived seat sets. The overlay displays the
+  // breakdown so testers do not confuse presence-only absence with the union
+  // the host actually dispatches to the reducer.
+  heartbeatStale?: number[];
+  awaySkip?: number[];
+  hostDisconnectedSeats?: number[];
 }
 
 // -------- Figma-transcribed constants --------
