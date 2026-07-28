@@ -593,6 +593,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
         heartbeatStale={heartbeatStaleSeats}
         awaySkip={awaySkipSeats}
         hostDisconnectedSeats={disconnectedSeats}
+        presenceStatus={presenceStatus}
       />
     );
   }
