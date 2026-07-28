@@ -103,6 +103,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode }
     awayVisitors: heartbeatAwayVisitors,
     awaySkipVisitors: heartbeatAwaySkipVisitors,
     endGameVisitors: heartbeatEndGameVisitors,
+    lastSeenSpreadMs,
   } = useHeartbeatMonitor({
     channel,
     onBroadcast,
