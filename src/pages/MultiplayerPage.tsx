@@ -71,12 +71,14 @@ const MultiplayerPage: React.FC = () => {
             height: "100%",
             objectFit: "cover",
             objectPosition: "center center",
-            opacity: 1,
+            opacity: introStatus === "running" ? 0 : 1,
+            transition: introStatus === "complete" ? "opacity 300ms ease-out 120ms" : "none",
             zIndex: -1,
             pointerEvents: "none",
             userSelect: "none",
           }}
         />
+
         <div
           style={{
             width: "100%",
