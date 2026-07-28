@@ -219,19 +219,23 @@ export function useHeartbeatMonitor(opts: {
         if (age > HEARTBEAT_END_GAME_STALE_MS) endGame.push(vid);
       }
       // Spread across watched non-host visitors' last-seen times. Null if any
-      // watched visitor has not produced a heartbeat yet.
+      // watched visitor has not produced a heartbeat yet, and null if fewer
+      // than two watched non-host visitors have a lastSeen entry — spread
+      // across a single seat carries no isolation signal.
       let spread: number | null = null;
       let minSeen = Infinity;
       let maxSeen = -Infinity;
+      let seenCount = 0;
       let missing = false;
       for (const vid of watchedRef.current) {
         if (vid === hostRef.current) continue;
         const last = lastSeenRef.current.get(vid);
         if (last == null) { missing = true; break; }
+        seenCount++;
         if (last < minSeen) minSeen = last;
         if (last > maxSeen) maxSeen = last;
       }
-      if (!missing && maxSeen >= minSeen && maxSeen !== -Infinity) {
+      if (!missing && seenCount >= 2 && maxSeen >= minSeen) {
         spread = maxSeen - minSeen;
       }
       const same = (prev: string[], next: string[]) =>
