@@ -12,8 +12,9 @@ const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindo
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
-  // TEMP: always show intro for testing (was: !hasSeenIntro()).
-  const [introStatus, setIntroStatus] = useState<"running" | "skipped" | "complete" | "none">("running");
+  const [introStatus, setIntroStatus] = useState<"running" | "skipped" | "complete" | "none">(
+    () => (hasSeenIntro() ? "none" : "running"),
+  );
 
   // Preload intro JSON and logo image to reduce first-frame flicker.
   useEffect(() => {
