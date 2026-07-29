@@ -11,7 +11,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useGameState } from "@/hooks/useGameState";
 import { toPublicState, type PublicState } from "@/lib/publicState";
-import type { IntentAction, TransientEvent, TransientEventKind } from "@/lib/multiplayer";
+import type {
+  IntentAction,
+  TransientEvent,
+  TransientEventKind,
+  RollCommitPayload,
+  RollAttribute,
+} from "@/lib/multiplayer";
 import {
   createBrain,
   observe,
@@ -30,6 +36,7 @@ const REVEAL_MS = 2000;
 const EVENT_LIFETIME_MS = 1400;
 const AUNTIE_ROLL_DELAY_MS = 1200;
 const AUNTIE_FLIP_DELAY_MS = 1400;
+const ROLL_ATTRS: readonly RollAttribute[] = ["SHAPE", "NUMBER", "COLOR"] as const;
 
 const SEAT_MAP = [
   { seat: 0, visitor_id: "solo-you", display_name: "You" },
@@ -44,6 +51,7 @@ export interface UseSoloGameResult {
   roomId: string;
   visitorId: string;
   gameId: string;
+  rollCommit: RollCommitPayload | null;
 }
 
 export function useSoloGame(): UseSoloGameResult {
@@ -62,6 +70,31 @@ export function useSoloGame(): UseSoloGameResult {
   const brainRef = useRef<Brain>(createBrain());
   const tokenRef = useRef(1);
   const nextToken = () => ++tokenRef.current;
+
+  // Solo mirrors the host's roll-commit protocol so MultiplayerGameView's
+  // hero-roll overlay and MatchDie render the same way they do in
+  // multiplayer. `startAt` is a local wall-clock timestamp; useServerClock's
+  // offset is zero in solo, so serverNow() matches Date.now().
+  const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
+  const commitAndRoll = useCallback(() => {
+    const s = stateRef.current;
+    if (s.phase !== "AWAITING_ROLL" || s.rolling) return;
+    const attribute = ROLL_ATTRS[Math.floor(Math.random() * ROLL_ATTRS.length)];
+    const faceIndex = (Math.floor(Math.random() * 2) as 0 | 1);
+    const tumbleSeed = Math.floor(Math.random() * 2 ** 31);
+    const startAt = Date.now() + 150;
+    setRollCommit({
+      roundId: `solo:${s.roundNum}`,
+      attribute,
+      faceIndex,
+      tumbleSeed,
+      startAt,
+    });
+    const delay = Math.max(0, startAt - Date.now());
+    setTimeout(() => {
+      void doRollDice([attribute]);
+    }, delay);
+  }, [doRollDice]);
 
   // ---- observation: peek → cleared transitions on any seat's flip ----
   // Decay fires per flip observed (not per round), so forgetting scales with
@@ -155,10 +188,10 @@ export function useSoloGame(): UseSoloGameResult {
     if (state.rolling) return;
     const t = setTimeout(() => {
       toast(pickLine("oppRoll"));
-      void doRollDice();
+      commitAndRoll();
     }, AUNTIE_ROLL_DELAY_MS);
     return () => clearTimeout(t);
-  }, [state.phase, state.roller, state.rolling, doRollDice]);
+  }, [state.phase, state.roller, state.rolling, commitAndRoll]);
 
   // ---- Auntie's auto-flip ----
   const flipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -265,7 +298,7 @@ export function useSoloGame(): UseSoloGameResult {
     (action: IntentAction) => {
       switch (action.type) {
         case "REQUEST_ROLL":
-          void doRollDice();
+          commitAndRoll();
           return;
         case "CANCEL_CLAIM":
           dispatch({ type: "CANCEL_CLAIM", by: HUMAN_SEAT });
@@ -301,7 +334,7 @@ export function useSoloGame(): UseSoloGameResult {
           return;
       }
     },
-    [dispatch, doRollDice],
+    [dispatch, doRollDice, commitAndRoll],
   );
 
   const publicState = useMemo<PublicState>(
@@ -317,5 +350,6 @@ export function useSoloGame(): UseSoloGameResult {
     roomId: "solo",
     visitorId: "solo-you",
     gameId: "solo-game",
+    rollCommit,
   };
 }
