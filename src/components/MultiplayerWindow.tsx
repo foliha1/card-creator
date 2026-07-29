@@ -68,9 +68,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const [gameId, setGameId] = useState<string>("");
   const [starting, setStarting] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [copiedFlash, setCopiedFlash] = useState(false);
-  const linkBoxRef = useRef<HTMLDivElement | null>(null);
-  const copiedTimerRef = useRef<number | null>(null);
+  const [shareFlash, setShareFlash] = useState(false);
+  const [codeFlash, setCodeFlash] = useState(false);
+  const [lobbyGrid, setLobbyGrid] = useState<"3x2" | "3x3">("3x2");
+  const shareFlashTimerRef = useRef<number | null>(null);
+  const codeFlashTimerRef = useRef<number | null>(null);
 
 
 
