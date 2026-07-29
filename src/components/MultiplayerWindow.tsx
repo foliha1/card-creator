@@ -1085,6 +1085,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
           .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
           .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+          .mp-shell input::placeholder { color: ${COLORS.panel}; opacity: 1; }
         `}</style>
         {idleCard}
       </div>
