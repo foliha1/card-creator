@@ -47,7 +47,7 @@ const prefersReducedMotion = (): boolean => {
   }
 };
 
-export type IntroDoneReason = "complete" | "skip";
+export type IntroDoneReason = "complete" | "skip" | "timeout" | "error";
 
 interface IntroAnimationProps {
   onDone: (reason: IntroDoneReason) => void;
