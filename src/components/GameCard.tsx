@@ -78,15 +78,22 @@ const GameCard = ({
 
   return (
     <div
+      ref={wrapperRef}
       role="button"
       tabIndex={0}
       aria-label={ariaLabel}
+      className={highlighted ? "ww-card-pulse" : undefined}
       style={{
         perspective: 600,
         width: "100%",
         height: fill ? "100%" : undefined,
         aspectRatio: fill ? undefined : "5/7",
         cursor: "pointer",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 6,
+        transformOrigin: "center",
+        ["--ww-k" as string]: String(k),
         transform: shrinking ? outerTransform : undefined,
         opacity: shrinking ? outerOpacity : undefined,
         transition: shrinking ? outerTransition : undefined,
