@@ -22,6 +22,9 @@ export const COLORS = {
   successHover: "#4ab87d",
   // Theme background (backs the "Off-White" theme swatch — distinct from `surface`, the UI background)
   offWhite: "#fef9f0",
+  // Play-mode accent tints used on the "How do you want to play?" screen.
+  soloTint: "#97DAFF",
+  peepsTint: "#FFC1C3",
 } as const;
 
 export const BORDER = {
