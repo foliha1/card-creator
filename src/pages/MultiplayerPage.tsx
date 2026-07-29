@@ -8,14 +8,21 @@ import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
 const INTRO_JSON_URL = "/intro/whoop-intro.json";
+// TODO: Temporary intro QA override — set to false to restore once-per-visitor behavior.
+const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = true;
 
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
+  const initialIntroStatus = (): "running" | "none" => {
+    const alreadySeen = hasSeenIntro();
+    return FORCE_INTRO_EVERY_RELOAD_FOR_TESTING || !alreadySeen ? "running" : "none";
+  };
   const [introStatus, setIntroStatus] = useState<"running" | "skipped" | "complete" | "none">(
-    () => (hasSeenIntro() ? "none" : "running"),
+    initialIntroStatus,
   );
+  const isIntroRunning = introStatus === "running";
 
   // Preload intro JSON and logo image to reduce first-frame flicker.
   useEffect(() => {
@@ -73,7 +80,7 @@ const MultiplayerPage: React.FC = () => {
             height: "100%",
             objectFit: "cover",
             objectPosition: "center center",
-            opacity: introStatus === "running" ? 0 : 1,
+            opacity: isIntroRunning ? 0 : 1,
             transition: introStatus === "complete" ? "opacity 300ms ease-out 120ms" : "none",
             zIndex: -1,
             pointerEvents: "none",
