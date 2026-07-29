@@ -1340,3 +1340,17 @@ describe("N=3 seats", () => {
     expect(s.scores[2]).toBe(0);
   });
 });
+
+describe("DEBUG_DRAIN_DECK", () => {
+  it("drains the deck to 2 while leaving grid and scores untouched", () => {
+    window.history.replaceState({}, "", "/?debug=1");
+    const s0 = initialState(9, { seatCount: 2 });
+    const s1 = reducer(s0, { type: "DEBUG_DRAIN_DECK" });
+    expect(s1.deck.length).toBe(2);
+    expect(s1.grid.length).toBe(s0.grid.length);
+    expect(s1.scores).toEqual(s0.scores);
+    expect(s1.roller).toBe(s0.roller);
+    expect(s1.phase).toBe(s0.phase);
+    window.history.replaceState({}, "", "/");
+  });
+});
