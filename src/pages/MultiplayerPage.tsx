@@ -3,40 +3,63 @@ import { useParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
 const IntroAnimation = React.lazy(() => import("@/components/IntroAnimation"));
-import { hasSeenIntro } from "@/components/IntroAnimation";
+import { hasSeenIntro, preloadIntroJson, getIntroJsonWithin } from "@/components/IntroAnimation";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
-const INTRO_JSON_URL = "/intro/whoop-intro.json";
 // TODO: Temporary intro QA override — set to false to restore once-per-visitor behavior.
 const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = true;
+// If the intro JSON hasn't arrived within this window, skip the intro
+// entirely rather than showing warm-black while we wait.
+const INTRO_READY_BUDGET_MS = 600;
+
+// Kick off the download as early as possible: the moment this module
+// evaluates, before the component mounts.
+preloadIntroJson();
 
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
+type IntroStatus = "pending" | "running" | "skipped" | "complete" | "none";
+
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
-  const initialIntroStatus = (): "running" | "none" => {
+  const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
-    return FORCE_INTRO_EVERY_RELOAD_FOR_TESTING || !alreadySeen ? "running" : "none";
+    if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) return "none";
+    return "pending";
   };
-  const [introStatus, setIntroStatus] = useState<"running" | "skipped" | "complete" | "none">(
-    initialIntroStatus,
-  );
-  const isIntroRunning = introStatus === "running";
+  const [introStatus, setIntroStatus] = useState<IntroStatus>(initialIntroStatus);
+  const [introData, setIntroData] = useState<unknown | null>(null);
 
-  // Preload intro JSON and logo image to reduce first-frame flicker.
+  // Preload the logo image for the match-cut.
   useEffect(() => {
-    let cancelled = false;
-    fetch(INTRO_JSON_URL, { cache: "force-cache" }).catch(() => {
-      /* ignore, IntroAnimation handles failure */
-    });
     const img = new Image();
     img.src = whoopLightLogo.url;
+  }, []);
+
+  // Race the JSON against the ready budget. If it wins → play the intro.
+  // If it loses → skip entirely and show the static pattern.
+  useEffect(() => {
+    if (introStatus !== "pending") return;
+    let cancelled = false;
+    getIntroJsonWithin(INTRO_READY_BUDGET_MS).then((json) => {
+      if (cancelled) return;
+      if (json) {
+        setIntroData(json);
+        setIntroStatus("running");
+      } else {
+        setIntroStatus("skipped");
+      }
+    });
     return () => {
       cancelled = true;
-      void cancelled;
     };
-  }, []);
+  }, [introStatus]);
+
+  // The intro's Lottie is the page background whenever it is/was playing.
+  // The static pattern is only used when the intro is skipped or never runs.
+  const introMounted = introStatus === "running" || introStatus === "complete";
+  const showPattern = introStatus === "skipped" || introStatus === "none";
 
   const title = "Multiplayer — WHOOP! WHOOP!";
   const description =
@@ -67,26 +90,27 @@ const MultiplayerPage: React.FC = () => {
           boxSizing: "border-box",
         }}
       >
-        <img
-          src="/whoop-pattern-bg.svg"
-          alt=""
-          aria-hidden="true"
-          decoding="async"
-          draggable={false}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center center",
-            opacity: isIntroRunning ? 0 : 1,
-            transition: introStatus === "complete" ? "opacity 300ms ease-out 120ms" : "none",
-            zIndex: -1,
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        />
+        {showPattern && (
+          <img
+            src="/whoop-pattern-bg.svg"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            draggable={false}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center center",
+              opacity: 1,
+              zIndex: -1,
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
+        )}
 
         <div
           style={{
@@ -103,14 +127,20 @@ const MultiplayerPage: React.FC = () => {
           }}
         >
           <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
-            <MultiplayerWindow initialRoomCode={roomCode} introStatus={introStatus} />
+            <MultiplayerWindow
+              initialRoomCode={roomCode}
+              introStatus={introStatus === "pending" ? "running" : introStatus}
+            />
           </Suspense>
         </div>
       </div>
-      {introStatus === "running" && (
+      {introMounted && (
         <Suspense fallback={null}>
           <IntroAnimation
-            onDone={(reason) => setIntroStatus(reason === "complete" ? "complete" : "skipped")}
+            preloadedData={introData}
+            onDone={(reason) =>
+              setIntroStatus(reason === "complete" ? "complete" : "skipped")
+            }
           />
         </Suspense>
       )}
