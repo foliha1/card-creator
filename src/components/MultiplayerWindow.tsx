@@ -9,6 +9,7 @@ import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
+const GameWindow = React.lazy(() => import("@/components/GameWindow"));
 import { toPublicState } from "@/lib/publicState";
 import {
   createRoom,
