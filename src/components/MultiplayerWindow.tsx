@@ -329,6 +329,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     setView({ kind: "name-prompt", pending: { kind: "create" } });
   }, [busy]);
 
+  const handlePlaySolo = useCallback(() => {
+    if (busy) return;
+    unlockAudio();
+    setView({ kind: "solo" });
+  }, [busy]);
+
+
   const handleJoinByCode = useCallback(() => {
     if (busy) return;
     const normalized = codeInput.toUpperCase();
