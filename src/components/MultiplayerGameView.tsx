@@ -72,6 +72,9 @@ interface Props {
   // When not "connected" AND a game is in progress, an overlay Reconnecting…
   // banner covers the board. Purely visual — no phase change, no gate.
   presenceStatus?: "connecting" | "connected" | "error";
+  // Solo bypass: when true, WHOOP dispatches PLAYER_ENTER_CLAIM through
+  // onIntent instead of hitting the (nonexistent) claim-lock arbiter.
+  soloMode?: boolean;
 }
 
 // -------- Figma-transcribed constants --------
@@ -599,7 +602,7 @@ presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
 
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
-  heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus,
+  heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
 }) => {
   void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
@@ -823,6 +826,11 @@ const MultiplayerGameView: React.FC<Props> = ({
     buttonOnClick = async () => {
       if (mySeat === null || claimBusy || modalOpen) return;
       unlockAudio();
+      if (soloMode) {
+        // No arbiter in solo — enter claim mode directly.
+        onIntent({ type: "PLAYER_ENTER_CLAIM", by: mySeat });
+        return;
+      }
       setClaimBusy(true);
       const result = await callClaimLock({
         room_id: roomId,
