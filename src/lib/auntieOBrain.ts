@@ -101,7 +101,7 @@ export function forget(brain: Brain, position: number): Brain {
   return { entries };
 }
 
-/** Multiply every stored confidence by DECAY_RATE. Called once per round. */
+/** Multiply every stored confidence by DECAY_RATE. Called once per flip observed. */
 export function decay(brain: Brain): Brain {
   const entries = new Map<number, Memory>();
   for (const [k, v] of brain.entries) {
