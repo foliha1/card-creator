@@ -19,6 +19,7 @@ const SoloView: React.FC<{ onLeave: () => void; mobile: boolean }> = ({ onLeave,
       publicState={solo.publicState}
       mySeat={solo.mySeat}
       events={solo.events}
+      rollCommit={solo.rollCommit}
       onIntent={solo.onIntent}
       onLeave={onLeave}
       mobile={mobile}
