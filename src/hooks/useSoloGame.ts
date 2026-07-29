@@ -298,7 +298,7 @@ export function useSoloGame(): UseSoloGameResult {
     (action: IntentAction) => {
       switch (action.type) {
         case "REQUEST_ROLL":
-          void doRollDice();
+          commitAndRoll();
           return;
         case "CANCEL_CLAIM":
           dispatch({ type: "CANCEL_CLAIM", by: HUMAN_SEAT });
