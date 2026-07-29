@@ -130,28 +130,24 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
     };
   }, [data, finish]);
 
-  // Duration-based fallback: onComplete on lottie-react can miss on the final
-  // frame. Fire completion after the animation's real duration if onComplete
-  // has not run yet.
+  // Hard safety net — the ONLY timer driving completion. Must be strictly
+  // longer than the animation's real duration so it never truncates playback.
+  // Lottie's own onComplete is the primary signal; this only fires if the
+  // player never emits it (asset error, tab thrash, etc.).
+  //
+  // We start counting from when `data` is available AND the Lottie module
+  // has had a reasonable chance to mount. The generous +3000ms cushion
+  // accounts for Suspense load of lottie-react and lottie-web's initial
+  // asset parse, which can be several hundred ms on slower devices.
   useEffect(() => {
     if (!data || phase !== "playing") return;
-    const duration = durationMsRef.current;
-    if (!duration || duration <= 0) return;
-    const to = window.setTimeout(() => {
-      if (!doneRef.current && phase === "playing") completeAndPersist();
-    }, duration + 50);
-    return () => window.clearTimeout(to);
-  }, [data, phase, completeAndPersist]);
-
-  // Hard safety net: never keep the user stuck if something goes wrong.
-  useEffect(() => {
     const duration = durationMsRef.current ?? 3000;
-    const cap = duration + 2000;
+    const cap = duration + 3000;
     const to = window.setTimeout(() => {
       if (!doneRef.current) finish("skip");
     }, cap);
     return () => window.clearTimeout(to);
-  }, [data, finish]);
+  }, [data, phase, finish]);
 
   // Skip on any keypress or pointer down anywhere — only while the intro is
   // still visually active. Once in the persistent background phase, the
@@ -199,8 +195,21 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
             autoplay
             onComplete={completeAndPersist}
             onDOMLoaded={() => {
-              const total = lottieRef.current?.getDuration?.(true);
-              if (total !== undefined && total <= 0) finish("skip");
+              const api = lottieRef.current;
+              if (!api) return;
+              const total = api.getDuration?.(true);
+              if (total !== undefined && total <= 0) {
+                finish("skip");
+                return;
+              }
+              // Guarantee immediate playback at native speed. Some builds of
+              // lottie-web hold on frame 0 for a few hundred ms after mount
+              // before the first RAF; forcing setSpeed(1) + play() here
+              // eliminates that stall without altering rate.
+              try {
+                api.setSpeed?.(1);
+                api.play?.();
+              } catch { /* ignore */ }
             }}
             rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
             style={{ width: "100%", height: "100%", pointerEvents: "none" }}
