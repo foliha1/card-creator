@@ -14,6 +14,40 @@ const MATCH_CUT_MS = 500;
 // (1920x1920 artboard). Adjust after testing.
 export const INTRO_LOGO_ARTBOARD_W = 700;
 
+// Module-level preload. Starts as soon as this module is evaluated (lazy
+// import from MultiplayerPage), so by the time the component mounts the
+// fetch is already in flight — and often complete.
+let introJsonPromise: Promise<unknown> | null = null;
+export const preloadIntroJson = (): Promise<unknown> => {
+  if (introJsonPromise) return introJsonPromise;
+  introJsonPromise = fetch(ASSET_URL)
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .catch(() => null);
+  return introJsonPromise;
+};
+
+// Resolves with the parsed JSON if it arrives within `ms`, else null.
+export const getIntroJsonWithin = (ms: number): Promise<unknown | null> => {
+  const p = preloadIntroJson();
+  return new Promise((resolve) => {
+    let settled = false;
+    const to = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(null);
+    }, ms);
+    p.then((data) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(to);
+      resolve(data ?? null);
+    });
+  });
+};
+
 export const hasSeenIntro = (): boolean => {
   try {
     return localStorage.getItem(STORAGE_KEY) === "1";
@@ -42,9 +76,11 @@ export type IntroDoneReason = "complete" | "skip";
 
 interface IntroAnimationProps {
   onDone: (reason: IntroDoneReason) => void;
+  /** Preloaded Lottie JSON. When provided, no fetch is issued. */
+  preloadedData?: unknown | null;
 }
 
-type Phase = "playing" | "matchcut";
+type Phase = "playing" | "matchcut" | "persistent";
 
 interface CutRect {
   startLeft: number;
@@ -71,25 +107,29 @@ const computeDurationMs = (json: unknown): number | null => {
   return ((op - ip) / fr) * 1000;
 };
 
-const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
-  const [data, setData] = useState<unknown | null>(null);
+const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }) => {
+  const [data, setData] = useState<unknown | null>(preloadedData ?? null);
   const [phase, setPhase] = useState<Phase>("playing");
   const [cut, setCut] = useState<CutRect | null>(null);
   const [transformed, setTransformed] = useState(false);
   const doneRef = useRef(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
-  const durationMsRef = useRef<number | null>(null);
+  const durationMsRef = useRef<number | null>(computeDurationMs(preloadedData));
 
-  const finish = React.useCallback((reason: IntroDoneReason) => {
-    if (doneRef.current) return;
-    doneRef.current = true;
-    markSeen();
-    onDone(reason);
-  }, [onDone]);
+  const finish = React.useCallback(
+    (reason: IntroDoneReason) => {
+      if (doneRef.current) return;
+      doneRef.current = true;
+      markSeen();
+      onDone(reason);
+    },
+    [onDone],
+  );
 
   const skip = React.useCallback(() => {
+    if (phase !== "playing" && phase !== "matchcut") return;
     finish("skip");
-  }, [finish]);
+  }, [finish, phase]);
 
   const startMatchCut = React.useCallback(() => {
     if (doneRef.current) return;
@@ -129,41 +169,41 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setTransformed(true));
     });
-    const to = window.setTimeout(() => finish("complete"), MATCH_CUT_MS + 40);
+    const to = window.setTimeout(() => {
+      finish("complete");
+      setPhase("persistent");
+    }, MATCH_CUT_MS + 40);
     return () => {
       cancelAnimationFrame(id);
       window.clearTimeout(to);
     };
   }, [phase, cut, finish]);
 
-  // Load asset. On any failure, dismiss immediately.
+  // Load asset if not preloaded. On any failure, dismiss immediately.
   useEffect(() => {
+    if (data) return;
     let cancelled = false;
     if (prefersReducedMotion()) {
       finish("skip");
       return;
     }
-    fetch(ASSET_URL)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((json) => {
-        if (cancelled) return;
-        durationMsRef.current = computeDurationMs(json);
-        setData(json);
-      })
-      .catch(() => {
-        if (!cancelled) finish("skip");
-      });
+    preloadIntroJson().then((json) => {
+      if (cancelled) return;
+      if (!json) {
+        finish("skip");
+        return;
+      }
+      durationMsRef.current = computeDurationMs(json);
+      setData(json);
+    });
     return () => {
       cancelled = true;
     };
-  }, [finish]);
+  }, [data, finish]);
 
   // Duration-based fallback: onComplete on lottie-react can miss on the final
-  // frame (esp. when loop=false is not respected mid-mount). Fire startMatchCut
-  // after the animation's real duration if onComplete has not run yet.
+  // frame. Fire startMatchCut after the animation's real duration if
+  // onComplete has not run yet.
   useEffect(() => {
     if (!data || phase !== "playing") return;
     const duration = durationMsRef.current;
@@ -178,12 +218,17 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   useEffect(() => {
     const duration = durationMsRef.current ?? 3000;
     const cap = duration + MATCH_CUT_MS + 2000;
-    const to = window.setTimeout(() => finish("skip"), cap);
+    const to = window.setTimeout(() => {
+      if (!doneRef.current) finish("skip");
+    }, cap);
     return () => window.clearTimeout(to);
   }, [data, finish]);
 
-  // Skip on any keypress or pointer down anywhere.
+  // Skip on any keypress or pointer down anywhere — only while the intro is
+  // still visually active. Once in the persistent background phase, the
+  // listeners are removed so clicks on the lobby are unaffected.
   useEffect(() => {
+    if (phase === "persistent") return;
     const onKey = () => skip();
     const onPointer = () => skip();
     window.addEventListener("keydown", onKey, true);
@@ -194,9 +239,11 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
       window.removeEventListener("pointerdown", onPointer, true);
       window.removeEventListener("touchstart", onPointer, true);
     };
-  }, [skip]);
+  }, [skip, phase]);
 
   if (!data && phase === "playing") return null;
+
+  const isActive = phase === "playing" || phase === "matchcut";
 
   return (
     <div
@@ -204,14 +251,17 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 2147483000,
+        // While playing/matchcut: on top of everything so it fully covers the
+        // page. Once persistent: drop behind all UI so it becomes the
+        // background layer for the rest of the session.
+        zIndex: isActive ? 2147483000 : -1,
         background: "transparent",
-        pointerEvents: phase === "playing" ? "auto" : "none",
-        cursor: phase === "playing" ? "pointer" : "default",
+        pointerEvents: isActive ? "auto" : "none",
+        cursor: isActive ? "pointer" : "default",
         overflow: "hidden",
       }}
     >
-      {phase === "playing" && data && (
+      {data && (
         <Suspense fallback={null}>
           <Lottie
             lottieRef={lottieRef}
