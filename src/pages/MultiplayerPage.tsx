@@ -3,19 +3,25 @@ import { useParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
 const IntroAnimation = React.lazy(() => import("@/components/IntroAnimation"));
-import { hasSeenIntro, preloadIntroJson, getIntroJsonWithin } from "@/components/IntroAnimation";
+import { hasSeenIntro, preloadIntroJson } from "@/components/IntroAnimation";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
 // TODO: Temporary intro QA override — set to false to restore once-per-visitor behavior.
 const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = true;
-// If the intro JSON hasn't arrived within this window, skip the intro
-// entirely rather than showing warm-black while we wait.
-const INTRO_READY_BUDGET_MS = 600;
 
 // Kick off the download as early as possible: the moment this module
-// evaluates, before the component mounts.
+// evaluates, before the component mounts. The index.html <link rel="preload">
+// has already started the fetch — this just latches the promise.
 preloadIntroJson();
+
+const prefersReducedMotion = (): boolean => {
+  try {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+};
 
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
@@ -26,6 +32,7 @@ const MultiplayerPage: React.FC = () => {
   const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
     if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) return "none";
+    if (prefersReducedMotion()) return "skipped";
     return "pending";
   };
   const [introStatus, setIntroStatus] = useState<IntroStatus>(initialIntroStatus);
@@ -37,12 +44,14 @@ const MultiplayerPage: React.FC = () => {
     img.src = whoopLightLogo.url;
   }, []);
 
-  // Race the JSON against the ready budget. If it wins → play the intro.
-  // If it loses → skip entirely and show the static pattern.
+  // Wait for the intro JSON — no short-timer bail. Load times vary wildly on
+  // the same connection, so any small cutoff drops the intro at random. The
+  // safety net inside IntroAnimation covers the "started but never finished"
+  // case; here we just wait.
   useEffect(() => {
     if (introStatus !== "pending") return;
     let cancelled = false;
-    getIntroJsonWithin(INTRO_READY_BUDGET_MS).then((json) => {
+    preloadIntroJson().then((json) => {
       if (cancelled) return;
       if (json) {
         setIntroData(json);
@@ -60,6 +69,10 @@ const MultiplayerPage: React.FC = () => {
   // The static pattern is only used when the intro is skipped or never runs.
   const introMounted = introStatus === "running" || introStatus === "complete";
   const showPattern = introStatus === "skipped" || introStatus === "none";
+  // Hide the lobby entirely until the intro decision has resolved. Otherwise
+  // the lobby paints first and gets hidden a frame later when the intro
+  // mounts — a visible flash.
+  const lobbyVisible = introStatus !== "pending";
 
   const title = "Multiplayer — WHOOP! WHOOP!";
   const description =
@@ -124,6 +137,7 @@ const MultiplayerPage: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            visibility: lobbyVisible ? "visible" : "hidden",
           }}
         >
           <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
@@ -149,3 +163,4 @@ const MultiplayerPage: React.FC = () => {
 };
 
 export default MultiplayerPage;
+
