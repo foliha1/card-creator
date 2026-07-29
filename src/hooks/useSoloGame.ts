@@ -64,13 +64,18 @@ export function useSoloGame(): UseSoloGameResult {
   const nextToken = () => ++tokenRef.current;
 
   // ---- observation: peek → cleared transitions on any seat's flip ----
+  // Decay fires per flip observed (not per round), so forgetting scales with
+  // information flow rather than table size.
   const prevPeekRef = useRef<number | null>(state.peekingCard);
   useEffect(() => {
     const prev = prevPeekRef.current;
     prevPeekRef.current = state.peekingCard;
     if (prev !== null && state.peekingCard === null) {
       const card = state.grid[prev];
-      if (card) brainRef.current = observe(brainRef.current, prev, card);
+      if (card) {
+        brainRef.current = decay(brainRef.current);
+        brainRef.current = observe(brainRef.current, prev, card);
+      }
     }
   }, [state.peekingCard, state.grid]);
 
@@ -85,15 +90,6 @@ export function useSoloGame(): UseSoloGameResult {
     }
     prevGridRef.current = state.grid;
   }, [state.grid]);
-
-  // Decay once per round advance.
-  const prevRoundRef = useRef(state.roundNum);
-  useEffect(() => {
-    if (state.roundNum !== prevRoundRef.current) {
-      prevRoundRef.current = state.roundNum;
-      brainRef.current = decay(brainRef.current);
-    }
-  }, [state.roundNum]);
 
   // ---- transient events + quips ----
   const [events, setEvents] = useState<TransientEvent[]>([]);
