@@ -808,6 +808,17 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }, [inClaimMode, s.selectedCards.length, mySeat, onIntent]);
 
+  // Optimistic selection: highlight the instant a card is touched, so the
+  // animation runs for the whole 800ms auto-resolve delay rather than only
+  // after the intent round-trips back as state.
+  const [optimisticSel, setOptimisticSel] = React.useState<number[]>([]);
+  React.useEffect(() => {
+    if (!inClaimMode) setOptimisticSel([]);
+  }, [inClaimMode]);
+  React.useEffect(() => {
+    if (s.selectedCards.length === 0) setOptimisticSel([]);
+  }, [s.selectedCards.length]);
+
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
     if (modalOpen) return;
@@ -827,9 +838,13 @@ const MultiplayerGameView: React.FC<Props> = ({
       return;
     }
     if (inClaimMode) {
+      setOptimisticSel((prev) =>
+        prev.includes(i) ? prev.filter((x) => x !== i) : prev.length >= 2 ? prev : [...prev, i]
+      );
       onIntent({ type: "PLAYER_SELECT_CARD", by: mySeat, idx: i });
       return;
     }
+
     if (isMyTurnToFlip) {
       const slot = s.grid[i];
       if (!slot.occupied) return;
@@ -1140,7 +1155,8 @@ const MultiplayerGameView: React.FC<Props> = ({
             const cardForRender: Card =
               slot.card ??
               ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
-            const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
+            const selected =
+              s.selectedCards.includes(i) || optimisticSel.includes(i) || lastCallSel.includes(i);
             return (
               <div key={i} style={{
                 width: cardW, height: cardH,
