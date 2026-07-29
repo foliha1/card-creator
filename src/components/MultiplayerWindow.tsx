@@ -10,6 +10,26 @@ import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type Seat
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 const GameWindow = React.lazy(() => import("@/components/GameWindow"));
+import { useSoloGame } from "@/hooks/useSoloGame";
+
+const SoloView: React.FC<{ onLeave: () => void; mobile: boolean }> = ({ onLeave, mobile }) => {
+  const solo = useSoloGame();
+  return (
+    <MultiplayerGameView
+      publicState={solo.publicState}
+      mySeat={solo.mySeat}
+      events={solo.events}
+      onIntent={solo.onIntent}
+      onLeave={onLeave}
+      mobile={mobile}
+      roomId={solo.roomId}
+      visitorId={solo.visitorId}
+      isHost={true}
+      soloMode={true}
+    />
+  );
+};
+
 import { toPublicState } from "@/lib/publicState";
 import {
   createRoom,
