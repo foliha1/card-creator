@@ -470,6 +470,15 @@ const ActionButton: React.FC<{
 }> = ({ kind, disabled, onClick, label }) => {
   const s = ButtonStyles[kind];
   const isDisabled = disabled || kind === "DISABLED";
+  // Shine sweep only runs while it is the human seat's turn to roll.
+  const shineOn = kind === "YOUR_ROLL" && !isDisabled;
+  const shineStyle: React.CSSProperties = {
+    pointerEvents: "none",
+    background: "#F8F2E9",
+    transformOrigin: "0 0",
+    animationPlayState: shineOn ? "running" : "paused",
+    opacity: shineOn ? 1 : 0,
+  };
   return (
     <button
       type="button"
@@ -482,9 +491,12 @@ const ActionButton: React.FC<{
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
         fontSize: 32, lineHeight: "39px", textAlign: "center", padding: 4,
+        position: "relative", overflow: "hidden",
       }}
     >
-      {label ?? s.label}
+      <span style={{ position: "relative", zIndex: 1 }}>{label ?? s.label}</span>
+      <span aria-hidden="true" className="ww-shine-thin" style={shineStyle} />
+      <span aria-hidden="true" className="ww-shine-wide" style={shineStyle} />
     </button>
   );
 };
