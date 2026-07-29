@@ -857,9 +857,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       : introComplete
       ? { opacity: 1, transition: "opacity 300ms ease 120ms" }
       : { opacity: 1 };
+    // Single wrapper: the reveal target IS the intro-hide target. The idle
+    // view intentionally skips wrapInShell's extra inner column so there is
+    // exactly one element sized like the card, and that element carries the
+    // opacity/pointer-events driven by introStatus. See fix note in commit.
     const idleCard = (
       <div style={{
-        alignSelf: "stretch",
+        width: "100%",
+        maxWidth: 390,
         background: "#F8F2E9",
         border: "2px solid #231F20",
         borderRadius: 4,
@@ -873,128 +878,22 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         ...cardStyleIntro,
       }}>
         {view.error && (
-          <div role="alert" style={{
-            alignSelf: "stretch",
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 16,
-            lineHeight: "20px",
-            color: "#D72229",
-            border: "1.5px solid #D72229",
-            borderRadius: 4,
-            padding: "8px 12px",
-            background: "#F8F2E9",
-          }}>
-            {view.error}
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={handleStartRoom}
-          disabled={busy}
-          style={{
-            alignSelf: "stretch",
-            height: 71,
-            background: "#D72229",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: 32,
-            lineHeight: "39px",
-            color: "#F8F2E9",
-            cursor: busy ? "default" : "pointer",
-            opacity: busy ? 0.7 : 1,
-            padding: 0,
-          }}
-        >
-          Start a Table
-        </button>
-
-        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 20,
-            lineHeight: "24px",
-            color: "#231F20",
-          }}>
-            Already have a code?
-          </div>
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: 8,
-            height: 56,
-            background: "#D0C3AF",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            boxSizing: "border-box",
-          }}>
-            <input
-              value={codeInput}
-              onChange={(e) => setCodeInput(sanitizeCodeInput(e.target.value))}
-              placeholder="ABC123"
-              inputMode="text"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              maxLength={ROOM_CODE_LENGTH}
-              aria-label="Table code"
-              style={{
-                flexGrow: 1,
-                minWidth: 0,
-                height: 40,
-                padding: "8px 16px",
-                background: "#F8F2E9",
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                boxSizing: "border-box",
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: "24px",
-                letterSpacing: "0.1em",
-                color: "#231F20",
-                textTransform: "uppercase",
-                outline: "none",
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleJoinByCode}
-              disabled={busy || !codeEnabled}
-              style={{
-                width: 95,
-                height: 40,
-                flexShrink: 0,
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                fontFamily: FONT_FAMILY,
-                fontStyle: "italic",
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: "24px",
-                background: codeEnabled ? "#231F20" : "#544C4A",
-                color: codeEnabled ? "#F8F2E9" : "#D0C3AF",
-                cursor: codeEnabled && !busy ? "pointer" : "default",
-                padding: 0,
-              }}
-            >
-              Join
-            </button>
-          </div>
+...
         </div>
       </div>
     );
 
-    return wrapInShell(idleCard);
+    return (
+      <div className="mp-shell" style={shellStyle}>
+        <style>{`
+          .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
+          .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
+          .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
+          .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+        `}</style>
+        {idleCard}
+      </div>
+    );
   }
 
 
