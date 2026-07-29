@@ -597,6 +597,36 @@ presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
   );
 };
 
+// Debug-only action buttons (?debug=1). Inert otherwise.
+const DebugControls: React.FC<{
+  deckCount: number;
+  onIntent: (a: IntentAction) => void;
+}> = ({ deckCount, onIntent }) => {
+  const on = useDebugFlag();
+  if (!on) return null;
+  return (
+    <div style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1001 }}>
+      <button
+        type="button"
+        onClick={() => onIntent({ type: "DEBUG_DRAIN_DECK" })}
+        style={{
+          background: "rgba(35,31,32,0.88)",
+          color: "#F8F2E9",
+          border: "1px solid #F8F2E9",
+          borderRadius: 4,
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+          fontSize: 11,
+          padding: "4px 8px",
+          cursor: "pointer",
+        }}
+        data-testid="debug-drain-deck"
+      >
+        {`Drain draw pile (${deckCount})`}
+      </button>
+    </div>
+  );
+};
+
 // -------- Main component --------
 
 
@@ -1144,6 +1174,8 @@ const MultiplayerGameView: React.FC<Props> = ({
             {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nfromW: ${fromW.toFixed(1)}\nfromH: ${fromH.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}\nseatCount: ${s.seatCount} | connected: ${s.seatMap.length - s.disconnectedSeats.length}/${s.seatMap.length}\nflipper: ${s.flipper ?? "-"} | roller: ${s.roller ?? "-"}\nlens scores:${s.scores.length} skip:${s.skip.length} wrongBy:${s.wrongBy.length} disc:${s.disconnectedSeats.length}\nskip:[${s.skip.map(b => b ? 1 : 0).join(",")}] scores:[${s.scores.join(",")}]`}
           </div>
         )}
+
+        <DebugControls deckCount={s.deckCount} onIntent={onIntent} />
 
         <PresenceDebugOverlay
           mySeat={mySeat}

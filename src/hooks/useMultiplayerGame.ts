@@ -504,6 +504,9 @@ function handleHostIntent(
     case "LAST_CALL_CLAIM":
       dispatch({ type: "LAST_CALL_CLAIM", by: seat, a: action.a, b: action.b });
       return;
+    case "DEBUG_DRAIN_DECK":
+      dispatch({ type: "DEBUG_DRAIN_DECK" });
+      return;
   }
 }
 
