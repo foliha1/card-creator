@@ -414,57 +414,82 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
 
-  const flashCopied = useCallback(() => {
-    setCopiedFlash(true);
-    // Keep URL box focused so keyboard users stay put.
-    const el = linkBoxRef.current;
-    if (el) {
-      el.focus({ preventScroll: true });
-      // Select the visible text for quick manual re-copy.
-      try {
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      } catch {
-        /* non-fatal */
-      }
-    }
-    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
-    copiedTimerRef.current = window.setTimeout(() => setCopiedFlash(false), 2000);
+  const flashShare = useCallback(() => {
+    setShareFlash(true);
+    if (shareFlashTimerRef.current) window.clearTimeout(shareFlashTimerRef.current);
+    shareFlashTimerRef.current = window.setTimeout(() => setShareFlash(false), 1200);
   }, []);
 
-  const handleCopy = useCallback(async (code: string) => {
-    const url = shareUrl(code);
+  const flashCode = useCallback(() => {
+    setCodeFlash(true);
+    if (codeFlashTimerRef.current) window.clearTimeout(codeFlashTimerRef.current);
+    codeFlashTimerRef.current = window.setTimeout(() => setCodeFlash(false), 1200);
+  }, []);
+
+  const copyText = useCallback(async (text: string): Promise<boolean> => {
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
-        flashCopied();
-        return;
+        await navigator.clipboard.writeText(text);
+        return true;
       }
       throw new Error("no clipboard");
     } catch {
       try {
         const ta = document.createElement("textarea");
-        ta.value = url;
+        ta.value = text;
         ta.style.position = "fixed";
         ta.style.opacity = "0";
         document.body.appendChild(ta);
         ta.select();
         document.execCommand("copy");
         document.body.removeChild(ta);
-        toast.success("Link copied");
-        flashCopied();
+        return true;
       } catch {
-        toast.error("Copy failed — select the link manually.");
+        return false;
       }
     }
-  }, [flashCopied]);
+  }, []);
+
+  const handleShare = useCallback(async (code: string) => {
+    const url = shareUrl(code);
+    const shareData = {
+      title: "Whoop Whoop",
+      text: `Join my Whoop Whoop table — code ${code}`,
+      url,
+    };
+    // Feature-detect Web Share API.
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        // User cancelled: don't fall back or toast.
+        const name = (err as { name?: string })?.name;
+        if (name === "AbortError") return;
+        // Other error (e.g. share failed) — fall through to clipboard.
+      }
+    }
+    const ok = await copyText(url);
+    if (ok) {
+      toast.success("Link copied");
+      flashShare();
+    } else {
+      toast.error("Share failed — select the link manually.");
+    }
+  }, [copyText, flashShare]);
+
+  const handleCopyCode = useCallback(async (code: string) => {
+    const ok = await copyText(code);
+    if (ok) {
+      flashCode();
+    } else {
+      toast.error("Copy failed");
+    }
+  }, [copyText, flashCode]);
 
   useEffect(() => () => {
-    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+    if (shareFlashTimerRef.current) window.clearTimeout(shareFlashTimerRef.current);
+    if (codeFlashTimerRef.current) window.clearTimeout(codeFlashTimerRef.current);
   }, []);
 
   const leaveToIdle = useCallback(() => {
