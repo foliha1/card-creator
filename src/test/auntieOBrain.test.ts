@@ -35,7 +35,7 @@ describe("auntieOBrain", () => {
     expect(m?.confidence).toBe(1);
   });
 
-  it("decay multiplies every confidence by DECAY_RATE each round", () => {
+  it("decay multiplies every confidence by DECAY_RATE each flip observed", () => {
     let b = observe(createBrain(), 0, card("circle", 1, "red"), seq([0.9]));
     b = observe(b, 1, card("square", 2, "blue"), seq([0.9]));
     b = decay(b);
@@ -64,9 +64,8 @@ describe("auntieOBrain", () => {
   it("findClaim returns null when both remembered cards are below the confidence threshold", () => {
     let b = observe(createBrain(), 0, card("circle", 1, "red"), seq([0.9]));
     b = observe(b, 1, card("circle", 2, "blue"), seq([0.9]));
-    // Decay enough times that both confidences fall under CONFIDENCE_THRESHOLD.
-    // 0.85^4 ≈ 0.522 (< 0.55).
-    b = decay(decay(decay(decay(b))));
+    // Decay per flip observed. 0.97^n < 0.55 when n >= 20 (0.97^20 ≈ 0.5438).
+    for (let i = 0; i < 20; i++) b = decay(b);
     const claim = findClaim(b, ["SHAPE"]);
     expect(b.entries.get(0)!.confidence).toBeLessThan(CONFIDENCE_THRESHOLD);
     expect(claim).toBeNull();

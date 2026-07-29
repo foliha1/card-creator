@@ -15,7 +15,7 @@ import {
   COLOR_NAMES,
 } from "@/cardData";
 
-export const DECAY_RATE = 0.85;
+export const DECAY_RATE = 0.97;
 export const CORRUPT_CHANCE = 0.16;
 export const CONFIDENCE_THRESHOLD = 0.55;
 export const REACTION_MIN_MS = 2500;
@@ -101,7 +101,7 @@ export function forget(brain: Brain, position: number): Brain {
   return { entries };
 }
 
-/** Multiply every stored confidence by DECAY_RATE. Called once per round. */
+/** Multiply every stored confidence by DECAY_RATE. Called once per flip observed. */
 export function decay(brain: Brain): Brain {
   const entries = new Map<number, Memory>();
   for (const [k, v] of brain.entries) {
