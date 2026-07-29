@@ -878,7 +878,123 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         ...cardStyleIntro,
       }}>
         {view.error && (
-...
+          <div role="alert" style={{
+            alignSelf: "stretch",
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 16,
+            lineHeight: "20px",
+            color: "#D72229",
+            border: "1.5px solid #D72229",
+            borderRadius: 4,
+            padding: "8px 12px",
+            background: "#F8F2E9",
+          }}>
+            {view.error}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleStartRoom}
+          disabled={busy}
+          style={{
+            alignSelf: "stretch",
+            height: 71,
+            background: "#D72229",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: 32,
+            lineHeight: "39px",
+            color: "#F8F2E9",
+            cursor: busy ? "default" : "pointer",
+            opacity: busy ? 0.7 : 1,
+            padding: 0,
+          }}
+        >
+          Start a Table
+        </button>
+
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 20,
+            lineHeight: "24px",
+            color: "#231F20",
+          }}>
+            Already have a code?
+          </div>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: 8,
+            height: 56,
+            background: "#D0C3AF",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            boxSizing: "border-box",
+          }}>
+            <input
+              value={codeInput}
+              onChange={(e) => setCodeInput(sanitizeCodeInput(e.target.value))}
+              placeholder="ABC123"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={ROOM_CODE_LENGTH}
+              aria-label="Table code"
+              style={{
+                flexGrow: 1,
+                minWidth: 0,
+                height: 40,
+                padding: "8px 16px",
+                background: "#F8F2E9",
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                boxSizing: "border-box",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: "24px",
+                letterSpacing: "0.1em",
+                color: "#231F20",
+                textTransform: "uppercase",
+                outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleJoinByCode}
+              disabled={busy || !codeEnabled}
+              style={{
+                width: 95,
+                height: 40,
+                flexShrink: 0,
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: "24px",
+                background: codeEnabled ? "#231F20" : "#544C4A",
+                color: codeEnabled ? "#F8F2E9" : "#D0C3AF",
+                cursor: codeEnabled && !busy ? "pointer" : "default",
+                padding: 0,
+              }}
+            >
+              Join
+            </button>
+          </div>
         </div>
       </div>
     );
