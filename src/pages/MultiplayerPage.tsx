@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
 const IntroAnimation = React.lazy(() => import("@/components/IntroAnimation"));
+import { hasSeenIntro } from "@/components/IntroAnimation";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
