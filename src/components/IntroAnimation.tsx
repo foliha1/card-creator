@@ -94,6 +94,21 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
     [onDone],
   );
 
+  // Freeze Lottie on its final frame so the last (pattern-only) frame becomes
+  // the page background. Safe to call multiple times; no-op if the player
+  // isn't mounted yet.
+  const freezeOnFinalFrame = React.useCallback(() => {
+    const api = lottieRef.current;
+    if (!api) return;
+    try {
+      const total = api.getDuration?.(true);
+      if (typeof total === "number" && total > 0) {
+        // getDuration(true) returns total frames. goToAndStop with isFrame=true.
+        api.goToAndStop?.(Math.max(0, total - 1), true);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   // On completion: leave Lottie mounted and paused on its final frame. Drop
   // the overlay's z-index so the lobby receives input; the frozen frame
   // becomes the page background for the rest of the session.
@@ -103,23 +118,34 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
     setPhase("persistent");
   }, [finish]);
 
+  // Skip must ALSO persist the animation. If the player is already mounted,
+  // jump to the final frame and drop into the persistent background phase —
+  // never unmount. Only when no data has arrived at all do we bail to the
+  // parent with an "error" so it can fall back to the static pattern.
   const skip = React.useCallback(() => {
     if (phase !== "playing") return;
+    if (!data) {
+      finish("error");
+      return;
+    }
+    freezeOnFinalFrame();
     finish("skip");
-  }, [finish, phase]);
+    setPhase("persistent");
+  }, [finish, phase, data, freezeOnFinalFrame]);
 
-  // Load asset if not preloaded. On any failure, dismiss immediately.
+  // Load asset if not preloaded. On any failure, tell the parent so it can
+  // fall back to the static pattern — we have nothing to persist.
   useEffect(() => {
     if (data) return;
     let cancelled = false;
     if (prefersReducedMotion()) {
-      finish("skip");
+      finish("error");
       return;
     }
     preloadIntroJson().then((json) => {
       if (cancelled) return;
       if (!json) {
-        finish("skip");
+        finish("error");
         return;
       }
       durationMsRef.current = computeDurationMs(json);
@@ -130,24 +156,22 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
     };
   }, [data, finish]);
 
-  // Hard safety net — the ONLY timer driving completion. Must be strictly
-  // longer than the animation's real duration so it never truncates playback.
-  // Lottie's own onComplete is the primary signal; this only fires if the
-  // player never emits it (asset error, tab thrash, etc.).
-  //
-  // We start counting from when `data` is available AND the Lottie module
-  // has had a reasonable chance to mount. The generous +3000ms cushion
-  // accounts for Suspense load of lottie-react and lottie-web's initial
-  // asset parse, which can be several hundred ms on slower devices.
+  // Hard safety net. If Lottie's onComplete never fires (asset stall, tab
+  // thrash), freeze on the final frame and persist — do NOT unmount. The
+  // parent treats "timeout" like "complete"/"skip": keep Lottie as the
+  // background, don't swap in the static pattern.
   useEffect(() => {
     if (!data || phase !== "playing") return;
     const duration = durationMsRef.current ?? 3000;
     const cap = duration + 3000;
     const to = window.setTimeout(() => {
-      if (!doneRef.current) finish("skip");
+      if (doneRef.current) return;
+      freezeOnFinalFrame();
+      finish("timeout");
+      setPhase("persistent");
     }, cap);
     return () => window.clearTimeout(to);
-  }, [data, phase, finish]);
+  }, [data, phase, finish, freezeOnFinalFrame]);
 
   // Skip on any keypress or pointer down anywhere — only while the intro is
   // still visually active. Once in the persistent background phase, the
