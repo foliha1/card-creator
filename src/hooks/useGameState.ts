@@ -176,7 +176,17 @@ export type Action =
   | { type: "END_GAME_TABLE_EMPTY" }
   | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
   | { type: "REMOVE_MATCHED" }
+  | { type: "DEBUG_DRAIN_DECK" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
+
+// Debug URL flag (?debug=1). Read live so it cannot be stale.
+export function debugFlagOn(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("debug") === "1";
+  } catch {
+    return false;
+  }
+}
 
 export function initialState(slotCount: number, opts: InitOptions = {}): State {
   const seatCount = opts.seatCount ?? 2;
@@ -607,6 +617,14 @@ export function reducer(state: State, action: Action): State {
       const g = [...state.grid];
       state.matchedCards.forEach((i) => { g[i] = null; });
       return { ...state, grid: g };
+    }
+
+    // Debug-only: shrink the draw pile so Last Call can be reached quickly.
+    // No-op unless ?debug=1 is on. Grid, scores, roller and phase untouched.
+    case "DEBUG_DRAIN_DECK": {
+      if (!debugFlagOn()) return state;
+      if (state.deck.length <= 2) return state;
+      return { ...state, deck: state.deck.slice(0, 2) };
     }
 
     case "SET_MESSAGE":

@@ -30,6 +30,7 @@ export const ROLL_HERO_MS = 1600;
 export type IntentAction =
   | { type: "REQUEST_ROLL" }
   | { type: "CANCEL_CLAIM"; by: number }
+  | { type: "DEBUG_DRAIN_DECK" }
   | Extract<
       Action,
       | { type: "PLAYER_ENTER_CLAIM" }

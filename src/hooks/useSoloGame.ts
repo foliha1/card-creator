@@ -324,6 +324,9 @@ export function useSoloGame(): UseSoloGameResult {
             REVEAL_MS,
           );
           return;
+        case "DEBUG_DRAIN_DECK":
+          dispatch({ type: "DEBUG_DRAIN_DECK" });
+          return;
         case "LAST_CALL_CLAIM":
           dispatch({
             type: "LAST_CALL_CLAIM",
