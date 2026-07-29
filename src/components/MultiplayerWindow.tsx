@@ -595,12 +595,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
   // ---------- SOLO ----------
   if (view.kind === "solo") {
-    return (
-      <React.Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
-        <GameWindow mobile={mobile} />
-      </React.Suspense>
-    );
+    return <SoloView onLeave={leaveToIdle} mobile={mobile} />;
   }
+
 
   // ---------- GAME IN PROGRESS: HOST ----------
   if (isHostView && frozenSeats !== null && activeRoom) {
