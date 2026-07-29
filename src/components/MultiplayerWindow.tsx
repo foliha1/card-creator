@@ -68,9 +68,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const [gameId, setGameId] = useState<string>("");
   const [starting, setStarting] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [copiedFlash, setCopiedFlash] = useState(false);
-  const linkBoxRef = useRef<HTMLDivElement | null>(null);
-  const copiedTimerRef = useRef<number | null>(null);
+  const [shareFlash, setShareFlash] = useState(false);
+  const [codeFlash, setCodeFlash] = useState(false);
+  const [lobbyGrid, setLobbyGrid] = useState<"3x2" | "3x3">("3x2");
+  const shareFlashTimerRef = useRef<number | null>(null);
+  const codeFlashTimerRef = useRef<number | null>(null);
 
 
 
@@ -394,75 +396,112 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     });
   }, [isHostView, participants, activeRoom, starting, channel]);
 
-  // Joiner: listen for host's game_starting notice to show loading state.
+  // Joiner: listen for host's game_starting notice + lobby grid selection.
   useEffect(() => {
     if (view.kind !== "joiner") return;
     const unsub = onBroadcast(({ payload }) => {
-      if (
-        payload &&
-        typeof payload === "object" &&
-        (payload as { kind?: string }).kind === "game_starting"
-      ) {
+      if (!payload || typeof payload !== "object") return;
+      const kind = (payload as { kind?: string }).kind;
+      if (kind === "game_starting") {
         setStarting(true);
+      } else if (kind === "lobby_grid") {
+        const size = (payload as { size?: string }).size;
+        if (size === "3x2" || size === "3x3") setLobbyGrid(size);
       }
     });
     return unsub;
   }, [view.kind, onBroadcast]);
 
+  // Host: broadcast the current lobby grid selection whenever it changes,
+  // and once when a joiner arrives (roster growth) so late joiners sync.
+  useEffect(() => {
+    if (view.kind !== "host" || !channel) return;
+    try {
+      channel.send({ type: "broadcast", event: "msg", payload: { kind: "lobby_grid", size: lobbyGrid } });
+    } catch {
+      /* non-fatal */
+    }
+  }, [view.kind, channel, lobbyGrid, participants.length]);
+
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
 
-  const flashCopied = useCallback(() => {
-    setCopiedFlash(true);
-    // Keep URL box focused so keyboard users stay put.
-    const el = linkBoxRef.current;
-    if (el) {
-      el.focus({ preventScroll: true });
-      // Select the visible text for quick manual re-copy.
-      try {
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      } catch {
-        /* non-fatal */
-      }
-    }
-    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
-    copiedTimerRef.current = window.setTimeout(() => setCopiedFlash(false), 2000);
+  const flashShare = useCallback(() => {
+    setShareFlash(true);
+    if (shareFlashTimerRef.current) window.clearTimeout(shareFlashTimerRef.current);
+    shareFlashTimerRef.current = window.setTimeout(() => setShareFlash(false), 1200);
   }, []);
 
-  const handleCopy = useCallback(async (code: string) => {
-    const url = shareUrl(code);
+  const flashCode = useCallback(() => {
+    setCodeFlash(true);
+    if (codeFlashTimerRef.current) window.clearTimeout(codeFlashTimerRef.current);
+    codeFlashTimerRef.current = window.setTimeout(() => setCodeFlash(false), 1200);
+  }, []);
+
+  const copyText = useCallback(async (text: string): Promise<boolean> => {
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
-        flashCopied();
-        return;
+        await navigator.clipboard.writeText(text);
+        return true;
       }
       throw new Error("no clipboard");
     } catch {
       try {
         const ta = document.createElement("textarea");
-        ta.value = url;
+        ta.value = text;
         ta.style.position = "fixed";
         ta.style.opacity = "0";
         document.body.appendChild(ta);
         ta.select();
         document.execCommand("copy");
         document.body.removeChild(ta);
-        toast.success("Link copied");
-        flashCopied();
+        return true;
       } catch {
-        toast.error("Copy failed — select the link manually.");
+        return false;
       }
     }
-  }, [flashCopied]);
+  }, []);
+
+  const handleShare = useCallback(async (code: string) => {
+    const url = shareUrl(code);
+    const shareData = {
+      title: "Whoop Whoop",
+      text: `Join my Whoop Whoop table — code ${code}`,
+      url,
+    };
+    // Feature-detect Web Share API.
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        // User cancelled: don't fall back or toast.
+        const name = (err as { name?: string })?.name;
+        if (name === "AbortError") return;
+        // Other error (e.g. share failed) — fall through to clipboard.
+      }
+    }
+    const ok = await copyText(url);
+    if (ok) {
+      toast.success("Link copied");
+      flashShare();
+    } else {
+      toast.error("Share failed — select the link manually.");
+    }
+  }, [copyText, flashShare]);
+
+  const handleCopyCode = useCallback(async (code: string) => {
+    const ok = await copyText(code);
+    if (ok) {
+      flashCode();
+    } else {
+      toast.error("Copy failed");
+    }
+  }, [copyText, flashCode]);
 
   useEffect(() => () => {
-    if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);
+    if (shareFlashTimerRef.current) window.clearTimeout(shareFlashTimerRef.current);
+    if (codeFlashTimerRef.current) window.clearTimeout(codeFlashTimerRef.current);
   }, []);
 
   const leaveToIdle = useCallback(() => {
@@ -1115,107 +1154,177 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     boxSizing: "border-box",
   };
 
+  const codeTileLabel = codeFlash ? "Copied" : `Tap to copy code ${room.room_code}`;
   const codeSection = (
-    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Your table code</div>
-      <div style={{
-        ...wrapperBase,
+    <button
+      type="button"
+      onClick={() => handleCopyCode(room.room_code)}
+      aria-label={codeTileLabel}
+      aria-live="polite"
+      style={{
+        alignSelf: "stretch",
+        background: "#D0C3AF",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        padding: "16px 8px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        padding: 8,
-        height: 71,
+        justifyContent: "center",
+        gap: 4,
+        cursor: "pointer",
+        boxSizing: "border-box",
+        fontFamily: FONT_FAMILY,
+        color: "#231F20",
+        userSelect: "none",
+      }}
+    >
+      <div style={{
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 48,
+        lineHeight: "56px",
+        letterSpacing: "0.1em",
+        color: "#231F20",
       }}>
-        <div style={{
-          flexGrow: 1,
-          height: 55,
-          padding: "8px 16px",
-          background: "#F8F2E9",
-          border: "2px solid #231F20",
-          borderRadius: 4,
-          boxSizing: "border-box",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 32,
-          lineHeight: "39px",
-          letterSpacing: "0.1em",
-          color: "#231F20",
-          userSelect: "all",
-        }}>
-          {room.room_code}
-        </div>
+        {room.room_code}
       </div>
+      <div style={{
+        fontFamily: FONT_FAMILY,
+        fontStyle: "italic",
+        fontWeight: 400,
+        fontSize: 16,
+        lineHeight: "20px",
+        color: "#544C4A",
+      }}>
+        {codeFlash ? "Copied" : "Tap to copy"}
+      </div>
+    </button>
+  );
+
+  const shareSection = isHost ? (
+    <button
+      type="button"
+      onClick={() => handleShare(room.room_code)}
+      aria-live="polite"
+      style={{
+        alignSelf: "stretch",
+        height: 56,
+        background: shareFlash ? "#231F20" : "#0072B2",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 20,
+        lineHeight: "24px",
+        color: "#F8F2E9",
+        cursor: "pointer",
+        padding: 0,
+        transition: "background 150ms ease",
+      }}
+    >
+      {shareFlash ? "Copied!" : "Share"}
+    </button>
+  ) : null;
+
+  const gridOptions: Array<{ key: "3x2" | "3x3"; label: string; cols: number; rows: number }> = [
+    { key: "3x2", label: "6 cards", cols: 3, rows: 2 },
+    { key: "3x3", label: "9 cards", cols: 3, rows: 3 },
+  ];
+
+  const renderGridMini = (cols: number, rows: number, selected: boolean) => (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+      gridTemplateRows: `repeat(${rows}, 1fr)`,
+      gap: 4,
+      width: "70%",
+      aspectRatio: `${cols} / ${rows * 1.35}`,
+      maxHeight: 110,
+    }}>
+      {Array.from({ length: cols * rows }).map((_, i) => (
+        <div key={i} style={{
+          background: "#F8F2E9",
+          border: `${selected ? 2 : 1}px solid #231F20`,
+          borderRadius: 3,
+        }} />
+      ))}
     </div>
   );
 
-  const linkSection = isHost ? (
+  const gridPickerSection = (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Your table link</div>
       <div style={{
-        ...wrapperBase,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        padding: 8,
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 36,
+        lineHeight: "44px",
+        color: "#231F20",
       }}>
-        <div
-          ref={linkBoxRef}
-          tabIndex={0}
-          role="textbox"
-          aria-readonly="true"
-          aria-label="Table link"
-          style={{
-            alignSelf: "stretch",
-            height: 40,
-            padding: "8px 16px",
-            background: "#F8F2E9",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            boxSizing: "border-box",
-            display: "flex",
-            alignItems: "center",
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 20,
-            lineHeight: "24px",
-            color: "#231F20",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            userSelect: "all",
-            outline: "none",
-          }}
-          title={link}
-        >
-          {link}
-        </div>
-        <button
-          type="button"
-          onClick={() => handleCopy(room.room_code)}
-          aria-live="polite"
-          style={{
-            alignSelf: "stretch",
-            height: 40,
-            background: copiedFlash ? "#231F20" : "#0072B2",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 20,
-            lineHeight: "24px",
-            color: "#F8F2E9",
-            cursor: "pointer",
-            padding: 0,
-            transition: "background 150ms ease",
-          }}
-        >
-          {copiedFlash ? "Copied!" : "Copy link"}
-        </button>
+        Choose a grid size
       </div>
+      {isHost ? (
+        <div style={{ display: "flex", gap: 12, alignSelf: "stretch" }}>
+          {gridOptions.map((opt) => {
+            const selected = lobbyGrid === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => !starting && setLobbyGrid(opt.key)}
+                aria-pressed={selected}
+                aria-label={`${opt.label} grid`}
+                disabled={starting}
+                style={{
+                  flex: 1,
+                  height: 188,
+                  background: "#D0C3AF",
+                  border: `${selected ? 4 : 2}px solid #231F20`,
+                  outline: selected ? "2px solid #D72229" : "none",
+                  outlineOffset: selected ? -8 : 0,
+                  borderRadius: 4,
+                  padding: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  cursor: starting ? "default" : "pointer",
+                  boxShadow: selected ? "inset 0 0 0 2px #F8F2E9" : "none",
+                  boxSizing: "border-box",
+                }}
+              >
+                {renderGridMini(opt.cols, opt.rows, selected)}
+                <div style={{
+                  fontFamily: FONT_FAMILY,
+                  fontStyle: selected ? "italic" : "normal",
+                  fontWeight: 400,
+                  fontSize: 20,
+                  lineHeight: "24px",
+                  color: "#231F20",
+                }}>
+                  {opt.label}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{
+          ...wrapperBase,
+          padding: "12px 16px",
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 20,
+          lineHeight: "24px",
+          color: "#231F20",
+        }}>
+          {gridOptions.find((g) => g.key === lobbyGrid)?.label ?? "6 cards"}
+        </div>
+      )}
     </div>
-  ) : null;
+  );
+
 
 
   const seatSlots = Array.from({ length: ROOM_CAPACITY }, (_, i) => visibleParticipants[i] ?? null);
@@ -1524,7 +1633,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       {startingBanner}
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
         {codeSection}
-        {linkSection}
+        {shareSection}
+        {gridPickerSection}
         {playersSection}
         {startButton}
         {leaveButton}
