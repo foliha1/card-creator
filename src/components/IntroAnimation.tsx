@@ -55,6 +55,22 @@ interface CutRect {
   endW: number;
 }
 
+interface LottieJson {
+  fr?: number;
+  ip?: number;
+  op?: number;
+}
+
+const computeDurationMs = (json: unknown): number | null => {
+  if (!json || typeof json !== "object") return null;
+  const j = json as LottieJson;
+  const fr = typeof j.fr === "number" ? j.fr : 0;
+  const ip = typeof j.ip === "number" ? j.ip : 0;
+  const op = typeof j.op === "number" ? j.op : 0;
+  if (fr <= 0 || op <= ip) return null;
+  return ((op - ip) / fr) * 1000;
+};
+
 const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   const [data, setData] = useState<unknown | null>(null);
   const [phase, setPhase] = useState<Phase>("playing");
@@ -62,6 +78,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   const [transformed, setTransformed] = useState(false);
   const doneRef = useRef(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
+  const durationMsRef = useRef<number | null>(null);
 
   const finish = React.useCallback((reason: IntroDoneReason) => {
     if (doneRef.current) return;
@@ -76,18 +93,15 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
 
   const startMatchCut = React.useCallback(() => {
     if (doneRef.current) return;
-    // Compute start rect: centred, sized by cover scale of 1920 artboard.
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const scale = Math.max(vw, vh) / 1920;
     const startW = INTRO_LOGO_ARTBOARD_W * scale;
-    // Preserve logo aspect ratio (252 x 199).
     const aspect = 199 / 252;
     const startH = startW * aspect;
     const startLeft = vw / 2 - startW / 2;
     const startTop = vh / 2 - startH / 2;
 
-    // Measure lobby logo.
     const el = document.querySelector<HTMLImageElement>('[data-lobby-logo="true"]');
     if (!el) {
       finish("skip");
@@ -110,7 +124,6 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
     setPhase("matchcut");
   }, [finish]);
 
-  // Kick off the CSS transition on the frame after we mount the img.
   useEffect(() => {
     if (phase !== "matchcut" || !cut) return;
     const id = requestAnimationFrame(() => {
@@ -137,6 +150,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
       })
       .then((json) => {
         if (cancelled) return;
+        durationMsRef.current = computeDurationMs(json);
         setData(json);
       })
       .catch(() => {
@@ -147,11 +161,39 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
     };
   }, [finish]);
 
-  // Skip on any keypress.
+  // Duration-based fallback: onComplete on lottie-react can miss on the final
+  // frame (esp. when loop=false is not respected mid-mount). Fire startMatchCut
+  // after the animation's real duration if onComplete has not run yet.
+  useEffect(() => {
+    if (!data || phase !== "playing") return;
+    const duration = durationMsRef.current;
+    if (!duration || duration <= 0) return;
+    const to = window.setTimeout(() => {
+      if (!doneRef.current && phase === "playing") startMatchCut();
+    }, duration + 50);
+    return () => window.clearTimeout(to);
+  }, [data, phase, startMatchCut]);
+
+  // Hard safety net: whatever happens, never keep the user stuck.
+  useEffect(() => {
+    const duration = durationMsRef.current ?? 3000;
+    const cap = duration + MATCH_CUT_MS + 2000;
+    const to = window.setTimeout(() => finish("skip"), cap);
+    return () => window.clearTimeout(to);
+  }, [data, finish]);
+
+  // Skip on any keypress or pointer down anywhere.
   useEffect(() => {
     const onKey = () => skip();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const onPointer = () => skip();
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("pointerdown", onPointer, true);
+    window.addEventListener("touchstart", onPointer, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("touchstart", onPointer, true);
+    };
   }, [skip]);
 
   if (!data && phase === "playing") return null;
@@ -159,12 +201,10 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
   return (
     <div
       role="presentation"
-      onClick={phase === "playing" ? skip : undefined}
-      onTouchStart={phase === "playing" ? skip : undefined}
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: 2147483000,
         background: "transparent",
         pointerEvents: phase === "playing" ? "auto" : "none",
         cursor: phase === "playing" ? "pointer" : "default",
@@ -184,7 +224,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone }) => {
               if (total !== undefined && total <= 0) finish("skip");
             }}
             rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: "100%", height: "100%", pointerEvents: "none" }}
           />
         </Suspense>
       )}
