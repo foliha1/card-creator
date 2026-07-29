@@ -32,12 +32,26 @@ const GameCard = ({
   fill,
 }: GameCardProps) => {
   const [focusVis, setFocusVis] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [cardW, setCardW] = useState(0);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      setCardW(w);
+    });
+    ro.observe(el);
+    setCardW(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
+
+  const k = cardW > 0 ? cardW / 104.333 : 0;
 
   const baseShadow = "0 6px 14px rgba(0,0,0,0.25)";
   const boxShadow = matched
     ? `0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5), ${baseShadow}`
-    : highlighted
-    ? `0 0 0 3px #231f20, 0 0 16px rgba(35,31,32,0.3), ${baseShadow}`
     : baseShadow;
 
   let outerTransform = "";
@@ -53,6 +67,8 @@ const GameCard = ({
     ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
     : shaking
     ? "card-shake 0.2s ease"
+    : highlighted
+    ? "ww-card-pulse 1.6s linear infinite"
     : "none";
 
   const shapeLabel = card.shape === "tri" ? "triangle" : card.shape;
