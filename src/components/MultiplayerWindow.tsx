@@ -883,13 +883,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       <div style={{
         width: "100%",
         maxWidth: 390,
-        background: "#F8F2E9",
-        border: "2px solid #231F20",
+        background: COLORS.surface,
+        border: "2px solid " + COLORS.ink,
         borderRadius: 4,
         padding: 16,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
+        alignItems: "stretch",
         gap: 16,
         height: "auto",
         boxSizing: "border-box",
@@ -902,42 +902,104 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             fontWeight: 400,
             fontSize: 16,
             lineHeight: "20px",
-            color: "#D72229",
-            border: "1.5px solid #D72229",
+            color: COLORS.red,
+            border: `1.5px solid ${COLORS.red}`,
             borderRadius: 4,
             padding: "8px 12px",
-            background: "#F8F2E9",
+            background: COLORS.surface,
           }}>
             {view.error}
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={handleStartRoom}
-          disabled={busy}
-          style={{
-            alignSelf: "stretch",
-            height: 71,
-            background: "#D72229",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: 32,
-            lineHeight: "39px",
-            color: "#F8F2E9",
-            cursor: busy ? "default" : "pointer",
-            opacity: busy ? 0.7 : 1,
-            padding: 0,
-          }}
-        >
-          Start a Table
-        </button>
+        <div style={{
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 36,
+          lineHeight: "44px",
+          color: COLORS.ink,
+          textAlign: "center",
+        }}>
+          How do you want to play?
+        </div>
+
+        <div style={{ alignSelf: "stretch", display: "flex", gap: 16 }}>
+          <button
+            type="button"
+            onClick={handlePlaySolo}
+            disabled={busy}
+            style={{
+              flex: 1,
+              height: 101,
+              background: COLORS.blue,
+              border: "2px solid " + COLORS.ink,
+              borderRadius: 4,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              gap: 8,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.7 : 1,
+            }}
+            aria-label="Play Solo"
+          >
+            <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+              <circle cx="16" cy="11" r="5" fill="none" stroke={COLORS.soloTint} strokeWidth="2.5" />
+              <path d="M6 27c2-5 6-7 10-7s8 2 10 7" fill="none" stroke={COLORS.soloTint} strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <div style={{
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 24,
+              lineHeight: "29px",
+              color: COLORS.soloTint,
+              textAlign: "center",
+            }}>
+              Play Solo
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleStartRoom}
+            disabled={busy}
+            style={{
+              flex: 1,
+              height: 101,
+              background: COLORS.red,
+              border: "2px solid " + COLORS.ink,
+              borderRadius: 4,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              gap: 8,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.7 : 1,
+            }}
+            aria-label="Play with Peeps"
+          >
+            <svg width="64" height="32" viewBox="0 0 64 32" aria-hidden="true">
+              <circle cx="16" cy="12" r="5" fill="none" stroke={COLORS.peepsTint} strokeWidth="2.5" />
+              <path d="M6 28c2-5 5-7 10-7s8 2 10 7" fill="none" stroke={COLORS.peepsTint} strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="48" cy="12" r="5" fill="none" stroke={COLORS.peepsTint} strokeWidth="2.5" />
+              <path d="M38 28c2-5 5-7 10-7s8 2 10 7" fill="none" stroke={COLORS.peepsTint} strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+            <div style={{
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 24,
+              lineHeight: "29px",
+              color: COLORS.peepsTint,
+              textAlign: "center",
+            }}>
+              Play with Peeps
+            </div>
+          </button>
+        </div>
 
         <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{
@@ -945,18 +1007,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             fontWeight: 400,
             fontSize: 20,
             lineHeight: "24px",
-            color: "#231F20",
+            color: COLORS.ink,
+            textAlign: "left",
           }}>
-            Already have a code?
+            Already have a table code?
           </div>
           <div style={{
             display: "flex",
             alignItems: "center",
             gap: 8,
             padding: 8,
-            height: 56,
-            background: "#D0C3AF",
-            border: "2px solid #231F20",
+            background: COLORS.panel,
+            border: "2px solid " + COLORS.ink,
             borderRadius: 4,
             boxSizing: "border-box",
           }}>
@@ -973,10 +1035,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               style={{
                 flexGrow: 1,
                 minWidth: 0,
-                height: 40,
                 padding: "8px 16px",
-                background: "#F8F2E9",
-                border: "2px solid #231F20",
+                background: COLORS.surface,
+                border: "2px solid " + COLORS.ink,
                 borderRadius: 4,
                 boxSizing: "border-box",
                 fontFamily: FONT_FAMILY,
@@ -984,7 +1045,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 fontSize: 20,
                 lineHeight: "24px",
                 letterSpacing: "0.1em",
-                color: "#231F20",
+                color: COLORS.ink,
                 textTransform: "uppercase",
                 outline: "none",
               }}
@@ -994,20 +1055,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               onClick={handleJoinByCode}
               disabled={busy || !codeEnabled}
               style={{
-                width: 95,
-                height: 40,
                 flexShrink: 0,
-                border: "2px solid #231F20",
+                padding: "8px 16px",
+                border: "2px solid " + COLORS.ink,
                 borderRadius: 4,
                 fontFamily: FONT_FAMILY,
                 fontStyle: "italic",
                 fontWeight: 400,
                 fontSize: 20,
                 lineHeight: "24px",
-                background: codeEnabled ? "#231F20" : "#544C4A",
-                color: codeEnabled ? "#F8F2E9" : "#D0C3AF",
+                background: COLORS.inkMuted,
+                color: COLORS.panel,
                 cursor: codeEnabled && !busy ? "pointer" : "default",
-                padding: 0,
+                opacity: codeEnabled && !busy ? 1 : 0.7,
               }}
             >
               Join
@@ -1016,6 +1076,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         </div>
       </div>
     );
+
 
     return (
       <div className="mp-shell" style={shellStyle}>
