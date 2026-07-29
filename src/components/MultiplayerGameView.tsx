@@ -72,6 +72,9 @@ interface Props {
   // When not "connected" AND a game is in progress, an overlay Reconnecting…
   // banner covers the board. Purely visual — no phase change, no gate.
   presenceStatus?: "connecting" | "connected" | "error";
+  // Solo bypass: when true, WHOOP dispatches PLAYER_ENTER_CLAIM through
+  // onIntent instead of hitting the (nonexistent) claim-lock arbiter.
+  soloMode?: boolean;
 }
 
 // -------- Figma-transcribed constants --------
