@@ -994,26 +994,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       </div>
     );
 
-    return wrapInShell(idleCard, {
-      gap: 72,
-      above: (
-        <img
-          src={whoopLightLogo.url}
-          alt="WHOOP! WHOOP!"
-          width={252}
-          height={199}
-          data-lobby-logo="true"
-          style={{
-            width: 252,
-            height: 199,
-            display: "block",
-            opacity: introRunning ? 0 : 1,
-            pointerEvents: introRunning ? "none" : "auto",
-          }}
-        />
-
-      ),
-    });
+    return wrapInShell(idleCard);
   }
 
 
