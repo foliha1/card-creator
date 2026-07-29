@@ -15,7 +15,7 @@ import {
   COLOR_NAMES,
 } from "@/cardData";
 
-export const DECAY_RATE = 0.85;
+export const DECAY_RATE = 0.97;
 export const CORRUPT_CHANCE = 0.16;
 export const CONFIDENCE_THRESHOLD = 0.55;
 export const REACTION_MIN_MS = 2500;
