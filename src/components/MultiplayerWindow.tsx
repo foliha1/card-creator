@@ -1142,107 +1142,177 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     boxSizing: "border-box",
   };
 
+  const codeTileLabel = codeFlash ? "Copied" : `Tap to copy code ${room.room_code}`;
   const codeSection = (
-    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Your table code</div>
-      <div style={{
-        ...wrapperBase,
+    <button
+      type="button"
+      onClick={() => handleCopyCode(room.room_code)}
+      aria-label={codeTileLabel}
+      aria-live="polite"
+      style={{
+        alignSelf: "stretch",
+        background: "#D0C3AF",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        padding: "16px 8px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        padding: 8,
-        height: 71,
+        justifyContent: "center",
+        gap: 4,
+        cursor: "pointer",
+        boxSizing: "border-box",
+        fontFamily: FONT_FAMILY,
+        color: "#231F20",
+        userSelect: "none",
+      }}
+    >
+      <div style={{
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 48,
+        lineHeight: "56px",
+        letterSpacing: "0.1em",
+        color: "#231F20",
       }}>
-        <div style={{
-          flexGrow: 1,
-          height: 55,
-          padding: "8px 16px",
-          background: "#F8F2E9",
-          border: "2px solid #231F20",
-          borderRadius: 4,
-          boxSizing: "border-box",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 32,
-          lineHeight: "39px",
-          letterSpacing: "0.1em",
-          color: "#231F20",
-          userSelect: "all",
-        }}>
-          {room.room_code}
-        </div>
+        {room.room_code}
       </div>
+      <div style={{
+        fontFamily: FONT_FAMILY,
+        fontStyle: "italic",
+        fontWeight: 400,
+        fontSize: 16,
+        lineHeight: "20px",
+        color: "#544C4A",
+      }}>
+        {codeFlash ? "Copied" : "Tap to copy"}
+      </div>
+    </button>
+  );
+
+  const shareSection = isHost ? (
+    <button
+      type="button"
+      onClick={() => handleShare(room.room_code)}
+      aria-live="polite"
+      style={{
+        alignSelf: "stretch",
+        height: 56,
+        background: shareFlash ? "#231F20" : "#0072B2",
+        border: "2px solid #231F20",
+        borderRadius: 4,
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 20,
+        lineHeight: "24px",
+        color: "#F8F2E9",
+        cursor: "pointer",
+        padding: 0,
+        transition: "background 150ms ease",
+      }}
+    >
+      {shareFlash ? "Copied!" : "Share"}
+    </button>
+  ) : null;
+
+  const gridOptions: Array<{ key: "3x2" | "3x3"; label: string; cols: number; rows: number }> = [
+    { key: "3x2", label: "6 cards", cols: 3, rows: 2 },
+    { key: "3x3", label: "9 cards", cols: 3, rows: 3 },
+  ];
+
+  const renderGridMini = (cols: number, rows: number, selected: boolean) => (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+      gridTemplateRows: `repeat(${rows}, 1fr)`,
+      gap: 4,
+      width: "70%",
+      aspectRatio: `${cols} / ${rows * 1.35}`,
+      maxHeight: 110,
+    }}>
+      {Array.from({ length: cols * rows }).map((_, i) => (
+        <div key={i} style={{
+          background: "#F8F2E9",
+          border: `${selected ? 2 : 1}px solid #231F20`,
+          borderRadius: 3,
+        }} />
+      ))}
     </div>
   );
 
-  const linkSection = isHost ? (
+  const gridPickerSection = (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Your table link</div>
       <div style={{
-        ...wrapperBase,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        padding: 8,
+        fontFamily: FONT_FAMILY,
+        fontWeight: 400,
+        fontSize: 36,
+        lineHeight: "44px",
+        color: "#231F20",
       }}>
-        <div
-          ref={linkBoxRef}
-          tabIndex={0}
-          role="textbox"
-          aria-readonly="true"
-          aria-label="Table link"
-          style={{
-            alignSelf: "stretch",
-            height: 40,
-            padding: "8px 16px",
-            background: "#F8F2E9",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            boxSizing: "border-box",
-            display: "flex",
-            alignItems: "center",
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 20,
-            lineHeight: "24px",
-            color: "#231F20",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            userSelect: "all",
-            outline: "none",
-          }}
-          title={link}
-        >
-          {link}
-        </div>
-        <button
-          type="button"
-          onClick={() => handleCopy(room.room_code)}
-          aria-live="polite"
-          style={{
-            alignSelf: "stretch",
-            height: 40,
-            background: copiedFlash ? "#231F20" : "#0072B2",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 20,
-            lineHeight: "24px",
-            color: "#F8F2E9",
-            cursor: "pointer",
-            padding: 0,
-            transition: "background 150ms ease",
-          }}
-        >
-          {copiedFlash ? "Copied!" : "Copy link"}
-        </button>
+        Choose a grid size
       </div>
+      {isHost ? (
+        <div style={{ display: "flex", gap: 12, alignSelf: "stretch" }}>
+          {gridOptions.map((opt) => {
+            const selected = lobbyGrid === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => !starting && setLobbyGrid(opt.key)}
+                aria-pressed={selected}
+                aria-label={`${opt.label} grid`}
+                disabled={starting}
+                style={{
+                  flex: 1,
+                  height: 188,
+                  background: "#D0C3AF",
+                  border: `${selected ? 4 : 2}px solid #231F20`,
+                  outline: selected ? "2px solid #D72229" : "none",
+                  outlineOffset: selected ? -8 : 0,
+                  borderRadius: 4,
+                  padding: 12,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  cursor: starting ? "default" : "pointer",
+                  boxShadow: selected ? "inset 0 0 0 2px #F8F2E9" : "none",
+                  boxSizing: "border-box",
+                }}
+              >
+                {renderGridMini(opt.cols, opt.rows, selected)}
+                <div style={{
+                  fontFamily: FONT_FAMILY,
+                  fontStyle: selected ? "italic" : "normal",
+                  fontWeight: 400,
+                  fontSize: 20,
+                  lineHeight: "24px",
+                  color: "#231F20",
+                }}>
+                  {opt.label}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{
+          ...wrapperBase,
+          padding: "12px 16px",
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 20,
+          lineHeight: "24px",
+          color: "#231F20",
+        }}>
+          {gridOptions.find((g) => g.key === lobbyGrid)?.label ?? "6 cards"}
+        </div>
+      )}
     </div>
-  ) : null;
+  );
+
 
 
   const seatSlots = Array.from({ length: ROOM_CAPACITY }, (_, i) => visibleParticipants[i] ?? null);
