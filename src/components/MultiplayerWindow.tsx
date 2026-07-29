@@ -396,20 +396,32 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     });
   }, [isHostView, participants, activeRoom, starting, channel]);
 
-  // Joiner: listen for host's game_starting notice to show loading state.
+  // Joiner: listen for host's game_starting notice + lobby grid selection.
   useEffect(() => {
     if (view.kind !== "joiner") return;
     const unsub = onBroadcast(({ payload }) => {
-      if (
-        payload &&
-        typeof payload === "object" &&
-        (payload as { kind?: string }).kind === "game_starting"
-      ) {
+      if (!payload || typeof payload !== "object") return;
+      const kind = (payload as { kind?: string }).kind;
+      if (kind === "game_starting") {
         setStarting(true);
+      } else if (kind === "lobby_grid") {
+        const size = (payload as { size?: string }).size;
+        if (size === "3x2" || size === "3x3") setLobbyGrid(size);
       }
     });
     return unsub;
   }, [view.kind, onBroadcast]);
+
+  // Host: broadcast the current lobby grid selection whenever it changes,
+  // and once when a joiner arrives (roster growth) so late joiners sync.
+  useEffect(() => {
+    if (view.kind !== "host" || !channel) return;
+    try {
+      channel.send({ type: "broadcast", event: "msg", payload: { kind: "lobby_grid", size: lobbyGrid } });
+    } catch {
+      /* non-fatal */
+    }
+  }, [view.kind, channel, lobbyGrid, participants.length]);
 
   const shareUrl = (code: string) =>
     typeof window !== "undefined" ? `${window.location.origin}/play/${code}` : `/play/${code}`;
