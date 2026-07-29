@@ -857,9 +857,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       : introComplete
       ? { opacity: 1, transition: "opacity 300ms ease 120ms" }
       : { opacity: 1 };
+    // Single wrapper: the reveal target IS the intro-hide target. The idle
+    // view intentionally skips wrapInShell's extra inner column so there is
+    // exactly one element sized like the card, and that element carries the
+    // opacity/pointer-events driven by introStatus. See fix note in commit.
     const idleCard = (
       <div style={{
-        alignSelf: "stretch",
+        width: "100%",
+        maxWidth: 390,
         background: "#F8F2E9",
         border: "2px solid #231F20",
         borderRadius: 4,
@@ -994,7 +999,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       </div>
     );
 
-    return wrapInShell(idleCard);
+    return (
+      <div className="mp-shell" style={shellStyle}>
+        <style>{`
+          .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
+          .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
+          .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
+          .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+        `}</style>
+        {idleCard}
+      </div>
+    );
   }
 
 
