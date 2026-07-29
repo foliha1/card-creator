@@ -18,7 +18,7 @@ import {
   ROOM_CODE_LENGTH,
   type RoomRow,
 } from "@/lib/rooms";
-import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+
 import { unlockAudio } from "@/lib/sounds";
 
 
@@ -849,15 +849,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     const codeEnabled = codeInput.length === ROOM_CODE_LENGTH;
     const introRunning = introStatus === "running";
     const introComplete = introStatus === "complete";
+    // The lobby logo has been removed from this screen — the intro's final
+    // frame masks the logo so the container itself takes that space, centred
+    // on screen. Only the container fades in; nothing else animates.
     const cardStyleIntro: React.CSSProperties = introRunning
-      ? { opacity: 0, transform: "translateY(12px)", pointerEvents: "none" }
+      ? { opacity: 0, pointerEvents: "none" }
       : introComplete
-      ? {
-          opacity: 1,
-          transform: "translateY(0)",
-          transition: "opacity 300ms ease 120ms, transform 300ms ease 120ms",
-        }
-      : { opacity: 1, transform: "translateY(0)" };
+      ? { opacity: 1, transition: "opacity 300ms ease 120ms" }
+      : { opacity: 1 };
     const idleCard = (
       <div style={{
         alignSelf: "stretch",
@@ -995,26 +994,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       </div>
     );
 
-    return wrapInShell(idleCard, {
-      gap: 72,
-      above: (
-        <img
-          src={whoopLightLogo.url}
-          alt="WHOOP! WHOOP!"
-          width={252}
-          height={199}
-          data-lobby-logo="true"
-          style={{
-            width: 252,
-            height: 199,
-            display: "block",
-            opacity: introRunning ? 0 : 1,
-            pointerEvents: introRunning ? "none" : "auto",
-          }}
-        />
-
-      ),
-    });
+    return wrapInShell(idleCard);
   }
 
 
