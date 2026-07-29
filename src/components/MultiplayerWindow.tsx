@@ -849,15 +849,14 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     const codeEnabled = codeInput.length === ROOM_CODE_LENGTH;
     const introRunning = introStatus === "running";
     const introComplete = introStatus === "complete";
+    // The lobby logo has been removed from this screen — the intro's final
+    // frame masks the logo so the container itself takes that space, centred
+    // on screen. Only the container fades in; nothing else animates.
     const cardStyleIntro: React.CSSProperties = introRunning
-      ? { opacity: 0, transform: "translateY(12px)", pointerEvents: "none" }
+      ? { opacity: 0, pointerEvents: "none" }
       : introComplete
-      ? {
-          opacity: 1,
-          transform: "translateY(0)",
-          transition: "opacity 300ms ease 120ms, transform 300ms ease 120ms",
-        }
-      : { opacity: 1, transform: "translateY(0)" };
+      ? { opacity: 1, transition: "opacity 300ms ease 120ms" }
+      : { opacity: 1 };
     const idleCard = (
       <div style={{
         alignSelf: "stretch",
