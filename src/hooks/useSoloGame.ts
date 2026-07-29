@@ -334,7 +334,7 @@ export function useSoloGame(): UseSoloGameResult {
           return;
       }
     },
-    [dispatch, doRollDice],
+    [dispatch, doRollDice, commitAndRoll],
   );
 
   const publicState = useMemo<PublicState>(
@@ -350,5 +350,6 @@ export function useSoloGame(): UseSoloGameResult {
     roomId: "solo",
     visitorId: "solo-you",
     gameId: "solo-game",
+    rollCommit,
   };
 }
