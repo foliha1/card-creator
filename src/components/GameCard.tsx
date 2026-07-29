@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CARD_BACK_PATH } from "@/cardData";
 import { COLORS } from "@/lib/tokens";
 
@@ -32,12 +32,26 @@ const GameCard = ({
   fill,
 }: GameCardProps) => {
   const [focusVis, setFocusVis] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [cardW, setCardW] = useState(0);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      setCardW(w);
+    });
+    ro.observe(el);
+    setCardW(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
+
+  const k = cardW > 0 ? cardW / 104.333 : 0;
 
   const baseShadow = "0 6px 14px rgba(0,0,0,0.25)";
   const boxShadow = matched
     ? `0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5), ${baseShadow}`
-    : highlighted
-    ? `0 0 0 3px #231f20, 0 0 16px rgba(35,31,32,0.3), ${baseShadow}`
     : baseShadow;
 
   let outerTransform = "";
@@ -53,6 +67,8 @@ const GameCard = ({
     ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
     : shaking
     ? "card-shake 0.2s ease"
+    : highlighted
+    ? "ww-card-pulse 1.6s linear infinite"
     : "none";
 
   const shapeLabel = card.shape === "tri" ? "triangle" : card.shape;
@@ -62,15 +78,22 @@ const GameCard = ({
 
   return (
     <div
+      ref={wrapperRef}
       role="button"
       tabIndex={0}
       aria-label={ariaLabel}
+      className={highlighted ? "ww-card-pulse" : undefined}
       style={{
         perspective: 600,
         width: "100%",
         height: fill ? "100%" : undefined,
         aspectRatio: fill ? undefined : "5/7",
         cursor: "pointer",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 6,
+        transformOrigin: "center",
+        ["--ww-k" as string]: String(k),
         transform: shrinking ? outerTransform : undefined,
         opacity: shrinking ? outerOpacity : undefined,
         transition: shrinking ? outerTransition : undefined,
@@ -151,6 +174,39 @@ const GameCard = ({
           />
         </div>
       </div>
+
+      {highlighted && (
+        <>
+          <div
+            className="ww-card-shine"
+            style={{
+              position: "absolute",
+              background: "#F8F2E9",
+              pointerEvents: "none",
+              transformOrigin: "0 0",
+              width: "calc(28.1111px * var(--ww-k))",
+              height: "calc(228.331px * var(--ww-k))",
+              left: "calc(33.665px * var(--ww-k))",
+              top: "calc(-114.962px * var(--ww-k))",
+              animation: "ww-card-shine 1.6s linear infinite",
+              zIndex: 2,
+            }}
+          />
+          <div
+            className="ww-card-ring"
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: 6,
+              opacity: 0,
+              pointerEvents: "none",
+              boxShadow: "inset 0 0 0 calc(2px * var(--ww-k)) #0072B2",
+              animation: "ww-card-ring 1.6s linear infinite",
+              zIndex: 3,
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
