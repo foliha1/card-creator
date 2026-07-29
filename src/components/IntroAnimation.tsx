@@ -223,7 +223,7 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
               if (!api) return;
               const total = api.getDuration?.(true);
               if (total !== undefined && total <= 0) {
-                finish("skip");
+                finish("error");
                 return;
               }
               // Guarantee immediate playback at native speed. Some builds of
