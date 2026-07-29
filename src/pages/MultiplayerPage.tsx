@@ -25,7 +25,7 @@ const prefersReducedMotion = (): boolean => {
 
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
-type IntroStatus = "pending" | "running" | "skipped" | "complete" | "none";
+type IntroStatus = "pending" | "running" | "skipped" | "complete" | "timeout" | "none";
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
