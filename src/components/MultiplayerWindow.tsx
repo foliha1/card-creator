@@ -1621,7 +1621,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       {startingBanner}
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
         {codeSection}
-        {linkSection}
+        {shareSection}
+        {gridPickerSection}
         {playersSection}
         {startButton}
         {leaveButton}
