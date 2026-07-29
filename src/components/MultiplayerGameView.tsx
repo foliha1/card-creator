@@ -1155,7 +1155,8 @@ const MultiplayerGameView: React.FC<Props> = ({
             const cardForRender: Card =
               slot.card ??
               ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
-            const selected = s.selectedCards.includes(i) || lastCallSel.includes(i);
+            const selected =
+              s.selectedCards.includes(i) || optimisticSel.includes(i) || lastCallSel.includes(i);
             return (
               <div key={i} style={{
                 width: cardW, height: cardH,
