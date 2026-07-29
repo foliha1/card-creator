@@ -828,7 +828,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       unlockAudio();
       if (soloMode) {
         // No arbiter in solo — enter claim mode directly.
-        onIntent({ type: "PLAYER_ENTER_CLAIM" });
+        onIntent({ type: "PLAYER_ENTER_CLAIM", by: mySeat });
         return;
       }
       setClaimBusy(true);
