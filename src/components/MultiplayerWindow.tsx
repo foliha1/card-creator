@@ -36,6 +36,7 @@ type PendingAction =
 
 type View =
   | { kind: "idle"; error?: string }
+  | { kind: "solo" }
   | { kind: "name-prompt"; pending: PendingAction; error?: string }
   | { kind: "host"; room: RoomRow }
   | { kind: "joiner"; room: RoomRow }
