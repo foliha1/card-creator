@@ -195,8 +195,21 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
             autoplay
             onComplete={completeAndPersist}
             onDOMLoaded={() => {
-              const total = lottieRef.current?.getDuration?.(true);
-              if (total !== undefined && total <= 0) finish("skip");
+              const api = lottieRef.current;
+              if (!api) return;
+              const total = api.getDuration?.(true);
+              if (total !== undefined && total <= 0) {
+                finish("skip");
+                return;
+              }
+              // Guarantee immediate playback at native speed. Some builds of
+              // lottie-web hold on frame 0 for a few hundred ms after mount
+              // before the first RAF; forcing setSpeed(1) + play() here
+              // eliminates that stall without altering rate.
+              try {
+                api.setSpeed?.(1);
+                api.play?.();
+              } catch { /* ignore */ }
             }}
             rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
             style={{ width: "100%", height: "100%", pointerEvents: "none" }}
