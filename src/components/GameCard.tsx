@@ -174,6 +174,39 @@ const GameCard = ({
           />
         </div>
       </div>
+
+      {highlighted && (
+        <>
+          <div
+            className="ww-card-shine"
+            style={{
+              position: "absolute",
+              background: "#F8F2E9",
+              pointerEvents: "none",
+              transformOrigin: "0 0",
+              width: "calc(28.1111px * var(--ww-k))",
+              height: "calc(228.331px * var(--ww-k))",
+              left: "calc(33.665px * var(--ww-k))",
+              top: "calc(-114.962px * var(--ww-k))",
+              animation: "ww-card-shine 1.6s linear infinite",
+              zIndex: 2,
+            }}
+          />
+          <div
+            className="ww-card-ring"
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: 6,
+              opacity: 0,
+              pointerEvents: "none",
+              boxShadow: "inset 0 0 0 calc(2px * var(--ww-k)) #0072B2",
+              animation: "ww-card-ring 1.6s linear infinite",
+              zIndex: 3,
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
