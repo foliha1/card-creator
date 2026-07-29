@@ -24,7 +24,7 @@ import { unlockAudio } from "@/lib/sounds";
 
 interface MultiplayerWindowProps {
   initialRoomCode?: string;
-  introStatus?: "running" | "skipped" | "complete" | "none";
+  introStatus?: "running" | "skipped" | "complete" | "timeout" | "none";
 }
 
 const ROOM_CAPACITY = 6;
