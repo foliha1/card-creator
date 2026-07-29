@@ -826,6 +826,11 @@ const MultiplayerGameView: React.FC<Props> = ({
     buttonOnClick = async () => {
       if (mySeat === null || claimBusy || modalOpen) return;
       unlockAudio();
+      if (soloMode) {
+        // No arbiter in solo — enter claim mode directly.
+        onIntent({ type: "PLAYER_ENTER_CLAIM" });
+        return;
+      }
       setClaimBusy(true);
       const result = await callClaimLock({
         room_id: roomId,
