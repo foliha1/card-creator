@@ -25,7 +25,7 @@ const prefersReducedMotion = (): boolean => {
 
 const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindow"));
 
-type IntroStatus = "pending" | "running" | "skipped" | "complete" | "none";
+type IntroStatus = "pending" | "running" | "skipped" | "complete" | "timeout" | "none";
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
@@ -66,9 +66,14 @@ const MultiplayerPage: React.FC = () => {
   }, [introStatus]);
 
   // The intro's Lottie is the page background whenever it is/was playing.
-  // The static pattern is only used when the intro is skipped or never runs.
-  const introMounted = introStatus === "running" || introStatus === "complete";
-  const showPattern = introStatus === "skipped" || introStatus === "none";
+  // The static pattern is ONLY used when the intro never ran at all ("none").
+  // Skip/timeout/complete all persist the Lottie's final frame as the bg.
+  const introMounted =
+    introStatus === "running" ||
+    introStatus === "complete" ||
+    introStatus === "skipped" ||
+    introStatus === "timeout";
+  const showPattern = introStatus === "none";
   // Hide the lobby entirely until the intro decision has resolved. Otherwise
   // the lobby paints first and gets hidden a frame later when the intro
   // mounts — a visible flash.
@@ -77,6 +82,14 @@ const MultiplayerPage: React.FC = () => {
   const title = "Multiplayer — WHOOP! WHOOP!";
   const description =
     "Play WHOOP! WHOOP! online with friends. Start a table, share the link, and match cards under the die.";
+
+  const handleIntroDone = (reason: "complete" | "skip" | "timeout" | "error") => {
+    if (reason === "complete") setIntroStatus("complete");
+    else if (reason === "skip") setIntroStatus("skipped");
+    else if (reason === "timeout") setIntroStatus("timeout");
+    else setIntroStatus("none");
+  };
+
   return (
     <>
       <Helmet>
@@ -125,6 +138,17 @@ const MultiplayerPage: React.FC = () => {
           />
         )}
 
+        {/* IntroAnimation lives INSIDE .mp-page-root so that when it drops to
+            z-index:-1 in the persistent phase it paints behind the lobby
+            content but still in front of this container's own dark bg,
+            rather than being occluded by it (which happens when the overlay
+            is a sibling to an isolated, opaque parent). */}
+        {introMounted && (
+          <Suspense fallback={null}>
+            <IntroAnimation preloadedData={introData} onDone={handleIntroDone} />
+          </Suspense>
+        )}
+
         <div
           style={{
             width: "100%",
@@ -148,16 +172,6 @@ const MultiplayerPage: React.FC = () => {
           </Suspense>
         </div>
       </div>
-      {introMounted && (
-        <Suspense fallback={null}>
-          <IntroAnimation
-            preloadedData={introData}
-            onDone={(reason) =>
-              setIntroStatus(reason === "complete" ? "complete" : "skipped")
-            }
-          />
-        </Suspense>
-      )}
     </>
   );
 };
