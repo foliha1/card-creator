@@ -9,7 +9,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useGameState } from "@/hooks/useGameState";
+import {
+  useGameState,
+  SETTLE_MATCH_MS,
+  SETTLE_WRONG_MS,
+} from "@/hooks/useGameState";
+
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import type {
   IntentAction,
@@ -66,6 +71,16 @@ export function useSoloGame(): UseSoloGameResult {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // ---- settle scheduler (mirrors the host) ----
+  useEffect(() => {
+    if (state.phase !== "SETTLING" || state.settleKind === null) return;
+    const ms = state.settleKind === "MATCH" ? SETTLE_MATCH_MS : SETTLE_WRONG_MS;
+    const token = state.settleToken;
+    const t = setTimeout(() => dispatch({ type: "SETTLE_COMPLETE", token }), ms);
+    return () => clearTimeout(t);
+  }, [state.phase, state.settleKind, state.settleToken, dispatch]);
+
 
   const brainRef = useRef<Brain>(createBrain());
   const tokenRef = useRef(1);

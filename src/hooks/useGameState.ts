@@ -112,8 +112,15 @@ export type Phase =
   | "FLIPPING"
   | "CLAIM_SELECTING"
   | "CLAIM_RESOLVING"
+  | "SETTLING"
   | "LAST_CALL"
   | "GAME_OVER";
+
+// How long the engine holds in SETTLING so feedback animations can finish
+// before the board advances.
+export const SETTLE_MATCH_MS = 1150;
+export const SETTLE_WRONG_MS = 800;
+
 
 type InFlight =
   | null
@@ -149,7 +156,15 @@ export interface State {
   messageType: MessageType;
   inFlight: InFlight;
   claimBy: number | null;
+  // SETTLING bookkeeping. `settleKind` says which feedback animation is
+  // playing; `settleToken` guards against stale SETTLE_COMPLETE timers;
+  // `settleBy` remembers the claiming seat so the deferred startRound can
+  // hand the roll to the winner.
+  settleKind: "MATCH" | "WRONG" | null;
+  settleToken: number;
+  settleBy: number | null;
 }
+
 
 export interface InitOptions {
   seatCount?: number;
@@ -167,6 +182,8 @@ export type Action =
   | { type: "PLAYER_RESOLVE_MATCH"; by: number }
   | { type: "FLIP_START"; by: number; idx: number; token: number }
   | { type: "FLIP_COMPLETE"; token: number }
+  | { type: "SETTLE_COMPLETE"; token: number }
+
   | { type: "SKIP_TICK" }
   | { type: "CLAIM_START"; by: number; a: number; b: number; token: number }
   | { type: "CLAIM_RESOLVE"; token: number }
@@ -225,6 +242,10 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     messageType: "info",
     inFlight: null,
     claimBy: null,
+    settleKind: null,
+    settleToken: 0,
+    settleBy: null,
+
   };
 }
 
@@ -419,26 +440,25 @@ export function reducer(state: State, action: Action): State {
       const b = state.grid[ib];
       if (a && b && cardsMatchRule(a, b, state.rule)) {
         const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
-        const { grid: newGrid, deck: newDeck } = refill(
-          state.grid,
-          state.deck,
-          state.selectedCards
-        );
-        const draining = newDeck.length === 0;
-        const post: State = {
+        // Do NOT refill or start the round yet — hold in SETTLING so the
+        // matched pair stays in place, face-up, while the Great Match
+        // animation plays. SETTLE_COMPLETE does the refill + startRound.
+        return {
           ...state,
+          phase: "SETTLING",
+          settleKind: "MATCH",
+          settleToken: state.settleToken + 1,
+          settleBy: by,
           scores,
-          grid: newGrid,
-          deck: newDeck,
           matchedCards: new Set(state.selectedCards),
           selectedCards: [],
           claimedThisCycle: true,
-          drawEmpty: state.drawEmpty || draining,
           claimBy: null,
+          inFlight: null,
+          peekingCard: null,
           message: `${state.names[by]} — match! +2`,
           messageType: "success",
         };
-        return startRound(post, by);
       }
       // Wrong claim
       const wrongForBy = new Set(state.wrongBy[by] ?? []);
@@ -450,17 +470,50 @@ export function reducer(state: State, action: Action): State {
 
       const post: State = {
         ...state,
-        phase: "FLIPPING",
+        phase: "SETTLING",
+        settleKind: "WRONG",
+        settleToken: state.settleToken + 1,
+        settleBy: by,
         wrongBy: nextWrongBy,
         skip,
         selectedCards: [],
         matchedCards: new Set(),
         claimBy: null,
         message: `${state.names[by]} — no match. Skip next flip.`,
+
         messageType: "error",
       };
       return post;
     }
+
+    // Ends the feedback hold. Token-guarded so a stale timer from an earlier
+    // settle can never advance the board twice.
+    case "SETTLE_COMPLETE": {
+      if (state.phase !== "SETTLING") return state;
+      if (state.settleToken !== action.token) return state;
+      if (state.settleKind === "MATCH") {
+        const idxs = Array.from(state.matchedCards);
+        const { grid: newGrid, deck: newDeck } = refill(state.grid, state.deck, idxs);
+        const draining = newDeck.length === 0;
+        const post: State = {
+          ...state,
+          grid: newGrid,
+          deck: newDeck,
+          drawEmpty: state.drawEmpty || draining,
+          settleKind: null,
+          settleBy: null,
+        };
+        return startRound(post, state.settleBy);
+      }
+      return {
+        ...state,
+        phase: "FLIPPING",
+        settleKind: null,
+        settleBy: null,
+      };
+    }
+
+
 
     case "FLIP_START": {
       if (state.phase !== "FLIPPING") return state;

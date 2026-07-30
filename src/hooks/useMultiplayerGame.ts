@@ -9,7 +9,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useGameState, type Action } from "@/hooks/useGameState";
+import {
+  useGameState,
+  SETTLE_MATCH_MS,
+  SETTLE_WRONG_MS,
+  type Action,
+} from "@/hooks/useGameState";
+
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
   ISOLATION_SPREAD_MS,
@@ -82,6 +88,27 @@ export function useMultiplayerHost(opts: {
   const names = useMemo(() => (seatMap.length ? seatMap.map((e) => e.display_name) : ["Host", "Joiner"]), [seatMap]);
   // 3x3 = 9 cards for multiplayer.
   const g = useGameState("3x3", { seatCount, botSeats: [], names });
+
+  // ---- settle scheduler ----
+  // When the reducer enters SETTLING, hold the board for the length of the
+  // feedback animation, then fire SETTLE_COMPLETE with the same token.
+  // Scheduled with setTimeout exactly like FLIP_COMPLETE, and shares its
+  // known limitation: a backgrounded tab throttles the timer.
+  const gDispatch = g.dispatch;
+  const settlePhase = g.state.phase;
+  const settleKind = g.state.settleKind;
+  const settleToken = g.state.settleToken;
+  useEffect(() => {
+    if (settlePhase !== "SETTLING" || settleKind === null) return;
+    const ms = settleKind === "MATCH" ? SETTLE_MATCH_MS : SETTLE_WRONG_MS;
+    const t = setTimeout(
+      () => gDispatch({ type: "SETTLE_COMPLETE", token: settleToken }),
+      ms,
+    );
+    return () => clearTimeout(t);
+  }, [settlePhase, settleKind, settleToken, gDispatch]);
+
+
 
   const seqRef = useRef(0);
   const seatMapRef = useRef(seatMap);

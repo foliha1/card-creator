@@ -80,6 +80,10 @@ function baseState(overrides: Partial<State> = {}): State {
     messageType: "info",
     inFlight: null,
     claimBy: 0,
+    settleKind: null,
+    settleToken: 0,
+    settleBy: null,
+
     ...overrides,
   };
 }
@@ -335,7 +339,7 @@ describe("PLAYER_SELECT_CARD", () => {
 // PLAYER_RESOLVE_MATCH
 // ===========================================================================
 describe("PLAYER_RESOLVE_MATCH", () => {
-  it("correct match: +2 points, refills slots, winner rolls next round", () => {
+  it("correct match: +2 points, holds in SETTLING, then refills and winner rolls", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
       selectedCards: [0, 2], // SHAPE_MATCH_A + SHAPE_MATCH_B share SHAPE
@@ -344,21 +348,34 @@ describe("PLAYER_RESOLVE_MATCH", () => {
       flipper: 1,
       roundNum: 3,
     });
-    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
-    expect(next.scores).toEqual([2, 0]);
+    const settling = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    // Score lands immediately; the board holds while the animation plays.
+    expect(settling.scores).toEqual([2, 0]);
+    expect(settling.phase).toBe("SETTLING");
+    expect(settling.settleKind).toBe("MATCH");
+    expect(Array.from(settling.matchedCards).sort()).toEqual([0, 2]);
+    // Grid untouched — the matched pair stays in place, face-up.
+    expect(settling.grid[0]).toBe(s.grid[0]);
+    expect(settling.grid[2]).toBe(s.grid[2]);
+    expect(settling.roundNum).toBe(3);
+
+    const next = reducer(settling, {
+      type: "SETTLE_COMPLETE",
+      token: settling.settleToken,
+    });
     expect(next.phase).toBe("AWAITING_ROLL");
     // Winner rolls
     expect(next.roller).toBe(0);
     expect(next.flipper).toBe(0);
     expect(next.roundNum).toBe(4);
-    // startRound resets matchedCards; the interim matchedCards set is not observable here.
     expect(next.matchedCards.size).toBe(0);
     // Refilled from deck (base deck had 2 cards, so slot 0 & 2 now non-null)
     expect(next.grid[0]).not.toBeNull();
     expect(next.grid[2]).not.toBeNull();
+    expect(next.grid[0]).not.toBe(s.grid[0]);
   });
 
-  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], stays in FLIPPING", () => {
+  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], FLIPPING only after SETTLE_COMPLETE", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
       selectedCards: [1, 3], // unrelated cards, no shared SHAPE
@@ -366,15 +383,24 @@ describe("PLAYER_RESOLVE_MATCH", () => {
       flipper: 0,
       flippedThisCycle: new Set([0]), // human already recorded their flip
     });
-    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
-    expect(next.scores).toEqual([0, 0]);
-    expect(next.wrongBy[0].has(1)).toBe(true);
-    expect(next.wrongBy[0].has(3)).toBe(true);
-    expect(next.skip[0]).toBe(true);
+    const settling = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    expect(settling.scores).toEqual([0, 0]);
+    expect(settling.wrongBy[0].has(1)).toBe(true);
+    expect(settling.wrongBy[0].has(3)).toBe(true);
+    expect(settling.skip[0]).toBe(true);
+    expect(settling.phase).toBe("SETTLING");
+    expect(settling.settleKind).toBe("WRONG");
+
+    const next = reducer(settling, {
+      type: "SETTLE_COMPLETE",
+      token: settling.settleToken,
+    });
+    expect(next.phase).toBe("FLIPPING");
+    expect(next.settleKind).toBeNull();
     // Wrong claim does NOT advance the cycle; flipper is unchanged.
     expect(next.flipper).toBe(0);
-    expect(next.phase).toBe("FLIPPING");
   });
+
 
   it("is a NO-OP outside CLAIM_SELECTING", () => {
     const s = baseState({ phase: "FLIPPING", selectedCards: [0, 2] });
@@ -810,9 +836,11 @@ describe("winner rolls (v6.2)", () => {
       roller: 1,
       flipper: 1,
     });
-    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const settling = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const next = reducer(settling, { type: "SETTLE_COMPLETE", token: settling.settleToken });
     expect(next.roller).toBe(0);
     expect(next.flipper).toBe(0);
+
   });
 
   it("opponent correct claim makes the opponent next roller", () => {
@@ -881,9 +909,11 @@ describe("game over terminal", () => {
         null,
       ],
     });
-    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const settling = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const next = reducer(settling, { type: "SETTLE_COMPLETE", token: settling.settleToken });
     expect(next.phase).toBe("GAME_OVER");
     expect(next.scores).toEqual([2, 0]);
+
   });
 
   it("further actions after GAME_OVER are ignored where phase-guarded", () => {
@@ -1333,6 +1363,8 @@ describe("N=3 seats", () => {
       rule: ["SHAPE"],
     });
     s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 2 });
+    expect(s.phase).toBe("SETTLING");
+    s = reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken });
     expect(s.phase).toBe("FLIPPING");
     expect(s.skip[2]).toBe(true);
     expect(s.wrongBy[2].has(1)).toBe(true);
@@ -1340,6 +1372,53 @@ describe("N=3 seats", () => {
     expect(s.scores[2]).toBe(0);
   });
 });
+
+// ===========================================================================
+// SETTLING
+// ===========================================================================
+describe("SETTLING", () => {
+  function settledMatch() {
+    const s = baseState({
+      phase: "CLAIM_SELECTING",
+      selectedCards: [0, 2],
+      rule: ["SHAPE"],
+      claimBy: 0,
+    });
+    return reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+  }
+
+  it("every player intent is a no-op while SETTLING", () => {
+    const s = settledMatch();
+    expect(reducer(s, { type: "ROLL_START" })).toBe(s);
+    expect(reducer(s, { type: "FLIP_START", by: 0, idx: 1, token: 9 })).toBe(s);
+    expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 1 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "CLAIM_START", by: 0, a: 1, b: 3, token: 9 })).toBe(s);
+    expect(reducer(s, { type: "CANCEL_CLAIM", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
+  });
+
+  it("a stale SETTLE_COMPLETE token is a no-op", () => {
+    const s = settledMatch();
+    expect(reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken - 1 })).toBe(s);
+    expect(reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken + 5 })).toBe(s);
+  });
+
+  it("SETTLE_COMPLETE is a no-op outside SETTLING", () => {
+    const s = baseState({ phase: "FLIPPING" });
+    expect(reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken })).toBe(s);
+  });
+
+  it("matchedCards survives until SETTLE_COMPLETE", () => {
+    const s = settledMatch();
+    expect(Array.from(s.matchedCards).sort()).toEqual([0, 2]);
+    const after = reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken });
+    expect(after.matchedCards.size).toBe(0);
+  });
+});
+
 
 describe("DEBUG_DRAIN_DECK", () => {
   it("drains the deck to 2 while leaving grid and scores untouched", () => {
