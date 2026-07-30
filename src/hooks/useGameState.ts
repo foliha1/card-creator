@@ -306,11 +306,13 @@ function startRound(s: State, winnerIndex: number | null): State {
     roller: nextRoller,
     flipper: nextRoller,
     wrongBy: emptyWrongBy(s.seatCount),
-    // NOTE: `skip` PERSISTS across round boundaries (v6.2). A wrong-claim
-    // penalty is forfeited when that player's flip turn next comes around —
-    // not when the current round ends. It is cleared only by SKIP_TICK
-    // consumption, on NEW_GAME (via initialState), and on LAST_CALL entry.
-    // `disconnected` is likewise persistent — do NOT reset it here.
+    // v6.4: the wrong-claim penalty is a ROUND-SCOPED LOCKOUT. A penalised
+    // seat cannot flip, claim or roll for the remainder of the round, and the
+    // lockout clears on every round boundary — exactly as long as the
+    // face-up penalty cards stay on the table. So `skip` resets here.
+    // `disconnected` is persistent — do NOT reset it here.
+    skip: Array(s.seatCount).fill(false),
+
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     selectedCards: [],
