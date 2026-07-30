@@ -795,6 +795,8 @@ const MultiplayerGameView: React.FC<Props> = ({
         });
         if (copies.length) {
           setFlyCards(copies);
+          // Safety net only — the copy is normally unmounted when SETTLING
+          // ends (see effect below), which is exactly SETTLE_MATCH_MS.
           if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
           flyTimerRef.current = setTimeout(() => setFlyCards([]), 1300);
         }
