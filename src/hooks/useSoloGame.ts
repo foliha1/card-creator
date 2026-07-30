@@ -72,6 +72,16 @@ export function useSoloGame(): UseSoloGameResult {
     stateRef.current = state;
   }, [state]);
 
+  // ---- settle scheduler (mirrors the host) ----
+  useEffect(() => {
+    if (state.phase !== "SETTLING" || state.settleKind === null) return;
+    const ms = state.settleKind === "MATCH" ? SETTLE_MATCH_MS : SETTLE_WRONG_MS;
+    const token = state.settleToken;
+    const t = setTimeout(() => dispatch({ type: "SETTLE_COMPLETE", token }), ms);
+    return () => clearTimeout(t);
+  }, [state.phase, state.settleKind, state.settleToken, dispatch]);
+
+
   const brainRef = useRef<Brain>(createBrain());
   const tokenRef = useRef(1);
   const nextToken = () => ++tokenRef.current;
