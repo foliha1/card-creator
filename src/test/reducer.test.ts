@@ -766,35 +766,90 @@ describe("winner rolls (v6.2)", () => {
   });
 });
 
-describe("end-game entry conditions (v6.5)", () => {
-  it("cycle-complete + drawEmpty + no-claim-this-cycle ends the game", () => {
+describe("end-game entry conditions (v6.6 — two quiet rotations)", () => {
+  // Completes a rotation on a 2-seat table by finishing seat 1's flip.
+  function quietRotation(over: Partial<State> = {}): State {
     const s = baseState({
       phase: "FLIPPING",
       flipper: 1,
-      drawEmpty: true,
       claimedThisCycle: false,
       flippedThisCycle: new Set([0]),
       inFlight: { kind: "flip", token: 4, by: 1, idx: 3 },
       peekingCard: 3,
+      ...over,
     });
-    const next = reducer(s, { type: "FLIP_COMPLETE", token: 4 });
+    return reducer(s, { type: "FLIP_COMPLETE", token: 4 });
+  }
+
+  it("ONE quiet rotation with an empty pile does NOT end the game", () => {
+    const next = quietRotation({ drawEmpty: true, quietRotations: 0 });
+    expect(next.phase).toBe("AWAITING_ROLL");
+    expect(next.quietRotations).toBe(1);
+  });
+
+  it("TWO consecutive quiet rotations with an empty pile end the game", () => {
+    const next = quietRotation({ drawEmpty: true, quietRotations: 1 });
     expect(next.phase).toBe("GAME_OVER");
+    expect(next.quietRotations).toBe(2);
+  });
+
+  it("a quiet rotation with a NON-empty pile does not increment the counter", () => {
+    const next = quietRotation({ drawEmpty: false, quietRotations: 1 });
+    expect(next.phase).toBe("AWAITING_ROLL");
+    expect(next.quietRotations).toBe(0);
+  });
+
+  it("a correct claim between quiet rotations resets the counter and the game continues", () => {
+    // One quiet rotation on an empty pile.
+    const afterQuiet = quietRotation({ drawEmpty: true, quietRotations: 0 });
+    expect(afterQuiet.quietRotations).toBe(1);
+    // A correct claim resets it.
+    const claimed = reducer(
+      {
+        ...afterQuiet,
+        phase: "CLAIM_RESOLVING",
+        rule: ["SHAPE"],
+        inFlight: { kind: "claim", token: 7, by: 1, a: 0, b: 2 },
+      },
+      { type: "CLAIM_RESOLVE", token: 7 },
+    );
+    expect(claimed.quietRotations).toBe(0);
+    // The next quiet rotation is therefore only the first one again.
+    const next = reducer(
+      {
+        ...claimed,
+        phase: "FLIPPING",
+        flipper: 1,
+        claimedThisCycle: false,
+        flippedThisCycle: new Set([0]),
+        inFlight: { kind: "flip", token: 8, by: 1, idx: 3 },
+      },
+      { type: "FLIP_COMPLETE", token: 8 },
+    );
+    expect(next.phase).not.toBe("GAME_OVER");
+    expect(next.quietRotations).toBe(1);
   });
 
   it("cycle-complete + drawEmpty + claimedThisCycle does NOT end the game (passes roll instead)", () => {
-    const s = baseState({
-      phase: "FLIPPING",
-      flipper: 1,
-      drawEmpty: true,
-      claimedThisCycle: true,
-      flippedThisCycle: new Set([0]),
-      inFlight: { kind: "flip", token: 4, by: 1, idx: 3 },
-      peekingCard: 3,
-    });
-    const next = reducer(s, { type: "FLIP_COMPLETE", token: 4 });
+    const next = quietRotation({ drawEmpty: true, claimedThisCycle: true, quietRotations: 1 });
     expect(next.phase).toBe("AWAITING_ROLL");
   });
+
+  it("the grid draining to zero through correct claims still ends the game immediately", () => {
+    const s = baseState({
+      phase: "CLAIM_RESOLVING",
+      rule: ["SHAPE"],
+      deck: [],
+      drawEmpty: true,
+      quietRotations: 0,
+      grid: [SHAPE_MATCH_A, null, SHAPE_MATCH_B, null, null, null],
+      inFlight: { kind: "claim", token: 9, by: 0, a: 0, b: 2 },
+    });
+    const next = reducer(s, { type: "CLAIM_RESOLVE", token: 9 });
+    expect(next.phase).toBe("GAME_OVER");
+  });
 });
+
 
 describe("game over terminal", () => {
   it("startRound with no cards left and empty deck yields GAME_OVER", () => {
