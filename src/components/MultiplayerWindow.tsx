@@ -8,6 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
+import PreGameNav from "@/components/PreGameNav";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { useSoloGame } from "@/hooks/useSoloGame";
 
@@ -535,6 +536,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
 
   const shellStyle: React.CSSProperties = {
+    position: "relative",
     minHeight: "100%",
     height: "100%",
     display: "flex",
@@ -596,7 +598,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
   const wrapInShell = (
     content: React.ReactNode,
-    opts?: { above?: React.ReactNode; gap?: number },
+    opts?: { above?: React.ReactNode; gap?: number; nav?: boolean },
   ) => (
     <div className="mp-shell" style={shellStyle}>
       <style>{`
@@ -605,6 +607,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
         .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
       `}</style>
+      {opts?.nav !== false && <PreGameNav />}
       <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
         {opts?.above}
         {content}
@@ -1162,6 +1165,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
           .mp-shell input::placeholder { color: ${COLORS.panel}; opacity: 1; }
         `}</style>
+        <PreGameNav />
         {idleCard}
       </div>
     );

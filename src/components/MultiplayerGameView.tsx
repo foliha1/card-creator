@@ -1536,12 +1536,26 @@ const MultiplayerGameView: React.FC<Props> = ({
           <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, color: MUTED }}>
             Coming soon.
           </p>
+          <a
+            href="/about#how-to-play"
+            style={{
+              minHeight: 44,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: FONT_FAMILY, fontSize: 16, color: INK,
+              textDecoration: "none", border: BORDER_HEAVY, borderRadius: R_BOX,
+              boxSizing: "border-box",
+            }}
+          >
+            How to Play
+          </a>
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
             <button
               type="button"
               onClick={() => setShowSettings(false)}
               style={{
                 all: "unset", cursor: "pointer",
+                  minHeight: 44, minWidth: 44,
+                display: "flex", alignItems: "center", justifyContent: "center",
                 padding: "8px 16px", background: INK, color: SURFACE,
                 border: BORDER_HEAVY, borderRadius: R_BOX,
                 fontFamily: FONT_FAMILY, fontSize: 16,
