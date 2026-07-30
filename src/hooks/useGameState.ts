@@ -198,6 +198,7 @@ export type Action =
   | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
   | { type: "REMOVE_MATCHED" }
   | { type: "DEBUG_DRAIN_DECK" }
+  | { type: "DEBUG_FORCE_END_GAME" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
 
 // Debug URL flag (?debug=1). Read live so it cannot be stale.
