@@ -233,6 +233,9 @@ const GameCard = ({
           />
         </>
       )}
+      </div>
+
+
 
     </div>
   );
