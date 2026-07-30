@@ -617,7 +617,7 @@ const DebugControls: React.FC<{
   const on = useDebugFlag();
   if (!on) return null;
   return (
-    <div style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1001 }}>
+    <div style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1001, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
       <button
         type="button"
         onClick={() => onIntent({ type: "DEBUG_DRAIN_DECK" })}
@@ -634,6 +634,23 @@ const DebugControls: React.FC<{
         data-testid="debug-drain-deck"
       >
         {`Drain draw pile (${deckCount})`}
+      </button>
+      <button
+        type="button"
+        onClick={() => onIntent({ type: "DEBUG_FORCE_END_GAME" })}
+        style={{
+          background: "rgba(35,31,32,0.88)",
+          color: "#F8F2E9",
+          border: "1px solid #F8F2E9",
+          borderRadius: 4,
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+          fontSize: 11,
+          padding: "4px 8px",
+          cursor: "pointer",
+        }}
+        data-testid="debug-force-end-game"
+      >
+        Force end game
       </button>
     </div>
   );

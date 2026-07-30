@@ -341,6 +341,9 @@ export function useSoloGame(): UseSoloGameResult {
         case "DEBUG_DRAIN_DECK":
           dispatch({ type: "DEBUG_DRAIN_DECK" });
           return;
+        case "DEBUG_FORCE_END_GAME":
+          dispatch({ type: "DEBUG_FORCE_END_GAME" });
+          return;
       }
     },
     [dispatch, doRollDice, commitAndRoll],

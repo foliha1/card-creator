@@ -198,6 +198,7 @@ export type Action =
   | { type: "SAFETY_SWAP"; grid: (Card | null)[]; deck: Card[] }
   | { type: "REMOVE_MATCHED" }
   | { type: "DEBUG_DRAIN_DECK" }
+  | { type: "DEBUG_FORCE_END_GAME" }
   | { type: "SET_MESSAGE"; message: string; messageType: MessageType };
 
 // Debug URL flag (?debug=1). Read live so it cannot be stale.
@@ -686,6 +687,17 @@ export function reducer(state: State, action: Action): State {
       if (!debugFlagOn()) return state;
       if (state.deck.length <= 2) return state;
       return { ...state, deck: state.deck.slice(0, 2) };
+    }
+
+    // Debug-only: put the table in the exact state the end-game trigger fires
+    // from — empty draw pile, one card left on the grid. Scores, seats, names
+    // and round number are untouched, so the next completed rotation with no
+    // correct claim ends the game through the normal cycleAdvance path.
+    case "DEBUG_FORCE_END_GAME": {
+      if (!debugFlagOn()) return state;
+      const keep = state.grid.findIndex((c) => c !== null);
+      const grid = state.grid.map((c, i) => (i === keep ? c : null));
+      return { ...state, grid, deck: [], drawEmpty: true };
     }
 
     case "SET_MESSAGE":
