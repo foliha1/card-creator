@@ -752,6 +752,22 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }, [s.selectedCards]);
 
+  // ---- great-match flying copies ---------------------------------------
+  // The grid (and its ancestors) clip, so the scale+slide is performed by
+  // copies rendered into a fixed-position layer that is a child of the page
+  // root. We measure each matched cell at event time and pin the copy there.
+  const cellRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+  const gridRef = React.useRef(s.grid);
+  gridRef.current = s.grid;
+  const [flyCards, setFlyCards] = React.useState<
+    { key: string; card: Card; rect: { top: number; left: number; width: number; height: number } }[]
+  >([]);
+  const flyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+  }, []);
+
+
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => {
@@ -765,7 +781,25 @@ const MultiplayerGameView: React.FC<Props> = ({
       seenEventIdsRef.current.add(e.id);
       if (e.kind === "GREAT_MATCH") {
         playCorrect();
+        const idxs = lastPairRef.current;
+        const copies = idxs.flatMap((i) => {
+          const el = cellRefs.current[i];
+          const card = gridRef.current[i]?.card;
+          if (!el || !card) return [];
+          const r = el.getBoundingClientRect();
+          return [{
+            key: `${e.id}-${i}`,
+            card,
+            rect: { top: r.top, left: r.left, width: r.width, height: r.height },
+          }];
+        });
+        if (copies.length) {
+          setFlyCards(copies);
+          if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+          flyTimerRef.current = setTimeout(() => setFlyCards([]), 1300);
+        }
       }
+
       else if (e.kind === "NOPE") {
         playWrong();
         // Every player sees the wrong pair animate — no seat filter.
@@ -1123,13 +1157,14 @@ const MultiplayerGameView: React.FC<Props> = ({
           padding: 8,
           boxSizing: "border-box", flex: "1 1 0", minHeight: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          overflowY: needsScroll ? "auto" : "visible",
-          overflowX: "visible",
+          overflowY: needsScroll ? "auto" : "hidden",
+          overflowX: "hidden",
           opacity: 1,
           pointerEvents: isRolling ? "none" : "auto",
           transition: "opacity 250ms ease",
         }}
       >
+
         <div style={{
           display: "grid",
           gridTemplateColumns: `repeat(3, ${cardW}px)`,
@@ -1155,10 +1190,13 @@ const MultiplayerGameView: React.FC<Props> = ({
             const selected =
               s.selectedCards.includes(i) || optimisticSel.includes(i) || lastCallSel.includes(i);
             return (
-              <div key={i} style={{
-                width: cardW, height: cardH,
-                borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
-              }}>
+              <div key={i}
+                ref={(el) => { cellRefs.current[i] = el; }}
+                style={{
+                  width: cardW, height: cardH,
+                  borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
+                }}>
+
                 <GameCard
                   card={cardForRender}
                   faceUp={faceUp}
@@ -1213,7 +1251,40 @@ const MultiplayerGameView: React.FC<Props> = ({
         />
       </div>
 
+      {/* Great-match flying copies. Fixed layer, direct child of the play
+          root, above the grid but below modals (z=50). Nothing renders when
+          there is no active great match. */}
+      {flyCards.length > 0 && (
+        <div
+          aria-hidden
+          style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 40 }}
+        >
+          {flyCards.map((f) => (
+            <div
+              key={f.key}
+              className="ww-great"
+              style={{
+                position: "absolute",
+                top: f.rect.top, left: f.rect.left,
+                width: f.rect.width, height: f.rect.height,
+                borderRadius: R_CARD,
+                pointerEvents: "none",
+                ["--ww-k" as string]: String(f.rect.width / 104.333),
+              }}
+            >
+              <img
+                src={f.card.svgPath}
+                alt=""
+                draggable={false}
+                style={{ width: "100%", height: "100%", display: "block", borderRadius: R_CARD }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       {scoreRow}
+
       {bottomRow}
       {gameOverBtn}
       {showSettings && (
