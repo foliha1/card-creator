@@ -1067,6 +1067,21 @@ const MultiplayerGameView: React.FC<Props> = ({
   else if (tooSlowAt !== null) banner = "TOO_SLOW";
   else if (isMyTurnToFlip) banner = "YOUR_FLIP";
 
+  // Animate banner enter/exit. Keep the last banner mounted briefly after it
+  // disappears so the exit transition can play.
+  const [exitingBanner, setExitingBanner] = React.useState<BannerKind>(null);
+  React.useEffect(() => {
+    if (banner) {
+      setExitingBanner(null);
+      return;
+    }
+    if (!exitingBanner) return;
+    const t = setTimeout(() => setExitingBanner(null), 200);
+    return () => clearTimeout(t);
+  }, [banner, exitingBanner]);
+  const activeBanner = banner || exitingBanner;
+  const bannerExiting = banner === null && exitingBanner !== null;
+
   // Button state.
   let buttonKind: ButtonKind = "DISABLED";
   let buttonOnClick: (() => void) | undefined;
@@ -1343,13 +1358,16 @@ const MultiplayerGameView: React.FC<Props> = ({
       {header}
       <div ref={panelRef} style={{ position: "relative", flex: "none" }}>
         {opponentRow}
-        {banner && (
+        {activeBanner && (
           <div style={{
             position: "absolute", inset: 0, zIndex: 10,
             pointerEvents: "none",
+            opacity: bannerExiting ? 0 : 1,
+            transform: bannerExiting ? "translateY(-6px)" : "translateY(0)",
+            transition: "opacity 200ms ease, transform 200ms ease",
           }}>
             <ScoreRow
-              banner={banner}
+              banner={activeBanner}
               onCancel={
                 canCancelClaim && mySeat !== null
                   ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
