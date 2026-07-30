@@ -1013,7 +1013,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   }
 
 
-  const chips = chipsForOpponents(s, mySeat, events);
+  const chips = deriveChips(s, mySeat, events);
 
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
