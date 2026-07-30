@@ -1302,3 +1302,43 @@ describe("DEBUG_DRAIN_DECK", () => {
     window.history.replaceState({}, "", "/");
   });
 });
+
+describe("DEBUG_FORCE_END_GAME", () => {
+  it("is a no-op without ?debug=1", () => {
+    window.history.replaceState({}, "", "/");
+    const s0 = initialState(9, { seatCount: 2 });
+    expect(reducer(s0, { type: "DEBUG_FORCE_END_GAME" })).toBe(s0);
+  });
+
+  it("leaves scores, seats and round number unchanged", () => {
+    window.history.replaceState({}, "", "/?debug=1");
+    const s0 = initialState(9, { seatCount: 3 });
+    const s1 = reducer(s0, { type: "DEBUG_FORCE_END_GAME" });
+    expect(s1.scores).toEqual(s0.scores);
+    expect(s1.seatCount).toBe(s0.seatCount);
+    expect(s1.names).toEqual(s0.names);
+    expect(s1.roundNum).toBe(s0.roundNum);
+    expect(s1.deck.length).toBe(0);
+    expect(s1.drawEmpty).toBe(true);
+    expect(s1.grid.filter((c) => c !== null).length).toBe(1);
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("reaches GAME_OVER through the normal rotation path", () => {
+    window.history.replaceState({}, "", "/?debug=1");
+    const forced = reducer(
+      { ...initialState(9, { seatCount: 2 }), phase: "FLIPPING", flipper: 1 },
+      { type: "DEBUG_FORCE_END_GAME" },
+    );
+    const s = {
+      ...forced,
+      claimedThisCycle: false,
+      flippedThisCycle: new Set([0]),
+      inFlight: { kind: "flip" as const, token: 9, by: 1, idx: 3 },
+      peekingCard: 3,
+    };
+    const next = reducer(s, { type: "FLIP_COMPLETE", token: 9 });
+    expect(next.phase).toBe("GAME_OVER");
+    window.history.replaceState({}, "", "/");
+  });
+});
