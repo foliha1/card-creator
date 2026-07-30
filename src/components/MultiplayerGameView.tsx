@@ -1342,7 +1342,24 @@ const MultiplayerGameView: React.FC<Props> = ({
         boxSizing: "border-box",
       }}>
       {header}
-      <div ref={panelRef} style={{ flex: "none" }}>{opponentRow}</div>
+      <div ref={panelRef} style={{ position: "relative", flex: "none" }}>
+        {opponentRow}
+        {banner && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 10,
+            pointerEvents: "none",
+          }}>
+            <ScoreRow
+              banner={banner}
+              onCancel={
+                canCancelClaim && mySeat !== null
+                  ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
+                  : undefined
+              }
+            />
+          </div>
+        )}
+      </div>
 
       {/* Card area — the only flexing child. Measured card sizing. */}
       <div
