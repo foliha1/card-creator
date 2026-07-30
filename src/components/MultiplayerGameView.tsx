@@ -1126,18 +1126,23 @@ const MultiplayerGameView: React.FC<Props> = ({
     return () => ro.disconnect();
   }, []);
 
+  // Card sizing from the measured content box. 3 columns always; rows follow
+  // the host's chosen grid size (6 → 2 rows, 9 → 3 rows).
   const GAP = 8;
-  const RATIO = 146.07 / 104.33;
+  const RATIO = 1.4; // design card ratio 146.07 / 104.33
+  const MAX_CARD_W = 104;
   const MIN_CARD_W = 64;
+  const COLS = 3;
+  const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
   const availH = Math.max(0, box.h);
-  const fromW = (availW - GAP * 2) / 3;
-  const fromH = ((availH - GAP * 2) / 3) / RATIO;
-  const rawCardW = Math.min(fromW, fromH);
+  const fromW = (availW - (COLS - 1) * GAP) / COLS;
+  const fromH = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
+  const rawCardW = Math.min(fromW, fromH, MAX_CARD_W);
   const cardW = Math.floor(Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W));
 
-  const cardH = cardW * RATIO;
-  const gridHeightNeeded = cardH * 3 + GAP * 2;
+  const cardH = Math.round(cardW * RATIO);
+  const gridHeightNeeded = cardH * ROWS + GAP * (ROWS - 1);
   const needsScroll = gridHeightNeeded > availH + 0.5;
 
   return (
