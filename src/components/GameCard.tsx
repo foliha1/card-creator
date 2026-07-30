@@ -48,9 +48,7 @@ const GameCard = ({
   const k = cardW > 0 ? cardW / 104.333 : 0;
 
   const baseShadow = "0 6px 14px rgba(0,0,0,0.25)";
-  const boxShadow = matched
-    ? `0 0 0 3px #4ade80, 0 0 20px rgba(74,222,128,0.5), ${baseShadow}`
-    : baseShadow;
+  const boxShadow = baseShadow;
 
   let outerTransform = "";
   let outerTransition = "transform 0.4s ease, opacity 0.4s ease";
@@ -61,10 +59,10 @@ const GameCard = ({
     outerOpacity = 0;
   }
 
-  // The wrong animation wins over the highlight pulse on the same card.
-  const showHighlight = !!highlighted && !wrong;
+  // Precedence: wrong > matched > enter/highlight. Only one treatment runs.
+  const showHighlight = !!highlighted && !wrong && !matched;
 
-  const animStyle = wrong
+  const animStyle = wrong || matched
     ? undefined
     : entering
     ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
@@ -77,13 +75,22 @@ const GameCard = ({
     ? `${card.color} ${shapeLabel}, ${card.number}`
     : `Card ${card.id}, face down`;
 
+  const wrapperClass = wrong
+    ? "ww-wrong"
+    : matched
+    ? "ww-great"
+    : showHighlight
+    ? "ww-card-pulse"
+    : undefined;
+
   return (
     <div
       ref={wrapperRef}
       role="button"
       tabIndex={0}
       aria-label={ariaLabel}
-      className={wrong ? "ww-wrong" : showHighlight ? "ww-card-pulse" : undefined}
+      className={wrapperClass}
+
       style={{
         perspective: 600,
         width: "100%",
