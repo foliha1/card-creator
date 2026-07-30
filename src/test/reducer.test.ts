@@ -71,6 +71,7 @@ function baseState(overrides: Partial<State> = {}): State {
     drawEmpty: false,
     roundNum: 1,
     roundsSinceClaim: 0,
+    quietRotations: 0,
     allFaceUp: false,
     selectedCards: [],
     matchedCards: new Set<number>(),
