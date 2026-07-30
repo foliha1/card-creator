@@ -645,6 +645,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           if (action.type === "PLAYER_ENTER_CLAIM") {
             return;
           }
+          // Debug-only controls. Host-local: they never travel the wire.
+          // The reducer re-checks ?debug=1, so without the flag these are
+          // no-ops even if a button somehow renders.
+          if (action.type === "DEBUG_DRAIN_DECK") {
+            host.dispatch({ type: "DEBUG_DRAIN_DECK" });
+            return;
+          }
+          if (action.type === "DEBUG_FORCE_END_GAME") {
+            host.dispatch({ type: "DEBUG_FORCE_END_GAME" });
+            return;
+          }
           if (action.type === "NEW_GAME") {
             // Rematch: same seats, same grid size, scores reset to zero.
             host.dispatch({
