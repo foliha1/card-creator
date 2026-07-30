@@ -25,6 +25,7 @@
 
 import React from "react";
 import { Settings, X } from "lucide-react";
+import SiteHeader, { SITE_HEADER_H, SITE_HEADER_OFFSET } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
@@ -324,45 +325,28 @@ const EndScreen: React.FC<{
   );
 };
 
-// Top bar — 40px fixed row: settings button, centre readout, close button.
+// Top bar — 30px readout row. Settings and leave now live in the fixed
+// site header, so this bar carries only the round / deck readout.
 const Header: React.FC<{
   round: number;
   deckCount: number;
-  onSettings: () => void;
-  onClose: () => void;
-}> = ({ round, deckCount, onSettings, onClose }) => {
+}> = ({ round, deckCount }) => {
   const half: React.CSSProperties = {
     flex: "1 1 0", display: "flex", alignItems: "center",
     justifyContent: "center", padding: "0 4px", minWidth: 0,
     overflow: "hidden",
   };
   const text: React.CSSProperties = {
-    fontFamily: FONT_FAMILY, fontWeight: 400, fontSize: 20, lineHeight: 1,
+    fontFamily: FONT_FAMILY, fontWeight: 400, fontSize: 18, lineHeight: 1,
     color: SURFACE, textAlign: "center",
     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
   };
   return (
     <div style={{
-      display: "flex", flexDirection: "row", gap: 8, height: 40, flex: "none",
+      display: "flex", flexDirection: "row", height: 30, flex: "none",
     }}>
-      <button
-        type="button"
-        className="mp-header-btn"
-        onClick={onSettings}
-        aria-label="Settings"
-        style={{
-          all: "unset", cursor: "pointer",
-          width: 40, height: 40, flex: "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxSizing: "border-box",
-          background: BLUE, border: BORDER_HEAVY, borderRadius: R_BOX,
-        }}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSettings(); } }}
-      >
-        <Settings size={24} color={INK} aria-hidden="true" />
-      </button>
       <div style={{
-        flex: "1 1 0", height: 40, boxSizing: "border-box",
+        flex: "1 1 0", height: 30, boxSizing: "border-box",
         display: "flex", alignItems: "center",
         padding: "0 4px", gap: 4, overflow: "hidden",
         background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
@@ -371,22 +355,6 @@ const Header: React.FC<{
         <div aria-hidden="true" style={{ width: 2, background: SURFACE, alignSelf: "stretch", flex: "none" }} />
         <div style={half}><span style={text}>{deckCount} Cards Left</span></div>
       </div>
-      <button
-        type="button"
-        className="mp-header-btn"
-        onClick={onClose}
-        aria-label="Leave game"
-        style={{
-          all: "unset", cursor: "pointer",
-          width: 40, height: 40, flex: "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxSizing: "border-box",
-          background: RED, border: BORDER_HEAVY, borderRadius: R_BOX,
-        }}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}
-      >
-        <X size={16} color={INK} aria-hidden="true" />
-      </button>
     </div>
   );
 };
@@ -1179,8 +1147,6 @@ const MultiplayerGameView: React.FC<Props> = ({
     <Header
       round={s.roundNum}
       deckCount={s.deckCount}
-      onSettings={() => setShowSettings(true)}
-      onClose={() => setShowLeave(true)}
     />
   );
   const opponentRow = <OpponentRow chips={chips} />;
@@ -1247,7 +1213,15 @@ const MultiplayerGameView: React.FC<Props> = ({
   // element: the root now hugs its content, so measuring it would feed its
   // own height back into the card size (a loop that collapses to MIN_CARD_W).
   // The wrapper's 900px ceiling is applied here instead.
-  const readViewportH = () => Math.min(900, typeof window === "undefined" ? 0 : window.innerHeight);
+  // The fixed site header eats the top of the viewport (bar height + notch
+  // inset). Measure the real element so the safe-area inset is included.
+  const readHeaderH = () => {
+    if (typeof document === "undefined") return SITE_HEADER_H;
+    const el = document.getElementById("site-header");
+    return el ? el.getBoundingClientRect().height : SITE_HEADER_H;
+  };
+  const readViewportH = () =>
+    Math.min(900, typeof window === "undefined" ? 0 : Math.max(0, window.innerHeight - readHeaderH()));
   const [rootH, setRootH] = React.useState(readViewportH);
   React.useEffect(() => {
     const pe = panelRef.current;
@@ -1287,7 +1261,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   // overlay on the player panel, so it no longer needs reserved height.
   const availH = Math.max(
     0,
-    rootH - 16 - 40 - panelH - 110.94 - 24 - 32,
+    rootH - 16 - 30 - panelH - 110.94 - 24 - 32,
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
@@ -1302,10 +1276,15 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: 8, height: "auto", maxHeight: "100%", boxSizing: "border-box",
+      padding: 8, paddingTop: `calc(8px + ${SITE_HEADER_OFFSET})`,
+      height: "auto", maxHeight: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>
+      <SiteHeader
+        onSettings={() => setShowSettings(true)}
+        onLeave={() => setShowLeave(true)}
+      />
       {activeCommit && heroRects && (
         <RollHeroOverlay
           commit={activeCommit}
