@@ -1159,10 +1159,11 @@ const MultiplayerGameView: React.FC<Props> = ({
   // Free vertical space for the card area: viewport height minus the root
   // padding, top bar, player panel, bottom bar, the three 8px column gaps,
   // the card area's own 32px of vertical padding and the banner when shown.
-  const BANNER_H = 65.32 + 8; // banner box + its gap to the grid
+  // Always reserved, shown or not, so card size never changes mid-round.
+  const BANNER_H = 30 + 8; // banner box + its gap to the grid
   const availH = Math.max(
     0,
-    rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - (banner ? BANNER_H : 0),
+    rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - BANNER_H,
   );
   const fromW = (availW - (COLS - 1) * GAP) / COLS;
   const fromH = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
