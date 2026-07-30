@@ -33,7 +33,10 @@ const GameCard = ({
   enterDelay = 0,
   shaking,
   fill,
+  dealKey,
+  dealIndex,
 }: GameCardProps) => {
+
   const [focusVis, setFocusVis] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [cardW, setCardW] = useState(0);
