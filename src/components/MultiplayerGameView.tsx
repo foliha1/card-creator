@@ -1186,8 +1186,7 @@ const MultiplayerGameView: React.FC<Props> = ({
                   onClick={() => handleCardClick(i)}
                   highlighted={selected}
                   matched={s.matchedCards.includes(i)}
-                  wrong={false}
-                  wrongWash={false}
+                  wrong={wrongCards.includes(i)}
                   shaking={false}
                   fill
                 />
