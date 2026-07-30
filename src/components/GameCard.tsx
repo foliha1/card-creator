@@ -14,7 +14,12 @@ interface GameCardProps {
   enterDelay?: number;
   shaking?: boolean;
   fill?: boolean;
+  /** Remount key for the deal-in wrapper; changing it replays the animation. */
+  dealKey?: string | number;
+  /** Stagger index for the deal-in animation (`--ww-deal-i`). */
+  dealIndex?: number;
 }
+
 
 const GameCard = ({
   card,
