@@ -767,6 +767,18 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
   }, []);
 
+  // While SETTLING on a MATCH the real cards leave the table entirely — the
+  // flying copy is the only visible card, and it stays mounted for the whole
+  // settle window (SETTLE_MATCH_MS === animation delay + duration).
+  const matchSettling = s.phase === "SETTLING" && s.settleKind === "MATCH";
+  React.useEffect(() => {
+    if (matchSettling) return;
+    if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+    setFlyCards((prev) => (prev.length ? [] : prev));
+  }, [matchSettling]);
+
+
+
 
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -795,6 +807,8 @@ const MultiplayerGameView: React.FC<Props> = ({
         });
         if (copies.length) {
           setFlyCards(copies);
+          // Safety net only — the copy is normally unmounted when SETTLING
+          // ends (see effect below), which is exactly SETTLE_MATCH_MS.
           if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
           flyTimerRef.current = setTimeout(() => setFlyCards([]), 1300);
         }
@@ -1174,13 +1188,19 @@ const MultiplayerGameView: React.FC<Props> = ({
           position: "relative",
         }}>
           {s.grid.map((slot, i) => {
-            if (!slot.occupied) {
+            // During a MATCH settle the matched pair has left the table: no
+            // card, no green treatment — the panel shows through and the
+            // flying copy carries the whole animation.
+            const leaving = matchSettling && s.matchedCards.includes(i);
+            if (!slot.occupied || leaving) {
               return (
-                <div key={`empty-${i}`} style={{
-                  width: cardW, height: cardH,
-                  border: `2px dashed rgba(35,31,32,0.13)`,
-                  borderRadius: R_CARD, boxSizing: "border-box",
-                }} />
+                <div key={`empty-${i}`}
+                  ref={(el) => { cellRefs.current[i] = el; }}
+                  style={{
+                    width: cardW, height: cardH,
+                    border: leaving ? "none" : `2px dashed rgba(35,31,32,0.13)`,
+                    borderRadius: R_CARD, boxSizing: "border-box",
+                  }} />
               );
             }
             const faceUp = slot.card !== null;
@@ -1202,7 +1222,6 @@ const MultiplayerGameView: React.FC<Props> = ({
                   faceUp={faceUp}
                   onClick={() => handleCardClick(i)}
                   highlighted={selected}
-                  matched={s.matchedCards.includes(i)}
                   wrong={wrongCards.includes(i)}
                   shaking={false}
                   fill
@@ -1268,6 +1287,7 @@ const MultiplayerGameView: React.FC<Props> = ({
                 top: f.rect.top, left: f.rect.left,
                 width: f.rect.width, height: f.rect.height,
                 borderRadius: R_CARD,
+                overflow: "hidden",
                 pointerEvents: "none",
                 ["--ww-k" as string]: String(f.rect.width / 104.333),
               }}
@@ -1277,6 +1297,17 @@ const MultiplayerGameView: React.FC<Props> = ({
                 alt=""
                 draggable={false}
                 style={{ width: "100%", height: "100%", display: "block", borderRadius: R_CARD }}
+              />
+              {/* The copy carries the entire great-match treatment: wash,
+                  shine, then ring on top. */}
+              <div
+                className="ww-great-wash"
+                style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}
+              />
+              <div className="ww-great-shine" style={{ pointerEvents: "none", zIndex: 2 }} />
+              <div
+                className="ww-great-ring"
+                style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3 }}
               />
             </div>
           ))}

@@ -29,6 +29,8 @@ export interface PublicSlot {
 
 export interface PublicState {
   phase: Phase;
+  // Which feedback animation the SETTLING hold is waiting on.
+  settleKind: "MATCH" | "WRONG" | null;
   seatCount: number;
   roller: number;
   flipper: number;
@@ -104,6 +106,7 @@ export function toPublicState(
 
   return {
     phase: state.phase,
+    settleKind: state.settleKind,
     seatCount: state.seatCount,
     roller: state.roller,
     flipper: state.flipper,
