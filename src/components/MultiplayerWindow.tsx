@@ -656,8 +656,6 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             setTimeout(() => {
               host.dispatch({ type: "FLIP_COMPLETE", token: action.token });
             }, 2000);
-          } else if (action.type === "LAST_CALL_CLAIM") {
-            host.dispatch({ type: "LAST_CALL_CLAIM", by: 0, a: action.a, b: action.b });
           }
         }}
         onLeave={leaveToIdle}

@@ -38,7 +38,6 @@ export type IntentAction =
       | { type: "PLAYER_SELECT_CARD" }
       | { type: "PLAYER_RESOLVE_MATCH" }
       | { type: "FLIP_START" }
-      | { type: "LAST_CALL_CLAIM" }
     >;
 
 export interface IntentPayload {

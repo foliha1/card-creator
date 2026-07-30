@@ -9,10 +9,8 @@
 //
 // Chip state derivation is deterministic:
 //   claimBy === seat           → WHOOP!  (arbiter grant is authoritative)
-//   event NOPE  on seat        → NICE! not shown; PENALTY shows via skip[]
 //   event GREAT_MATCH on seat  → NICE!  (transient, 1.4s window)
 //   disconnected[seat]         → GONE   (see report — invented state)
-//   skip[seat]                 → PENALTY
 //   AWAITING_ROLL && roller    → ROLLING!
 //   FLIPPING     && flipper    → FLIPPING
 //   otherwise                  → idle
@@ -149,7 +147,6 @@ function deriveChips(
     let kind: ChipKind = "IDLE";
     if (s.awaySeats?.includes(seat)) kind = "DISCONNECTED";
     else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
-    else if (s.skip[seat]) kind = "PENALTY";
     else if (s.claimBy === seat) kind = "WHOOP";
     else if (great.has(seat)) kind = "GREAT_MATCH";
     else if ((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat)) kind = "ROLLING";
@@ -720,12 +717,9 @@ const MultiplayerGameView: React.FC<Props> = ({
     s.claimBy === null &&
     !isAnimating;
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
-  const inLastCall = s.phase === "LAST_CALL";
-  const [lastCallSel, setLastCallSel] = React.useState<number[]>([]);
   const [claimBusy, setClaimBusy] = React.useState(false);
   const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
   const [claimErrAt, setClaimErrAt] = React.useState<number | null>(null);
-  React.useEffect(() => { if (!inLastCall) setLastCallSel([]); }, [inLastCall]);
   // Clear transient claim feedback when the claim window rotates.
   React.useEffect(() => { setTooSlowAt(null); setClaimErrAt(null); }, [s.claimWindow]);
   // Auto-clear TOO SLOW after a short interval so the banner doesn't stick.
@@ -928,21 +922,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
     if (modalOpen) return;
-    if (inLastCall) {
-      const slot = s.grid[i];
-      if (!slot.occupied) return;
-      setLastCallSel((prev) => {
-        if (prev.includes(i)) return prev.filter((x) => x !== i);
-        if (prev.length >= 2) return prev;
-        const next = [...prev, i];
-        if (next.length === 2) {
-          onIntent({ type: "LAST_CALL_CLAIM", by: mySeat, a: next[0], b: next[1] });
-          return [];
-        }
-        return next;
-      });
-      return;
-    }
     if (inClaimMode) {
       setOptimisticSel((prev) =>
         prev.includes(i) ? prev.filter((x) => x !== i) : prev.length >= 2 ? prev : [...prev, i]
@@ -965,7 +944,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   let banner: BannerKind = null;
   const canCancelClaim = inClaimMode && s.selectedCards.length < 2;
   if (canCancelClaim) banner = "CANCEL";
-  else if (mySeat !== null && s.skip[mySeat] && s.phase === "FLIPPING" && s.flipper === mySeat) banner = "PENALTY";
   else if (claimErrAt !== null) banner = "CLAIM_ERROR";
   else if (tooSlowAt !== null) banner = "TOO_SLOW";
   else if (isMyTurnToFlip) banner = "YOUR_FLIP";
@@ -984,7 +962,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     buttonKind = "YOUR_ROLL";
     buttonOnClick = () => onIntent({ type: "REQUEST_ROLL" });
     buttonLabel = s.roundNum === 1 ? "PLAY!" : "YOUR ROLL!";
-  } else if (canClaim && !inLastCall && s.phase !== "GAME_OVER") {
+  } else if (canClaim && s.phase !== "GAME_OVER") {
     buttonKind = "WHOOP";
     buttonOnClick = async () => {
       if (mySeat === null || claimBusy || modalOpen) return;
@@ -1024,10 +1002,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   ) {
     // Flip animation freeze: WHOOP stays red but is inert.
     buttonKind = "WHOOP";
-    buttonOnClick = undefined;
-  } else if (inLastCall && mySeat !== null) {
-    buttonKind = "WHOOP";
-    buttonLabel = "LAST CALL!";
     buttonOnClick = undefined;
   }
 
@@ -1328,7 +1302,7 @@ const MultiplayerGameView: React.FC<Props> = ({
               slot.card ??
               ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "" } as Card);
             const selected =
-              s.selectedCards.includes(i) || optimisticSel.includes(i) || lastCallSel.includes(i);
+              s.selectedCards.includes(i) || optimisticSel.includes(i);
             return (
               <div key={i}
                 ref={(el) => { cellRefs.current[i] = el; }}
@@ -1374,7 +1348,7 @@ const MultiplayerGameView: React.FC<Props> = ({
             }}
             aria-hidden="true"
           >
-            {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nbyWidth: ${byWidth.toFixed(1)}\nbyHeight: ${byHeight.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}\nseatCount: ${s.seatCount} | connected: ${s.seatMap.length - s.disconnectedSeats.length}/${s.seatMap.length}\nflipper: ${s.flipper ?? "-"} | roller: ${s.roller ?? "-"}\nlens scores:${s.scores.length} skip:${s.skip.length} wrongBy:${s.wrongBy.length} disc:${s.disconnectedSeats.length}\nskip:[${s.skip.map(b => b ? 1 : 0).join(",")}] scores:[${s.scores.join(",")}]`}
+            {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nbyWidth: ${byWidth.toFixed(1)}\nbyHeight: ${byHeight.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}\nseatCount: ${s.seatCount} | connected: ${s.seatMap.length - s.disconnectedSeats.length}/${s.seatMap.length}\nflipper: ${s.flipper ?? "-"} | roller: ${s.roller ?? "-"}\nlens scores:${s.scores.length} wrongBy:${s.wrongBy.length} disc:${s.disconnectedSeats.length}\nscores:[${s.scores.join(",")}]`}
           </div>
         )}
 

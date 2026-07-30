@@ -340,8 +340,7 @@ export function useMultiplayerHost(opts: {
         const boardAction =
           intent.action.type === "FLIP_START" ||
           intent.action.type === "PLAYER_SELECT_CARD" ||
-          intent.action.type === "PLAYER_RESOLVE_MATCH" ||
-          intent.action.type === "LAST_CALL_CLAIM";
+          intent.action.type === "PLAYER_RESOLVE_MATCH";
         if (rolling && boardAction) {
           rejectDuringRoll(intent.seat, intent.action.type);
           return;
@@ -527,9 +526,6 @@ function handleHostIntent(
     case "FLIP_START":
       dispatch({ type: "FLIP_START", by: seat, idx: action.idx, token: action.token });
       setTimeout(() => dispatch({ type: "FLIP_COMPLETE", token: action.token }), 2000);
-      return;
-    case "LAST_CALL_CLAIM":
-      dispatch({ type: "LAST_CALL_CLAIM", by: seat, a: action.a, b: action.b });
       return;
     case "DEBUG_DRAIN_DECK":
       dispatch({ type: "DEBUG_DRAIN_DECK" });

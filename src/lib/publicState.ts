@@ -10,7 +10,6 @@
 //   - currently peeking (state.peekingCard === i)
 //   - a wrong-claim penalty exposure (any wrongBy set contains i)
 //   - matched this tick (state.matchedCards has i)
-//   - Last Call, where all cards are face-up (state.allFaceUp)
 // Any face-down slot is emitted as { occupied: true, card: null }, and empty
 // slots as { occupied: false, card: null }. A client MUST NOT be able to tell
 // "face-down card" from "empty slot" by inspecting the payload contents beyond
@@ -37,7 +36,6 @@ export interface PublicState {
   scores: number[];
   rule: string[];
   dieValues: string[];
-  skip: boolean[];
   claimBy: number | null;
   roundNum: number;
   allFaceUp: boolean;
@@ -113,7 +111,6 @@ export function toPublicState(
     scores: state.scores.slice(),
     rule: state.rule.slice(),
     dieValues: state.dieValues.slice(),
-    skip: state.skip.slice(),
     claimBy: state.claimBy,
     roundNum: state.roundNum,
     allFaceUp: state.allFaceUp,

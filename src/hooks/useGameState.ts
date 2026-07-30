@@ -113,7 +113,6 @@ export type Phase =
   | "CLAIM_SELECTING"
   | "CLAIM_RESOLVING"
   | "SETTLING"
-  | "LAST_CALL"
   | "GAME_OVER";
 
 // How long the engine holds in SETTLING so feedback animations can finish
@@ -144,7 +143,9 @@ export interface State {
   rule: string[];
   dieValues: string[];
   wrongBy: Set<number>[];
-  skip: boolean[];
+  // v6.5: cards won by each seat. Length always equals that seat's score.
+  // A wrong claim returns one of these to the bottom of the draw pile.
+  piles: Card[][];
   disconnected: boolean[];
   flippedThisCycle: Set<number>;
   claimedThisCycle: boolean;
@@ -191,7 +192,6 @@ export type Action =
   | { type: "SKIP_TICK" }
   | { type: "CLAIM_START"; by: number; a: number; b: number; token: number }
   | { type: "CLAIM_RESOLVE"; token: number }
-  | { type: "LAST_CALL_CLAIM"; by: number; a: number; b: number }
   | { type: "CANCEL_CLAIM"; by: number }
   | { type: "SET_DISCONNECTED"; seats: number[] }
   | { type: "END_GAME_TABLE_EMPTY" }
@@ -230,7 +230,7 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     rule,
     dieValues: values,
     wrongBy: emptyWrongBy(seatCount),
-    skip: Array(seatCount).fill(false),
+    piles: Array.from({ length: seatCount }, () => [] as Card[]),
     disconnected: Array(seatCount).fill(false),
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
@@ -265,6 +265,43 @@ function refill(
     else g[i] = null;
   }
   return { grid: g, deck: d };
+}
+
+// v6.5 wrong-claim penalty: the claimant returns ONE card from their score
+// pile to the BOTTOM of the draw pile. Score drops by one. If their pile is
+// empty they return nothing and the score never goes negative. If the draw
+// pile was empty, the returned card simply becomes its only card and refills
+// the grid through the normal refill path.
+function returnOneCard(
+  s: State,
+  by: number,
+): {
+  scores: number[];
+  piles: Card[][];
+  deck: Card[];
+  drawEmpty: boolean;
+  returnedCard: Card | null;
+} {
+  const pile = s.piles[by] ?? [];
+  if ((s.scores[by] ?? 0) <= 0 || pile.length === 0) {
+    return {
+      scores: s.scores,
+      piles: s.piles,
+      deck: s.deck,
+      drawEmpty: s.drawEmpty,
+      returnedCard: null,
+    };
+  }
+  const nextPile = pile.slice();
+  const card = nextPile.pop()!;
+  const deck = [...s.deck, card];
+  return {
+    scores: replaceAt(s.scores, by, (s.scores[by] ?? 0) - 1),
+    piles: replaceAt(s.piles, by, nextPile),
+    deck,
+    drawEmpty: deck.length === 0,
+    returnedCard: card,
+  };
 }
 
 function withGameOverAnnounce(s: State): State {
@@ -306,13 +343,7 @@ function startRound(s: State, winnerIndex: number | null): State {
     roller: nextRoller,
     flipper: nextRoller,
     wrongBy: emptyWrongBy(s.seatCount),
-    // v6.4: the wrong-claim penalty is a ROUND-SCOPED LOCKOUT. A penalised
-    // seat cannot flip, claim or roll for the remainder of the round, and the
-    // lockout clears on every round boundary — exactly as long as the
-    // face-up penalty cards stay on the table. So `skip` resets here.
     // `disconnected` is persistent — do NOT reset it here.
-    skip: Array(s.seatCount).fill(false),
-
     flippedThisCycle: new Set(),
     claimedThisCycle: false,
     selectedCards: [],
@@ -333,33 +364,15 @@ function cycleAdvance(s: State, addWho: number): State {
   const conn = Math.max(1, connectedCount(s.seatCount, s.disconnected));
   if (flipped.size >= conn) {
     const noClaim = !s.claimedThisCycle;
-    if (s.phase === "LAST_CALL") {
-      const next = nextConnected(s.flipper, s.seatCount, s.disconnected);
-      return {
-        ...s,
-        flipper: next,
-        flippedThisCycle: new Set(),
-        inFlight: null,
-        peekingCard: null,
-      };
-    }
+    // v6.5: no Last Call. Once the draw pile cannot refill and a full
+    // rotation completes with no correct claim, the game simply ends.
+    // Unmatched cards are stranded and score for nobody.
     if (s.drawEmpty && noClaim) {
-      const value = ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)];
-      return {
+      return withGameOverAnnounce({
         ...s,
-        phase: "LAST_CALL",
-        allFaceUp: true,
-        wrongBy: emptyWrongBy(s.seatCount),
-        skip: Array(s.seatCount).fill(false),
-        dieValues: [value],
-        rule: [value],
         flippedThisCycle: new Set(),
-        claimedThisCycle: false,
         roundsSinceClaim: s.roundsSinceClaim + 1,
-        inFlight: null,
-        peekingCard: null,
-        claimBy: null,
-      };
+      });
     }
     return startRound({ ...s, flippedThisCycle: flipped }, null);
   }
@@ -393,8 +406,6 @@ export function reducer(state: State, action: Action): State {
 
     case "ROLL_START":
       if (state.phase !== "AWAITING_ROLL") return state;
-      // v6.4 lockout: a penalised seat cannot roll.
-      if (state.skip[state.roller]) return state;
       return { ...state, rolling: true };
 
     case "ROLL_LAND": {
@@ -409,8 +420,6 @@ export function reducer(state: State, action: Action): State {
 
     case "PLAYER_ENTER_CLAIM": {
       if (state.phase !== "FLIPPING") return state;
-      // v6.4 lockout: a penalised seat cannot claim.
-      if (state.skip[action.by]) return state;
       const flipped = new Set(state.flippedThisCycle);
       if (state.inFlight?.kind === "flip") flipped.add(state.inFlight.by);
       else flipped.add(state.flipper);
@@ -450,6 +459,11 @@ export function reducer(state: State, action: Action): State {
       const b = state.grid[ib];
       if (a && b && cardsMatchRule(a, b, state.rule)) {
         const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
+        const piles = replaceAt(state.piles, by, [
+          ...(state.piles[by] ?? []),
+          a,
+          b,
+        ]);
         // Do NOT refill or start the round yet — hold in SETTLING so the
         // matched pair stays in place, face-up, while the Great Match
         // animation plays. SETTLE_COMPLETE does the refill + startRound.
@@ -460,6 +474,7 @@ export function reducer(state: State, action: Action): State {
           settleToken: state.settleToken + 1,
           settleBy: by,
           scores,
+          piles,
           matchedCards: new Set(state.selectedCards),
           selectedCards: [],
           claimedThisCycle: true,
@@ -476,7 +491,7 @@ export function reducer(state: State, action: Action): State {
       wrongForBy.add(ib);
       const nextWrongBy = state.wrongBy.slice();
       nextWrongBy[by] = wrongForBy;
-      const skip = replaceAt(state.skip, by, true);
+      const returned = returnOneCard(state, by);
 
       const post: State = {
         ...state,
@@ -485,12 +500,16 @@ export function reducer(state: State, action: Action): State {
         settleToken: state.settleToken + 1,
         settleBy: by,
         wrongBy: nextWrongBy,
-        skip,
+        scores: returned.scores,
+        piles: returned.piles,
+        deck: returned.deck,
+        drawEmpty: returned.drawEmpty,
         selectedCards: [],
         matchedCards: new Set(),
         claimBy: null,
-        message: `${state.names[by]} — no match. Locked out this round.`,
-
+        message: returned.returnedCard
+          ? `${state.names[by]} — no match. One card back to the pile.`
+          : `${state.names[by]} — no match.`,
         messageType: "error",
       };
       return post;
@@ -528,8 +547,6 @@ export function reducer(state: State, action: Action): State {
     case "FLIP_START": {
       if (state.phase !== "FLIPPING") return state;
       if (state.flipper !== action.by) return state;
-      // v6.4 lockout: a penalised seat cannot flip.
-      if (state.skip[action.by]) return state;
       if (state.inFlight) return state;
       if (state.wrongBy[action.by]?.has(action.idx)) return state;
       if (state.grid[action.idx] === null) return state;
@@ -557,24 +574,16 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.inFlight) return state;
       const who = state.flipper;
-      // v6.4: SKIP_TICK no longer CONSUMES anything — the lockout is
-      // round-scoped and clears at the round boundary. It only advances the
-      // rotation past a seat that cannot act (locked out or disconnected),
-      // so a locked-out seat's turn still counts toward the no-claim
-      // rotation backstop.
-      if (state.disconnected[who]) {
-        return cycleAdvance(state, who);
-      }
-      if (!state.skip[who]) return state;
+      // v6.5: the only reason a seat cannot take its flip turn is
+      // disconnection. SKIP_TICK advances the rotation past it, and that
+      // turn still counts toward the no-claim rotation backstop.
+      if (!state.disconnected[who]) return state;
       return cycleAdvance(state, who);
-
     }
 
     case "CLAIM_START": {
       if (state.phase !== "FLIPPING" && state.phase !== "CLAIM_SELECTING") return state;
       if (state.phase === "CLAIM_SELECTING") return state;
-      // v6.4 lockout: a penalised seat cannot claim.
-      if (state.skip[action.by]) return state;
       if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
       if (
         state.wrongBy[action.by]?.has(action.a) ||
@@ -608,11 +617,17 @@ export function reducer(state: State, action: Action): State {
       const cardB = state.grid[b];
       if (cardA && cardB && cardsMatchRule(cardA, cardB, state.rule)) {
         const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
+        const piles = replaceAt(state.piles, by, [
+          ...(state.piles[by] ?? []),
+          cardA,
+          cardB,
+        ]);
         const { grid: newGrid, deck: newDeck } = refill(state.grid, state.deck, [a, b]);
         const draining = newDeck.length === 0;
         const post: State = {
           ...state,
           scores,
+          piles,
           grid: newGrid,
           deck: newDeck,
           claimedThisCycle: true,
@@ -629,45 +644,23 @@ export function reducer(state: State, action: Action): State {
       wrongForBy.add(b);
       const nextWrongBy = state.wrongBy.slice();
       nextWrongBy[by] = wrongForBy;
-      const skip = replaceAt(state.skip, by, true);
+      const returned = returnOneCard(state, by);
 
       const post: State = {
         ...state,
         phase: "FLIPPING",
         wrongBy: nextWrongBy,
-        skip,
+        scores: returned.scores,
+        piles: returned.piles,
+        deck: returned.deck,
+        drawEmpty: returned.drawEmpty,
         inFlight: null,
         claimBy: null,
-        message: `${state.names[by]} — no match. Locked out this round.`,
+        message: returned.returnedCard
+          ? `${state.names[by]} — no match. One card back to the pile.`
+          : `${state.names[by]} — no match.`,
         messageType: "info",
       };
-      return post;
-    }
-
-    case "LAST_CALL_CLAIM": {
-      if (state.phase !== "LAST_CALL") return state;
-      const { by, a, b } = action;
-      // v6.4 lockout (defensive — skip is cleared on Last Call entry).
-      if (state.skip[by]) return state;
-      if (a === b) return state;
-      const cardA = state.grid[a];
-      const cardB = state.grid[b];
-      if (!cardA || !cardB) return state;
-      if (!cardsMatchRule(cardA, cardB, state.rule)) return state;
-      const newGrid = [...state.grid];
-      newGrid[a] = null;
-      newGrid[b] = null;
-      const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
-      const hasCards = newGrid.some((c) => c !== null);
-      const stillPlayable = hasValidPair(newGrid, state.rule);
-      const post: State = {
-        ...state,
-        grid: newGrid,
-        scores,
-        message: `Last Call — ${state.names[by]} matched! +2`,
-        messageType: "success",
-      };
-      if (!hasCards || !stillPlayable) return withGameOverAnnounce(post);
       return post;
     }
 
@@ -687,7 +680,7 @@ export function reducer(state: State, action: Action): State {
       return { ...state, grid: g };
     }
 
-    // Debug-only: shrink the draw pile so Last Call can be reached quickly.
+    // Debug-only: shrink the draw pile so the end-game can be reached quickly.
     // No-op unless ?debug=1 is on. Grid, scores, roller and phase untouched.
     case "DEBUG_DRAIN_DECK": {
       if (!debugFlagOn()) return state;
@@ -907,14 +900,10 @@ export function useGameState(
   useEffect(() => {
     if (state.phase !== "FLIPPING") return;
     if (state.inFlight) return;
-    // Auto-tick when the current flipper is either locked out (v6.4
-    // round-scoped wrong-claim penalty) OR disconnected. SKIP_TICK just
-    // advances the rotation past them; the lockout itself clears at the
-    // round boundary. Without this the flipper lands on a seat that cannot
-    // act and the round hard-stops.
-    if (!state.skip[state.flipper] && !state.disconnected[state.flipper]) return;
+    // Auto-tick past a disconnected flipper so the round never hard-stops.
+    if (!state.disconnected[state.flipper]) return;
     dispatch({ type: "SKIP_TICK" });
-  }, [state.phase, state.flipper, state.inFlight, state.skip, state.disconnected]);
+  }, [state.phase, state.flipper, state.inFlight, state.disconnected]);
 
   // Bot auto-flip
   const inFlightNullMarker = state.inFlight === null;
@@ -995,9 +984,9 @@ export function useGameState(
 
   const resolveOpponentClaim = useCallback(() => {}, []);
 
-  const claimLastCall = useCallback((a: number, b: number) => {
-    dispatch({ type: "LAST_CALL_CLAIM", by: humanSeat, a, b });
-  }, [humanSeat]);
+  // v6.5: Last Call removed. Retained as a no-op so the retiring
+  // GameWindow.tsx keeps compiling until it is removed.
+  const claimLastCall = useCallback((_a: number, _b: number) => {}, []);
 
   const removeMatchedFromGrid = useCallback(() => {
     dispatch({ type: "REMOVE_MATCHED" });
@@ -1088,32 +1077,6 @@ export function useGameState(
     }
   }, [state.roundNum, state.phase]);
 
-  // Bot Last Call scanner
-  useEffect(() => {
-    if (state.phase !== "LAST_CALL") return;
-    if (schedulerBot < 0) return;
-    const delay = 1200 + Math.random() * 1600;
-    const t = setTimeout(() => {
-      const s = stateRef.current;
-      if (s.phase !== "LAST_CALL") return;
-      const cards = s.grid
-        .map((c, i) => ({ c, i }))
-        .filter((x): x is { c: Card; i: number } => x.c !== null);
-      const pairs: Array<[number, number]> = [];
-      for (let i = 0; i < cards.length; i++) {
-        for (let j = i + 1; j < cards.length; j++) {
-          if (cardsMatchRule(cards[i].c, cards[j].c, s.rule)) {
-            pairs.push([cards[i].i, cards[j].i]);
-          }
-        }
-      }
-      if (pairs.length === 0) return;
-      const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
-      dispatch({ type: "LAST_CALL_CLAIM", by: schedulerBot, a, b });
-    }, delay);
-    return () => clearTimeout(t);
-  }, [state.phase, state.grid, state.scores, schedulerBot]);
-
   const opponentClaimingValue = useMemo(
     () =>
       state.inFlight?.kind === "claim" && botSeatSet.has(state.inFlight.by)
@@ -1143,7 +1106,8 @@ export function useGameState(
     players: state.names,
     rollerIndex: state.roller,
     flipperIndex: state.flipper,
-    skipNextFlip: state.skip,
+    // v6.5: no lockout. Retained for the retiring GameWindow.tsx.
+    skipNextFlip: state.disconnected,
     peekingCard: state.peekingCard,
     claimMode: state.phase === "CLAIM_SELECTING",
     selectedCards: state.selectedCards,
@@ -1165,7 +1129,7 @@ export function useGameState(
     resolveOpponentClaim,
     rollPhase: state.phase === "AWAITING_ROLL",
     rollDice,
-    lastCall: state.phase === "LAST_CALL",
+    lastCall: false as boolean,
     allFaceUp: state.allFaceUp,
     drawEmpty: state.drawEmpty,
     roundsSinceClaim: state.roundsSinceClaim,
