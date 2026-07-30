@@ -1,6 +1,6 @@
 # WHOOP! WHOOP! — Rules
 
-**Version 6.5**
+**Version 6.6**
 
 > Note: this file did not exist in the repository before v6.4. It is the
 > canonical written rulebook, and rules changes have a single home here.
@@ -44,9 +44,15 @@
 
 ## Ending the Game
 
-Once the draw pile cannot refill the grid and a full rotation passes with no
-correct claim, the game **ends** immediately. Any unmatched cards left on the
-table are stranded and score for nobody.
+Once the draw pile is empty, the game **ends when two consecutive full
+rotations pass with no correct claim**. A single quiet rotation is not enough —
+the table gets a second one. Any correct claim resets the count to zero, and so
+does a quiet rotation taken while the draw pile still has cards in it.
+
+Any unmatched cards left on the table are stranded and score for nobody.
+
+If the grid drains to zero through correct claims, the game ends immediately
+regardless of the count.
 
 Count piles. **Most cards wins.** Ties go to the player who made the most recent
 correct claim.
@@ -63,6 +69,9 @@ correct claim.
 | A wrong claim with an empty score pile | Nothing is returned. The two face-up cards are the entire penalty. |
 | A card is returned to an empty draw pile | It becomes the new bottom — and therefore the top — of the pile, and refills the grid as normal. |
 | A player leaves mid-round | Their seat and pile are kept; their flip turn is passed over until they return. |
+| A correct claim lands after one quiet rotation | The count resets to zero. Two consecutive quiet rotations are needed to end the game. |
+| A quiet rotation while the draw pile still has cards | It does not count. The count resets to zero; only rotations on an empty pile accumulate. |
+| The grid empties through correct claims | The game ends immediately, whatever the quiet-rotation count is. |
 
 ---
 
@@ -76,12 +85,27 @@ correct claim.
 | Wrong claim, empty pile | Return nothing; face-up cards only |
 | Penalty duration | None — paid instantly, nothing tracked |
 | No-claim rotation | Roll passes clockwise |
-| Game end | Draw pile cannot refill + no-claim rotation → game over, unmatched cards score for nobody |
+| Game end | Draw pile empty + **two consecutive** no-claim rotations → game over, unmatched cards score for nobody |
+| Game end (alternate) | Grid drains to zero through correct claims → game over immediately |
 | Winner | Most cards; ties to the most recent correct claim |
 
 ---
 
 ## Version History
+
+### v6.6 — Game end requires two consecutive quiet rotations
+Once the draw pile is empty, the game now ends only after **two consecutive**
+full rotations pass with no correct claim. A correct claim resets the count, and
+so does a quiet rotation taken while the draw pile still holds cards.
+**Rationale:** at two seats a rotation is only two flips, so the single-rotation
+trigger fired easily and ended games with the whole board still on the table.
+Last Call used to harvest that situation and it has been removed. Requiring two
+consecutive quiet rotations makes an accidental early finish much less likely at
+small tables without reintroducing a separate mode. This supersedes the
+single-rotation trigger introduced when Last Call was removed in v6.5.
+
+The other end-game route is unchanged: if the grid drains to zero through
+correct claims, the game ends immediately.
 
 ### v6.5 — Card return replaces the lockout; Last Call removed
 A wrong claim now costs one card from the claimant's score pile, returned to the

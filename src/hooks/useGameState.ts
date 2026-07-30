@@ -152,6 +152,10 @@ export interface State {
   drawEmpty: boolean;
   roundNum: number;
   roundsSinceClaim: number;
+  // v6.6: consecutive full rotations that ended with no correct claim while
+  // the draw pile was empty. The game ends when this reaches 2. Any correct
+  // claim, or a quiet rotation with cards still in the pile, resets it to 0.
+  quietRotations: number;
   allFaceUp: boolean;
   selectedCards: number[];
   matchedCards: Set<number>;
@@ -238,6 +242,8 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     drawEmpty: newDeck.length === 0,
     roundNum: 1,
     roundsSinceClaim: 0,
+    quietRotations: 0,
+
     allFaceUp: false,
     selectedCards: [],
     matchedCards: new Set(),
@@ -353,6 +359,9 @@ function startRound(s: State, winnerIndex: number | null): State {
     peekingCard: null,
     roundNum: s.roundNum + 1,
     roundsSinceClaim: winnerIndex !== null ? 0 : s.roundsSinceClaim,
+    // v6.6: a correct claim always clears the quiet-rotation counter. Any
+    // other route leaves it as cycleAdvance set it — never reset blindly.
+    quietRotations: winnerIndex !== null ? 0 : s.quietRotations,
     claimBy: null,
   };
 }
@@ -365,15 +374,22 @@ function cycleAdvance(s: State, addWho: number): State {
   const conn = Math.max(1, connectedCount(s.seatCount, s.disconnected));
   if (flipped.size >= conn) {
     const noClaim = !s.claimedThisCycle;
-    // v6.5: no Last Call. Once the draw pile cannot refill and a full
-    // rotation completes with no correct claim, the game simply ends.
-    // Unmatched cards are stranded and score for nobody.
-    if (s.drawEmpty && noClaim) {
-      return withGameOverAnnounce({
-        ...s,
-        flippedThisCycle: new Set(),
-        roundsSinceClaim: s.roundsSinceClaim + 1,
-      });
+    // v6.6: the rotation backstop no longer ends the game on its own. A quiet
+    // rotation with an empty draw pile increments quietRotations; a quiet
+    // rotation with cards still in the pile resets it. Only the SECOND
+    // consecutive quiet rotation on an empty pile ends the game. Unmatched
+    // cards are stranded and score for nobody.
+    if (noClaim) {
+      const q = s.drawEmpty ? s.quietRotations + 1 : 0;
+      if (q >= 2) {
+        return withGameOverAnnounce({
+          ...s,
+          flippedThisCycle: new Set(),
+          roundsSinceClaim: s.roundsSinceClaim + 1,
+          quietRotations: q,
+        });
+      }
+      return startRound({ ...s, flippedThisCycle: flipped, quietRotations: q }, null);
     }
     return startRound({ ...s, flippedThisCycle: flipped }, null);
   }
