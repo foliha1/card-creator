@@ -156,7 +156,15 @@ export interface State {
   messageType: MessageType;
   inFlight: InFlight;
   claimBy: number | null;
+  // SETTLING bookkeeping. `settleKind` says which feedback animation is
+  // playing; `settleToken` guards against stale SETTLE_COMPLETE timers;
+  // `settleBy` remembers the claiming seat so the deferred startRound can
+  // hand the roll to the winner.
+  settleKind: "MATCH" | "WRONG" | null;
+  settleToken: number;
+  settleBy: number | null;
 }
+
 
 export interface InitOptions {
   seatCount?: number;
