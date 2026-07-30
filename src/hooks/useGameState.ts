@@ -900,14 +900,10 @@ export function useGameState(
   useEffect(() => {
     if (state.phase !== "FLIPPING") return;
     if (state.inFlight) return;
-    // Auto-tick when the current flipper is either locked out (v6.4
-    // round-scoped wrong-claim penalty) OR disconnected. SKIP_TICK just
-    // advances the rotation past them; the lockout itself clears at the
-    // round boundary. Without this the flipper lands on a seat that cannot
-    // act and the round hard-stops.
-    if (!state.skip[state.flipper] && !state.disconnected[state.flipper]) return;
+    // Auto-tick past a disconnected flipper so the round never hard-stops.
+    if (!state.disconnected[state.flipper]) return;
     dispatch({ type: "SKIP_TICK" });
-  }, [state.phase, state.flipper, state.inFlight, state.skip, state.disconnected]);
+  }, [state.phase, state.flipper, state.inFlight, state.disconnected]);
 
   // Bot auto-flip
   const inFlightNullMarker = state.inFlight === null;
@@ -988,9 +984,9 @@ export function useGameState(
 
   const resolveOpponentClaim = useCallback(() => {}, []);
 
-  const claimLastCall = useCallback((a: number, b: number) => {
-    dispatch({ type: "LAST_CALL_CLAIM", by: humanSeat, a, b });
-  }, [humanSeat]);
+  // v6.5: Last Call removed. Retained as a no-op so the retiring
+  // GameWindow.tsx keeps compiling until it is removed.
+  const claimLastCall = useCallback((_a: number, _b: number) => {}, []);
 
   const removeMatchedFromGrid = useCallback(() => {
     dispatch({ type: "REMOVE_MATCHED" });
@@ -1081,32 +1077,6 @@ export function useGameState(
     }
   }, [state.roundNum, state.phase]);
 
-  // Bot Last Call scanner
-  useEffect(() => {
-    if (state.phase !== "LAST_CALL") return;
-    if (schedulerBot < 0) return;
-    const delay = 1200 + Math.random() * 1600;
-    const t = setTimeout(() => {
-      const s = stateRef.current;
-      if (s.phase !== "LAST_CALL") return;
-      const cards = s.grid
-        .map((c, i) => ({ c, i }))
-        .filter((x): x is { c: Card; i: number } => x.c !== null);
-      const pairs: Array<[number, number]> = [];
-      for (let i = 0; i < cards.length; i++) {
-        for (let j = i + 1; j < cards.length; j++) {
-          if (cardsMatchRule(cards[i].c, cards[j].c, s.rule)) {
-            pairs.push([cards[i].i, cards[j].i]);
-          }
-        }
-      }
-      if (pairs.length === 0) return;
-      const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
-      dispatch({ type: "LAST_CALL_CLAIM", by: schedulerBot, a, b });
-    }, delay);
-    return () => clearTimeout(t);
-  }, [state.phase, state.grid, state.scores, schedulerBot]);
-
   const opponentClaimingValue = useMemo(
     () =>
       state.inFlight?.kind === "claim" && botSeatSet.has(state.inFlight.by)
@@ -1136,7 +1106,8 @@ export function useGameState(
     players: state.names,
     rollerIndex: state.roller,
     flipperIndex: state.flipper,
-    skipNextFlip: state.skip,
+    // v6.5: no lockout. Retained for the retiring GameWindow.tsx.
+    skipNextFlip: state.disconnected,
     peekingCard: state.peekingCard,
     claimMode: state.phase === "CLAIM_SELECTING",
     selectedCards: state.selectedCards,
@@ -1158,7 +1129,7 @@ export function useGameState(
     resolveOpponentClaim,
     rollPhase: state.phase === "AWAITING_ROLL",
     rollDice,
-    lastCall: state.phase === "LAST_CALL",
+    lastCall: false as boolean,
     allFaceUp: state.allFaceUp,
     drawEmpty: state.drawEmpty,
     roundsSinceClaim: state.roundsSinceClaim,
