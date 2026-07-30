@@ -225,7 +225,7 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
 const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
   <div style={{
     display: "grid", gridTemplateColumns: "1fr 1fr",
-    columnGap: 8, rowGap: 4, padding: 8,
+    columnGap: 8, rowGap: 4, padding: 8, flex: "none",
     background: PANEL, border: BORDER_HEAVY, borderRadius: 4,
     boxSizing: "border-box",
   }}>
