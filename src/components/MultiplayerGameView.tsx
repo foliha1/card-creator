@@ -1054,7 +1054,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     </div>
   ) : null;
   const bottomRow = (
-    <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none", marginTop: "auto" }}>
+    <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none" }}>
       <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
       {/* Wrap the WHOOP button so AWAITING_ROLL/ROLLING dims it to 40% and
           physically blocks taps. pointerEvents:none guarantees no tap ever
