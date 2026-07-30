@@ -1067,6 +1067,21 @@ const MultiplayerGameView: React.FC<Props> = ({
   else if (tooSlowAt !== null) banner = "TOO_SLOW";
   else if (isMyTurnToFlip) banner = "YOUR_FLIP";
 
+  // Animate banner enter/exit. Keep the last banner mounted briefly after it
+  // disappears so the exit transition can play.
+  const [exitingBanner, setExitingBanner] = React.useState<BannerKind>(null);
+  React.useEffect(() => {
+    if (banner) {
+      setExitingBanner(null);
+      return;
+    }
+    if (!exitingBanner) return;
+    const t = setTimeout(() => setExitingBanner(null), 200);
+    return () => clearTimeout(t);
+  }, [banner, exitingBanner]);
+  const activeBanner = banner || exitingBanner;
+  const bannerExiting = banner === null && exitingBanner !== null;
+
   // Button state.
   let buttonKind: ButtonKind = "DISABLED";
   let buttonOnClick: (() => void) | undefined;
