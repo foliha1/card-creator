@@ -14,7 +14,12 @@ interface GameCardProps {
   enterDelay?: number;
   shaking?: boolean;
   fill?: boolean;
+  /** Remount key for the deal-in wrapper; changing it replays the animation. */
+  dealKey?: string | number;
+  /** Stagger index for the deal-in animation (`--ww-deal-i`). */
+  dealIndex?: number;
 }
+
 
 const GameCard = ({
   card,
@@ -28,7 +33,10 @@ const GameCard = ({
   enterDelay = 0,
   shaking,
   fill,
+  dealKey,
+  dealIndex,
 }: GameCardProps) => {
+
   const [focusVis, setFocusVis] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [cardW, setCardW] = useState(0);
@@ -121,7 +129,21 @@ const GameCard = ({
       onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) setFocusVis(true); }}
       onBlur={() => setFocusVis(false)}
     >
+      {/* Inner wrapper: carries the deal-in animation so the outer tappable
+          element (position + hit area) never moves mid-deal. */}
       <div
+        key={dealKey}
+        className={dealIndex !== undefined ? "ww-deal" : undefined}
+        style={{
+          position: "absolute",
+          inset: 0,
+          ...(dealIndex !== undefined
+            ? { ["--ww-deal-i" as string]: String(dealIndex) }
+            : {}),
+        }}
+      >
+      <div
+
         style={{
           width: "100%",
           height: "100%",
@@ -225,6 +247,9 @@ const GameCard = ({
           />
         </>
       )}
+      </div>
+
+
 
     </div>
   );
