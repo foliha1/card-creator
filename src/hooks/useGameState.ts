@@ -182,6 +182,8 @@ export type Action =
   | { type: "PLAYER_RESOLVE_MATCH"; by: number }
   | { type: "FLIP_START"; by: number; idx: number; token: number }
   | { type: "FLIP_COMPLETE"; token: number }
+  | { type: "SETTLE_COMPLETE"; token: number }
+
   | { type: "SKIP_TICK" }
   | { type: "CLAIM_START"; by: number; a: number; b: number; token: number }
   | { type: "CLAIM_RESOLVE"; token: number }

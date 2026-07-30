@@ -80,6 +80,10 @@ function baseState(overrides: Partial<State> = {}): State {
     messageType: "info",
     inFlight: null,
     claimBy: 0,
+    settleKind: null,
+    settleToken: 0,
+    settleBy: null,
+
     ...overrides,
   };
 }
