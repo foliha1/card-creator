@@ -745,22 +745,14 @@ const MultiplayerGameView: React.FC<Props> = ({
   // Remember the last pair of touched cards. The NOPE event lands on the tick
   // after the claim resolves, when selectedCards is already empty — so this
   // ref is never cleared, only overwritten by the next full pair.
-  const lastPairRef = React.useRef<{ indices: number[]; cards: (Card | null)[] }>({ indices: [], cards: [] });
+  const lastPairRef = React.useRef<number[]>([]);
   React.useEffect(() => {
     if (s.selectedCards.length === 2) {
-      lastPairRef.current = {
-        indices: [...s.selectedCards],
-        cards: s.selectedCards.map((i) => s.grid[i]?.card ?? null),
-      };
+      lastPairRef.current = [...s.selectedCards];
     }
-  }, [s.selectedCards, s.grid]);
+  }, [s.selectedCards]);
 
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
-  const [greatMatch, setGreatMatch] = React.useState<{ indices: number[]; cards: (Card | null)[] } | null>(null);
-  const greatTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  React.useEffect(() => () => {
-    if (greatTimerRef.current) clearTimeout(greatTimerRef.current);
-  }, []);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => {
     if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
@@ -773,15 +765,11 @@ const MultiplayerGameView: React.FC<Props> = ({
       seenEventIdsRef.current.add(e.id);
       if (e.kind === "GREAT_MATCH") {
         playCorrect();
-        // Every player sees the matched pair animate — no seat filter.
-        setGreatMatch(lastPairRef.current);
-        if (greatTimerRef.current) clearTimeout(greatTimerRef.current);
-        greatTimerRef.current = setTimeout(() => setGreatMatch(null), 1300);
       }
       else if (e.kind === "NOPE") {
         playWrong();
         // Every player sees the wrong pair animate — no seat filter.
-        setWrongCards(lastPairRef.current.indices);
+        setWrongCards(lastPairRef.current);
         if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
         wrongTimerRef.current = setTimeout(() => setWrongCards([]), 900);
       }
@@ -792,6 +780,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       seenEventIdsRef.current = new Set(arr.slice(-128));
     }
   }, [events]);
+
 
   // Deal sound when the grid refills after a claim. Watch occupied count
   // rising — a claim removes cards then the deck deals to fill the gaps.
