@@ -31,8 +31,15 @@ const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
   const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
-    if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) return "none";
-    if (prefersReducedMotion()) return "skipped";
+    if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) {
+      console.log("[intro] skipped because hasSeenIntro() returned true");
+      return "none";
+    }
+    if (prefersReducedMotion()) {
+      console.log("[intro] skipped because prefersReducedMotion() returned true");
+      return "skipped";
+    }
+    console.log("[intro] fell through to pending");
     return "pending";
   };
   const [introStatus, setIntroStatus] = useState<IntroStatus>(initialIntroStatus);
