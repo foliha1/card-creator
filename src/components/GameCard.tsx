@@ -75,13 +75,15 @@ const GameCard = ({
     ? `${card.color} ${shapeLabel}, ${card.number}`
     : `Card ${card.id}, face down`;
 
+  // NOTE: matched intentionally gets NO `ww-great` here. The scale/slide is
+  // performed by a flying copy rendered in a fixed-position layer above the
+  // grid; the real card only keeps its green wash + ring in place.
   const wrapperClass = wrong
     ? "ww-wrong"
-    : matched
-    ? "ww-great"
     : showHighlight
     ? "ww-card-pulse"
     : undefined;
+
 
   return (
     <div
