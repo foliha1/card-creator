@@ -510,11 +510,11 @@ const ActionButton: React.FC<{
       disabled={isDisabled}
       style={{
         all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
-        flex: "1 1 0", height: 110.94, background: s.bg, color: s.text,
+        flex: "1 1 0", alignSelf: "stretch", background: s.bg, color: s.text,
         border: BORDER_HEAVY, borderRadius: R_BOX, boxSizing: "border-box",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
-        fontSize: 32, lineHeight: "39px", textAlign: "center", padding: 4,
+        fontSize: 32, lineHeight: 1, textAlign: "center", padding: 12.66,
         position: "relative", overflow: "hidden",
       }}
     >
