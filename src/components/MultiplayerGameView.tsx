@@ -133,6 +133,7 @@ function deriveChips(
   s: PublicState,
   mySeat: number | null,
   events: TransientEvent[],
+  penaltySeat: number | null,
 ): DerivedChip[] {
   const great = new Set<number>();
   for (const e of events) if (e.kind === "GREAT_MATCH") great.add(e.seat);
@@ -149,6 +150,7 @@ function deriveChips(
     else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
     else if (s.claimBy === seat) kind = "WHOOP";
     else if (great.has(seat)) kind = "GREAT_MATCH";
+    else if (penaltySeat === seat) kind = "PENALTY";
     else if ((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat)) kind = "ROLLING";
     else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
     out.push({
@@ -816,6 +818,9 @@ const MultiplayerGameView: React.FC<Props> = ({
 
 
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
+  // Transient PENALTY chip state — same NOPE event, same 900ms window as the
+  // wrong-card animation. Falls back to the seat's live state after.
+  const [penaltySeat, setPenaltySeat] = React.useState<number | null>(null);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => {
     if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
@@ -853,8 +858,12 @@ const MultiplayerGameView: React.FC<Props> = ({
         playWrong();
         // Every player sees the wrong pair animate — no seat filter.
         setWrongCards(lastPairRef.current);
+        setPenaltySeat(e.seat);
         if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
-        wrongTimerRef.current = setTimeout(() => setWrongCards([]), 900);
+        wrongTimerRef.current = setTimeout(() => {
+          setWrongCards([]);
+          setPenaltySeat(null);
+        }, 900);
       }
     }
     // Bound the dedup set so it doesn't grow forever across a long session.
@@ -1033,7 +1042,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   }
 
 
-  const chips = deriveChips(s, mySeat, events);
+  const chips = deriveChips(s, mySeat, events, penaltySeat);
 
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
