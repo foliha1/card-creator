@@ -129,7 +129,21 @@ const GameCard = ({
       onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) setFocusVis(true); }}
       onBlur={() => setFocusVis(false)}
     >
+      {/* Inner wrapper: carries the deal-in animation so the outer tappable
+          element (position + hit area) never moves mid-deal. */}
       <div
+        key={dealKey}
+        className={dealIndex !== undefined ? "ww-deal" : undefined}
+        style={{
+          position: "absolute",
+          inset: 0,
+          ...(dealIndex !== undefined
+            ? { ["--ww-deal-i" as string]: String(dealIndex) }
+            : {}),
+        }}
+      >
+      <div
+
         style={{
           width: "100%",
           height: "100%",
