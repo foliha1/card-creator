@@ -1362,6 +1362,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           <div style={{
             position: "absolute", inset: 0, zIndex: 10,
             pointerEvents: "none",
+            display: "flex", alignItems: "center", justifyContent: "center",
             opacity: bannerExiting ? 0 : 1,
             transform: bannerExiting ? "translateY(-6px)" : "translateY(0)",
             transition: "opacity 200ms ease, transform 200ms ease",
