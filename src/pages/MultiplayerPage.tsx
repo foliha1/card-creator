@@ -61,9 +61,11 @@ const MultiplayerPage: React.FC = () => {
     preloadIntroJson().then((json) => {
       if (cancelled) return;
       if (json) {
+        console.log("[intro] preloadIntroJson() resolved with data");
         setIntroData(json);
         setIntroStatus("running");
       } else {
+        console.log("[intro] preloadIntroJson() returned null");
         setIntroStatus("skipped");
       }
     });
