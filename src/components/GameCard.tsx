@@ -164,12 +164,16 @@ const GameCard = ({
             boxShadow,
           }}
         >
-          <img
-            src={card.svgPath}
-            alt={card.id}
-            style={{ width: "100%", height: "100%", display: "block" }}
-            draggable={false}
-          />
+          {/* Only render a face when a real card is known. A placeholder must
+              never fall back to the card back — that reads as a duplicate back. */}
+          {card.svgPath ? (
+            <img
+              src={card.svgPath}
+              alt={card.id}
+              style={{ width: "100%", height: "100%", display: "block" }}
+              draggable={false}
+            />
+          ) : null}
         </div>
 
 

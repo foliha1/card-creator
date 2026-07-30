@@ -36,6 +36,7 @@ import { serverNow } from "@/hooks/useServerClock";
 import RollHeroOverlay from "@/components/RollHeroOverlay";
 import { MATCH_ART_SRC } from "@/components/MatchDie";
 import type { Card } from "@/cardData";
+import { ALL_CARDS, CARD_BACK_PATH } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
@@ -642,6 +643,9 @@ const DebugControls: React.FC<{
 // -------- Main component --------
 
 
+// Kept alive for the lifetime of the page so the browser cannot evict the art.
+const preloadedArt: HTMLImageElement[] = [];
+
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
   heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
@@ -659,6 +663,19 @@ const MultiplayerGameView: React.FC<Props> = ({
   const homeRef = React.useRef<HTMLDivElement | null>(null);
   // `activeCommit` is the commit we're CURRENTLY animating. It becomes null
   // when the 1100ms window expires (or is skipped if we arrived too late).
+  // Preload every card face once on mount. Uncached SVGs otherwise decode
+  // after the flip starts, briefly showing an empty/backed front face.
+  // References are parked in a module-level array so nothing gets evicted.
+  React.useEffect(() => {
+    if (preloadedArt.length > 0) return;
+    for (const src of [CARD_BACK_PATH, ...ALL_CARDS.map((c) => c.svgPath)]) {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = src;
+      preloadedArt.push(img);
+    }
+  }, []);
+
   const [activeCommit, setActiveCommit] = React.useState<RollCommitPayload | null>(null);
   const [heroRects, setHeroRects] = React.useState<{
     home: DOMRect; target: DOMRect; parent: DOMRect;
@@ -1309,7 +1326,7 @@ const MultiplayerGameView: React.FC<Props> = ({
             const faceUp = slot.card !== null;
             const cardForRender: Card =
               slot.card ??
-              ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "/cards/card-back.svg" } as Card);
+              ({ id: `hidden-${i}`, shape: "circle", number: 1, color: "red", svgPath: "" } as Card);
             const selected =
               s.selectedCards.includes(i) || optimisticSel.includes(i) || lastCallSel.includes(i);
             return (
