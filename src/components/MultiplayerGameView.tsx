@@ -1199,13 +1199,13 @@ const MultiplayerGameView: React.FC<Props> = ({
       {header}
       {opponentRow}
 
-      {/* Card area — padding 8 (16 when overlay), measured card sizing */}
+      {/* Card area — the only flexing child. Measured card sizing. */}
       <div
         ref={cardAreaRef}
         style={{
           position: "relative", background: PANEL, border: BORDER_HEAVY,
           borderRadius: R_BOX,
-          padding: 8,
+          padding: "0 16px",
           boxSizing: "border-box", flex: "1 1 0", minHeight: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           overflowY: needsScroll ? "auto" : "hidden",
@@ -1215,11 +1215,12 @@ const MultiplayerGameView: React.FC<Props> = ({
           transition: "opacity 250ms ease",
         }}
       >
+        {scoreRow}
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: `repeat(3, ${cardW}px)`,
-          gridTemplateRows: `repeat(3, ${cardH}px)`,
+          gridTemplateColumns: `repeat(${COLS}, ${cardW}px)`,
+          gridTemplateRows: `repeat(${ROWS}, ${cardH}px)`,
           gap: GAP,
           margin: "auto",
           position: "relative",
