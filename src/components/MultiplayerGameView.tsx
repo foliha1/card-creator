@@ -1371,16 +1371,14 @@ const MultiplayerGameView: React.FC<Props> = ({
           boxSizing: "border-box", flex: "0 0 auto",
           display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "flex-start", gap: 8,
-          overflowY: needsScroll ? "auto" : "hidden",
-          overflowX: "hidden",
-          opacity: 1,
-          pointerEvents: isRolling ? "none" : "auto",
-          transition: "opacity 250ms ease",
-        }}
-      >
-        {scoreRow}
-
-        <div style={{
+        overflowY: needsScroll ? "auto" : "hidden",
+        overflowX: "hidden",
+        opacity: 1,
+        pointerEvents: isRolling ? "none" : "auto",
+        transition: "opacity 250ms ease",
+      }}
+    >
+      <div style={{
           display: "grid",
           gridTemplateColumns: `repeat(${COLS}, ${cardW}px)`,
           gridTemplateRows: `repeat(${ROWS}, ${cardH}px)`,
