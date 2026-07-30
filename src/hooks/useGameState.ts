@@ -393,6 +393,8 @@ export function reducer(state: State, action: Action): State {
 
     case "ROLL_START":
       if (state.phase !== "AWAITING_ROLL") return state;
+      // v6.4 lockout: a penalised seat cannot roll.
+      if (state.skip[state.roller]) return state;
       return { ...state, rolling: true };
 
     case "ROLL_LAND": {
@@ -407,6 +409,8 @@ export function reducer(state: State, action: Action): State {
 
     case "PLAYER_ENTER_CLAIM": {
       if (state.phase !== "FLIPPING") return state;
+      // v6.4 lockout: a penalised seat cannot claim.
+      if (state.skip[action.by]) return state;
       const flipped = new Set(state.flippedThisCycle);
       if (state.inFlight?.kind === "flip") flipped.add(state.inFlight.by);
       else flipped.add(state.flipper);
@@ -485,7 +489,7 @@ export function reducer(state: State, action: Action): State {
         selectedCards: [],
         matchedCards: new Set(),
         claimBy: null,
-        message: `${state.names[by]} — no match. Skip next flip.`,
+        message: `${state.names[by]} — no match. Locked out this round.`,
 
         messageType: "error",
       };
@@ -524,6 +528,8 @@ export function reducer(state: State, action: Action): State {
     case "FLIP_START": {
       if (state.phase !== "FLIPPING") return state;
       if (state.flipper !== action.by) return state;
+      // v6.4 lockout: a penalised seat cannot flip.
+      if (state.skip[action.by]) return state;
       if (state.inFlight) return state;
       if (state.wrongBy[action.by]?.has(action.idx)) return state;
       if (state.grid[action.idx] === null) return state;
@@ -551,23 +557,24 @@ export function reducer(state: State, action: Action): State {
       if (state.phase !== "FLIPPING") return state;
       if (state.inFlight) return state;
       const who = state.flipper;
-      // Disconnected seats auto-advance every rotation without consuming
-      // the one-shot `skip` penalty — disconnection is persistent, skip is
-      // transient. If a seat is BOTH disconnected and skip-penalised, we
-      // advance without consuming skip; the penalty still owes when they
-      // return.
+      // v6.4: SKIP_TICK no longer CONSUMES anything — the lockout is
+      // round-scoped and clears at the round boundary. It only advances the
+      // rotation past a seat that cannot act (locked out or disconnected),
+      // so a locked-out seat's turn still counts toward the no-claim
+      // rotation backstop.
       if (state.disconnected[who]) {
         return cycleAdvance(state, who);
       }
       if (!state.skip[who]) return state;
-      const skip = replaceAt(state.skip, who, false);
-      return cycleAdvance({ ...state, skip }, who);
+      return cycleAdvance(state, who);
 
     }
 
     case "CLAIM_START": {
       if (state.phase !== "FLIPPING" && state.phase !== "CLAIM_SELECTING") return state;
       if (state.phase === "CLAIM_SELECTING") return state;
+      // v6.4 lockout: a penalised seat cannot claim.
+      if (state.skip[action.by]) return state;
       if (state.grid[action.a] === null || state.grid[action.b] === null) return state;
       if (
         state.wrongBy[action.by]?.has(action.a) ||
@@ -631,7 +638,7 @@ export function reducer(state: State, action: Action): State {
         skip,
         inFlight: null,
         claimBy: null,
-        message: `${state.names[by]} — no match. Skip next flip.`,
+        message: `${state.names[by]} — no match. Locked out this round.`,
         messageType: "info",
       };
       return post;
@@ -640,6 +647,8 @@ export function reducer(state: State, action: Action): State {
     case "LAST_CALL_CLAIM": {
       if (state.phase !== "LAST_CALL") return state;
       const { by, a, b } = action;
+      // v6.4 lockout (defensive — skip is cleared on Last Call entry).
+      if (state.skip[by]) return state;
       if (a === b) return state;
       const cardA = state.grid[a];
       const cardB = state.grid[b];
@@ -898,11 +907,11 @@ export function useGameState(
   useEffect(() => {
     if (state.phase !== "FLIPPING") return;
     if (state.inFlight) return;
-    // Auto-tick when the current flipper is either skip-penalised OR
-    // disconnected. Both cases are handled inside the SKIP_TICK reducer:
-    // disconnection auto-advances without consuming skip; a served skip
-    // consumes the flag. Without this second condition the flipper lands
-    // on a disconnected seat and the round hard-stops.
+    // Auto-tick when the current flipper is either locked out (v6.4
+    // round-scoped wrong-claim penalty) OR disconnected. SKIP_TICK just
+    // advances the rotation past them; the lockout itself clears at the
+    // round boundary. Without this the flipper lands on a seat that cannot
+    // act and the round hard-stops.
     if (!state.skip[state.flipper] && !state.disconnected[state.flipper]) return;
     dispatch({ type: "SKIP_TICK" });
   }, [state.phase, state.flipper, state.inFlight, state.skip, state.disconnected]);
