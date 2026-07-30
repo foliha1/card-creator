@@ -502,3 +502,72 @@ All colors MUST be HSL.
   .ww-great { animation: ww-great-fade 1s linear 300ms both; }
   .ww-great-shine { display: none; }
 }
+
+/* ---- Deal-in animation ------------------------------------------------- */
+.ww-deal {
+  transform-origin: center;
+  animation: ww-deal-move 900ms linear calc(var(--ww-deal-i, 0) * 60ms) both,
+             ww-deal-fade 900ms linear calc(var(--ww-deal-i, 0) * 60ms) both;
+}
+
+@keyframes ww-deal-move {
+  0%     { transform: translateY(calc(26.967px * var(--ww-k))) scale(1.05); }
+  1.67%  { transform: translateY(calc(26.92px * var(--ww-k))) scale(1.05); }
+  3.33%  { transform: translateY(calc(26.776px * var(--ww-k))) scale(1.05); }
+  5%     { transform: translateY(calc(26.511px * var(--ww-k))) scale(1.05); }
+  6.67%  { transform: translateY(calc(26.097px * var(--ww-k))) scale(1.05); }
+  8.33%  { transform: translateY(calc(25.496px * var(--ww-k))) scale(1.05); }
+  10%    { transform: translateY(calc(24.645px * var(--ww-k))) scale(1.05); }
+  11.67% { transform: translateY(calc(23.464px * var(--ww-k))) scale(1.05); }
+  13.33% { transform: translateY(calc(21.848px * var(--ww-k))) scale(1.05); }
+  15%    { transform: translateY(calc(19.65px * var(--ww-k))) scale(1.05); }
+  16.67% { transform: translateY(calc(16.854px * var(--ww-k))) scale(1.05); }
+  18.33% { transform: translateY(calc(13.789px * var(--ww-k))) scale(1.05); }
+  20%    { transform: translateY(calc(10.941px * var(--ww-k))) scale(1.05); }
+  21.67% { transform: translateY(calc(8.596px * var(--ww-k))) scale(1.05); }
+  23.33% { transform: translateY(calc(6.746px * var(--ww-k))) scale(1.05); }
+  25%    { transform: translateY(calc(5.272px * var(--ww-k))) scale(1.05); }
+  26.67% { transform: translateY(calc(4.097px * var(--ww-k))) scale(1.05); }
+  28.33% { transform: translateY(calc(3.159px * var(--ww-k))) scale(1.05); }
+  30%    { transform: translateY(calc(2.397px * var(--ww-k))) scale(1.05); }
+  31.67% { transform: translateY(calc(1.782px * var(--ww-k))) scale(1.05); }
+  33.33% { transform: translateY(calc(1.292px * var(--ww-k))) scale(1.05); }
+  35%    { transform: translateY(calc(0.899px * var(--ww-k))) scale(1.05); }
+  36.67% { transform: translateY(calc(0.592px * var(--ww-k))) scale(1.05); }
+  38.33% { transform: translateY(calc(0.36px * var(--ww-k))) scale(1.05); }
+  40%    { transform: translateY(calc(0.191px * var(--ww-k))) scale(1.05); }
+  41.67% { transform: translateY(calc(0.079px * var(--ww-k))) scale(1.05); }
+  43.33% { transform: translateY(calc(0.017px * var(--ww-k))) scale(1.05); }
+  44.44% { transform: translateY(0) scale(1.05); }
+  45%    { transform: translateY(0) scale(1.051); }
+  46.67% { transform: translateY(0) scale(1.055); }
+  48.33% { transform: translateY(0) scale(1.058); }
+  50%    { transform: translateY(0) scale(1.061); }
+  51.67% { transform: translateY(0) scale(1.062); }
+  53.33% { transform: translateY(0) scale(1.063); }
+  55%    { transform: translateY(0) scale(1.06); }
+  56.67% { transform: translateY(0) scale(1.051); }
+  58.33% { transform: translateY(0) scale(1.021); }
+  60%    { transform: translateY(0) scale(1.001); }
+  61.67% { transform: translateY(0) scale(0.993); }
+  63.33% { transform: translateY(0) scale(0.989); }
+  65%    { transform: translateY(0) scale(0.987); }
+  68.33% { transform: translateY(0) scale(0.987); }
+  70%    { transform: translateY(0) scale(0.989); }
+  71.67% { transform: translateY(0) scale(0.99); }
+  73.33% { transform: translateY(0) scale(0.993); }
+  75%    { transform: translateY(0) scale(0.995); }
+  76.67% { transform: translateY(0) scale(0.998); }
+  77.78% { transform: translateY(0) scale(1); }
+  100%   { transform: translateY(0) scale(1); }
+}
+
+@keyframes ww-deal-fade {
+  0%     { animation-timing-function: cubic-bezier(.5,0,.5,1); opacity: 0; }
+  22.22% { animation-timing-function: linear; opacity: 1; }
+  100%   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-deal { animation: ww-deal-fade 300ms linear 0ms both; }
+}
