@@ -858,8 +858,12 @@ const MultiplayerGameView: React.FC<Props> = ({
         playWrong();
         // Every player sees the wrong pair animate — no seat filter.
         setWrongCards(lastPairRef.current);
+        setPenaltySeat(e.seat);
         if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
-        wrongTimerRef.current = setTimeout(() => setWrongCards([]), 900);
+        wrongTimerRef.current = setTimeout(() => {
+          setWrongCards([]);
+          setPenaltySeat(null);
+        }, 900);
       }
     }
     // Bound the dedup set so it doesn't grow forever across a long session.
