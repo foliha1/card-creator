@@ -486,6 +486,35 @@ export function reducer(state: State, action: Action): State {
       return post;
     }
 
+    // Ends the feedback hold. Token-guarded so a stale timer from an earlier
+    // settle can never advance the board twice.
+    case "SETTLE_COMPLETE": {
+      if (state.phase !== "SETTLING") return state;
+      if (state.settleToken !== action.token) return state;
+      if (state.settleKind === "MATCH") {
+        const idxs = Array.from(state.matchedCards);
+        const { grid: newGrid, deck: newDeck } = refill(state.grid, state.deck, idxs);
+        const draining = newDeck.length === 0;
+        const post: State = {
+          ...state,
+          grid: newGrid,
+          deck: newDeck,
+          drawEmpty: state.drawEmpty || draining,
+          settleKind: null,
+          settleBy: null,
+        };
+        return startRound(post, state.settleBy);
+      }
+      return {
+        ...state,
+        phase: "FLIPPING",
+        settleKind: null,
+        settleBy: null,
+      };
+    }
+
+
+
     case "FLIP_START": {
       if (state.phase !== "FLIPPING") return state;
       if (state.flipper !== action.by) return state;
