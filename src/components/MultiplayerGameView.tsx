@@ -1287,6 +1287,7 @@ const MultiplayerGameView: React.FC<Props> = ({
                 top: f.rect.top, left: f.rect.left,
                 width: f.rect.width, height: f.rect.height,
                 borderRadius: R_CARD,
+                overflow: "hidden",
                 pointerEvents: "none",
                 ["--ww-k" as string]: String(f.rect.width / 104.333),
               }}
@@ -1296,6 +1297,17 @@ const MultiplayerGameView: React.FC<Props> = ({
                 alt=""
                 draggable={false}
                 style={{ width: "100%", height: "100%", display: "block", borderRadius: R_CARD }}
+              />
+              {/* The copy carries the entire great-match treatment: wash,
+                  shine, then ring on top. */}
+              <div
+                className="ww-great-wash"
+                style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1 }}
+              />
+              <div className="ww-great-shine" style={{ pointerEvents: "none", zIndex: 2 }} />
+              <div
+                className="ww-great-ring"
+                style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3 }}
               />
             </div>
           ))}
