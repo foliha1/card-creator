@@ -209,6 +209,21 @@ const GameCard = ({
           <div className="ww-wrong-ring" style={{ zIndex: 5 }} />
         </>
       )}
+
+      {matched && !wrong && (
+        <>
+          <div
+            className="ww-great-wash"
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 4 }}
+          />
+          <div className="ww-great-shine" style={{ pointerEvents: "none", zIndex: 5 }} />
+          <div
+            className="ww-great-ring"
+            style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 6 }}
+          />
+        </>
+      )}
+
     </div>
   );
 };
