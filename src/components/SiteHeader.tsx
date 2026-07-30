@@ -6,99 +6,125 @@ import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const TOUCH = 44;
 
-/**
- * Pre-game nav bar. Only used on the play-style screen and the lobby — never
- * in the in-game view, which is vertically constrained.
- */
-const PreGameNav: React.FC = () => {
-  const [showSettings, setShowSettings] = useState(false);
+/** Bar height, excluding the safe-area inset that pads it from the top. */
+export const SITE_HEADER_H = 44;
+/** CSS length: bar height + notch inset. Use for page top offsets. */
+export const SITE_HEADER_OFFSET = `calc(${SITE_HEADER_H}px + env(safe-area-inset-top))`;
+/** DOM id — read by the in-game card sizer to measure the real bar height. */
+export const SITE_HEADER_ID = "site-header";
 
-  const linkStyle: React.CSSProperties = {
+export interface SiteHeaderProps {
+  /** Provide to hand settings to the host screen; otherwise a built-in sheet opens. */
+  onSettings?: () => void;
+  /** In-game only: adds a leave control alongside settings in the right slot. */
+  onLeave?: () => void;
+}
+
+/**
+ * Persistent site header. Fixed to the top of the viewport, full width, on
+ * every screen: support page, play-style screen, lobby and in-game. The bar
+ * spans edge to edge; its contents are constrained to the 420px game column.
+ */
+const SiteHeader: React.FC<SiteHeaderProps> = ({ onSettings, onLeave }) => {
+  const [showSettings, setShowSettings] = useState(false);
+  const openSettings = onSettings ?? (() => setShowSettings(true));
+
+  const controlBase: React.CSSProperties = {
     minHeight: TOUCH,
     minWidth: TOUCH,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "0 10px",
+    boxSizing: "border-box",
     fontFamily: FONT_FAMILY,
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 1,
     color: COLORS.surface,
     textDecoration: "none",
-    border: `2px solid ${COLORS.surface}`,
-    borderRadius: RADIUS.sm,
     background: "transparent",
-    boxSizing: "border-box",
+    border: "none",
+    padding: "0 8px",
     whiteSpace: "nowrap",
+    cursor: "pointer",
   };
 
   return (
     <>
-      <nav
-        aria-label="Main"
+      <header
+        id={SITE_HEADER_ID}
         style={{
-          position: "absolute",
-          top: "calc(8px + env(safe-area-inset-top))",
-          left: "calc(8px + env(safe-area-inset-left))",
-          right: "calc(8px + env(safe-area-inset-right))",
-          zIndex: 20,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          width: "100%",
+          height: SITE_HEADER_OFFSET,
+          paddingTop: "env(safe-area-inset-top)",
+          background: COLORS.ink,
+          borderBottom: `2px solid ${COLORS.surface}`,
+          boxSizing: "border-box",
+          zIndex: 50,
         }}
       >
-        <Link
-          to="/"
-          aria-label="WHOOP! WHOOP! home"
+        <nav
+          aria-label="Main"
           style={{
-            minHeight: TOUCH,
-            minWidth: TOUCH,
-            display: "inline-flex",
+            maxWidth: 420,
+            margin: "0 auto",
+            height: SITE_HEADER_H,
+            display: "flex",
             alignItems: "center",
-            padding: "0 4px",
+            justifyContent: "space-between",
+            gap: 4,
+            paddingLeft: 4,
+            paddingRight: 4,
+            boxSizing: "border-box",
           }}
         >
-          <img
-            src={whoopLightLogo.url}
-            alt="WHOOP! WHOOP!"
-            style={{ height: 24, display: "block" }}
-          />
-        </Link>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <a href="/about#how-to-play" style={linkStyle}>
+          <a href="/about#how-to-play" style={{ ...controlBase, flex: "none" }}>
             How to Play
           </a>
-          <button
-            type="button"
-            onClick={() => setShowSettings(true)}
-            aria-label="Settings"
-            style={{
-              all: "unset",
-              cursor: "pointer",
-              width: TOUCH,
-              height: TOUCH,
-              flex: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxSizing: "border-box",
-              background: COLORS.blue,
-              border: BORDER.heavy,
-              borderRadius: RADIUS.sm,
-            }}
+
+          <Link
+            to="/"
+            aria-label="WHOOP! WHOOP! home"
+            style={{ ...controlBase, flex: "0 1 auto", minWidth: 0, overflow: "hidden" }}
           >
-            <Settings size={24} color={COLORS.ink} aria-hidden="true" />
-          </button>
-        </div>
-      </nav>
+            <img
+              src={whoopLightLogo.url}
+              alt="WHOOP! WHOOP!"
+              style={{ height: 22, display: "block", maxWidth: "100%" }}
+            />
+          </Link>
+
+          <div style={{ display: "flex", alignItems: "center", flex: "none" }}>
+            <button
+              type="button"
+              onClick={openSettings}
+              aria-label="Settings"
+              style={{ ...controlBase, width: TOUCH, height: TOUCH, padding: 0 }}
+            >
+              <Settings size={22} color={COLORS.surface} aria-hidden="true" />
+            </button>
+            {onLeave && (
+              <button
+                type="button"
+                onClick={onLeave}
+                aria-label="Leave game"
+                style={{ ...controlBase, width: TOUCH, height: TOUCH, padding: 0 }}
+              >
+                <X size={22} color={COLORS.surface} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </nav>
+      </header>
 
       {showSettings && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="pregame-settings-title"
+          aria-labelledby="site-settings-title"
           onClick={() => setShowSettings(false)}
           style={{
             position: "fixed",
@@ -128,7 +154,7 @@ const PreGameNav: React.FC = () => {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <h2
-                id="pregame-settings-title"
+                id="site-settings-title"
                 style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: COLORS.ink }}
               >
                 Settings
@@ -179,4 +205,4 @@ const PreGameNav: React.FC = () => {
   );
 };
 
-export default PreGameNav;
+export default SiteHeader;

@@ -8,7 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
-import PreGameNav from "@/components/PreGameNav";
+import SiteHeader, { SITE_HEADER_OFFSET } from "@/components/SiteHeader";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { useSoloGame } from "@/hooks/useSoloGame";
 
@@ -544,7 +544,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     justifyContent: "center",
     alignItems: "center",
     padding: 8,
-    paddingTop: "calc(64px + env(safe-area-inset-top))",
+    paddingTop: `calc(20px + ${SITE_HEADER_OFFSET})`,
     paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
     paddingLeft: "calc(8px + env(safe-area-inset-left))",
     paddingRight: "calc(8px + env(safe-area-inset-right))",
@@ -607,7 +607,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
         .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
       `}</style>
-      {opts?.nav !== false && <PreGameNav />}
+      {opts?.nav !== false && <SiteHeader />}
       <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
         {opts?.above}
         {content}
@@ -1165,7 +1165,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
           .mp-shell input::placeholder { color: ${COLORS.panel}; opacity: 1; }
         `}</style>
-        <PreGameNav />
+        <SiteHeader />
         {idleCard}
       </div>
     );

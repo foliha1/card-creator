@@ -1,5 +1,6 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
+import SiteHeader, { SITE_HEADER_OFFSET } from "@/components/SiteHeader";
 import { Link } from "react-router-dom";
 import { COLORS, SPACE, RADIUS, BORDER, FONT_FAMILY, TEXT, textStyle } from "@/lib/tokens";
 import { AppButton } from "@/components/ui/AppButton";
@@ -100,6 +101,7 @@ const SupportPage: React.FC = () => {
         <meta name="twitter:card" content="summary" />
       </Helmet>
 
+      <SiteHeader />
       <div
         style={{
           minHeight: "100dvh",
@@ -112,7 +114,7 @@ const SupportPage: React.FC = () => {
           style={{
             maxWidth: 420,
             margin: "0 auto",
-            padding: `${SPACE[12]}px ${SPACE[6]}px calc(${SPACE[16]}px + env(safe-area-inset-bottom))`,
+            padding: `calc(${SPACE[12]}px + ${SITE_HEADER_OFFSET}) ${SPACE[6]}px calc(${SPACE[16]}px + env(safe-area-inset-bottom))`,
             display: "flex",
             flexDirection: "column",
             gap: SPACE[8],
