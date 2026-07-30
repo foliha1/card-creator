@@ -1188,13 +1188,19 @@ const MultiplayerGameView: React.FC<Props> = ({
           position: "relative",
         }}>
           {s.grid.map((slot, i) => {
-            if (!slot.occupied) {
+            // During a MATCH settle the matched pair has left the table: no
+            // card, no green treatment — the panel shows through and the
+            // flying copy carries the whole animation.
+            const leaving = matchSettling && s.matchedCards.includes(i);
+            if (!slot.occupied || leaving) {
               return (
-                <div key={`empty-${i}`} style={{
-                  width: cardW, height: cardH,
-                  border: `2px dashed rgba(35,31,32,0.13)`,
-                  borderRadius: R_CARD, boxSizing: "border-box",
-                }} />
+                <div key={`empty-${i}`}
+                  ref={(el) => { cellRefs.current[i] = el; }}
+                  style={{
+                    width: cardW, height: cardH,
+                    border: leaving ? "none" : `2px dashed rgba(35,31,32,0.13)`,
+                    borderRadius: R_CARD, boxSizing: "border-box",
+                  }} />
               );
             }
             const faceUp = slot.card !== null;
@@ -1216,7 +1222,6 @@ const MultiplayerGameView: React.FC<Props> = ({
                   faceUp={faceUp}
                   onClick={() => handleCardClick(i)}
                   highlighted={selected}
-                  matched={s.matchedCards.includes(i)}
                   wrong={wrongCards.includes(i)}
                   shaking={false}
                   fill
