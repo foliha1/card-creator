@@ -166,8 +166,9 @@ const GameCard = ({
         >
           {/* Always mounted: unmounting inside a preserve-3d subtree rebuilds
               the compositor layer and hitches the flip. When no card is known
-              we keep a cached image loaded but fully transparent (no
-              transition — it must switch in the same frame as faceUp). */}
+              we keep a cached image loaded but fully transparent. Opacity
+              switches at the 250ms midpoint of the 500ms rotateY so the face
+              is visible only while pointing at the viewer, not while edge-on. */}
           <img
             src={card.svgPath || CARD_BACK_PATH}
             alt={card.svgPath ? card.id : ""}
@@ -177,6 +178,7 @@ const GameCard = ({
               height: "100%",
               display: "block",
               opacity: card.svgPath ? 1 : 0,
+              transition: "opacity 0s linear 250ms",
             }}
             draggable={false}
           />
