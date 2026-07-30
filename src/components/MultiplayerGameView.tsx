@@ -818,6 +818,9 @@ const MultiplayerGameView: React.FC<Props> = ({
 
 
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
+  // Transient PENALTY chip state — same NOPE event, same 900ms window as the
+  // wrong-card animation. Falls back to the seat's live state after.
+  const [penaltySeat, setPenaltySeat] = React.useState<number | null>(null);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => {
     if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
