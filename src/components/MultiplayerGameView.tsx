@@ -133,6 +133,7 @@ function deriveChips(
   s: PublicState,
   mySeat: number | null,
   events: TransientEvent[],
+  penaltySeat: number | null,
 ): DerivedChip[] {
   const great = new Set<number>();
   for (const e of events) if (e.kind === "GREAT_MATCH") great.add(e.seat);
@@ -149,6 +150,7 @@ function deriveChips(
     else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
     else if (s.claimBy === seat) kind = "WHOOP";
     else if (great.has(seat)) kind = "GREAT_MATCH";
+    else if (penaltySeat === seat) kind = "PENALTY";
     else if ((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat)) kind = "ROLLING";
     else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
     out.push({
