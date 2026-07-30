@@ -1126,33 +1126,41 @@ const MultiplayerGameView: React.FC<Props> = ({
   // against the column's genuinely free vertical space.
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const [panelH, setPanelH] = React.useState(0);
-  const [rootH, setRootH] = React.useState(0);
+  // Available vertical space comes from the viewport, not from the root
+  // element: the root now hugs its content, so measuring it would feed its
+  // own height back into the card size (a loop that collapses to MIN_CARD_W).
+  // The wrapper's 900px ceiling is applied here instead.
+  const readViewportH = () => Math.min(900, typeof window === "undefined" ? 0 : window.innerHeight);
+  const [rootH, setRootH] = React.useState(readViewportH);
   React.useEffect(() => {
     const pe = panelRef.current;
-    const re = rootRef.current;
     const ro = new ResizeObserver(() => {
       if (pe) setPanelH((prev) => {
         const h = pe.getBoundingClientRect().height;
         return Math.abs(prev - h) < 0.5 ? prev : h;
       });
-      if (re) setRootH((prev) => {
-        const h = re.getBoundingClientRect().height;
-        return Math.abs(prev - h) < 0.5 ? prev : h;
-      });
     });
     if (pe) ro.observe(pe);
-    if (re) ro.observe(re);
     if (pe) setPanelH(pe.getBoundingClientRect().height);
-    if (re) setRootH(re.getBoundingClientRect().height);
-    return () => ro.disconnect();
+    const onResize = () => setRootH((prev) => {
+      const h = readViewportH();
+      return Math.abs(prev - h) < 0.5 ? prev : h;
+    });
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
+
 
   // Card sizing from the measured content box. 3 columns always; rows follow
   // the host's chosen grid size (6 → 2 rows, 9 → 3 rows).
   const GAP = 8;
   const RATIO = 1.4; // design card ratio 146.07 / 104.33
   const MIN_CARD_W = 64;
-  const MAX_CARD_W = 104;
+  
   const COLS = 3;
   const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
@@ -1167,7 +1175,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
-  const rawCardW = Math.min(byWidth, byHeight, MAX_CARD_W);
+  const rawCardW = Math.min(byWidth, byHeight);
   const cardW = Math.floor(Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W));
 
   const cardH = Math.round(cardW * RATIO);
