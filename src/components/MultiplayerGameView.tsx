@@ -377,8 +377,8 @@ const CancelX: React.FC = () => (
 );
 
 const ScoreRow: React.FC<{
-  score: number; cardsLeft: number; banner: BannerKind; onCancel?: () => void;
-}> = ({ score, cardsLeft, banner, onCancel }) => {
+  score?: number; cardsLeft?: number; banner: BannerKind; onCancel?: () => void;
+}> = ({ score = 0, cardsLeft = 0, banner, onCancel }) => {
   const box: React.CSSProperties = {
     flex: "1 1 0", height: 49.32, background: SURFACE,
     border: BORDER_HEAVY, borderRadius: R_STRIP, padding: 12.6609,
@@ -1042,12 +1042,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   // survives as an overlay pinned to the top of the card area so the
   // cancel-claim affordance stays reachable without adding a fifth fixed row.
   const scoreRow = banner ? (
-    <div style={{
-      position: "absolute", top: 8, left: 16, right: 16, zIndex: 10,
-    }}>
+    <div style={{ alignSelf: "stretch" }}>
       <ScoreRow
-        score={myScore}
-        cardsLeft={s.deckCount}
         banner={banner}
         onCancel={
           canCancelClaim && mySeat !== null
@@ -1058,7 +1054,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     </div>
   ) : null;
   const bottomRow = (
-    <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none" }}>
+    <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none", marginTop: "auto" }}>
       <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
       {/* Wrap the WHOOP button so AWAITING_ROLL/ROLLING dims it to 40% and
           physically blocks taps. pointerEvents:none guarantees no tap ever
@@ -1126,6 +1122,31 @@ const MultiplayerGameView: React.FC<Props> = ({
     return () => ro.disconnect();
   }, []);
 
+  // Measure the player panel and the root so the card area can size cards
+  // against the column's genuinely free vertical space.
+  const panelRef = React.useRef<HTMLDivElement | null>(null);
+  const [panelH, setPanelH] = React.useState(0);
+  const [rootH, setRootH] = React.useState(0);
+  React.useEffect(() => {
+    const pe = panelRef.current;
+    const re = rootRef.current;
+    const ro = new ResizeObserver(() => {
+      if (pe) setPanelH((prev) => {
+        const h = pe.getBoundingClientRect().height;
+        return Math.abs(prev - h) < 0.5 ? prev : h;
+      });
+      if (re) setRootH((prev) => {
+        const h = re.getBoundingClientRect().height;
+        return Math.abs(prev - h) < 0.5 ? prev : h;
+      });
+    });
+    if (pe) ro.observe(pe);
+    if (re) ro.observe(re);
+    if (pe) setPanelH(pe.getBoundingClientRect().height);
+    if (re) setRootH(re.getBoundingClientRect().height);
+    return () => ro.disconnect();
+  }, []);
+
   // Card sizing from the measured content box. 3 columns always; rows follow
   // the host's chosen grid size (6 → 2 rows, 9 → 3 rows).
   const GAP = 8;
@@ -1135,7 +1156,14 @@ const MultiplayerGameView: React.FC<Props> = ({
   const COLS = 3;
   const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
-  const availH = Math.max(0, box.h);
+  // Free vertical space for the card area: viewport height minus the root
+  // padding, top bar, player panel, bottom bar, the three 8px column gaps,
+  // the card area's own 32px of vertical padding and the banner when shown.
+  const BANNER_H = 65.32 + 8; // banner box + its gap to the grid
+  const availH = Math.max(
+    0,
+    rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - (banner ? BANNER_H : 0),
+  );
   const fromW = (availW - (COLS - 1) * GAP) / COLS;
   const fromH = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
   const rawCardW = Math.min(fromW, fromH, MAX_CARD_W);
@@ -1197,7 +1225,7 @@ const MultiplayerGameView: React.FC<Props> = ({
         }}
       />
       {header}
-      {opponentRow}
+      <div ref={panelRef} style={{ flex: "none" }}>{opponentRow}</div>
 
       {/* Card area — the only flexing child. Measured card sizing. */}
       <div
@@ -1205,9 +1233,10 @@ const MultiplayerGameView: React.FC<Props> = ({
         style={{
           position: "relative", background: PANEL, border: BORDER_HEAVY,
           borderRadius: R_BOX,
-          padding: "0 16px",
-          boxSizing: "border-box", flex: "1 1 0", minHeight: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+          boxSizing: "border-box", flex: "0 0 auto",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "flex-start", gap: 8,
           overflowY: needsScroll ? "auto" : "hidden",
           overflowX: "hidden",
           opacity: 1,
