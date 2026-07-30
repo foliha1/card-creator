@@ -152,6 +152,10 @@ export interface State {
   drawEmpty: boolean;
   roundNum: number;
   roundsSinceClaim: number;
+  // v6.6: consecutive full rotations that ended with no correct claim while
+  // the draw pile was empty. The game ends when this reaches 2. Any correct
+  // claim, or a quiet rotation with cards still in the pile, resets it to 0.
+  quietRotations: number;
   allFaceUp: boolean;
   selectedCards: number[];
   matchedCards: Set<number>;
