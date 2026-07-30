@@ -9,7 +9,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useGameState, type Action } from "@/hooks/useGameState";
+import {
+  useGameState,
+  SETTLE_MATCH_MS,
+  SETTLE_WRONG_MS,
+  type Action,
+} from "@/hooks/useGameState";
+
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
   ISOLATION_SPREAD_MS,

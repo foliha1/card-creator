@@ -9,7 +9,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useGameState } from "@/hooks/useGameState";
+import {
+  useGameState,
+  SETTLE_MATCH_MS,
+  SETTLE_WRONG_MS,
+} from "@/hooks/useGameState";
+
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import type {
   IntentAction,
