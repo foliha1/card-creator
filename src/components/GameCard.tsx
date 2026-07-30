@@ -9,7 +9,6 @@ interface GameCardProps {
   highlighted?: boolean;
   matched?: boolean;
   wrong?: boolean;
-  wrongWash?: boolean;
   shrinking?: boolean;
   entering?: boolean;
   enterDelay?: number;
