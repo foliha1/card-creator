@@ -171,44 +171,45 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
       role="group"
       aria-label={`${chip.name}${c.labelText ? ` — ${c.labelText}` : ""}`}
       style={{
-        display: "flex", height: 22, borderRadius: 4, minWidth: 0,
+        display: "flex", flexDirection: "row", alignItems: "stretch",
+        padding: 0, height: 22, borderRadius: 4, minWidth: 0,
         background: c.bg, border: `2px solid ${c.border}`,
-        boxSizing: "border-box",
+        boxSizing: "border-box", overflow: "hidden",
       }}
     >
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "4px 8px", flex: "1 1 0", minWidth: 0,
-        borderRadius: "4px 0 0 4px",
-        background: c.nameBg, border: `2px solid ${c.nameBorder}`,
+        padding: "0 8px", flex: "1 1 0", minWidth: 0,
+        background: c.nameBg, borderRight: `2px solid ${c.border}`,
         boxSizing: "border-box",
       }}>
         <span style={{
-          fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: "17px",
+          margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
           letterSpacing: "0.04em", color: c.name,
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>{chip.name}</span>
         {chip.score !== null && (
           <span style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            borderRadius: 2, padding: 2, height: 14, minWidth: 10,
+            margin: "0 auto", display: "flex", flexDirection: "column",
+            justifyContent: "center", alignItems: "center",
+            borderRadius: 2, padding: 2, height: 14, width: "auto",
             flexShrink: 0, background: c.badgeBg, boxSizing: "border-box",
           }}>
             <span style={{
-              fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: "17px",
-              letterSpacing: "0.02em", color: c.badgeText,
+              fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
+              letterSpacing: "0.02em", textAlign: "center", color: c.badgeText,
             }}>{chip.score}</span>
           </span>
         )}
       </div>
       <div style={{
-        display: "flex", alignItems: "center", padding: "4px 8px",
-        flex: "1 1 0", minWidth: 0, borderRadius: "0 4px 4px 0",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "0 8px", flex: "1 1 0", minWidth: 0,
         background: "transparent", boxSizing: "border-box",
       }}>
         {c.labelText && (
           <span style={{
-            fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: "15px",
+            margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: 1,
             letterSpacing: "0.04em", color: c.label,
             fontStyle: c.italic ? "italic" : "normal",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
