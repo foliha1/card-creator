@@ -501,29 +501,6 @@ const ActionButton: React.FC<{
   );
 };
 
-// -------- Grid overlay --------
-
-const GridOverlay: React.FC<{ kind: "GREAT_MATCH" }> = () => {
-  return (
-    <div style={{
-      position: "absolute", inset: 16, borderRadius: R_STRIP,
-      background: GREEN, border: BORDER_HEAVY,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      pointerEvents: "none", overflow: "hidden",
-    }}>
-      <span style={{
-        fontFamily: FONT_FAMILY, fontStyle: "italic",
-        fontSize: 88, lineHeight: "85%",
-        color: INK,
-        transform: "rotate(-4.69deg)",
-        whiteSpace: "nowrap",
-      }}>
-        Great Match!
-      </span>
-    </div>
-  );
-};
-
 // -------- Diagnostic overlay (?debug=1) --------
 //
 // Inert unless window.location.search contains debug=1. Values are read
@@ -739,10 +716,6 @@ const MultiplayerGameView: React.FC<Props> = ({
     setClaimErrAt(Date.now());
   }, [lastClaimReject, mySeat]);
 
-  // Detect self outcome events (last ~1.4s) for the grid overlay.
-  const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
-  const overlay: "GREAT_MATCH" | null = myGreat ? "GREAT_MATCH" : null;
-
   // -------- Sound effects --------
   // Each fires once per event using refs to remember previous values / seen
   // event ids. Do not derive from render — refs survive re-renders and dedupe
@@ -772,12 +745,22 @@ const MultiplayerGameView: React.FC<Props> = ({
   // Remember the last pair of touched cards. The NOPE event lands on the tick
   // after the claim resolves, when selectedCards is already empty — so this
   // ref is never cleared, only overwritten by the next full pair.
-  const lastPairRef = React.useRef<number[]>([]);
+  const lastPairRef = React.useRef<{ indices: number[]; cards: (Card | null)[] }>({ indices: [], cards: [] });
   React.useEffect(() => {
-    if (s.selectedCards.length === 2) lastPairRef.current = [...s.selectedCards];
-  }, [s.selectedCards]);
+    if (s.selectedCards.length === 2) {
+      lastPairRef.current = {
+        indices: [...s.selectedCards],
+        cards: s.selectedCards.map((i) => s.grid[i]?.card ?? null),
+      };
+    }
+  }, [s.selectedCards, s.grid]);
 
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
+  const [greatMatch, setGreatMatch] = React.useState<{ indices: number[]; cards: (Card | null)[] } | null>(null);
+  const greatTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (greatTimerRef.current) clearTimeout(greatTimerRef.current);
+  }, []);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => {
     if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
@@ -788,11 +771,17 @@ const MultiplayerGameView: React.FC<Props> = ({
     for (const e of events) {
       if (seenEventIdsRef.current.has(e.id)) continue;
       seenEventIdsRef.current.add(e.id);
-      if (e.kind === "GREAT_MATCH") playCorrect();
+      if (e.kind === "GREAT_MATCH") {
+        playCorrect();
+        // Every player sees the matched pair animate — no seat filter.
+        setGreatMatch(lastPairRef.current);
+        if (greatTimerRef.current) clearTimeout(greatTimerRef.current);
+        greatTimerRef.current = setTimeout(() => setGreatMatch(null), 1300);
+      }
       else if (e.kind === "NOPE") {
         playWrong();
         // Every player sees the wrong pair animate — no seat filter.
-        setWrongCards(lastPairRef.current);
+        setWrongCards(lastPairRef.current.indices);
         if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
         wrongTimerRef.current = setTimeout(() => setWrongCards([]), 900);
       }
@@ -1142,11 +1131,11 @@ const MultiplayerGameView: React.FC<Props> = ({
         style={{
           position: "relative", background: PANEL, border: BORDER_HEAVY,
           borderRadius: R_BOX,
-          padding: overlay ? 16 : 8,
+          padding: 8,
           boxSizing: "border-box", flex: "1 1 0", minHeight: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
-          overflowY: needsScroll ? "auto" : "hidden",
-          overflowX: "hidden",
+          overflowY: needsScroll ? "auto" : "visible",
+          overflowX: "visible",
           opacity: 1,
           pointerEvents: isRolling ? "none" : "auto",
           transition: "opacity 250ms ease",
@@ -1158,6 +1147,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           gridTemplateRows: `repeat(3, ${cardH}px)`,
           gap: GAP,
           margin: "auto",
+          position: "relative",
         }}>
           {s.grid.map((slot, i) => {
             if (!slot.occupied) {
@@ -1193,8 +1183,42 @@ const MultiplayerGameView: React.FC<Props> = ({
               </div>
             );
           })}
+          {greatMatch?.indices.map((idx, n) => {
+            const gcard = greatMatch.cards[n];
+            if (!gcard) return null;
+            const col = idx % 3;
+            const row = Math.floor(idx / 3);
+            return (
+              <div
+                key={`great-${idx}-${n}`}
+                aria-hidden="true"
+                className="ww-great"
+                style={{
+                  position: "absolute",
+                  left: col * (cardW + GAP),
+                  top: row * (cardH + GAP),
+                  width: cardW,
+                  height: cardH,
+                  borderRadius: R_CARD,
+                  pointerEvents: "none",
+                  zIndex: 50,
+                  ["--ww-k" as string]: String(cardW / 104.333),
+                }}
+              >
+                <img
+                  src={gcard.svgPath}
+                  alt=""
+                  draggable={false}
+                  style={{ width: "100%", height: "100%", display: "block" }}
+                />
+                <div className="ww-great-wash" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
+                <div className="ww-great-shine" style={{ pointerEvents: "none" }} />
+                <div className="ww-great-ring" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
+              </div>
+            );
+          })}
         </div>
-        {overlay && <GridOverlay kind={overlay} />}
+
 
         {import.meta.env.DEV && (
           <div
