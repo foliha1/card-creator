@@ -767,6 +767,18 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
   }, []);
 
+  // While SETTLING on a MATCH the real cards leave the table entirely — the
+  // flying copy is the only visible card, and it stays mounted for the whole
+  // settle window (SETTLE_MATCH_MS === animation delay + duration).
+  const matchSettling = s.phase === "SETTLING" && s.settleKind === "MATCH";
+  React.useEffect(() => {
+    if (matchSettling) return;
+    if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+    setFlyCards((prev) => (prev.length ? [] : prev));
+  }, [matchSettling]);
+
+
+
 
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
