@@ -853,6 +853,27 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }, [events]);
 
+  // Deal-in bookkeeping. A slot that newly becomes occupied gets a fresh
+  // remount key (so the deal animation replays) and a stagger index: reading
+  // order on the initial deal, 0/1 on a refill regardless of grid position.
+  const dealRef = React.useRef<{ occ: boolean[]; keys: number[]; idx: number[]; seq: number }>({
+    occ: [], keys: [], idx: [], seq: 0,
+  });
+  const dealInfo = React.useMemo(() => {
+    const st = dealRef.current;
+    const occ = s.grid.map((sl) => sl.occupied);
+    const newly: number[] = [];
+    for (let i = 0; i < occ.length; i++) if (occ[i] && !st.occ[i]) newly.push(i);
+    const initial = st.occ.length === 0 || st.occ.every((o) => !o) || newly.length > 2;
+    newly.forEach((slot, n) => {
+      st.seq += 1;
+      st.keys[slot] = st.seq;
+      st.idx[slot] = initial ? slot : n;
+    });
+    st.occ = occ;
+    return { keys: [...st.keys], idx: [...st.idx] };
+  }, [s.grid]);
+
 
   // Deal sound when the grid refills after a claim. Watch occupied count
   // rising — a claim removes cards then the deck deals to fill the gaps.
