@@ -242,6 +242,8 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     drawEmpty: newDeck.length === 0,
     roundNum: 1,
     roundsSinceClaim: 0,
+    quietRotations: 0,
+
     allFaceUp: false,
     selectedCards: [],
     matchedCards: new Set(),
