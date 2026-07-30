@@ -8,7 +8,7 @@ import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
 // TODO: Temporary intro QA override — set to false to restore once-per-visitor behavior.
-const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = false;
+const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = true;
 
 // Kick off the download as early as possible: the moment this module
 // evaluates, before the component mounts. The index.html <link rel="preload">
