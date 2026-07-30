@@ -390,9 +390,8 @@ const ScoreRow: React.FC<{
     const clickable = banner === "CANCEL" && !!onCancel;
     return (
       <div style={{
-        height: 65.32, background: PANEL, border: BORDER_HEAVY,
-        borderRadius: R_BOX, padding: 8, boxSizing: "border-box",
-        display: "flex", alignItems: "center",
+        height: 30, boxSizing: "border-box",
+        display: "flex", alignItems: "stretch",
       }}>
         <button
           type="button"
@@ -401,10 +400,11 @@ const ScoreRow: React.FC<{
           aria-label={b.label}
           style={{
             all: "unset", cursor: clickable ? "pointer" : "default",
-            width: "100%", height: 49.32, background: b.bg, color: b.text,
+            width: "100%", height: 30, background: b.bg, color: b.text,
             border: BORDER_HEAVY, borderRadius: R_STRIP, boxSizing: "border-box",
+            padding: "6px 8px",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: FONT_FAMILY, fontSize: 20, lineHeight: "24px",
+            fontFamily: FONT_FAMILY, fontSize: 16, lineHeight: 1,
           }}
         >
           {b.icon && <CancelX />}
@@ -1159,10 +1159,11 @@ const MultiplayerGameView: React.FC<Props> = ({
   // Free vertical space for the card area: viewport height minus the root
   // padding, top bar, player panel, bottom bar, the three 8px column gaps,
   // the card area's own 32px of vertical padding and the banner when shown.
-  const BANNER_H = 65.32 + 8; // banner box + its gap to the grid
+  // Always reserved, shown or not, so card size never changes mid-round.
+  const BANNER_H = 30 + 8; // banner box + its gap to the grid
   const availH = Math.max(
     0,
-    rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - (banner ? BANNER_H : 0),
+    rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - BANNER_H,
   );
   const fromW = (availW - (COLS - 1) * GAP) / COLS;
   const fromH = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
