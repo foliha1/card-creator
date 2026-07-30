@@ -1328,6 +1328,8 @@ const MultiplayerGameView: React.FC<Props> = ({
                   wrong={wrongCards.includes(i)}
                   shaking={false}
                   fill
+                  dealKey={dealInfo.keys[i]}
+                  dealIndex={dealInfo.idx[i]}
                 />
               </div>
             );
