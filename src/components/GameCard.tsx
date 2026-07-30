@@ -164,16 +164,22 @@ const GameCard = ({
             boxShadow,
           }}
         >
-          {/* Only render a face when a real card is known. A placeholder must
-              never fall back to the card back — that reads as a duplicate back. */}
-          {card.svgPath ? (
-            <img
-              src={card.svgPath}
-              alt={card.id}
-              style={{ width: "100%", height: "100%", display: "block" }}
-              draggable={false}
-            />
-          ) : null}
+          {/* Always mounted: unmounting inside a preserve-3d subtree rebuilds
+              the compositor layer and hitches the flip. When no card is known
+              we keep a cached image loaded but fully transparent (no
+              transition — it must switch in the same frame as faceUp). */}
+          <img
+            src={card.svgPath || CARD_BACK_PATH}
+            alt={card.svgPath ? card.id : ""}
+            aria-hidden={card.svgPath ? undefined : true}
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+              opacity: card.svgPath ? 1 : 0,
+            }}
+            draggable={false}
+          />
         </div>
 
 
