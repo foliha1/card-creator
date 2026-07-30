@@ -9,10 +9,8 @@
 //
 // Chip state derivation is deterministic:
 //   claimBy === seat           → WHOOP!  (arbiter grant is authoritative)
-//   event NOPE  on seat        → NICE! not shown; PENALTY shows via skip[]
 //   event GREAT_MATCH on seat  → NICE!  (transient, 1.4s window)
 //   disconnected[seat]         → GONE   (see report — invented state)
-//   skip[seat]                 → PENALTY
 //   AWAITING_ROLL && roller    → ROLLING!
 //   FLIPPING     && flipper    → FLIPPING
 //   otherwise                  → idle
