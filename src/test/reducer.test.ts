@@ -1359,6 +1359,8 @@ describe("N=3 seats", () => {
       rule: ["SHAPE"],
     });
     s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 2 });
+    expect(s.phase).toBe("SETTLING");
+    s = reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken });
     expect(s.phase).toBe("FLIPPING");
     expect(s.skip[2]).toBe(true);
     expect(s.wrongBy[2].has(1)).toBe(true);
@@ -1366,6 +1368,53 @@ describe("N=3 seats", () => {
     expect(s.scores[2]).toBe(0);
   });
 });
+
+// ===========================================================================
+// SETTLING
+// ===========================================================================
+describe("SETTLING", () => {
+  function settledMatch() {
+    const s = baseState({
+      phase: "CLAIM_SELECTING",
+      selectedCards: [0, 2],
+      rule: ["SHAPE"],
+      claimBy: 0,
+    });
+    return reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+  }
+
+  it("every player intent is a no-op while SETTLING", () => {
+    const s = settledMatch();
+    expect(reducer(s, { type: "ROLL_START" })).toBe(s);
+    expect(reducer(s, { type: "FLIP_START", by: 0, idx: 1, token: 9 })).toBe(s);
+    expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 1 })).toBe(s);
+    expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "CLAIM_START", by: 0, a: 1, b: 3, token: 9 })).toBe(s);
+    expect(reducer(s, { type: "CANCEL_CLAIM", by: 0 })).toBe(s);
+    expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
+  });
+
+  it("a stale SETTLE_COMPLETE token is a no-op", () => {
+    const s = settledMatch();
+    expect(reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken - 1 })).toBe(s);
+    expect(reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken + 5 })).toBe(s);
+  });
+
+  it("SETTLE_COMPLETE is a no-op outside SETTLING", () => {
+    const s = baseState({ phase: "FLIPPING" });
+    expect(reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken })).toBe(s);
+  });
+
+  it("matchedCards survives until SETTLE_COMPLETE", () => {
+    const s = settledMatch();
+    expect(Array.from(s.matchedCards).sort()).toEqual([0, 2]);
+    const after = reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken });
+    expect(after.matchedCards.size).toBe(0);
+  });
+});
+
 
 describe("DEBUG_DRAIN_DECK", () => {
   it("drains the deck to 2 while leaving grid and scores untouched", () => {
