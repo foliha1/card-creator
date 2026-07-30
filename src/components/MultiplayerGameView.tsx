@@ -741,8 +741,7 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   // Detect self outcome events (last ~1.4s) for the grid overlay.
   const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
-  const myNope = mySeat !== null && events.some((e) => e.kind === "NOPE" && e.seat === mySeat);
-  const overlay: "GREAT_MATCH" | "NOPE" | null = myGreat ? "GREAT_MATCH" : myNope ? "NOPE" : null;
+  const overlay: "GREAT_MATCH" | null = myGreat ? "GREAT_MATCH" : null;
 
   // -------- Sound effects --------
   // Each fires once per event using refs to remember previous values / seen
