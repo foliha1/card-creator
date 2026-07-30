@@ -225,7 +225,7 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
 const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
   <div style={{
     display: "grid", gridTemplateColumns: "1fr 1fr",
-    columnGap: 8, rowGap: 4, padding: 8,
+    columnGap: 8, rowGap: 4, padding: 8, flex: "none",
     background: PANEL, border: BORDER_HEAVY, borderRadius: 4,
     boxSizing: "border-box",
   }}>
@@ -234,66 +234,73 @@ const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
 );
 
 
+// Top bar — 40px fixed row: settings button, centre readout, close button.
 const Header: React.FC<{
   round: number;
+  deckCount: number;
   onSettings: () => void;
   onClose: () => void;
-}> = ({ round, onSettings, onClose }) => (
-  <div style={{
-    display: "flex", flexDirection: "column", justifyContent: "center",
-    alignItems: "center", padding: 8, gap: 8, height: 56,
-    background: SURFACE, alignSelf: "stretch", boxSizing: "border-box",
-  }}>
+}> = ({ round, deckCount, onSettings, onClose }) => {
+  const half: React.CSSProperties = {
+    flex: "1 1 0", display: "flex", alignItems: "center",
+    justifyContent: "center", padding: "0 4px", minWidth: 0,
+    overflow: "hidden",
+  };
+  const text: React.CSSProperties = {
+    fontFamily: FONT_FAMILY, fontWeight: 400, fontSize: 20, lineHeight: 1,
+    color: SURFACE, textAlign: "center",
+    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+  };
+  return (
     <div style={{
-      display: "flex", flexDirection: "row", alignItems: "flex-start",
-      gap: 8, height: 40, width: "100%",
+      display: "flex", flexDirection: "row", gap: 8, height: 40, flex: "none",
     }}>
       <button
         type="button"
+        className="mp-header-btn"
         onClick={onSettings}
         aria-label="Settings"
         style={{
           all: "unset", cursor: "pointer",
           width: 40, height: 40, flex: "none",
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: 8, boxSizing: "border-box",
+          boxSizing: "border-box",
           background: BLUE, border: BORDER_HEAVY, borderRadius: R_BOX,
         }}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSettings(); } }}
       >
-        <Settings size={24} color={SURFACE} aria-hidden="true" />
+        <Settings size={24} color={INK} aria-hidden="true" />
       </button>
       <div style={{
-        flex: "1 1 0", height: 40,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: 8, gap: 7.91, boxSizing: "border-box",
+        flex: "1 1 0", height: 40, boxSizing: "border-box",
+        display: "flex", alignItems: "center",
+        padding: "0 4px", gap: 4, overflow: "hidden",
         background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
       }}>
-        <span style={{
-          fontFamily: FONT_FAMILY, fontWeight: 400, fontSize: 20,
-          lineHeight: "24px", color: SURFACE, textAlign: "center",
-        }}>
-          Round: {round}
-        </span>
+        <div style={half}><span style={text}>Round: {round}</span></div>
+        <div aria-hidden="true" style={{ width: 2, background: SURFACE, alignSelf: "stretch", flex: "none" }} />
+        <div style={half}><span style={text}>{deckCount} Cards Left</span></div>
       </div>
       <button
         type="button"
+        className="mp-header-btn"
         onClick={onClose}
         aria-label="Leave game"
         style={{
           all: "unset", cursor: "pointer",
-          width: 40, height: 40, flex: "none", alignSelf: "stretch",
+          width: 40, height: 40, flex: "none",
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: 12, boxSizing: "border-box",
+          boxSizing: "border-box",
           background: RED, border: BORDER_HEAVY, borderRadius: R_BOX,
         }}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClose(); } }}
       >
-        <X size={16} color={SURFACE} aria-hidden="true" />
+        <X size={16} color={INK} aria-hidden="true" />
       </button>
     </div>
-  </div>
-);
+  );
+};
+
 
 // Focus outline for keyboard users on the header buttons.
 const HEADER_FOCUS_CSS = `
@@ -438,12 +445,12 @@ const DieBox: React.FC<{
   homeRef?: React.Ref<HTMLDivElement>;
 }> = ({ rule, heroActive, waiting, homeRef }) => (
   <div style={{
-    width: 111.07, height: 110.94, background: ORANGE,
-    border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8, gap: 16,
+    width: 111, flex: "none", boxSizing: "border-box", background: ORANGE,
+    border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8,
     display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", boxSizing: "border-box", flex: "0 0 auto",
+    justifyContent: "center",
   }}>
-    {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
+    {/* The 89×89 cream box is the home cell for the roll-hero overlay. When
         the overlay is live we hide the art so the animation lands cleanly.
         While AWAITING_ROLL (and not mid-hero) the face is blank — the prior
         round's rule must not read as current. Size stays fixed so layout
@@ -451,8 +458,8 @@ const DieBox: React.FC<{
     <div
       ref={homeRef}
       style={{
-        width: 80, height: 80, background: SURFACE, borderRadius: 8,
-        transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
+        width: 89, height: 89, background: SURFACE, borderRadius: 8,
+        transform: "rotate(-3.65deg)", filter: `drop-shadow(${CARD_SHADOW})`,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "8%", boxSizing: "border-box",
         opacity: heroActive ? 0 : 1, overflow: "hidden",
@@ -503,11 +510,11 @@ const ActionButton: React.FC<{
       disabled={isDisabled}
       style={{
         all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
-        flex: "1 1 0", height: 110.94, background: s.bg, color: s.text,
+        flex: "1 1 0", alignSelf: "stretch", background: s.bg, color: s.text,
         border: BORDER_HEAVY, borderRadius: R_BOX, boxSizing: "border-box",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
-        fontSize: 32, lineHeight: "39px", textAlign: "center", padding: 4,
+        fontSize: 32, lineHeight: 1, textAlign: "center", padding: 12.66,
         position: "relative", overflow: "hidden",
       }}
     >
@@ -1025,32 +1032,40 @@ const MultiplayerGameView: React.FC<Props> = ({
   const header = (
     <Header
       round={s.roundNum}
+      deckCount={s.deckCount}
       onSettings={() => setShowSettings(true)}
       onClose={() => setShowLeave(true)}
     />
   );
   const opponentRow = <OpponentRow chips={chips} />;
-  const scoreRow = (
-    <ScoreRow
-      score={myScore}
-      cardsLeft={s.deckCount}
-      banner={banner}
-      onCancel={
-        canCancelClaim && mySeat !== null
-          ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
-          : undefined
-      }
-    />
-  );
+  // The score/cards-left readout now lives in the top bar. The banner strip
+  // survives as an overlay pinned to the top of the card area so the
+  // cancel-claim affordance stays reachable without adding a fifth fixed row.
+  const scoreRow = banner ? (
+    <div style={{
+      position: "absolute", top: 8, left: 16, right: 16, zIndex: 10,
+    }}>
+      <ScoreRow
+        score={myScore}
+        cardsLeft={s.deckCount}
+        banner={banner}
+        onCancel={
+          canCancelClaim && mySeat !== null
+            ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
+            : undefined
+        }
+      />
+    </div>
+  ) : null;
   const bottomRow = (
-    <div style={{ display: "flex", gap: 8, height: 110.94 }}>
+    <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none" }}>
       <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
       {/* Wrap the WHOOP button so AWAITING_ROLL/ROLLING dims it to 40% and
           physically blocks taps. pointerEvents:none guarantees no tap ever
           reaches the onClick — belt-and-braces on top of the cleared
           handler above. */}
       <div style={{
-        flex: "1 1 auto", display: "flex", minWidth: 0,
+        flex: "1 1 0", display: "flex", minWidth: 0, alignSelf: "stretch",
         opacity: dimForRoll ? 0.4 : 1,
         pointerEvents: dimForRoll ? "none" : "auto",
         transition: "opacity 250ms ease",
@@ -1111,18 +1126,23 @@ const MultiplayerGameView: React.FC<Props> = ({
     return () => ro.disconnect();
   }, []);
 
+  // Card sizing from the measured content box. 3 columns always; rows follow
+  // the host's chosen grid size (6 → 2 rows, 9 → 3 rows).
   const GAP = 8;
-  const RATIO = 146.07 / 104.33;
+  const RATIO = 1.4; // design card ratio 146.07 / 104.33
+  const MAX_CARD_W = 104;
   const MIN_CARD_W = 64;
+  const COLS = 3;
+  const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
   const availH = Math.max(0, box.h);
-  const fromW = (availW - GAP * 2) / 3;
-  const fromH = ((availH - GAP * 2) / 3) / RATIO;
-  const rawCardW = Math.min(fromW, fromH);
+  const fromW = (availW - (COLS - 1) * GAP) / COLS;
+  const fromH = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
+  const rawCardW = Math.min(fromW, fromH, MAX_CARD_W);
   const cardW = Math.floor(Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W));
 
-  const cardH = cardW * RATIO;
-  const gridHeightNeeded = cardH * 3 + GAP * 2;
+  const cardH = Math.round(cardW * RATIO);
+  const gridHeightNeeded = cardH * ROWS + GAP * (ROWS - 1);
   const needsScroll = gridHeightNeeded > availH + 0.5;
 
   return (
@@ -1179,13 +1199,13 @@ const MultiplayerGameView: React.FC<Props> = ({
       {header}
       {opponentRow}
 
-      {/* Card area — padding 8 (16 when overlay), measured card sizing */}
+      {/* Card area — the only flexing child. Measured card sizing. */}
       <div
         ref={cardAreaRef}
         style={{
           position: "relative", background: PANEL, border: BORDER_HEAVY,
           borderRadius: R_BOX,
-          padding: 8,
+          padding: "0 16px",
           boxSizing: "border-box", flex: "1 1 0", minHeight: 0,
           display: "flex", alignItems: "center", justifyContent: "center",
           overflowY: needsScroll ? "auto" : "hidden",
@@ -1195,11 +1215,12 @@ const MultiplayerGameView: React.FC<Props> = ({
           transition: "opacity 250ms ease",
         }}
       >
+        {scoreRow}
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: `repeat(3, ${cardW}px)`,
-          gridTemplateRows: `repeat(3, ${cardH}px)`,
+          gridTemplateColumns: `repeat(${COLS}, ${cardW}px)`,
+          gridTemplateRows: `repeat(${ROWS}, ${cardH}px)`,
           gap: GAP,
           margin: "auto",
           position: "relative",
@@ -1331,7 +1352,6 @@ const MultiplayerGameView: React.FC<Props> = ({
         </div>
       )}
 
-      {scoreRow}
 
       {bottomRow}
       {gameOverBtn}
