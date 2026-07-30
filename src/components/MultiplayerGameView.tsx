@@ -480,7 +480,7 @@ const ScoreRow: React.FC<{
     const clickable = banner === "CANCEL" && !!onCancel;
     return (
       <div style={{
-        height: 30, boxSizing: "border-box",
+        width: "100%", height: "100%", boxSizing: "border-box",
         display: "flex", alignItems: "stretch",
       }}>
         <button
@@ -490,7 +490,7 @@ const ScoreRow: React.FC<{
           aria-label={b.label}
           style={{
             all: "unset", cursor: clickable ? "pointer" : "default",
-            width: "100%", height: 30, background: b.bg, color: b.text,
+            width: "100%", height: "100%", background: b.bg, color: b.text,
             border: BORDER_HEAVY, borderRadius: R_STRIP, boxSizing: "border-box",
             padding: "6px 8px",
             display: "flex", alignItems: "center", justifyContent: "center",
