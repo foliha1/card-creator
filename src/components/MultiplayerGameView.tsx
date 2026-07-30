@@ -1352,7 +1352,6 @@ const MultiplayerGameView: React.FC<Props> = ({
         </div>
       )}
 
-      {scoreRow}
 
       {bottomRow}
       {gameOverBtn}
