@@ -1151,7 +1151,6 @@ const MultiplayerGameView: React.FC<Props> = ({
   // the host's chosen grid size (6 → 2 rows, 9 → 3 rows).
   const GAP = 8;
   const RATIO = 1.4; // design card ratio 146.07 / 104.33
-  const MAX_CARD_W = 104;
   const MIN_CARD_W = 64;
   const COLS = 3;
   const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
@@ -1165,9 +1164,9 @@ const MultiplayerGameView: React.FC<Props> = ({
     0,
     rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - BANNER_H,
   );
-  const fromW = (availW - (COLS - 1) * GAP) / COLS;
-  const fromH = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
-  const rawCardW = Math.min(fromW, fromH, MAX_CARD_W);
+  const byWidth = (availW - (COLS - 1) * GAP) / COLS;
+  const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
+  const rawCardW = Math.min(byWidth, byHeight);
   const cardW = Math.floor(Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W));
 
   const cardH = Math.round(cardW * RATIO);
@@ -1320,7 +1319,7 @@ const MultiplayerGameView: React.FC<Props> = ({
             }}
             aria-hidden="true"
           >
-            {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nfromW: ${fromW.toFixed(1)}\nfromH: ${fromH.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}\nseatCount: ${s.seatCount} | connected: ${s.seatMap.length - s.disconnectedSeats.length}/${s.seatMap.length}\nflipper: ${s.flipper ?? "-"} | roller: ${s.roller ?? "-"}\nlens scores:${s.scores.length} skip:${s.skip.length} wrongBy:${s.wrongBy.length} disc:${s.disconnectedSeats.length}\nskip:[${s.skip.map(b => b ? 1 : 0).join(",")}] scores:[${s.scores.join(",")}]`}
+            {`contentRect: ${Math.round(box.w)}×${Math.round(box.h)}\ncard: ${cardW}×${cardH.toFixed(1)}\nbyWidth: ${byWidth.toFixed(1)}\nbyHeight: ${byHeight.toFixed(1)}\nminW: ${MIN_CARD_W} | scroll: ${needsScroll}\nseatCount: ${s.seatCount} | connected: ${s.seatMap.length - s.disconnectedSeats.length}/${s.seatMap.length}\nflipper: ${s.flipper ?? "-"} | roller: ${s.roller ?? "-"}\nlens scores:${s.scores.length} skip:${s.skip.length} wrongBy:${s.wrongBy.length} disc:${s.disconnectedSeats.length}\nskip:[${s.skip.map(b => b ? 1 : 0).join(",")}] scores:[${s.scores.join(",")}]`}
           </div>
         )}
 
