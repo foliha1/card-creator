@@ -1178,7 +1178,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: 8, height: "100%", boxSizing: "border-box",
+      padding: 8, height: "auto", maxHeight: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>

@@ -157,7 +157,7 @@ const MultiplayerPage: React.FC = () => {
           style={{
             width: "100%",
             maxWidth: 420,
-            height: "100%",
+            height: "auto",
             maxHeight: 900,
             margin: "auto",
             padding: "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
