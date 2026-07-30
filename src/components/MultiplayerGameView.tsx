@@ -1167,7 +1167,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
-  const rawCardW = Math.min(byWidth, byHeight, MAX_CARD_W);
+  const rawCardW = Math.min(byWidth, byHeight);
   const cardW = Math.floor(Math.max(MIN_CARD_W, isFinite(rawCardW) && rawCardW > 0 ? rawCardW : MIN_CARD_W));
 
   const cardH = Math.round(cardW * RATIO);
