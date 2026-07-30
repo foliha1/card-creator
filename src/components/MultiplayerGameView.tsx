@@ -1251,7 +1251,40 @@ const MultiplayerGameView: React.FC<Props> = ({
         />
       </div>
 
+      {/* Great-match flying copies. Fixed layer, direct child of the play
+          root, above the grid but below modals (z=50). Nothing renders when
+          there is no active great match. */}
+      {flyCards.length > 0 && (
+        <div
+          aria-hidden
+          style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 40 }}
+        >
+          {flyCards.map((f) => (
+            <div
+              key={f.key}
+              className="ww-great"
+              style={{
+                position: "absolute",
+                top: f.rect.top, left: f.rect.left,
+                width: f.rect.width, height: f.rect.height,
+                borderRadius: R_CARD,
+                pointerEvents: "none",
+                ["--ww-k" as string]: String(f.rect.width / 104.333),
+              }}
+            >
+              <img
+                src={f.card.svgPath}
+                alt=""
+                draggable={false}
+                style={{ width: "100%", height: "100%", display: "block", borderRadius: R_CARD }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       {scoreRow}
+
       {bottomRow}
       {gameOverBtn}
       {showSettings && (
