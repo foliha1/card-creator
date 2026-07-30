@@ -836,9 +836,11 @@ describe("winner rolls (v6.2)", () => {
       roller: 1,
       flipper: 1,
     });
-    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const settling = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const next = reducer(settling, { type: "SETTLE_COMPLETE", token: settling.settleToken });
     expect(next.roller).toBe(0);
     expect(next.flipper).toBe(0);
+
   });
 
   it("opponent correct claim makes the opponent next roller", () => {
@@ -907,9 +909,11 @@ describe("game over terminal", () => {
         null,
       ],
     });
-    const next = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const settling = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+    const next = reducer(settling, { type: "SETTLE_COMPLETE", token: settling.settleToken });
     expect(next.phase).toBe("GAME_OVER");
     expect(next.scores).toEqual([2, 0]);
+
   });
 
   it("further actions after GAME_OVER are ignored where phase-guarded", () => {
