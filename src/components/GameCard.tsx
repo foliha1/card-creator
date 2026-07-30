@@ -61,11 +61,14 @@ const GameCard = ({
     outerOpacity = 0;
   }
 
-  const animStyle = entering
+  // The wrong animation wins over the highlight pulse on the same card.
+  const showHighlight = !!highlighted && !wrong;
+
+  const animStyle = wrong
+    ? undefined
+    : entering
     ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
-    : shaking
-    ? "card-shake 0.2s ease"
-    : highlighted
+    : showHighlight
     ? "ww-card-pulse 1.6s linear infinite"
     : "none";
 
@@ -80,7 +83,7 @@ const GameCard = ({
       role="button"
       tabIndex={0}
       aria-label={ariaLabel}
-      className={highlighted ? "ww-card-pulse" : undefined}
+      className={wrong ? "ww-wrong" : showHighlight ? "ww-card-pulse" : undefined}
       style={{
         perspective: 600,
         width: "100%",
