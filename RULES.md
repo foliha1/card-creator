@@ -1,10 +1,9 @@
 # WHOOP! WHOOP! — Rules
 
-**Version 6.4**
+**Version 6.5**
 
-> Note: this file did not exist in the repository before v6.4. It has been created
-> here as the canonical written rulebook, reconstructed from the shipped game
-> engine (`src/hooks/useGameState.ts`) so that rules changes have a single home.
+> Note: this file did not exist in the repository before v6.4. It is the
+> canonical written rulebook, and rules changes have a single home here.
 
 ---
 
@@ -27,30 +26,30 @@
 
 ## Scoring
 
-- **Correct claim:** +2 points, and the claimer becomes the next roller.
+- **Correct claim:** you take the two cards into your score pile (+2), and you
+  become the next roller. Every card is worth one point.
 - **No-claim rotation:** the roll passes clockwise to the next player.
 
 ## If Your Claim Is WRONG
 
 - The two cards you named stay **face-up** for the rest of the round.
-- You are **locked out for the rest of the round**. While locked out you
-  **cannot flip, cannot claim, and cannot roll**. Your flip turn is simply
-  passed over.
-- Your locked-out turn **still counts** toward completing the rotation, so a
-  no-claim rotation can still end the round normally.
-- The lockout **clears at the round boundary**, together with the face-up
-  penalty cards, which turn back down. It lasts exactly as long as those cards
-  are face-up — nothing to track, nothing to remember.
-- Because a locked-out player cannot claim, they cannot win the round or seize
-  the roll. The roll can still pass to them clockwise on a no-claim rotation —
-  by then their lockout has cleared.
+- You **return one card from your score pile** to the **bottom of the draw
+  pile**. You choose which card — all cards are worth one point, so the choice
+  costs you the same either way.
+- If your score pile is **empty**, you return nothing. The face-up cards are the
+  whole penalty.
+- Nothing is tracked, nothing persists, nothing is owed. You keep flipping, you
+  keep claiming, you can still roll. The penalty is paid the moment it happens.
+- The face-up cards turn back down at the round boundary as normal.
 
-## Last Call
+## Ending the Game
 
-When the draw pile is empty and a full rotation passes with no claim, the game
-enters **Last Call**: every card turns face-up, one final rule is rolled, and
-all penalties are cleared. Players claim matching pairs until no valid pair on
-the rule remains. Highest score wins.
+Once the draw pile cannot refill the grid and a full rotation passes with no
+correct claim, the game **ends** immediately. Any unmatched cards left on the
+table are stranded and score for nobody.
+
+Count piles. **Most cards wins.** Ties go to the player who made the most recent
+correct claim.
 
 ---
 
@@ -60,9 +59,10 @@ the rule remains. Highest score wins.
 | --- | --- |
 | Two players claim at once | The first claim to reach the table wins the window; the other is void and carries no penalty. |
 | A claim is cancelled before naming two cards | No penalty. The interrupted player finishes their flip turn. |
-| A wrong-claim lockout at a round boundary | It ends there. The lockout is round-scoped and never carries into the next round. |
-| A locked-out player's turn comes around | It is passed over, but it counts toward the rotation backstop. |
-| A player leaves mid-round | Their seat and score are kept; their flip turn is passed over until they return. |
+| Which card is returned on a wrong claim | The claimant chooses. All cards are worth one point, so any choice is equivalent. |
+| A wrong claim with an empty score pile | Nothing is returned. The two face-up cards are the entire penalty. |
+| A card is returned to an empty draw pile | It becomes the new bottom — and therefore the top — of the pile, and refills the grid as normal. |
+| A player leaves mid-round | Their seat and pile are kept; their flip turn is passed over until they return. |
 
 ---
 
@@ -71,23 +71,37 @@ the rule remains. Highest score wins.
 | | |
 | --- | --- |
 | Dice per round | 1 |
-| Correct claim | +2, claimer rolls next |
-| Wrong claim | Named cards stay face-up; claimer **locked out for the rest of the round** (no flip, no claim, no roll) |
-| Lockout duration | Round-scoped — clears at every round boundary |
+| Correct claim | Take both cards (+2), claimer rolls next |
+| Wrong claim | Named cards stay face-up for the round; return one card from your pile to the bottom of the draw pile |
+| Wrong claim, empty pile | Return nothing; face-up cards only |
+| Penalty duration | None — paid instantly, nothing tracked |
 | No-claim rotation | Roll passes clockwise |
-| Last Call | Draw pile empty + no-claim rotation → all cards face-up, one final rule |
+| Game end | Draw pile cannot refill + no-claim rotation → game over, unmatched cards score for nobody |
+| Winner | Most cards; ties to the most recent correct claim |
 
 ---
 
 ## Version History
 
-### v6.4 — Wrong-claim penalty becomes a round-long lockout
-A wrong claim no longer defers a single forfeited flip into future rounds.
-Instead the claimer is locked out of flipping, claiming and rolling for the
-remainder of the current round, and the lockout clears at the round boundary.
-**Rationale:** the face-up penalty cards are the physical tracker at the table.
-Tying the penalty to exactly how long those cards stay face-up means there is
-no bookkeeping — no remembering who still owes a skip from two rounds ago.
+### v6.5 — Card return replaces the lockout; Last Call removed
+A wrong claim now costs one card from the claimant's score pile, returned to the
+bottom of the draw pile. The round-long lockout is gone.
+**Rationale:** the lockout required the table to remember who was locked out
+across round boundaries that arrive unpredictably, and in play that proved
+unreliable. A card return is self-executing, fully public, and denominated in
+the same currency as the reward — you win cards, you lose cards. This supersedes
+the v6.4 lockout one day after it was written.
+
+Last Call is **removed**, not deferred. The end-game trigger is unchanged; the
+game simply ends there, and unmatched cards score for nobody.
+
+The new penalty is deliberately **softer** than the lockout: a wrong claimant
+stays in the round and can claim again immediately. That shifts the game
+slightly away from cautious memory play and toward speed.
+
+### v6.4 — Wrong-claim penalty becomes a round-long lockout (superseded by v6.5)
+A wrong claim locked the claimer out of flipping, claiming and rolling for the
+remainder of the round, clearing at the round boundary.
 
 ### v6.2 — Deferred skip penalty (superseded by v6.4)
 A wrong claim owed one forfeited flip, consumed when that player's turn next
