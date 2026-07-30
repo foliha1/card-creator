@@ -93,68 +93,72 @@ const R_STRIP = 6.33043;
 const BORDER_HEAVY = `2px solid ${INK}`;
 const CARD_SHADOW = "0px 4px 4px rgba(0,0,0,0.25)";
 
-type ChipKind = "ROLLING" | "WHOOP" | "NICE" | "FLIPPING" | "TOO_SLOW" | "PENALTY" | "GONE" | "AWAY" | "IDLE" | "EMPTY";
+type ChipKind =
+  | "WHOOP"
+  | "GREAT_MATCH"
+  | "ROLLING"
+  | "FLIPPING"
+  | "PENALTY"
+  | "GONE"
+  | "DISCONNECTED"
+  | "IDLE"
+  | "EMPTY";
 
 interface ChipStyle {
   bg: string; border: string; nameBg: string; nameBorder: string;
-  name: string; score: string; label: string;
-  labelText: string | null;
+  name: string; badgeBg: string; badgeText: string;
+  label: string; labelText: string | null; italic: boolean;
 }
 
 const CHIP: Record<ChipKind, ChipStyle> = {
-  ROLLING:  { bg: ORANGE, border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: INK,     labelText: "ROLLING!" },
-  WHOOP:    { bg: RED,    border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: SURFACE, labelText: "WHOOP!" },
-  NICE:     { bg: GREEN,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: INK,     labelText: "NICE!" },
-  FLIPPING: { bg: BLUE,   border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: SURFACE, labelText: "FLIPPING" },
-  TOO_SLOW: { bg: INK,    border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: SURFACE, labelText: "TOO SLOW!" },
-  PENALTY:  { bg: MUTED,  border: MUTED, nameBg: PANEL,   nameBorder: MUTED, name: MUTED, score: MUTED, label: PANEL, labelText: "PENALTY" },
-  // GONE — the one invented state (see report). More urgent than PENALTY:
-  // full-weight red border against panel fill, name/score at full ink so their
-  // earned score stays visible. Distinct from EMPTY (which uses muted ink to
-  // read as "never here").
-  GONE:     { bg: PANEL,  border: RED,   nameBg: SURFACE, nameBorder: RED,   name: INK,   score: RED, label: RED,     labelText: "GONE" },
-  // AWAY — the tab is backgrounded but heartbeat still ticking. Ink border,
-  // not red — the seat IS skipped by the reducer on the normal 15s threshold
-  // (they can't flip either way), but the skip is reversible when they
-  // return. AWAY takes precedence over GONE in chip labeling so a
-  // self-reported hidden seat shows AWAY rather than the harsher GONE.
-
-  AWAY:     { bg: PANEL,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: MUTED, score: MUTED, label: INK,   labelText: "AWAY" },
-  IDLE:     { bg: PANEL,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   score: RED, label: INK,     labelText: null },
-  EMPTY:    { bg: PANEL,  border: MUTED, nameBg: PANEL,   nameBorder: MUTED, name: MUTED, score: MUTED, label: MUTED, labelText: null },
+  IDLE:         { bg: PANEL,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   badgeBg: INK,   badgeText: SURFACE, label: INK,     labelText: null,           italic: false },
+  ROLLING:      { bg: ORANGE, border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   badgeBg: INK,   badgeText: SURFACE, label: INK,     labelText: "ROLLING",      italic: false },
+  WHOOP:        { bg: RED,    border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   badgeBg: INK,   badgeText: SURFACE, label: SURFACE, labelText: "WHOOP WHOOP!", italic: true  },
+  FLIPPING:     { bg: BLUE,   border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   badgeBg: INK,   badgeText: SURFACE, label: SURFACE, labelText: "FLIPPING",     italic: false },
+  GREAT_MATCH:  { bg: GREEN,  border: INK,   nameBg: SURFACE, nameBorder: INK,   name: INK,   badgeBg: INK,   badgeText: SURFACE, label: INK,     labelText: "GREAT MATCH!", italic: true  },
+  // Round-scoped wrong-claim lockout (v6.4).
+  PENALTY:      { bg: RED,    border: RED,   nameBg: PANEL,   nameBorder: RED,   name: RED,   badgeBg: RED,   badgeText: PANEL,   label: PANEL,   labelText: "PENALTY",      italic: false },
+  // GONE — heartbeat stale, seat presumed lost. Harsher than DISCONNECTED.
+  GONE:         { bg: PANEL,  border: RED,   nameBg: SURFACE, nameBorder: RED,   name: RED,   badgeBg: RED,   badgeText: SURFACE, label: RED,     labelText: "GONE",         italic: false },
+  // DISCONNECTED — self-reported backgrounded tab; gentler, takes precedence
+  // over GONE so a reversible absence never reads as the harsher state.
+  DISCONNECTED: { bg: MUTED,  border: MUTED, nameBg: PANEL,   nameBorder: MUTED, name: MUTED, badgeBg: MUTED, badgeText: PANEL,   label: PANEL,   labelText: "DISCONNECTED", italic: false },
+  EMPTY:        { bg: PANEL,  border: MUTED, nameBg: PANEL,   nameBorder: MUTED, name: MUTED, badgeBg: MUTED, badgeText: PANEL,   label: MUTED,   labelText: null,           italic: false },
 };
 
 interface DerivedChip { kind: ChipKind; name: string; score: number | null; }
 
-function chipsForOpponents(
+// One chip per seat, in seat order, including the human seat (rendered as
+// "YOU"). Seats the host reserved but nobody joined render as EMPTY.
+function deriveChips(
   s: PublicState,
   mySeat: number | null,
   events: TransientEvent[],
 ): DerivedChip[] {
-  // Recent NICE (GREAT_MATCH) events per seat — the chip flashes NICE! while
-  // the event is alive in the dedup buffer. Both NICE and TOO SLOW can be
-  // active on different seats simultaneously — nothing serialises them.
-  const nice = new Set<number>();
-  for (const e of events) if (e.kind === "GREAT_MATCH") nice.add(e.seat);
+  const great = new Set<number>();
+  for (const e of events) if (e.kind === "GREAT_MATCH") great.add(e.seat);
 
-  // Max 5 opponent chips. Host + 5 = 6 seats total.
-  const MAX = 5;
-  const opponents = s.seatMap.filter((e) => e.seat !== mySeat).slice(0, MAX);
-  const out: DerivedChip[] = opponents.map((entry) => {
-    const seat = entry.seat;
+  const out: DerivedChip[] = [];
+  for (let seat = 0; seat < s.seatCount; seat++) {
+    const entry = s.seatMap.find((e) => e.seat === seat);
+    if (!entry) {
+      out.push({ kind: "EMPTY", name: "---", score: 0 });
+      continue;
+    }
     let kind: ChipKind = "IDLE";
-    if (s.claimBy === seat) kind = "WHOOP";
-    else if (nice.has(seat)) kind = "NICE";
-    else if (s.awaySeats?.includes(seat)) kind = "AWAY";
+    if (s.awaySeats?.includes(seat)) kind = "DISCONNECTED";
     else if (s.disconnectedSeats.includes(seat)) kind = "GONE";
-
     else if (s.skip[seat]) kind = "PENALTY";
-    else if (((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat))) kind = "ROLLING";
+    else if (s.claimBy === seat) kind = "WHOOP";
+    else if (great.has(seat)) kind = "GREAT_MATCH";
+    else if ((s.phase === "AWAITING_ROLL" && s.roller === seat) || (s.rolling && s.roller === seat)) kind = "ROLLING";
     else if (s.phase === "FLIPPING" && s.flipper === seat) kind = "FLIPPING";
-    return { kind, name: entry.display_name, score: s.scores[seat] ?? 0 };
-  });
-  // Pad with EMPTY placeholders to MAX so the row width feels stable.
-  while (out.length < MAX) out.push({ kind: "EMPTY", name: "---", score: null });
+    out.push({
+      kind,
+      name: seat === mySeat ? "YOU" : entry.display_name,
+      score: s.scores[seat] ?? 0,
+    });
+  }
   return out;
 }
 
@@ -167,38 +171,47 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
       role="group"
       aria-label={`${chip.name}${c.labelText ? ` — ${c.labelText}` : ""}`}
       style={{
-        display: "flex", flexDirection: "column", alignItems: "flex-start",
-        height: 48, borderRadius: 8, flex: "1 1 0", minWidth: 0,
+        display: "flex", height: 22, borderRadius: 4, minWidth: 0,
         background: c.bg, border: `2px solid ${c.border}`,
         boxSizing: "border-box",
       }}
     >
       <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-        padding: "4px 8px", height: 25, borderRadius: R_STRIP,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        padding: "4px 8px", flex: "1 1 0", minWidth: 0,
+        borderRadius: "4px 0 0 4px",
         background: c.nameBg, border: `2px solid ${c.nameBorder}`,
-        boxSizing: "border-box", width: "100%",
+        boxSizing: "border-box",
       }}>
         <span style={{
           fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: "17px",
-          color: c.name, overflow: "hidden", textOverflow: "ellipsis",
-          whiteSpace: "nowrap", flex: "1 1 auto", minWidth: 0,
+          letterSpacing: "0.04em", color: c.name,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>{chip.name}</span>
         {chip.score !== null && (
           <span style={{
-            fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: "17px",
-            color: c.score, marginLeft: 8, flex: "0 0 auto",
-          }}>{chip.score}</span>
+            display: "flex", alignItems: "center", justifyContent: "center",
+            borderRadius: 2, padding: 2, height: 14, minWidth: 10,
+            flexShrink: 0, background: c.badgeBg, boxSizing: "border-box",
+          }}>
+            <span style={{
+              fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: "17px",
+              letterSpacing: "0.02em", color: c.badgeText,
+            }}>{chip.score}</span>
+          </span>
         )}
       </div>
       <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-        padding: "4px 8px", height: 23, borderRadius: R_STRIP,
-        width: "100%", boxSizing: "border-box",
+        display: "flex", alignItems: "center", padding: "4px 8px",
+        flex: "1 1 0", minWidth: 0, borderRadius: "0 4px 4px 0",
+        background: "transparent", boxSizing: "border-box",
       }}>
         {c.labelText && (
           <span style={{
-            fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: "15px", color: c.label,
+            fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: "15px",
+            letterSpacing: "0.04em", color: c.label,
+            fontStyle: c.italic ? "italic" : "normal",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>{c.labelText}</span>
         )}
       </div>
@@ -206,16 +219,19 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
   );
 };
 
+// Two-column grid — grows from one row to three as seats fill. No fixed
+// height, so the card area (flex: 1 1 0) reclaims the space on small screens.
 const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
   <div style={{
-    display: "flex", flexDirection: "row", alignItems: "center",
-    padding: 8, gap: 8, height: 64,
-    background: PANEL, border: BORDER_HEAVY, borderRadius: R_BOX,
+    display: "grid", gridTemplateColumns: "1fr 1fr",
+    columnGap: 8, rowGap: 4, padding: 8,
+    background: PANEL, border: BORDER_HEAVY, borderRadius: 4,
     boxSizing: "border-box",
   }}>
     {chips.map((c, i) => <ChipCell key={i} chip={c} />)}
   </div>
 );
+
 
 const Header: React.FC<{
   round: number;
@@ -997,7 +1013,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   }
 
 
-  const chips = chipsForOpponents(s, mySeat, events);
+  const chips = deriveChips(s, mySeat, events);
 
   const myScore = mySeat !== null ? (s.scores[mySeat] ?? 0) : 0;
   const rule = s.rule[0] ?? "SHAPE";
