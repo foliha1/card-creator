@@ -1172,40 +1172,6 @@ const MultiplayerGameView: React.FC<Props> = ({
               </div>
             );
           })}
-          {greatMatch?.indices.map((idx, n) => {
-            const gcard = greatMatch.cards[n];
-            if (!gcard) return null;
-            const col = idx % 3;
-            const row = Math.floor(idx / 3);
-            return (
-              <div
-                key={`great-${idx}-${n}`}
-                aria-hidden="true"
-                className="ww-great"
-                style={{
-                  position: "absolute",
-                  left: col * (cardW + GAP),
-                  top: row * (cardH + GAP),
-                  width: cardW,
-                  height: cardH,
-                  borderRadius: R_CARD,
-                  pointerEvents: "none",
-                  zIndex: 50,
-                  ["--ww-k" as string]: String(cardW / 104.333),
-                }}
-              >
-                <img
-                  src={gcard.svgPath}
-                  alt=""
-                  draggable={false}
-                  style={{ width: "100%", height: "100%", display: "block" }}
-                />
-                <div className="ww-great-wash" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
-                <div className="ww-great-shine" style={{ pointerEvents: "none" }} />
-                <div className="ww-great-ring" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
-              </div>
-            );
-          })}
         </div>
 
 
