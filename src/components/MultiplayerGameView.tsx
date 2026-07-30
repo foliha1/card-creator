@@ -702,10 +702,12 @@ presenceIds: ${presenceVisitorIds ? presenceVisitorIds.length : "n/a"}`}
 // Debug-only action buttons (?debug=1). Inert otherwise.
 const DebugControls: React.FC<{
   deckCount: number;
+  isHost: boolean;
   onIntent: (a: IntentAction) => void;
-}> = ({ deckCount, onIntent }) => {
+}> = ({ deckCount, isHost, onIntent }) => {
   const on = useDebugFlag();
-  if (!on) return null;
+  // Host/solo only: joiners have no debug authority, so don't offer the UI.
+  if (!on || !isHost) return null;
   return (
     <div style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1001, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
       <button
@@ -1465,7 +1467,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           </div>
         )}
 
-        <DebugControls deckCount={s.deckCount} onIntent={onIntent} />
+        <DebugControls deckCount={s.deckCount} isHost={isHost} onIntent={onIntent} />
 
         <PresenceDebugOverlay
           mySeat={mySeat}
