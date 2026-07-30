@@ -1032,32 +1032,40 @@ const MultiplayerGameView: React.FC<Props> = ({
   const header = (
     <Header
       round={s.roundNum}
+      deckCount={s.deckCount}
       onSettings={() => setShowSettings(true)}
       onClose={() => setShowLeave(true)}
     />
   );
   const opponentRow = <OpponentRow chips={chips} />;
-  const scoreRow = (
-    <ScoreRow
-      score={myScore}
-      cardsLeft={s.deckCount}
-      banner={banner}
-      onCancel={
-        canCancelClaim && mySeat !== null
-          ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
-          : undefined
-      }
-    />
-  );
+  // The score/cards-left readout now lives in the top bar. The banner strip
+  // survives as an overlay pinned to the top of the card area so the
+  // cancel-claim affordance stays reachable without adding a fifth fixed row.
+  const scoreRow = banner ? (
+    <div style={{
+      position: "absolute", top: 8, left: 16, right: 16, zIndex: 10,
+    }}>
+      <ScoreRow
+        score={myScore}
+        cardsLeft={s.deckCount}
+        banner={banner}
+        onCancel={
+          canCancelClaim && mySeat !== null
+            ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
+            : undefined
+        }
+      />
+    </div>
+  ) : null;
   const bottomRow = (
-    <div style={{ display: "flex", gap: 8, height: 110.94 }}>
+    <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none" }}>
       <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
       {/* Wrap the WHOOP button so AWAITING_ROLL/ROLLING dims it to 40% and
           physically blocks taps. pointerEvents:none guarantees no tap ever
           reaches the onClick — belt-and-braces on top of the cleared
           handler above. */}
       <div style={{
-        flex: "1 1 auto", display: "flex", minWidth: 0,
+        flex: "1 1 0", display: "flex", minWidth: 0, alignSelf: "stretch",
         opacity: dimForRoll ? 0.4 : 1,
         pointerEvents: dimForRoll ? "none" : "auto",
         transition: "opacity 250ms ease",
