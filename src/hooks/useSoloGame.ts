@@ -214,7 +214,7 @@ export function useSoloGame(): UseSoloGameResult {
     if (state.phase !== "FLIPPING") return;
     if (state.flipper !== AUNTIE_SEAT) return;
     if (state.inFlight) return;
-    if (state.skip[AUNTIE_SEAT] || state.disconnected[AUNTIE_SEAT]) return;
+    if (state.disconnected[AUNTIE_SEAT]) return;
     if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
     flipTimerRef.current = setTimeout(() => {
       flipTimerRef.current = null;
@@ -242,7 +242,6 @@ export function useSoloGame(): UseSoloGameResult {
     state.phase,
     state.flipper,
     state.inFlight,
-    state.skip,
     state.disconnected,
     dispatch,
   ]);
@@ -253,7 +252,7 @@ export function useSoloGame(): UseSoloGameResult {
     if (state.phase !== "FLIPPING") return;
     if (state.inFlight) return;
     if (state.claimBy !== null) return;
-    if (state.skip[AUNTIE_SEAT] || state.disconnected[AUNTIE_SEAT]) return;
+    if (state.disconnected[AUNTIE_SEAT]) return;
     const excluded = new Set<number>(state.wrongBy[AUNTIE_SEAT]);
     state.grid.forEach((c, i) => {
       if (c === null) excluded.add(i);
@@ -341,14 +340,6 @@ export function useSoloGame(): UseSoloGameResult {
           return;
         case "DEBUG_DRAIN_DECK":
           dispatch({ type: "DEBUG_DRAIN_DECK" });
-          return;
-        case "LAST_CALL_CLAIM":
-          dispatch({
-            type: "LAST_CALL_CLAIM",
-            by: HUMAN_SEAT,
-            a: action.a,
-            b: action.b,
-          });
           return;
       }
     },
