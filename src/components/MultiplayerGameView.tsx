@@ -495,6 +495,7 @@ const ScoreRow: React.FC<{
             padding: "6px 8px",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: FONT_FAMILY, fontSize: 16, lineHeight: 1,
+            pointerEvents: clickable ? "auto" : "none",
           }}
         >
           {b.icon && <CancelX />}
