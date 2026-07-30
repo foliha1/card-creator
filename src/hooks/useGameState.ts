@@ -440,26 +440,25 @@ export function reducer(state: State, action: Action): State {
       const b = state.grid[ib];
       if (a && b && cardsMatchRule(a, b, state.rule)) {
         const scores = replaceAt(state.scores, by, (state.scores[by] ?? 0) + 2);
-        const { grid: newGrid, deck: newDeck } = refill(
-          state.grid,
-          state.deck,
-          state.selectedCards
-        );
-        const draining = newDeck.length === 0;
-        const post: State = {
+        // Do NOT refill or start the round yet — hold in SETTLING so the
+        // matched pair stays in place, face-up, while the Great Match
+        // animation plays. SETTLE_COMPLETE does the refill + startRound.
+        return {
           ...state,
+          phase: "SETTLING",
+          settleKind: "MATCH",
+          settleToken: state.settleToken + 1,
+          settleBy: by,
           scores,
-          grid: newGrid,
-          deck: newDeck,
           matchedCards: new Set(state.selectedCards),
           selectedCards: [],
           claimedThisCycle: true,
-          drawEmpty: state.drawEmpty || draining,
           claimBy: null,
+          inFlight: null,
+          peekingCard: null,
           message: `${state.names[by]} — match! +2`,
           messageType: "success",
         };
-        return startRound(post, by);
       }
       // Wrong claim
       const wrongForBy = new Set(state.wrongBy[by] ?? []);
@@ -471,13 +470,17 @@ export function reducer(state: State, action: Action): State {
 
       const post: State = {
         ...state,
-        phase: "FLIPPING",
+        phase: "SETTLING",
+        settleKind: "WRONG",
+        settleToken: state.settleToken + 1,
+        settleBy: by,
         wrongBy: nextWrongBy,
         skip,
         selectedCards: [],
         matchedCards: new Set(),
         claimBy: null,
         message: `${state.names[by]} — no match. Skip next flip.`,
+
         messageType: "error",
       };
       return post;
