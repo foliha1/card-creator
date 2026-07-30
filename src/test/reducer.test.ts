@@ -417,18 +417,20 @@ describe("PLAYER_RESOLVE_MATCH", () => {
 // SKIP_TICK
 // ===========================================================================
 describe("SKIP_TICK", () => {
-  it("consumes the current flipper's skip flag and advances the cycle (one turn lost)", () => {
+  it("advances the cycle past a locked-out flipper WITHOUT clearing the lockout", () => {
     const s = baseState({
       phase: "FLIPPING",
       flipper: 0,
       skip: [true, false],
     });
     const next = reducer(s, { type: "SKIP_TICK" });
-    expect(next.skip).toEqual([false, false]);
+    // v6.4: the lockout is round-scoped — it is not consumed here.
+    expect(next.skip).toEqual([true, false]);
     // Cycle advances: flipper rotates to opponent, flippedThisCycle records human.
     expect(next.flipper).toBe(1);
     expect(next.flippedThisCycle.has(0)).toBe(true);
   });
+
 
   it("is a NO-OP when the flipper has no skip flag", () => {
     const s = baseState({ phase: "FLIPPING", flipper: 0, skip: [false, false] });
@@ -719,10 +721,8 @@ describe("stale-token rejection (both flip + claim)", () => {
   });
 });
 
-describe("skip penalty end-to-end", () => {
-  it("wrong claim → skip[i]=true → the very next SKIP_TICK for that player consumes exactly one turn", () => {
-    // Setup: human just made a wrong claim, opponent has already flipped this
-    // cycle (so cycleAdvance after skip completes the round).
+describe("wrong-claim lockout (v6.4)", () => {
+  it("wrong claim → skip[i]=true blocks flip, claim and roll for the rest of the round", () => {
     let s = baseState({
       phase: "CLAIM_SELECTING",
       selectedCards: [1, 3], // wrong pair
@@ -732,20 +732,29 @@ describe("skip penalty end-to-end", () => {
     });
     s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
     expect(s.skip[0]).toBe(true);
-    // After cycleAdvance, flipper is now opponent (1). Simulate the opponent
-    // completing their flip so the cycle rolls back to the human.
-    // Instead, just simulate reaching the human's next turn: set flipper=0 again.
-    s = { ...s, flipper: 0, flippedThisCycle: new Set(), phase: "FLIPPING" };
-    // First SKIP_TICK: consumes the flag AND counts as human's flip for this cycle.
-    const afterFirst = reducer(s, { type: "SKIP_TICK" });
-    expect(afterFirst.skip[0]).toBe(false);
-    expect(afterFirst.flippedThisCycle.has(0)).toBe(true);
-    // Second SKIP_TICK (no penalty left): NO-OP, no additional turn lost.
-    const afterSecond = reducer(afterFirst, { type: "SKIP_TICK" });
-    expect(afterSecond).toBe(afterFirst);
+
+    const flipping = { ...s, phase: "FLIPPING" as const, settleKind: null, flipper: 0, inFlight: null };
+    // Cannot flip.
+    expect(
+      reducer(flipping, { type: "FLIP_START", by: 0, idx: 2, token: 1 }),
+    ).toBe(flipping);
+    // Cannot enter a claim.
+    expect(reducer(flipping, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(flipping);
+    // Cannot claim a pair directly.
+    expect(
+      reducer(flipping, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 2 }),
+    ).toBe(flipping);
+    // Cannot roll.
+    const awaiting = { ...flipping, phase: "AWAITING_ROLL" as const, roller: 0 };
+    expect(reducer(awaiting, { type: "ROLL_START" })).toBe(awaiting);
+
+    // Their flip turn still counts toward the rotation backstop.
+    const ticked = reducer({ ...flipping, flippedThisCycle: new Set<number>() }, { type: "SKIP_TICK" });
+    expect(ticked.flippedThisCycle.has(0)).toBe(true);
+    expect(ticked.skip[0]).toBe(true);
   });
 
-  it("skip persists across a round transition when another player ends the round with a correct claim", () => {
+  it("the lockout clears at the round boundary when another player ends the round", () => {
     // Human (seat 0) makes a wrong claim → skip[0] = true, still in FLIPPING.
     let s = baseState({
       phase: "CLAIM_SELECTING",
@@ -770,17 +779,17 @@ describe("skip penalty end-to-end", () => {
     expect(s.phase).toBe("AWAITING_ROLL");
     expect(s.roundNum).toBe(roundBefore + 1);
     expect(s.roller).toBe(1);
-    // Skip penalty on the human MUST survive into the new round.
-    expect(s.skip[0]).toBe(true);
+    // v6.4: the lockout is round-scoped — it is clear in the new round.
+    expect(s.skip.every((v) => v === false)).toBe(true);
     // Wrongly-claimed cards flip back face-down: wrongBy is cleared.
     expect(s.wrongBy[0].size).toBe(0);
 
-    // When human's flip turn comes back around, SKIP_TICK consumes the penalty.
-    s = { ...s, phase: "FLIPPING", flipper: 0, flippedThisCycle: new Set() };
-    const afterTick = reducer(s, { type: "SKIP_TICK" });
-    expect(afterTick.skip[0]).toBe(false);
-    expect(afterTick.flippedThisCycle.has(0)).toBe(true);
+    // The human can act freely again.
+    const flipping = { ...s, phase: "FLIPPING" as const, flipper: 0, flippedThisCycle: new Set<number>() };
+    const flipped = reducer(flipping, { type: "FLIP_START", by: 0, idx: 2, token: 5 });
+    expect(flipped.peekingCard).toBe(2);
   });
+
 
   it("NEW_GAME (INIT) clears all skip flags", () => {
     const s = baseState({ skip: [true, true] });
