@@ -30,6 +30,9 @@ export const ROLL_HERO_MS = 1600;
 export type IntentAction =
   | { type: "REQUEST_ROLL" }
   | { type: "CANCEL_CLAIM"; by: number }
+  // Rematch. Host-only in multiplayer: maps onto the reducer's INIT with the
+  // same grid size, seat count and names, so scores reset to zero.
+  | { type: "NEW_GAME" }
   | { type: "DEBUG_DRAIN_DECK" }
   | { type: "DEBUG_FORCE_END_GAME" }
   | Extract<
