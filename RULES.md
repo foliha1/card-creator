@@ -69,6 +69,9 @@ correct claim.
 | A wrong claim with an empty score pile | Nothing is returned. The two face-up cards are the entire penalty. |
 | A card is returned to an empty draw pile | It becomes the new bottom — and therefore the top — of the pile, and refills the grid as normal. |
 | A player leaves mid-round | Their seat and pile are kept; their flip turn is passed over until they return. |
+| A correct claim lands after one quiet rotation | The count resets to zero. Two consecutive quiet rotations are needed to end the game. |
+| A quiet rotation while the draw pile still has cards | It does not count. The count resets to zero; only rotations on an empty pile accumulate. |
+| The grid empties through correct claims | The game ends immediately, whatever the quiet-rotation count is. |
 
 ---
 
