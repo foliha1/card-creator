@@ -291,7 +291,7 @@ export function useSoloGame(): UseSoloGameResult {
     state.phase,
     state.inFlight,
     state.claimBy,
-    state.skip,
+    
     state.disconnected,
     state.wrongBy,
     state.rule,
