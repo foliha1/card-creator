@@ -527,6 +527,9 @@ function handleHostIntent(
       dispatch({ type: "FLIP_START", by: seat, idx: action.idx, token: action.token });
       setTimeout(() => dispatch({ type: "FLIP_COMPLETE", token: action.token }), 2000);
       return;
+    case "NEW_GAME":
+      // Rematch is host-only; joiner requests are ignored.
+      return;
     case "DEBUG_DRAIN_DECK":
       dispatch({ type: "DEBUG_DRAIN_DECK" });
       return;
