@@ -118,8 +118,12 @@ export type Phase =
 
 // How long the engine holds in SETTLING so feedback animations can finish
 // before the board advances.
-export const SETTLE_MATCH_MS = 1150;
-export const SETTLE_WRONG_MS = 800;
+// RULE: each settle constant MUST equal its animation's delay + duration.
+// Retune one and you must retune the other together.
+//   great match = 300ms delay + 1000ms duration = 1300ms
+//   wrong       =   0ms delay +  900ms duration =  900ms
+export const SETTLE_MATCH_MS = 1300;
+export const SETTLE_WRONG_MS = 900;
 
 
 type InFlight =
