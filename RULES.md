@@ -44,9 +44,15 @@
 
 ## Ending the Game
 
-Once the draw pile cannot refill the grid and a full rotation passes with no
-correct claim, the game **ends** immediately. Any unmatched cards left on the
-table are stranded and score for nobody.
+Once the draw pile is empty, the game **ends when two consecutive full
+rotations pass with no correct claim**. A single quiet rotation is not enough —
+the table gets a second one. Any correct claim resets the count to zero, and so
+does a quiet rotation taken while the draw pile still has cards in it.
+
+Any unmatched cards left on the table are stranded and score for nobody.
+
+If the grid drains to zero through correct claims, the game ends immediately
+regardless of the count.
 
 Count piles. **Most cards wins.** Ties go to the player who made the most recent
 correct claim.
