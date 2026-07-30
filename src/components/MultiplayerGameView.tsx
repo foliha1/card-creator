@@ -1152,7 +1152,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   const GAP = 8;
   const RATIO = 1.4; // design card ratio 146.07 / 104.33
   const MIN_CARD_W = 64;
-  const MAX_CARD_W = 104;
+  
   const COLS = 3;
   const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
