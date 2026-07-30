@@ -1,6 +1,6 @@
 # WHOOP! WHOOP! — Rules
 
-**Version 6.5**
+**Version 6.6**
 
 > Note: this file did not exist in the repository before v6.4. It is the
 > canonical written rulebook, and rules changes have a single home here.
