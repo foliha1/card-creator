@@ -1156,10 +1156,13 @@ const MultiplayerGameView: React.FC<Props> = ({
             const selected =
               s.selectedCards.includes(i) || optimisticSel.includes(i) || lastCallSel.includes(i);
             return (
-              <div key={i} style={{
-                width: cardW, height: cardH,
-                borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
-              }}>
+              <div key={i}
+                ref={(el) => { cellRefs.current[i] = el; }}
+                style={{
+                  width: cardW, height: cardH,
+                  borderRadius: R_CARD, filter: `drop-shadow(${CARD_SHADOW})`,
+                }}>
+
                 <GameCard
                   card={cardForRender}
                   faceUp={faceUp}
