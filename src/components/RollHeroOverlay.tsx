@@ -9,11 +9,12 @@
 // via `transform: translate(dx, dy) scale(2.5)`. Transform ONLY — never
 // animate `left/top` (would fight the parent's layout and repaint constantly).
 //
-// Timeline (offsets from startAt, total ROLL_HERO_MS = 1600):
-//   0     → 450   cube tumbles from spin(seed) → landed rotation
-//   450   → 1350  hold on landed cube at lifted scale (900ms)
-//   1350  → 1600  transform back to home: translate(0,0) scale(1) (250ms)
-//   1600  →       overlay hidden; dice box shows the instruction natively
+// Timeline (offsets from startAt, total ROLL_HERO_MS = 2000):
+//   0     → 800   cube tumbles from spin(seed) → landed rotation, eased with
+//                 cubic-bezier(0.16, 1, 0.3, 1) so it decelerates into place
+//   800   → 1750  hold on landed cube at lifted scale (950ms)
+//   1750  → 2000  transform back to home: translate(0,0) scale(1) (250ms)
+//   2000  →       overlay hidden; dice box shows the instruction natively
 //
 // The landed die faces carry the instruction lettering in their artwork, so
 // no separate instruction card / crossfade is needed — the cube itself is
@@ -22,7 +23,7 @@
 // Guards (never shorten the phase — onComplete always fires at ROLL_HERO_MS):
 //   • prefers-reduced-motion: skip tumble + fly; render landed cube in-box.
 //   • Tap-to-skip: overlay is clickable; jumps to landed state locally.
-//   • Late arrival (elapsed > 450ms on mount): skip the truncated tumble and
+//   • Late arrival (elapsed > TUMBLE_MS on mount): skip the truncated tumble and
 //     jump straight to the landed state. Threshold stays tied to the end of
 //     the tumble, NOT the new total.
 // ============================================================================
@@ -38,12 +39,25 @@ import { serverNow } from "@/hooks/useServerClock";
 
 const HOME_SIZE = 80;         // 80×80 cream home box
 const LIFT_SCALE = 2.5;
-const TUMBLE_MS = 450;
-const LAND_START = ROLL_HERO_MS - 250; // 1350
+const TUMBLE_MS = 800;
+const LAND_START = ROLL_HERO_MS - 250; // 1750
 const LAND_MS = 250;
 
-// Ease-out cubic — snappy start, gentle settle onto landed rotation.
-const easeOut = (p: number) => 1 - Math.pow(1 - p, 3);
+// cubic-bezier(0.16, 1, 0.3, 1) — the same curve CSS would apply. Solved
+// numerically: bisect x(t) for the parameter t, then evaluate y(t).
+const bezier = (p1: number, p2: number) => (p: number): number => {
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  const cx = (t: number) => 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t;
+  let lo = 0, hi = 1, t = p;
+  for (let i = 0; i < 24; i++) {
+    t = (lo + hi) / 2;
+    if (cx(t) < p) lo = t; else hi = t;
+  }
+  const y1 = 1, y2 = 1; // control-point y values of cubic-bezier(0.16, 1, 0.3, 1)
+  return 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+};
+const easeOut = bezier(0.16, 0.3);
 
 // Feature detect — SSR-safe. `matchMedia` is not defined during Vitest jsdom
 // smoke reads in some environments, so we defensively fall back to `false`.
@@ -98,7 +112,7 @@ export const RollHeroOverlay: React.FC<Props> = ({
   // on mount so React state stays stable across re-renders. Any of:
   //   • the user prefers reduced motion,
   //   • the tumble window has already ended when we mounted (late join /
-  //     event arrived after startAt + 450ms — threshold stays at the end of
+  //     event arrived after startAt + TUMBLE_MS — threshold stays at the end of
   //     the tumble, not the new total phase length).
   const initialSkip = React.useMemo(() => {
     if (prefersReducedMotion()) return true;

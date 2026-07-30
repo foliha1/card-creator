@@ -21,8 +21,8 @@ export const PROTOCOL_VERSION = 1;
 // Total duration of the hero roll animation, in milliseconds. Shared across
 // the wire AND the reducer: the host schedules `ROLL_SETTLE` at
 // `startAt + ROLL_HERO_MS`, and every client's overlay animates on the same
-// budget. Split as tumble(450) + hold(900) + land(250) = 1600.
-export const ROLL_HERO_MS = 1600;
+// budget. Split as tumble(800) + hold(950) + land(250) = 2000.
+export const ROLL_HERO_MS = 2000;
 
 // Intent actions a joiner may request. Roll is a special intent because the
 // host owns dice animation; the joiner just asks. All other intents map

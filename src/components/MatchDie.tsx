@@ -125,18 +125,30 @@ export function MatchDie({ size, attribute, faceIndex, rotation, transition }: M
                 transform: facePlacement(key, size),
               }}
             >
-              <img
-                src={MATCH_ART_SRC[attr]}
-                alt=""
-                draggable={false}
+              <div
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "contain",
-                  display: "block",
-                  pointerEvents: "none",
+                  padding: "14%",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <img
+                  src={MATCH_ART_SRC[attr]}
+                  alt=""
+                  draggable={false}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    display: "block",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
             </div>
           );
         })}
