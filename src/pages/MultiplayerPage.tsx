@@ -8,7 +8,7 @@ import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
 
 const PAGE_BG = "#231F20";
 // TODO: Temporary intro QA override — set to false to restore once-per-visitor behavior.
-const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = false;
+const FORCE_INTRO_EVERY_RELOAD_FOR_TESTING = true;
 
 // Kick off the download as early as possible: the moment this module
 // evaluates, before the component mounts. The index.html <link rel="preload">
@@ -32,14 +32,11 @@ const MultiplayerPage: React.FC = () => {
   const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
     if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) {
-      console.log("[intro] skipped because hasSeenIntro() returned true");
       return "none";
     }
     if (prefersReducedMotion()) {
-      console.log("[intro] skipped because prefersReducedMotion() returned true");
       return "skipped";
     }
-    console.log("[intro] fell through to pending");
     return "pending";
   };
   const [introStatus, setIntroStatus] = useState<IntroStatus>(initialIntroStatus);
@@ -61,11 +58,9 @@ const MultiplayerPage: React.FC = () => {
     preloadIntroJson().then((json) => {
       if (cancelled) return;
       if (json) {
-        console.log("[intro] preloadIntroJson() resolved with data");
         setIntroData(json);
         setIntroStatus("running");
       } else {
-        console.log("[intro] preloadIntroJson() returned null");
         setIntroStatus("skipped");
       }
     });
