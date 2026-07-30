@@ -83,6 +83,27 @@ export function useMultiplayerHost(opts: {
   // 3x3 = 9 cards for multiplayer.
   const g = useGameState("3x3", { seatCount, botSeats: [], names });
 
+  // ---- settle scheduler ----
+  // When the reducer enters SETTLING, hold the board for the length of the
+  // feedback animation, then fire SETTLE_COMPLETE with the same token.
+  // Scheduled with setTimeout exactly like FLIP_COMPLETE, and shares its
+  // known limitation: a backgrounded tab throttles the timer.
+  const gDispatch = g.dispatch;
+  const settlePhase = g.state.phase;
+  const settleKind = g.state.settleKind;
+  const settleToken = g.state.settleToken;
+  useEffect(() => {
+    if (settlePhase !== "SETTLING" || settleKind === null) return;
+    const ms = settleKind === "MATCH" ? SETTLE_MATCH_MS : SETTLE_WRONG_MS;
+    const t = setTimeout(
+      () => gDispatch({ type: "SETTLE_COMPLETE", token: settleToken }),
+      ms,
+    );
+    return () => clearTimeout(t);
+  }, [settlePhase, settleKind, settleToken, gDispatch]);
+
+
+
   const seqRef = useRef(0);
   const seatMapRef = useRef(seatMap);
   seatMapRef.current = seatMap;
