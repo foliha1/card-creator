@@ -106,6 +106,7 @@ export function toPublicState(
 
   return {
     phase: state.phase,
+    settleKind: state.settleKind,
     seatCount: state.seatCount,
     roller: state.roller,
     flipper: state.flipper,
