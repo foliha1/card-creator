@@ -74,6 +74,14 @@ const DieChip: React.FC<{ label: string; rotate: string }> = ({ label, rotate })
 );
 
 const SupportPage: React.FC = () => {
+  // React Router does not scroll to #hash targets on navigation.
+  React.useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+    const el = document.getElementById(hash);
+    if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: "auto", block: "start" }));
+  }, []);
+
   const url = "https://whoop-whoop.lovable.app/about";
   const title = "How to Play WHOOP! WHOOP! — Rules, About & Pre-Order";
   const description =
@@ -129,8 +137,8 @@ const SupportPage: React.FC = () => {
           </header>
 
           {/* How to Play */}
-          <section style={panelStyle} aria-labelledby="how-to-play">
-            <h2 id="how-to-play" style={sectionTitleStyle}>
+          <section id="how-to-play" style={{ ...panelStyle, scrollMarginTop: SPACE[6] }} aria-labelledby="how-to-play-title">
+            <h2 id="how-to-play-title" style={sectionTitleStyle}>
               How to Play
             </h2>
 
@@ -201,8 +209,8 @@ const SupportPage: React.FC = () => {
           </section>
 
           {/* About */}
-          <section style={panelStyle} aria-labelledby="about">
-            <h2 id="about" style={sectionTitleStyle}>
+          <section id="about" style={{ ...panelStyle, scrollMarginTop: SPACE[6] }} aria-labelledby="about-title">
+            <h2 id="about-title" style={sectionTitleStyle}>
               About
             </h2>
             <div style={{ ...textStyle("body", true), fontStyle: "italic", color: COLORS.inkMuted }}>
@@ -251,8 +259,8 @@ const SupportPage: React.FC = () => {
           </section>
 
           {/* Pre-Order */}
-          <section style={{ ...panelStyle, alignItems: "center", textAlign: "center" }} aria-labelledby="pre-order">
-            <h2 id="pre-order" style={sectionTitleStyle}>
+          <section id="pre-order" style={{ ...panelStyle, alignItems: "center", textAlign: "center", scrollMarginTop: SPACE[6] }} aria-labelledby="pre-order-title">
+            <h2 id="pre-order-title" style={sectionTitleStyle}>
               Get the physical game
             </h2>
             <p style={{ ...bodyStyle, maxWidth: 280 }}>
