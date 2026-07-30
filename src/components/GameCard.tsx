@@ -23,7 +23,6 @@ const GameCard = ({
   highlighted,
   matched,
   wrong,
-  wrongWash,
   shrinking,
   entering,
   enterDelay = 0,
