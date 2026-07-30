@@ -31,6 +31,7 @@ export type IntentAction =
   | { type: "REQUEST_ROLL" }
   | { type: "CANCEL_CLAIM"; by: number }
   | { type: "DEBUG_DRAIN_DECK" }
+  | { type: "DEBUG_FORCE_END_GAME" }
   | Extract<
       Action,
       | { type: "PLAYER_ENTER_CLAIM" }
