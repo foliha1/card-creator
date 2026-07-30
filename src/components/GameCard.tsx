@@ -139,21 +139,8 @@ const GameCard = ({
             style={{ width: "100%", height: "100%", display: "block" }}
             draggable={false}
           />
-          {/* Red overlay for wrong */}
-          {(wrong || wrongWash) && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundColor: wrong
-                  ? "rgba(215,34,41,0.3)"
-                  : "rgba(215,34,41,0.1)",
-                transition: "background-color 0.3s",
-                pointerEvents: "none",
-              }}
-            />
-          )}
         </div>
+
 
         {/* Back */}
         <div
