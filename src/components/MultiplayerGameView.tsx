@@ -445,12 +445,12 @@ const DieBox: React.FC<{
   homeRef?: React.Ref<HTMLDivElement>;
 }> = ({ rule, heroActive, waiting, homeRef }) => (
   <div style={{
-    width: 111.07, height: 110.94, background: ORANGE,
-    border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8, gap: 16,
+    width: 111, flex: "none", boxSizing: "border-box", background: ORANGE,
+    border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8,
     display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", boxSizing: "border-box", flex: "0 0 auto",
+    justifyContent: "center",
   }}>
-    {/* The 80×80 cream box is the home cell for the roll-hero overlay. When
+    {/* The 89×89 cream box is the home cell for the roll-hero overlay. When
         the overlay is live we hide the art so the animation lands cleanly.
         While AWAITING_ROLL (and not mid-hero) the face is blank — the prior
         round's rule must not read as current. Size stays fixed so layout
@@ -458,8 +458,8 @@ const DieBox: React.FC<{
     <div
       ref={homeRef}
       style={{
-        width: 80, height: 80, background: SURFACE, borderRadius: 8,
-        transform: "rotate(-3.65deg)", boxShadow: CARD_SHADOW,
+        width: 89, height: 89, background: SURFACE, borderRadius: 8,
+        transform: "rotate(-3.65deg)", filter: `drop-shadow(${CARD_SHADOW})`,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "8%", boxSizing: "border-box",
         opacity: heroActive ? 0 : 1, overflow: "hidden",
