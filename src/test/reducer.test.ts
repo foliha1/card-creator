@@ -10,7 +10,7 @@ import { ALL_CARDS, Card } from "@/cardData";
 
 // ---------------------------------------------------------------------------
 // Determinism: stub Math.random so initialState (deck shuffle + die roll) and
-// the LAST_CALL die roll in cycleAdvance are deterministic. No production
+// cycleAdvance are deterministic. No production
 // code changes are required for this.
 // ---------------------------------------------------------------------------
 let randSpy: ReturnType<typeof vi.spyOn>;
@@ -64,7 +64,7 @@ function baseState(overrides: Partial<State> = {}): State {
     rule: ["SHAPE"],
     dieValues: ["SHAPE"],
     wrongBy: Array.from({ length: seatCount }, () => new Set<number>()),
-    skip: Array(seatCount).fill(false),
+    piles: Array.from({ length: seatCount }, () => [] as Card[]),
     disconnected: Array(seatCount).fill(false),
     flippedThisCycle: new Set<number>(),
     claimedThisCycle: false,
@@ -120,7 +120,7 @@ describe("ROLL_START", () => {
   });
 
   it("is a NO-OP outside AWAITING_ROLL", () => {
-    for (const phase of ["FLIPPING", "CLAIM_SELECTING", "CLAIM_RESOLVING", "LAST_CALL", "GAME_OVER"] as Phase[]) {
+    for (const phase of ["FLIPPING", "CLAIM_SELECTING", "CLAIM_RESOLVING", "GAME_OVER"] as Phase[]) {
       const s = baseState({ phase });
       expect(reducer(s, { type: "ROLL_START" })).toBe(s);
     }
@@ -375,7 +375,7 @@ describe("PLAYER_RESOLVE_MATCH", () => {
     expect(next.grid[0]).not.toBe(s.grid[0]);
   });
 
-  it("wrong match: no score, adds both to human's wrongBy, sets skip[0], FLIPPING only after SETTLE_COMPLETE", () => {
+  it("wrong match: no score, adds both to human's wrongBy, FLIPPING only after SETTLE_COMPLETE", () => {
     const s = baseState({
       phase: "CLAIM_SELECTING",
       selectedCards: [1, 3], // unrelated cards, no shared SHAPE
@@ -387,7 +387,6 @@ describe("PLAYER_RESOLVE_MATCH", () => {
     expect(settling.scores).toEqual([0, 0]);
     expect(settling.wrongBy[0].has(1)).toBe(true);
     expect(settling.wrongBy[0].has(3)).toBe(true);
-    expect(settling.skip[0]).toBe(true);
     expect(settling.phase).toBe("SETTLING");
     expect(settling.settleKind).toBe("WRONG");
 
@@ -417,28 +416,20 @@ describe("PLAYER_RESOLVE_MATCH", () => {
 // SKIP_TICK
 // ===========================================================================
 describe("SKIP_TICK", () => {
-  it("advances the cycle past a locked-out flipper WITHOUT clearing the lockout", () => {
-    const s = baseState({
-      phase: "FLIPPING",
-      flipper: 0,
-      skip: [true, false],
-    });
+  it("advances the cycle past a disconnected flipper", () => {
+    const s = baseState({ phase: "FLIPPING", flipper: 0, disconnected: [true, false] });
     const next = reducer(s, { type: "SKIP_TICK" });
-    // v6.4: the lockout is round-scoped — it is not consumed here.
-    expect(next.skip).toEqual([true, false]);
-    // Cycle advances: flipper rotates to opponent, flippedThisCycle records human.
     expect(next.flipper).toBe(1);
     expect(next.flippedThisCycle.has(0)).toBe(true);
   });
 
-
-  it("is a NO-OP when the flipper has no skip flag", () => {
-    const s = baseState({ phase: "FLIPPING", flipper: 0, skip: [false, false] });
+  it("is a NO-OP when the flipper is connected", () => {
+    const s = baseState({ phase: "FLIPPING", flipper: 0 });
     expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
   });
 
   it("is a NO-OP outside FLIPPING", () => {
-    const s = baseState({ phase: "AWAITING_ROLL", skip: [true, false] });
+    const s = baseState({ phase: "AWAITING_ROLL", disconnected: [true, false] });
     expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
   });
 
@@ -446,7 +437,7 @@ describe("SKIP_TICK", () => {
     const s = baseState({
       phase: "FLIPPING",
       flipper: 0,
-      skip: [true, false],
+      disconnected: [true, false],
       inFlight: { kind: "flip", token: 1, by: 0, idx: 0 },
     });
     expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
@@ -515,7 +506,7 @@ describe("CLAIM_RESOLVE", () => {
     expect(next.roundNum).toBe(6);
   });
 
-  it("wrong opponent claim: retains wrongBy, keeps skip[1], flipper + roundNum unchanged, stays in FLIPPING", () => {
+  it("wrong opponent claim: retains wrongBy, flipper + roundNum unchanged, stays in FLIPPING", () => {
     const s = baseState({
       phase: "CLAIM_RESOLVING",
       inFlight: { kind: "claim", token: 7, by: 1, a: 1, b: 3 },
@@ -530,12 +521,11 @@ describe("CLAIM_RESOLVE", () => {
     expect(next.phase).toBe("FLIPPING");
     expect(next.wrongBy[1].has(1)).toBe(true);
     expect(next.wrongBy[1].has(3)).toBe(true);
-    expect(next.skip[1]).toBe(true);
     expect(next.flipper).toBe(0);
     expect(next.roundNum).toBe(3);
   });
 
-  it("wrong opponent claim mid-cycle: retains wrongBy + skip and stays in FLIPPING", () => {
+  it("wrong opponent claim mid-cycle: retains wrongBy and stays in FLIPPING", () => {
     const s = baseState({
       phase: "CLAIM_RESOLVING",
       inFlight: { kind: "claim", token: 7, by: 1, a: 1, b: 3 },
@@ -546,7 +536,6 @@ describe("CLAIM_RESOLVE", () => {
     expect(next.phase).toBe("FLIPPING");
     expect(next.wrongBy[1].has(1)).toBe(true);
     expect(next.wrongBy[1].has(3)).toBe(true);
-    expect(next.skip[1]).toBe(true);
   });
 
   it("STALE-TOKEN rejection: mismatched tokens are ignored", () => {
@@ -564,76 +553,6 @@ describe("CLAIM_RESOLVE", () => {
       inFlight: { kind: "flip", token: 7, by: 0, idx: 0 },
     });
     expect(reducer(s, { type: "CLAIM_RESOLVE", token: 7 })).toBe(s);
-  });
-});
-
-// ===========================================================================
-// LAST_CALL_CLAIM
-// ===========================================================================
-describe("LAST_CALL_CLAIM", () => {
-  it("human valid claim in LAST_CALL: +2, cards removed, no refill", () => {
-    const s = baseState({
-      phase: "LAST_CALL",
-      rule: ["SHAPE"],
-      deck: [],
-      // Ensure a second pair remains so the game doesn't end.
-      grid: [
-        SHAPE_MATCH_A,          // 0
-        card("square", 1, "red"),  // 1 shares SHAPE with 3
-        SHAPE_MATCH_B,          // 2
-        card("square", 2, "blue"), // 3
-        UNRELATED_C,            // 4
-        UNRELATED_D,            // 5
-      ],
-    });
-    const next = reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 });
-    expect(next.scores).toEqual([2, 0]);
-    expect(next.grid[0]).toBeNull();
-    expect(next.grid[2]).toBeNull();
-  });
-
-  it("opponent valid claim in LAST_CALL: +2 opponent", () => {
-    const s = baseState({
-      phase: "LAST_CALL",
-      rule: ["SHAPE"],
-      grid: [
-        SHAPE_MATCH_A,
-        card("square", 1, "red"),
-        SHAPE_MATCH_B,
-        card("square", 2, "blue"),
-        UNRELATED_C,
-        UNRELATED_D,
-      ],
-    });
-    const next = reducer(s, { type: "LAST_CALL_CLAIM", by: 1, a: 0, b: 2 });
-    expect(next.scores).toEqual([0, 2]);
-  });
-
-  it("ends the game when the grid has no valid pair left", () => {
-    const s = baseState({
-      phase: "LAST_CALL",
-      rule: ["SHAPE"],
-      grid: [SHAPE_MATCH_A, null, SHAPE_MATCH_B, null, null, null],
-    });
-    const next = reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 });
-    expect(next.phase).toBe("GAME_OVER");
-    expect(next.scores).toEqual([2, 0]);
-  });
-
-  it("is a NO-OP outside LAST_CALL", () => {
-    const s = baseState({ phase: "FLIPPING" });
-    expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
-  });
-
-  it("is a NO-OP for invalid pair (does NOT penalize) — matches current behaviour", () => {
-    const s = baseState({ phase: "LAST_CALL", rule: ["SHAPE"] });
-    const next = reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 1, b: 3 });
-    expect(next).toBe(s);
-  });
-
-  it("is a NO-OP when a === b", () => {
-    const s = baseState({ phase: "LAST_CALL" });
-    expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 0 })).toBe(s);
   });
 });
 
@@ -721,96 +640,77 @@ describe("stale-token rejection (both flip + claim)", () => {
   });
 });
 
-describe("wrong-claim lockout (v6.4)", () => {
-  it("wrong claim → skip[i]=true blocks flip, claim and roll for the rest of the round", () => {
-    let s = baseState({
-      phase: "CLAIM_SELECTING",
-      selectedCards: [1, 3], // wrong pair
-      rule: ["SHAPE"],
-      flipper: 0,
-      flippedThisCycle: new Set([0]),
-    });
-    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
-    expect(s.skip[0]).toBe(true);
-
-    const flipping = { ...s, phase: "FLIPPING" as const, settleKind: null, flipper: 0, inFlight: null };
-    // Cannot flip.
-    expect(
-      reducer(flipping, { type: "FLIP_START", by: 0, idx: 2, token: 1 }),
-    ).toBe(flipping);
-    // Cannot enter a claim.
-    expect(reducer(flipping, { type: "PLAYER_ENTER_CLAIM", by: 0 })).toBe(flipping);
-    // Cannot claim a pair directly.
-    expect(
-      reducer(flipping, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 2 }),
-    ).toBe(flipping);
-    // Cannot roll.
-    const awaiting = { ...flipping, phase: "AWAITING_ROLL" as const, roller: 0 };
-    expect(reducer(awaiting, { type: "ROLL_START" })).toBe(awaiting);
-
-    // Their flip turn still counts toward the rotation backstop.
-    const ticked = reducer({ ...flipping, flippedThisCycle: new Set<number>() }, { type: "SKIP_TICK" });
-    expect(ticked.flippedThisCycle.has(0)).toBe(true);
-    expect(ticked.skip[0]).toBe(true);
-  });
-
-  it("the lockout clears at the round boundary when another player ends the round", () => {
-    // Human (seat 0) makes a wrong claim → skip[0] = true, still in FLIPPING.
-    let s = baseState({
-      phase: "CLAIM_SELECTING",
-      selectedCards: [1, 3], // wrong pair
-      rule: ["SHAPE"],
-      flipper: 0,
-      flippedThisCycle: new Set(),
-    });
-    s = reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
-    expect(s.skip[0]).toBe(true);
-    const roundBefore = s.roundNum;
-
-    // Opponent (seat 1) now makes a correct claim, ending the round.
-    s = {
-      ...s,
-      phase: "CLAIM_RESOLVING",
-      inFlight: { kind: "claim", token: 99, by: 1, a: 0, b: 2 },
-      rule: ["SHAPE"],
-    };
-    s = reducer(s, { type: "CLAIM_RESOLVE", token: 99 });
-    // New round started, opponent rolls next.
-    expect(s.phase).toBe("AWAITING_ROLL");
-    expect(s.roundNum).toBe(roundBefore + 1);
-    expect(s.roller).toBe(1);
-    // v6.4: the lockout is round-scoped — it is clear in the new round.
-    expect(s.skip.every((v) => v === false)).toBe(true);
-    // Wrongly-claimed cards flip back face-down: wrongBy is cleared.
-    expect(s.wrongBy[0].size).toBe(0);
-
-    // The human can act freely again.
-    const flipping = { ...s, phase: "FLIPPING" as const, flipper: 0, flippedThisCycle: new Set<number>() };
-    const flipped = reducer(flipping, { type: "FLIP_START", by: 0, idx: 2, token: 5 });
-    expect(flipped.peekingCard).toBe(2);
-  });
-
-
-  it("NEW_GAME (INIT) clears all skip flags", () => {
-    const s = baseState({ skip: [true, true] });
-    const next = reducer(s, { type: "INIT", slotCount: 6 });
-    expect(next.skip.every((v) => v === false)).toBe(true);
-  });
-
-  it("LAST_CALL entry clears all skip flags", () => {
+describe("wrong-claim card return (v6.5)", () => {
+  function wrongClaim(over: Partial<State> = {}) {
     const s = baseState({
-      phase: "FLIPPING",
-      flipper: 1,
-      drawEmpty: true,
-      claimedThisCycle: false,
+      phase: "CLAIM_SELECTING",
+      selectedCards: [1, 3], // wrong pair
+      rule: ["SHAPE"],
+      flipper: 0,
       flippedThisCycle: new Set([0]),
-      inFlight: { kind: "flip", token: 4, by: 1, idx: 3 },
-      peekingCard: 3,
-      skip: [true, true],
+      ...over,
     });
-    const next = reducer(s, { type: "FLIP_COMPLETE", token: 4 });
-    expect(next.phase).toBe("LAST_CALL");
-    expect(next.skip).toEqual([false, false]);
+    return reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 });
+  }
+
+  it("decrements the claimant's score by one and grows the draw pile by one", () => {
+    const before = baseState();
+    const s = wrongClaim({ scores: [2, 0], piles: [[SHAPE_MATCH_A, SHAPE_MATCH_B], []] });
+    expect(s.scores).toEqual([1, 0]);
+    expect(s.deck.length).toBe(before.deck.length + 1);
+    expect(s.piles[0]).toHaveLength(1);
+    // The returned card goes to the BOTTOM of the draw pile.
+    expect(s.deck[s.deck.length - 1].id).toBe(SHAPE_MATCH_B.id);
+  });
+
+  it("at zero score returns nothing: score stays 0 and the pile is unchanged", () => {
+    const before = baseState();
+    const s = wrongClaim({ scores: [0, 0] });
+    expect(s.scores).toEqual([0, 0]);
+    expect(s.deck.length).toBe(before.deck.length);
+    expect(s.piles[0]).toHaveLength(0);
+  });
+
+  it("a returned card refills an empty draw pile", () => {
+    const s = wrongClaim({
+      scores: [2, 0],
+      piles: [[SHAPE_MATCH_A, SHAPE_MATCH_B], []],
+      deck: [],
+      drawEmpty: true,
+    });
+    expect(s.deck).toHaveLength(1);
+    expect(s.drawEmpty).toBe(false);
+  });
+
+  it("no longer blocks the claimant from flipping, claiming or rolling", () => {
+    const s = wrongClaim({ scores: [2, 0], piles: [[SHAPE_MATCH_A, SHAPE_MATCH_B], []] });
+    const flipping = { ...s, phase: "FLIPPING" as const, settleKind: null, flipper: 0, inFlight: null };
+    expect(reducer(flipping, { type: "FLIP_START", by: 0, idx: 2, token: 1 }).peekingCard).toBe(2);
+    expect(reducer(flipping, { type: "PLAYER_ENTER_CLAIM", by: 0 }).phase).toBe("CLAIM_SELECTING");
+    expect(reducer(flipping, { type: "CLAIM_START", by: 0, a: 0, b: 2, token: 2 }).phase).toBe("CLAIM_RESOLVING");
+    const awaiting = { ...flipping, phase: "AWAITING_ROLL" as const, roller: 0 };
+    expect(reducer(awaiting, { type: "ROLL_START" }).rolling).toBe(true);
+  });
+
+  it("the two wrongly-claimed cards stay face-up until the round ends", () => {
+    let s = wrongClaim();
+    expect(s.wrongBy[0].has(1)).toBe(true);
+    expect(s.wrongBy[0].has(3)).toBe(true);
+    s = reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken });
+    expect(s.phase).toBe("FLIPPING");
+    expect(s.wrongBy[0].has(1)).toBe(true);
+    const roundBefore = s.roundNum;
+    s = reducer(
+      {
+        ...s,
+        phase: "CLAIM_RESOLVING",
+        inFlight: { kind: "claim", token: 99, by: 1, a: 0, b: 2 },
+        rule: ["SHAPE"],
+      },
+      { type: "CLAIM_RESOLVE", token: 99 },
+    );
+    expect(s.roundNum).toBe(roundBefore + 1);
+    expect(s.wrongBy[0].size).toBe(0);
   });
 });
 
@@ -866,9 +766,8 @@ describe("winner rolls (v6.2)", () => {
   });
 });
 
-describe("LAST_CALL entry conditions", () => {
-  it("cycle-complete + drawEmpty + no-claim-this-cycle enters LAST_CALL", () => {
-    // Human already flipped; opponent about to complete the cycle.
+describe("end-game entry conditions (v6.5)", () => {
+  it("cycle-complete + drawEmpty + no-claim-this-cycle ends the game", () => {
     const s = baseState({
       phase: "FLIPPING",
       flipper: 1,
@@ -879,13 +778,10 @@ describe("LAST_CALL entry conditions", () => {
       peekingCard: 3,
     });
     const next = reducer(s, { type: "FLIP_COMPLETE", token: 4 });
-    expect(next.phase).toBe("LAST_CALL");
-    expect(next.allFaceUp).toBe(true);
-    // die rule reset with Math.random=0 → ATTRIBUTES[0] = "SHAPE".
-    expect(next.rule).toEqual(["SHAPE"]);
+    expect(next.phase).toBe("GAME_OVER");
   });
 
-  it("cycle-complete + drawEmpty + claimedThisCycle does NOT enter LAST_CALL (passes roll instead)", () => {
+  it("cycle-complete + drawEmpty + claimedThisCycle does NOT end the game (passes roll instead)", () => {
     const s = baseState({
       phase: "FLIPPING",
       flipper: 1,
@@ -932,7 +828,6 @@ describe("game over terminal", () => {
     expect(reducer(s, { type: "PLAYER_SELECT_CARD", by: 0, idx: 0 })).toBe(s);
     expect(reducer(s, { type: "FLIP_START", by: 0, idx: 0, token: 1 })).toBe(s);
     expect(reducer(s, { type: "SKIP_TICK" })).toBe(s);
-    expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
   });
 });
 
@@ -959,22 +854,6 @@ describe("scoring", () => {
     expect(next.scores).toEqual([4, 8]);
   });
 
-  it("last-call claim also awards +2 (no Double Jeopardy in this reducer)", () => {
-    const s = baseState({
-      phase: "LAST_CALL",
-      rule: ["SHAPE"],
-      grid: [
-        SHAPE_MATCH_A,
-        card("square", 1, "red"),
-        SHAPE_MATCH_B,
-        card("square", 2, "blue"),
-        UNRELATED_C,
-        UNRELATED_D,
-      ],
-    });
-    const next = reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 });
-    expect(next.scores).toEqual([2, 0]);
-  });
 });
 
 // Confirm initialState is deterministic under our stub — a sanity check.
@@ -1035,7 +914,7 @@ describe("N>2 generalization", () => {
     expect(s.roller).toBe(1);
   });
 
-  it("skip penalty applies to the correct seat at seatCount=4", () => {
+  it("wrong-claim penalty applies to the correct seat at seatCount=4", () => {
     const s = baseState({
       seatCount: 4,
       phase: "CLAIM_RESOLVING",
@@ -1046,7 +925,7 @@ describe("N>2 generalization", () => {
     });
     const next = reducer(s, { type: "CLAIM_RESOLVE", token: 1 });
     expect(next.phase).toBe("FLIPPING");
-    expect(next.skip).toEqual([false, false, true, false]);
+    expect(next.wrongBy[2].has(1)).toBe(true);
     expect(next.scores).toEqual([0, 0, 0, 0]);
   });
 
@@ -1148,18 +1027,15 @@ describe("CANCEL_CLAIM", () => {
     expect(next.claimBy).toBeNull();
   });
 
-  it("applies no skip penalty", () => {
-    const s = baseState({
-      phase: "CLAIM_SELECTING",
-      claimBy: 0,
-      skip: [false, false],
-    });
+  it("applies no penalty", () => {
+    const s = baseState({ phase: "CLAIM_SELECTING", claimBy: 0, scores: [2, 0] });
     const next = reducer(s, { type: "CANCEL_CLAIM", by: 0 });
-    expect(next.skip).toEqual([false, false]);
+    expect(next.scores).toEqual([2, 0]);
+    expect(next.wrongBy[0].size).toBe(0);
   });
 
   it("is a NO-OP when phase !== CLAIM_SELECTING", () => {
-    for (const phase of ["FLIPPING", "AWAITING_ROLL", "CLAIM_RESOLVING", "LAST_CALL", "GAME_OVER"] as Phase[]) {
+    for (const phase of ["FLIPPING", "AWAITING_ROLL", "CLAIM_RESOLVING", "GAME_OVER"] as Phase[]) {
       const s = baseState({ phase, claimBy: 0 });
       expect(reducer(s, { type: "CANCEL_CLAIM", by: 0 })).toBe(s);
     }
@@ -1188,21 +1064,17 @@ describe("SET_DISCONNECTED", () => {
     const s = baseState({
       seatCount: 3,
       disconnected: [false, true, false],
-      skip: [false, false, false],
       scores: [0, 0, 0],
       wrongBy: [new Set(), new Set(), new Set()],
     });
     const next = reducer(s, { type: "SET_DISCONNECTED", seats: [2] });
     expect(next.disconnected).toEqual([false, false, true]);
-    // No borrowing of the one-shot skip flag
-    expect(next.skip).toEqual([false, false, false]);
   });
 
   it("advancement skips a disconnected seat", () => {
     const s = baseState({
       seatCount: 3,
       disconnected: [false, true, false],
-      skip: [false, false, false],
       scores: [0, 0, 0],
       wrongBy: [new Set(), new Set(), new Set()],
       phase: "FLIPPING",
@@ -1218,7 +1090,6 @@ describe("SET_DISCONNECTED", () => {
     const s = baseState({
       seatCount: 3,
       disconnected: [false, true, true],
-      skip: [false, false, false],
       scores: [0, 0, 0],
       wrongBy: [new Set(), new Set(), new Set()],
       phase: "FLIPPING",
@@ -1235,11 +1106,10 @@ describe("SET_DISCONNECTED", () => {
     expect(next.flipper).toBe(0);
   });
 
-  it("a seat both disconnected and skip-penalised advances without consuming skip", () => {
+  it("a disconnected seat advances the rotation", () => {
     const s = baseState({
       seatCount: 3,
       disconnected: [false, true, false],
-      skip: [false, true, false],
       scores: [0, 0, 0],
       wrongBy: [new Set(), new Set(), new Set()],
       phase: "FLIPPING",
@@ -1247,16 +1117,13 @@ describe("SET_DISCONNECTED", () => {
       inFlight: null,
     });
     const next = reducer(s, { type: "SKIP_TICK" });
-    // Advanced past seat 1 to seat 2; disconnect path does not consume skip.
     expect(next.flipper).toBe(2);
-    expect(next.skip[1]).toBe(true);
   });
 
   it("roll passes to the next connected seat when the roller is disconnected", () => {
     const s = baseState({
       seatCount: 3,
       disconnected: [false, false, false],
-      skip: [false, false, false],
       scores: [0, 0, 0],
       wrongBy: [new Set(), new Set(), new Set()],
       phase: "AWAITING_ROLL",
@@ -1278,7 +1145,7 @@ describe("N=3 seats", () => {
     const s = initialState(9, { seatCount: 3 });
     expect(s.seatCount).toBe(3);
     expect(s.scores).toHaveLength(3);
-    expect(s.skip).toHaveLength(3);
+    expect(s.piles).toHaveLength(3);
     expect(s.wrongBy).toHaveLength(3);
     expect(s.disconnected).toHaveLength(3);
   });
@@ -1289,7 +1156,6 @@ describe("N=3 seats", () => {
     let s = baseState({
       seatCount: 3,
       scores: [0, 0, 0],
-      skip: [false, false, false],
       wrongBy: [new Set(), new Set(), new Set()],
       disconnected: [false, false, false],
       phase: "FLIPPING",
@@ -1324,7 +1190,6 @@ describe("N=3 seats", () => {
     let s = baseState({
       seatCount: 3,
       scores: [0, 0, 0],
-      skip: [false, false, false],
       wrongBy: [new Set(), new Set(), new Set()],
       disconnected: [false, false, false],
       phase: "FLIPPING",
@@ -1346,7 +1211,6 @@ describe("N=3 seats", () => {
     let s = baseState({
       seatCount: 3,
       scores: [0, 0, 0],
-      skip: [false, false, false],
       wrongBy: [new Set(), new Set(), new Set()],
       disconnected: [false, false, false],
       phase: "CLAIM_SELECTING",
@@ -1363,7 +1227,6 @@ describe("N=3 seats", () => {
     let s = baseState({
       seatCount: 3,
       scores: [0, 0, 0],
-      skip: [false, false, false],
       wrongBy: [new Set(), new Set(), new Set()],
       disconnected: [false, false, false],
       phase: "CLAIM_SELECTING",
@@ -1375,7 +1238,6 @@ describe("N=3 seats", () => {
     expect(s.phase).toBe("SETTLING");
     s = reducer(s, { type: "SETTLE_COMPLETE", token: s.settleToken });
     expect(s.phase).toBe("FLIPPING");
-    expect(s.skip[2]).toBe(true);
     expect(s.wrongBy[2].has(1)).toBe(true);
     expect(s.wrongBy[2].has(3)).toBe(true);
     expect(s.scores[2]).toBe(0);
@@ -1406,7 +1268,6 @@ describe("SETTLING", () => {
     expect(reducer(s, { type: "PLAYER_RESOLVE_MATCH", by: 0 })).toBe(s);
     expect(reducer(s, { type: "CLAIM_START", by: 0, a: 1, b: 3, token: 9 })).toBe(s);
     expect(reducer(s, { type: "CANCEL_CLAIM", by: 0 })).toBe(s);
-    expect(reducer(s, { type: "LAST_CALL_CLAIM", by: 0, a: 0, b: 2 })).toBe(s);
   });
 
   it("a stale SETTLE_COMPLETE token is a no-op", () => {
