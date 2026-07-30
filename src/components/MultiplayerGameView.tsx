@@ -769,13 +769,33 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (prev === null && s.claimBy !== null) playWhoopCall();
   }, [s.claimBy]);
 
+  // Remember the last pair of touched cards. The NOPE event lands on the tick
+  // after the claim resolves, when selectedCards is already empty — so this
+  // ref is never cleared, only overwritten by the next full pair.
+  const lastPairRef = React.useRef<number[]>([]);
+  React.useEffect(() => {
+    if (s.selectedCards.length === 2) lastPairRef.current = [...s.selectedCards];
+  }, [s.selectedCards]);
+
+  const [wrongCards, setWrongCards] = React.useState<number[]>([]);
+  const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+  }, []);
+
   const seenEventIdsRef = React.useRef<Set<string>>(new Set());
   React.useEffect(() => {
     for (const e of events) {
       if (seenEventIdsRef.current.has(e.id)) continue;
       seenEventIdsRef.current.add(e.id);
       if (e.kind === "GREAT_MATCH") playCorrect();
-      else if (e.kind === "NOPE") playWrong();
+      else if (e.kind === "NOPE") {
+        playWrong();
+        // Every player sees the wrong pair animate — no seat filter.
+        setWrongCards(lastPairRef.current);
+        if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+        wrongTimerRef.current = setTimeout(() => setWrongCards([]), 900);
+      }
     }
     // Bound the dedup set so it doesn't grow forever across a long session.
     if (seenEventIdsRef.current.size > 256) {
