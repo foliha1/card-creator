@@ -240,6 +240,10 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     messageType: "info",
     inFlight: null,
     claimBy: null,
+    settleKind: null,
+    settleToken: 0,
+    settleBy: null,
+
   };
 }
 
