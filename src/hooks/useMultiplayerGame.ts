@@ -531,10 +531,9 @@ function handleHostIntent(
       // Rematch is host-only; joiner requests are ignored.
       return;
     case "DEBUG_DRAIN_DECK":
-      dispatch({ type: "DEBUG_DRAIN_DECK" });
-      return;
     case "DEBUG_FORCE_END_GAME":
-      dispatch({ type: "DEBUG_FORCE_END_GAME" });
+      // Debug controls are host-local only. A joiner-sent debug intent is
+      // ignored so a remote seat can never mutate the host's deck or grid.
       return;
   }
 }
