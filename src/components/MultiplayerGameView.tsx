@@ -752,6 +752,22 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }, [s.selectedCards]);
 
+  // ---- great-match flying copies ---------------------------------------
+  // The grid (and its ancestors) clip, so the scale+slide is performed by
+  // copies rendered into a fixed-position layer that is a child of the page
+  // root. We measure each matched cell at event time and pin the copy there.
+  const cellRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+  const gridRef = React.useRef(s.grid);
+  gridRef.current = s.grid;
+  const [flyCards, setFlyCards] = React.useState<
+    { key: string; card: Card; rect: { top: number; left: number; width: number; height: number } }[]
+  >([]);
+  const flyTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+  }, []);
+
+
   const [wrongCards, setWrongCards] = React.useState<number[]>([]);
   const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => {
