@@ -781,7 +781,25 @@ const MultiplayerGameView: React.FC<Props> = ({
       seenEventIdsRef.current.add(e.id);
       if (e.kind === "GREAT_MATCH") {
         playCorrect();
+        const idxs = lastPairRef.current;
+        const copies = idxs.flatMap((i) => {
+          const el = cellRefs.current[i];
+          const card = gridRef.current[i]?.card;
+          if (!el || !card) return [];
+          const r = el.getBoundingClientRect();
+          return [{
+            key: `${e.id}-${i}`,
+            card,
+            rect: { top: r.top, left: r.left, width: r.width, height: r.height },
+          }];
+        });
+        if (copies.length) {
+          setFlyCards(copies);
+          if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+          flyTimerRef.current = setTimeout(() => setFlyCards([]), 1300);
+        }
       }
+
       else if (e.kind === "NOPE") {
         playWrong();
         // Every player sees the wrong pair animate — no seat filter.
