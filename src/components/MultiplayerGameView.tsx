@@ -503,23 +503,22 @@ const ActionButton: React.FC<{
 
 // -------- Grid overlay --------
 
-const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
-  const isGreat = kind === "GREAT_MATCH";
+const GridOverlay: React.FC<{ kind: "GREAT_MATCH" }> = () => {
   return (
     <div style={{
       position: "absolute", inset: 16, borderRadius: R_STRIP,
-      background: isGreat ? GREEN : RED, border: BORDER_HEAVY,
+      background: GREEN, border: BORDER_HEAVY,
       display: "flex", alignItems: "center", justifyContent: "center",
       pointerEvents: "none", overflow: "hidden",
     }}>
       <span style={{
         fontFamily: FONT_FAMILY, fontStyle: "italic",
-        fontSize: isGreat ? 88 : 100, lineHeight: "85%",
-        color: isGreat ? INK : SURFACE,
-        transform: `rotate(${isGreat ? -4.69 : 6.55}deg)`,
+        fontSize: 88, lineHeight: "85%",
+        color: INK,
+        transform: "rotate(-4.69deg)",
         whiteSpace: "nowrap",
       }}>
-        {isGreat ? "Great Match!" : "NOPE!"}
+        Great Match!
       </span>
     </div>
   );
