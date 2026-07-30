@@ -234,6 +234,96 @@ const OpponentRow: React.FC<{ chips: DerivedChip[] }> = ({ chips }) => (
 );
 
 
+// -------- End screen --------
+// Presentation only. Covers the card area when the engine reports GAME_OVER.
+// Standings reuse ChipCell: winner in GREAT_MATCH green, everyone else IDLE.
+const EndScreen: React.FC<{
+  chips: DerivedChip[];
+  scores: number[];
+  names: string[];
+  canRematch: boolean;
+  onPlayAgain: () => void;
+  onLeave: () => void;
+}> = ({ chips, scores, canRematch, onPlayAgain, onLeave }) => {
+  const seats = chips
+    .map((c, seat) => ({ chip: c, seat, score: scores[seat] ?? 0 }))
+    .filter((e) => e.chip.kind !== "EMPTY");
+  const top = seats.reduce((m, e) => Math.max(m, e.score), -Infinity);
+  const winners = seats.filter((e) => e.score === top);
+  const headline =
+    winners.length !== 1
+      ? "It's a draw!"
+      : winners[0].chip.name === "YOU"
+        ? "You win!"
+        : `${winners[0].chip.name} wins!`;
+  const ordered = seats.slice().sort((a, b) => b.score - a.score);
+
+  const btn = (bg: string, fg: string): React.CSSProperties => ({
+    all: "unset", cursor: "pointer", textAlign: "center",
+    padding: "10px 18px", borderRadius: R_BOX, border: BORDER_HEAVY,
+    background: bg, color: fg, fontFamily: FONT_FAMILY,
+    fontSize: 16, fontWeight: 700,
+  });
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Game over"
+      style={{
+        position: "absolute", inset: 0, zIndex: 60,
+        background: PANEL, border: BORDER_HEAVY, borderRadius: R_BOX,
+        boxSizing: "border-box", padding: 16,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", gap: 16,
+        overflowY: "auto",
+      }}
+    >
+      <h2 style={{
+        margin: 0, fontFamily: FONT_FAMILY, fontSize: 28, fontWeight: 700,
+        lineHeight: 1.1, color: INK, textAlign: "center",
+      }}>
+        {headline}
+      </h2>
+
+      <div style={{
+        display: "flex", flexDirection: "column", gap: 6,
+        width: "100%", maxWidth: 280,
+      }}>
+        {ordered.map((e) => (
+          <ChipCell
+            key={e.seat}
+            chip={{
+              kind: winners.length === 1 && e.seat === winners[0].seat ? "GREAT_MATCH" : "IDLE",
+              name: e.chip.name,
+              score: e.score,
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        {canRematch ? (
+          <button type="button" onClick={onPlayAgain} style={btn(GREEN, INK)}>
+            Play again
+          </button>
+        ) : (
+          <span
+            role="status"
+            aria-live="polite"
+            style={{ fontFamily: FONT_FAMILY, fontSize: 15, color: MUTED }}
+          >
+            Waiting for the host…
+          </span>
+        )}
+        <button type="button" onClick={onLeave} style={btn(SURFACE, INK)}>
+          Leave
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Top bar — 40px fixed row: settings button, centre readout, close button.
 const Header: React.FC<{
   round: number;
@@ -1113,20 +1203,6 @@ const MultiplayerGameView: React.FC<Props> = ({
       </div>
     </div>
   );
-  const gameOverBtn = s.phase === "GAME_OVER" ? (
-    <button
-      type="button"
-      onClick={onLeave}
-      style={{
-        all: "unset", cursor: "pointer", textAlign: "center",
-        padding: 8, borderRadius: R_BOX, border: BORDER_HEAVY,
-        background: SURFACE, color: INK, fontFamily: FONT_FAMILY,
-        fontSize: 16,
-      }}
-    >
-      {s.message || "Game over"} — Leave
-    </button>
-  ) : null;
 
   // Measured card sizing: compute per-card dimensions from the card area's
   // content box so 9 cards always fit both axes with padding + gaps.
@@ -1354,6 +1430,17 @@ const MultiplayerGameView: React.FC<Props> = ({
         </div>
 
 
+        {s.phase === "GAME_OVER" && (
+          <EndScreen
+            chips={chips}
+            scores={s.scores}
+            names={chips.map((c) => c.name)}
+            canRematch={soloMode === true || isHost}
+            onPlayAgain={() => onIntent({ type: "NEW_GAME" })}
+            onLeave={onLeave}
+          />
+        )}
+
         {import.meta.env.DEV && (
           <div
             style={{
@@ -1392,7 +1479,6 @@ const MultiplayerGameView: React.FC<Props> = ({
         />
       </div>
       {bottomRow}
-      {gameOverBtn}
       </div>
 
       {/* Great-match flying copies. Fixed layer, direct child of the play

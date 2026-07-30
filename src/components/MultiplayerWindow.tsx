@@ -645,6 +645,16 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           if (action.type === "PLAYER_ENTER_CLAIM") {
             return;
           }
+          if (action.type === "NEW_GAME") {
+            // Rematch: same seats, same grid size, scores reset to zero.
+            host.dispatch({
+              type: "INIT",
+              slotCount: host.state.slotCount,
+              seatCount: host.state.seatCount,
+              names: host.state.names,
+            });
+            return;
+          }
           if (action.type === "CANCEL_CLAIM") {
             host.dispatch({ type: "CANCEL_CLAIM", by: 0 });
           } else if (action.type === "PLAYER_SELECT_CARD") {

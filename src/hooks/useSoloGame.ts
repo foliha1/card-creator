@@ -338,6 +338,18 @@ export function useSoloGame(): UseSoloGameResult {
             REVEAL_MS,
           );
           return;
+        case "NEW_GAME": {
+          // Rematch: same seats, same grid size, scores back to zero.
+          const cur = stateRef.current;
+          brainRef.current = createBrain();
+          dispatch({
+            type: "INIT",
+            slotCount: cur.slotCount,
+            seatCount: cur.seatCount,
+            names: cur.names,
+          });
+          return;
+        }
         case "DEBUG_DRAIN_DECK":
           dispatch({ type: "DEBUG_DRAIN_DECK" });
           return;
