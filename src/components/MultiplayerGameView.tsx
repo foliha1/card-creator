@@ -1176,7 +1176,8 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   return (
     <div ref={rootRef} style={{
-      display: "flex", flexDirection: "column", gap: 8,
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
       padding: 8, height: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
@@ -1225,6 +1226,11 @@ const MultiplayerGameView: React.FC<Props> = ({
           zIndex: 20,
         }}
       />
+      <div style={{
+        display: "flex", flexDirection: "column", gap: 8,
+        width: "100%", height: "auto", maxHeight: "100%",
+        boxSizing: "border-box",
+      }}>
       {header}
       <div ref={panelRef} style={{ flex: "none" }}>{opponentRow}</div>
 
@@ -1337,6 +1343,9 @@ const MultiplayerGameView: React.FC<Props> = ({
           hostDisconnectedSeats={hostDisconnectedSeats}
         />
       </div>
+      {bottomRow}
+      {gameOverBtn}
+      </div>
 
       {/* Great-match flying copies. Fixed layer, direct child of the play
           root, above the grid but below modals (z=50). Nothing renders when
@@ -1383,8 +1392,6 @@ const MultiplayerGameView: React.FC<Props> = ({
       )}
 
 
-      {bottomRow}
-      {gameOverBtn}
       {showSettings && (
         <ModalShell titleId="mp-settings-title" onCancel={() => setShowSettings(false)}>
           <h2 id="mp-settings-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: INK }}>
