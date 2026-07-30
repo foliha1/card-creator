@@ -163,7 +163,7 @@ const GameCard = ({
         </div>
       </div>
 
-      {highlighted && (
+      {showHighlight && (
         <>
           <div
             className="ww-card-shine"
@@ -193,6 +193,13 @@ const GameCard = ({
               zIndex: 3,
             }}
           />
+        </>
+      )}
+
+      {wrong && (
+        <>
+          <div className="ww-wrong-wash" style={{ zIndex: 4 }} />
+          <div className="ww-wrong-ring" style={{ zIndex: 5 }} />
         </>
       )}
     </div>
