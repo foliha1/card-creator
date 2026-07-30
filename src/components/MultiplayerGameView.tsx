@@ -390,9 +390,8 @@ const ScoreRow: React.FC<{
     const clickable = banner === "CANCEL" && !!onCancel;
     return (
       <div style={{
-        height: 65.32, background: PANEL, border: BORDER_HEAVY,
-        borderRadius: R_BOX, padding: 8, boxSizing: "border-box",
-        display: "flex", alignItems: "center",
+        height: 30, boxSizing: "border-box",
+        display: "flex", alignItems: "stretch",
       }}>
         <button
           type="button"
@@ -401,10 +400,11 @@ const ScoreRow: React.FC<{
           aria-label={b.label}
           style={{
             all: "unset", cursor: clickable ? "pointer" : "default",
-            width: "100%", height: 49.32, background: b.bg, color: b.text,
+            width: "100%", height: 30, background: b.bg, color: b.text,
             border: BORDER_HEAVY, borderRadius: R_STRIP, boxSizing: "border-box",
+            padding: "6px 8px",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: FONT_FAMILY, fontSize: 20, lineHeight: "24px",
+            fontFamily: FONT_FAMILY, fontSize: 16, lineHeight: 1,
           }}
         >
           {b.icon && <CancelX />}
