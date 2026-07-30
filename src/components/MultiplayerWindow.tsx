@@ -9,7 +9,6 @@ import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
-const GameWindow = React.lazy(() => import("@/components/GameWindow"));
 import { useSoloGame } from "@/hooks/useSoloGame";
 
 const SoloView: React.FC<{ onLeave: () => void; mobile: boolean }> = ({ onLeave, mobile }) => {
