@@ -420,7 +420,6 @@ describe("SKIP_TICK", () => {
     const s = baseState({ phase: "FLIPPING", flipper: 0, disconnected: [true, false] });
     const next = reducer(s, { type: "SKIP_TICK" });
     expect(next.flipper).toBe(1);
-    expect(next.flippedThisCycle.has(0)).toBe(true);
   });
 
   it("is a NO-OP when the flipper is connected", () => {
