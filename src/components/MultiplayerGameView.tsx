@@ -445,7 +445,7 @@ const BannerStyles: Record<Exclude<BannerKind, null>, { bg: string; text: string
   TOO_SLOW:    { bg: INK,     text: SURFACE, label: "TOO SLOW!" },
   CLAIM_ERROR: { bg: RED,     text: SURFACE, label: "CONNECTION ISSUE — TRY AGAIN" },
   PENALTY:     { bg: MUTED,   text: SURFACE, label: "PENALTY" },
-  CANCEL:      { bg: SURFACE, text: RED,     label: "Cancel Match Selection", icon: true },
+  CANCEL:      { bg: SURFACE, text: RED,     label: "Cancel match", icon: true },
 };
 
 const CancelX: React.FC = () => (
@@ -495,6 +495,7 @@ const ScoreRow: React.FC<{
             padding: "6px 8px",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: FONT_FAMILY, fontSize: 16, lineHeight: 1,
+            pointerEvents: clickable ? "auto" : "none",
           }}
         >
           {b.icon && <CancelX />}
@@ -1168,21 +1169,6 @@ const MultiplayerGameView: React.FC<Props> = ({
     />
   );
   const opponentRow = <OpponentRow chips={chips} />;
-  // The score/cards-left readout now lives in the top bar. The banner strip
-  // survives as an overlay pinned to the top of the card area so the
-  // cancel-claim affordance stays reachable without adding a fifth fixed row.
-  const scoreRow = banner ? (
-    <div style={{ alignSelf: "stretch" }}>
-      <ScoreRow
-        banner={banner}
-        onCancel={
-          canCancelClaim && mySeat !== null
-            ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
-            : undefined
-        }
-      />
-    </div>
-  ) : null;
   const bottomRow = (
     <div style={{ display: "flex", flexDirection: "row", gap: 8, height: 110.94, flex: "none" }}>
       <DieBox rule={rule} heroActive={heroActive} waiting={s.phase === "AWAITING_ROLL" && !heroActive && !s.rolling} homeRef={homeRef} />
@@ -1282,12 +1268,11 @@ const MultiplayerGameView: React.FC<Props> = ({
   const availW = Math.max(0, box.w);
   // Free vertical space for the card area: viewport height minus the root
   // padding, top bar, player panel, bottom bar, the three 8px column gaps,
-  // the card area's own 32px of vertical padding and the banner when shown.
-  // Always reserved, shown or not, so card size never changes mid-round.
-  const BANNER_H = 30 + 8; // banner box + its gap to the grid
+  // and the card area's own 32px of vertical padding. The banner is now an
+  // overlay on the player panel, so it no longer needs reserved height.
   const availH = Math.max(
     0,
-    rootH - 16 - 40 - panelH - 110.94 - 24 - 32 - BANNER_H,
+    rootH - 16 - 40 - panelH - 110.94 - 24 - 32,
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
@@ -1356,7 +1341,24 @@ const MultiplayerGameView: React.FC<Props> = ({
         boxSizing: "border-box",
       }}>
       {header}
-      <div ref={panelRef} style={{ flex: "none" }}>{opponentRow}</div>
+      <div ref={panelRef} style={{ position: "relative", flex: "none" }}>
+        {opponentRow}
+        {banner && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 10,
+            pointerEvents: "none",
+          }}>
+            <ScoreRow
+              banner={banner}
+              onCancel={
+                canCancelClaim && mySeat !== null
+                  ? () => onIntent({ type: "CANCEL_CLAIM", by: mySeat })
+                  : undefined
+              }
+            />
+          </div>
+        )}
+      </div>
 
       {/* Card area — the only flexing child. Measured card sizing. */}
       <div
@@ -1368,16 +1370,14 @@ const MultiplayerGameView: React.FC<Props> = ({
           boxSizing: "border-box", flex: "0 0 auto",
           display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "flex-start", gap: 8,
-          overflowY: needsScroll ? "auto" : "hidden",
-          overflowX: "hidden",
-          opacity: 1,
-          pointerEvents: isRolling ? "none" : "auto",
-          transition: "opacity 250ms ease",
-        }}
-      >
-        {scoreRow}
-
-        <div style={{
+        overflowY: needsScroll ? "auto" : "hidden",
+        overflowX: "hidden",
+        opacity: 1,
+        pointerEvents: isRolling ? "none" : "auto",
+        transition: "opacity 250ms ease",
+      }}
+    >
+      <div style={{
           display: "grid",
           gridTemplateColumns: `repeat(${COLS}, ${cardW}px)`,
           gridTemplateRows: `repeat(${ROWS}, ${cardH}px)`,
