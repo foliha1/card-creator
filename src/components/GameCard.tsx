@@ -9,7 +9,6 @@ interface GameCardProps {
   highlighted?: boolean;
   matched?: boolean;
   wrong?: boolean;
-  wrongWash?: boolean;
   shrinking?: boolean;
   entering?: boolean;
   enterDelay?: number;
@@ -24,7 +23,6 @@ const GameCard = ({
   highlighted,
   matched,
   wrong,
-  wrongWash,
   shrinking,
   entering,
   enterDelay = 0,
@@ -63,11 +61,14 @@ const GameCard = ({
     outerOpacity = 0;
   }
 
-  const animStyle = entering
+  // The wrong animation wins over the highlight pulse on the same card.
+  const showHighlight = !!highlighted && !wrong;
+
+  const animStyle = wrong
+    ? undefined
+    : entering
     ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
-    : shaking
-    ? "card-shake 0.2s ease"
-    : highlighted
+    : showHighlight
     ? "ww-card-pulse 1.6s linear infinite"
     : "none";
 
@@ -82,7 +83,7 @@ const GameCard = ({
       role="button"
       tabIndex={0}
       aria-label={ariaLabel}
-      className={highlighted ? "ww-card-pulse" : undefined}
+      className={wrong ? "ww-wrong" : showHighlight ? "ww-card-pulse" : undefined}
       style={{
         perspective: 600,
         width: "100%",
@@ -138,21 +139,8 @@ const GameCard = ({
             style={{ width: "100%", height: "100%", display: "block" }}
             draggable={false}
           />
-          {/* Red overlay for wrong */}
-          {(wrong || wrongWash) && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundColor: wrong
-                  ? "rgba(215,34,41,0.3)"
-                  : "rgba(215,34,41,0.1)",
-                transition: "background-color 0.3s",
-                pointerEvents: "none",
-              }}
-            />
-          )}
         </div>
+
 
         {/* Back */}
         <div
@@ -175,7 +163,7 @@ const GameCard = ({
         </div>
       </div>
 
-      {highlighted && (
+      {showHighlight && (
         <>
           <div
             className="ww-card-shine"
@@ -205,6 +193,13 @@ const GameCard = ({
               zIndex: 3,
             }}
           />
+        </>
+      )}
+
+      {wrong && (
+        <>
+          <div className="ww-wrong-wash" style={{ zIndex: 4 }} />
+          <div className="ww-wrong-ring" style={{ zIndex: 5 }} />
         </>
       )}
     </div>

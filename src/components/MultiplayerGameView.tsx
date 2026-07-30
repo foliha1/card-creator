@@ -503,23 +503,22 @@ const ActionButton: React.FC<{
 
 // -------- Grid overlay --------
 
-const GridOverlay: React.FC<{ kind: "GREAT_MATCH" | "NOPE" }> = ({ kind }) => {
-  const isGreat = kind === "GREAT_MATCH";
+const GridOverlay: React.FC<{ kind: "GREAT_MATCH" }> = () => {
   return (
     <div style={{
       position: "absolute", inset: 16, borderRadius: R_STRIP,
-      background: isGreat ? GREEN : RED, border: BORDER_HEAVY,
+      background: GREEN, border: BORDER_HEAVY,
       display: "flex", alignItems: "center", justifyContent: "center",
       pointerEvents: "none", overflow: "hidden",
     }}>
       <span style={{
         fontFamily: FONT_FAMILY, fontStyle: "italic",
-        fontSize: isGreat ? 88 : 100, lineHeight: "85%",
-        color: isGreat ? INK : SURFACE,
-        transform: `rotate(${isGreat ? -4.69 : 6.55}deg)`,
+        fontSize: 88, lineHeight: "85%",
+        color: INK,
+        transform: "rotate(-4.69deg)",
         whiteSpace: "nowrap",
       }}>
-        {isGreat ? "Great Match!" : "NOPE!"}
+        Great Match!
       </span>
     </div>
   );
@@ -742,8 +741,7 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   // Detect self outcome events (last ~1.4s) for the grid overlay.
   const myGreat = mySeat !== null && events.some((e) => e.kind === "GREAT_MATCH" && e.seat === mySeat);
-  const myNope = mySeat !== null && events.some((e) => e.kind === "NOPE" && e.seat === mySeat);
-  const overlay: "GREAT_MATCH" | "NOPE" | null = myGreat ? "GREAT_MATCH" : myNope ? "NOPE" : null;
+  const overlay: "GREAT_MATCH" | null = myGreat ? "GREAT_MATCH" : null;
 
   // -------- Sound effects --------
   // Each fires once per event using refs to remember previous values / seen
@@ -771,13 +769,33 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (prev === null && s.claimBy !== null) playWhoopCall();
   }, [s.claimBy]);
 
+  // Remember the last pair of touched cards. The NOPE event lands on the tick
+  // after the claim resolves, when selectedCards is already empty — so this
+  // ref is never cleared, only overwritten by the next full pair.
+  const lastPairRef = React.useRef<number[]>([]);
+  React.useEffect(() => {
+    if (s.selectedCards.length === 2) lastPairRef.current = [...s.selectedCards];
+  }, [s.selectedCards]);
+
+  const [wrongCards, setWrongCards] = React.useState<number[]>([]);
+  const wrongTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => () => {
+    if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+  }, []);
+
   const seenEventIdsRef = React.useRef<Set<string>>(new Set());
   React.useEffect(() => {
     for (const e of events) {
       if (seenEventIdsRef.current.has(e.id)) continue;
       seenEventIdsRef.current.add(e.id);
       if (e.kind === "GREAT_MATCH") playCorrect();
-      else if (e.kind === "NOPE") playWrong();
+      else if (e.kind === "NOPE") {
+        playWrong();
+        // Every player sees the wrong pair animate — no seat filter.
+        setWrongCards(lastPairRef.current);
+        if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+        wrongTimerRef.current = setTimeout(() => setWrongCards([]), 900);
+      }
     }
     // Bound the dedup set so it doesn't grow forever across a long session.
     if (seenEventIdsRef.current.size > 256) {
@@ -1168,8 +1186,7 @@ const MultiplayerGameView: React.FC<Props> = ({
                   onClick={() => handleCardClick(i)}
                   highlighted={selected}
                   matched={s.matchedCards.includes(i)}
-                  wrong={false}
-                  wrongWash={false}
+                  wrong={wrongCards.includes(i)}
                   shaking={false}
                   fill
                 />

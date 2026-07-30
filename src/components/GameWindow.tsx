@@ -864,8 +864,7 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({ tier, gridSize, onNewGame, 
                     onClick={() => handleCardClick(i)}
                     highlighted={g.selectedCards.includes(i) || (g.opponentClaiming?.indices.includes(i) ?? false) || (g.lastCall && lastCallSel.includes(i))}
                     matched={g.matchedCards.has(i)}
-                    wrong={wrongFlashCards.has(i)}
-                    wrongWash={wrongWashCards.has(i)}
+                    wrong={wrongFlashCards.has(i) || wrongWashCards.has(i)}
                     shaking={shakingCards.has(i) || lastCallShake.has(i)}
                   />
                 </div>
