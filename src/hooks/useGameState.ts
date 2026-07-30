@@ -112,8 +112,15 @@ export type Phase =
   | "FLIPPING"
   | "CLAIM_SELECTING"
   | "CLAIM_RESOLVING"
+  | "SETTLING"
   | "LAST_CALL"
   | "GAME_OVER";
+
+// How long the engine holds in SETTLING so feedback animations can finish
+// before the board advances.
+export const SETTLE_MATCH_MS = 1150;
+export const SETTLE_WRONG_MS = 800;
+
 
 type InFlight =
   | null
