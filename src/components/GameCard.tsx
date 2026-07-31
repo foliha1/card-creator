@@ -67,15 +67,10 @@ const GameCard = ({
     outerOpacity = 0;
   }
 
-  // Precedence: wrong > matched > enter/highlight. Only one treatment runs.
-  const showHighlight = !!highlighted && !wrong && !matched;
-
   const animStyle = wrong || matched
     ? undefined
     : entering
     ? `card-enter-${card.id} 0.3s ease ${enterDelay}ms both`
-    : showHighlight
-    ? "ww-card-pulse 1.6s linear infinite"
     : "none";
 
   const shapeLabel = card.shape === "tri" ? "triangle" : card.shape;
@@ -86,10 +81,12 @@ const GameCard = ({
   // NOTE: matched intentionally gets NO `ww-great` here. The scale/slide is
   // performed by a flying copy rendered in a fixed-position layer above the
   // grid; the real card only keeps its green wash + ring in place.
+  // Selection is a one-shot hold animation; removing the class ends it
+  // immediately with no exit transition.
   const wrapperClass = wrong
     ? "ww-wrong"
-    : showHighlight
-    ? "ww-card-pulse"
+    : highlighted && !matched
+    ? "ww-select"
     : undefined;
 
 
