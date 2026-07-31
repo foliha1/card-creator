@@ -762,11 +762,17 @@ const MultiplayerGameView: React.FC<Props> = ({
 
   // Fade in a radial vignette over the persistent intro-animation still once
   // gameplay mounts, softening the background pattern behind the board.
+  // Fade it back out when the game ends so the background returns cleanly.
+  const isGameOver = s.phase === "GAME_OVER";
   const [bgOverlayVisible, setBgOverlayVisible] = useState(false);
   useEffect(() => {
+    if (isGameOver) {
+      setBgOverlayVisible(false);
+      return;
+    }
     const id = requestAnimationFrame(() => setBgOverlayVisible(true));
     return () => cancelAnimationFrame(id);
-  }, []);
+  }, [isGameOver]);
 
   // ---- roll-hero overlay wiring ----------------------------------------
   // Root of the play area — the overlay is absolutely positioned inside it.
@@ -1328,7 +1334,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           zIndex: -1,
           pointerEvents: "none",
           background:
-            "radial-gradient(circle at center, rgba(35,31,32,1) 0%, rgba(35,31,32,0.68) 55%, rgba(35,31,32,0) 100%)",
+            "radial-gradient(circle at center, rgba(35,31,32,1) 0%, rgba(35,31,32,1) 55%, rgba(35,31,32,0) 100%)",
           opacity: bgOverlayVisible ? 1 : 0,
           transition: prefersReducedMotion() ? "none" : "opacity 1200ms cubic-bezier(0.22, 0.61, 0.36, 1)",
         }}
