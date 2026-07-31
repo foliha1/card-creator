@@ -18,7 +18,10 @@ interface GameCardProps {
   dealKey?: string | number;
   /** Stagger index for the deal-in animation (`--ww-deal-i`). */
   dealIndex?: number;
+  /** Receives the selection wash element so callers can await its animationend. */
+  washRef?: (el: HTMLDivElement | null) => void;
 }
+
 
 
 const GameCard = ({
