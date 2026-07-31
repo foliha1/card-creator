@@ -330,7 +330,8 @@ const EndScreen: React.FC<{
 const Header: React.FC<{
   round: number;
   deckCount: number;
-}> = ({ round, deckCount }) => {
+  onLeave: () => void;
+}> = ({ round, deckCount, onLeave }) => {
   const half: React.CSSProperties = {
     flex: "1 1 0", display: "flex", alignItems: "center",
     justifyContent: "center", padding: "0 4px", minWidth: 0,
@@ -343,18 +344,36 @@ const Header: React.FC<{
   };
   return (
     <div style={{
-      display: "flex", flexDirection: "row", height: 30, flex: "none",
+      display: "flex", flexDirection: "row", gap: 8, height: 44, flex: "none",
     }}>
+      {/* 44px bar - 2px borders = 40px content box; 8px inset top and bottom
+          makes the stretched divider exactly 24px tall. */}
       <div style={{
-        flex: "1 1 0", height: 30, boxSizing: "border-box",
+        flex: "1 1 0", height: 44, boxSizing: "border-box",
         display: "flex", alignItems: "center",
-        padding: "0 4px", gap: 4, overflow: "hidden",
+        padding: "8px 4px", gap: 4, overflow: "hidden",
         background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
       }}>
         <div style={half}><span style={text}>Round: {round}</span></div>
         <div aria-hidden="true" style={{ width: 2, background: SURFACE, alignSelf: "stretch", flex: "none" }} />
         <div style={half}><span style={text}>{deckCount} Cards Left</span></div>
       </div>
+      <button
+        type="button"
+        className="mp-header-btn"
+        onClick={onLeave}
+        aria-label="Leave game"
+        style={{
+          all: "unset",
+          boxSizing: "border-box",
+          width: 44, height: 44, flex: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: RED, border: BORDER_HEAVY, borderRadius: R_BOX,
+          cursor: "pointer",
+        }}
+      >
+        <X size={22} color={SURFACE} aria-hidden="true" />
+      </button>
     </div>
   );
 };
