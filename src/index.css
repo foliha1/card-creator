@@ -367,26 +367,16 @@ All colors MUST be HSL.
   .ww-shine-thin, .ww-shine-wide { animation: none; opacity: 0; }
 }
 
-/* ── Selected card: single 500ms hold animation (no loop, no shine) ── */
-.ww-select {
-  transform-origin: center;
-  animation: ww-select-scale 500ms linear 1 both;
-}
+/* ── Selected card: single 500ms hold animation (no loop, no shine, no scale) ── */
 .ww-select-wash {
-  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  position: absolute; inset: calc(-1px * var(--ww-k)); border-radius: inherit;
+  pointer-events: none;
   background: rgba(0,114,178,0.4); opacity: 0;
   animation: ww-select-wash 500ms linear 1 both;
 }
 .ww-select-ring {
   position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   animation: ww-select-ring 500ms linear 1 both;
-}
-
-@keyframes ww-select-scale {
-  0%      { animation-timing-function: cubic-bezier(.638,-.001,.272,1.804);
-            transform: scale(1); }
-  79.94%  { transform: scale(.90); }
-  100%    { transform: scale(.90); }
 }
 
 @keyframes ww-select-wash {
@@ -403,9 +393,6 @@ All colors MUST be HSL.
   100%    { box-shadow: inset 0 0 0 calc(2px * var(--ww-k)) #0072B2; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ww-select { animation: none; }
-}
 
 /* ── Great-match ghost (per-card, 1s @ 300ms delay) ── */
 .ww-great {
