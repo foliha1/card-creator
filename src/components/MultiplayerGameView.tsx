@@ -31,6 +31,10 @@ import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
 import type { IntentAction, RollAttribute, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
+import {
+  GREAT_MATCH_DELAY_MS, DEAL_STAGGER_MS, DEAL_MOVE_MS, SFX_DEAL_STEP_MS,
+  applyAnimationTimingVars,
+} from "@/lib/animationTiming";
 import { serverNow } from "@/hooks/useServerClock";
 import RollHeroOverlay from "@/components/RollHeroOverlay";
 import { MATCH_ART_SRC } from "@/components/MatchDie";
@@ -794,6 +798,13 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
   }, []);
 
+  // Pending sound timers, cleared on unmount so no chime outlives the board.
+  const soundTimersRef = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+  React.useEffect(() => {
+    applyAnimationTimingVars();
+    return () => { soundTimersRef.current.forEach(clearTimeout); soundTimersRef.current = []; };
+  }, []);
+
   const [activeCommit, setActiveCommit] = React.useState<RollCommitPayload | null>(null);
   const [heroRects, setHeroRects] = React.useState<{
     home: DOMRect; target: DOMRect; parent: DOMRect;
@@ -810,6 +821,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (!home || !target || !parent) return;
     setHeroRects({ home, target, parent });
     setActiveCommit(rollCommit);
+    playDiceRoll();
     // cardAreaRef is declared below; the ref itself is stable so eslint's
     // dependency check is not helpful here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -883,14 +895,6 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (prev === null && s.peekingCard !== null) playFlip();
   }, [s.peekingCard]);
 
-  const prevRollingRef = React.useRef<boolean>(s.rolling);
-  React.useEffect(() => {
-    const prev = prevRollingRef.current;
-    prevRollingRef.current = s.rolling;
-    // Roll resolves when the rolling animation flag drops from true → false.
-    if (prev && !s.rolling) playDiceRoll();
-  }, [s.rolling]);
-
   const prevClaimByRef = React.useRef<number | null>(s.claimBy);
   React.useEffect(() => {
     const prev = prevClaimByRef.current;
@@ -951,7 +955,10 @@ const MultiplayerGameView: React.FC<Props> = ({
       if (seenEventIdsRef.current.has(e.id)) continue;
       seenEventIdsRef.current.add(e.id);
       if (e.kind === "GREAT_MATCH") {
-        playCorrect();
+        // The ghost animation has a GREAT_MATCH_DELAY_MS animation-delay —
+        // hold the sound by the same amount so it lands with the card.
+        const chime = setTimeout(playCorrect, GREAT_MATCH_DELAY_MS);
+        soundTimersRef.current.push(chime);
         const idxs = lastPairRef.current;
         const copies = idxs.flatMap((i) => {
           const el = cellRefs.current[i];
@@ -1021,7 +1028,17 @@ const MultiplayerGameView: React.FC<Props> = ({
   React.useEffect(() => {
     const prev = prevOccupiedRef.current;
     prevOccupiedRef.current = occupiedCount;
-    if (occupiedCount > prev) playDeal(occupiedCount - prev);
+    const count = occupiedCount - prev;
+    if (count <= 0) return;
+    // playDeal() already plays a multi-card burst (SFX_DEAL_STEP_MS apart), so
+    // keep that for the batch and align its midpoint with the midpoint of the
+    // cards landing: card i lands at i*DEAL_STAGGER_MS + DEAL_MOVE_MS.
+    const landMid = DEAL_MOVE_MS + ((count - 1) * DEAL_STAGGER_MS) / 2;
+    const soundMid = ((count - 1) * SFX_DEAL_STEP_MS) / 2;
+    const delay = Math.max(0, Math.round(landMid - soundMid));
+    const t = setTimeout(() => playDeal(count), delay);
+    soundTimersRef.current.push(t);
+    return () => { clearTimeout(t); };
   }, [occupiedCount]);
 
 
