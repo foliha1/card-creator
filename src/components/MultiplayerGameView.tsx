@@ -895,15 +895,6 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (prev === null && s.peekingCard !== null) playFlip();
   }, [s.peekingCard]);
 
-  const prevRollingRef = React.useRef<boolean>(s.rolling);
-  React.useEffect(() => {
-    const prev = prevRollingRef.current;
-    prevRollingRef.current = s.rolling;
-    // The roll sound fires off the roll:committed broadcast (see the
-    // activeCommit effect) so audio starts with the visual on every seat.
-    void prev;
-  }, [s.rolling]);
-
   const prevClaimByRef = React.useRef<number | null>(s.claimBy);
   React.useEffect(() => {
     const prev = prevClaimByRef.current;
