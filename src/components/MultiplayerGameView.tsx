@@ -1275,13 +1275,15 @@ const MultiplayerGameView: React.FC<Props> = ({
   const COLS = 3;
   const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
-  // Free vertical space for the card area: viewport height minus the root
-  // padding, top bar, player panel, bottom bar, the three 8px column gaps,
-  // and the card area's own 32px of vertical padding. The banner is now an
-  // overlay on the player panel, so it no longer needs reserved height.
+  // Free vertical space for the card area: viewport height (already minus the
+  // fixed header and its safe-area inset via rootH) minus the page wrapper's
+  // 8px top/bottom padding, the root's own 16px padding, the 44px top bar, the
+  // player panel, the bottom bar, the three 8px column gaps, and the card
+  // area's own 32px of vertical padding. The banner is an overlay on the
+  // player panel, so it needs no reserved height.
   const availH = Math.max(
     0,
-    rootH - 16 - 30 - panelH - 110.94 - 24 - 32,
+    rootH - 16 - 16 - 44 - panelH - 110.94 - 24 - 32,
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
@@ -1296,15 +1298,15 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: 8, paddingTop: `calc(8px + ${SITE_HEADER_OFFSET})`,
+      padding: 8, marginTop: SITE_HEADER_H,
       height: "auto", maxHeight: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>
       <SiteHeader
         onSettings={() => setShowSettings(true)}
-        onLeave={() => setShowLeave(true)}
       />
+
       {activeCommit && heroRects && (
         <RollHeroOverlay
           commit={activeCommit}
