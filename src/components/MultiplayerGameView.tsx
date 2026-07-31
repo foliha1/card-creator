@@ -23,7 +23,7 @@
 // state; the game currently only surfaces it on the SELF banner.
 // ============================================================================
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Settings, X } from "lucide-react";
 import SiteHeader, { SITE_HEADER_H } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
@@ -41,6 +41,14 @@ import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+
+const prefersReducedMotion = (): boolean => {
+  try {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+};
 
 interface Props {
   publicState: PublicState;
