@@ -1025,20 +1025,37 @@ const MultiplayerGameView: React.FC<Props> = ({
   }, [occupiedCount]);
 
 
-  // Auto-resolve match once two cards are selected during a claim.
+  // Auto-resolve match once two cards are selected during a claim. Driven by
+  // the selection animation finishing (animationend on the second card's wash)
+  // so the flip can never start mid-animation. A 900ms fallback timer covers
+  // cases where animationend never fires (reduced motion, backgrounded tab,
+  // cancelled animation). Whichever fires first wins; dispatch happens once.
   React.useEffect(() => {
     if (!inClaimMode) return;
-    if (s.selectedCards.length === 2 && mySeat !== null) {
-      const t = setTimeout(() => {
-        onIntent({ type: "PLAYER_RESOLVE_MATCH", by: mySeat });
-      }, 800);
-      return () => clearTimeout(t);
-    }
+    if (s.selectedCards.length !== 2 || mySeat === null) return;
+
+    let done = false;
+    const fire = () => {
+      if (done) return;
+      done = true;
+      onIntent({ type: "PLAYER_RESOLVE_MATCH", by: mySeat });
+    };
+
+    const washes = document.querySelectorAll<HTMLElement>(".ww-select-wash");
+    const target = washes[washes.length - 1] ?? null;
+    target?.addEventListener("animationend", fire);
+    const t = setTimeout(fire, 900);
+
+    return () => {
+      clearTimeout(t);
+      target?.removeEventListener("animationend", fire);
+    };
   }, [inClaimMode, s.selectedCards.length, mySeat, onIntent]);
 
   // Optimistic selection: highlight the instant a card is touched, so the
-  // animation runs for the whole 800ms auto-resolve delay rather than only
+  // animation runs for the whole selection hold rather than only
   // after the intent round-trips back as state.
+
   const [optimisticSel, setOptimisticSel] = React.useState<number[]>([]);
   React.useEffect(() => {
     if (!inClaimMode) setOptimisticSel([]);
