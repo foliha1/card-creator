@@ -25,7 +25,7 @@
 
 import React from "react";
 import { Settings, X } from "lucide-react";
-import SiteHeader, { SITE_HEADER_H, SITE_HEADER_OFFSET } from "@/components/SiteHeader";
+import SiteHeader, { SITE_HEADER_H } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
