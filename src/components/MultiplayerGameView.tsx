@@ -760,6 +760,14 @@ const MultiplayerGameView: React.FC<Props> = ({
   const modalOpen = showSettings || showLeave;
   void _mobile;
 
+  // Fade in a radial vignette over the persistent intro-animation still once
+  // gameplay mounts, softening the background pattern behind the board.
+  const [bgOverlayVisible, setBgOverlayVisible] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setBgOverlayVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   // ---- roll-hero overlay wiring ----------------------------------------
   // Root of the play area — the overlay is absolutely positioned inside it.
   // Home ref points at the 80×80 cream box inside the dice tray.
