@@ -1025,32 +1025,59 @@ const MultiplayerGameView: React.FC<Props> = ({
   }, [occupiedCount]);
 
 
+  // Wash elements keyed by grid index, so the resolve effect can address the
+  // exact card that was selected second (DOM order != selection order).
+  const washRefs = React.useRef<Record<number, HTMLDivElement | null>>({});
+
   // Auto-resolve match once two cards are selected during a claim. Driven by
-  // the selection animation finishing (animationend on the second card's wash)
-  // so the flip can never start mid-animation. A 900ms fallback timer covers
-  // cases where animationend never fires (reduced motion, backgrounded tab,
-  // cancelled animation). Whichever fires first wins; dispatch happens once.
+  // the selection animation finishing (animationend on the second selected
+  // card's wash) so the flip can never start mid-animation. A 700ms fallback
+  // timer covers cases where animationend never fires (reduced motion,
+  // backgrounded tab, cancelled animation, element never mounted). Whichever
+  // fires first wins; dispatch happens once.
   React.useEffect(() => {
     if (!inClaimMode) return;
     if (s.selectedCards.length !== 2 || mySeat === null) return;
 
+    const secondIdx = s.selectedCards[s.selectedCards.length - 1];
     let done = false;
-    const fire = () => {
+    let target: HTMLDivElement | null = null;
+    let raf = 0;
+
+    const fire = (via: "animationend" | "timer") => () => {
       if (done) return;
       done = true;
+      if (import.meta.env.DEV) {
+        console.log(`[resolve] PLAYER_RESOLVE_MATCH via ${via} (card ${secondIdx})`);
+      }
       onIntent({ type: "PLAYER_RESOLVE_MATCH", by: mySeat });
     };
+    const onEnd = fire("animationend");
+    const t = setTimeout(fire("timer"), 700);
 
-    const washes = document.querySelectorAll<HTMLElement>(".ww-select-wash");
-    const target = washes[washes.length - 1] ?? null;
-    target?.addEventListener("animationend", fire);
-    const t = setTimeout(fire, 900);
+    // The wash for the second card may not be mounted on this render pass;
+    // poll on animation frames until it appears (the timer is the backstop).
+    const attach = () => {
+      if (done) return;
+      const el = washRefs.current[secondIdx];
+      if (el) {
+        target = el;
+        el.addEventListener("animationend", onEnd);
+        return;
+      }
+      raf = requestAnimationFrame(attach);
+    };
+    attach();
 
     return () => {
       clearTimeout(t);
-      target?.removeEventListener("animationend", fire);
+      cancelAnimationFrame(raf);
+      target?.removeEventListener("animationend", onEnd);
     };
-  }, [inClaimMode, s.selectedCards.length, mySeat, onIntent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inClaimMode, s.selectedCards.join(","), mySeat, onIntent]);
+
+
 
   // Optimistic selection: highlight the instant a card is touched, so the
   // animation runs for the whole selection hold rather than only
@@ -1499,6 +1526,8 @@ const MultiplayerGameView: React.FC<Props> = ({
                   fill
                   dealKey={dealInfo.keys[i]}
                   dealIndex={dealInfo.idx[i]}
+                  washRef={(el) => { washRefs.current[i] = el; }}
+
                 />
               </div>
             );
