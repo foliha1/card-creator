@@ -19,25 +19,24 @@ Cards keep rendering as images, so the grid, flip and deal animations are untouc
 
 **3. Intro animation recoloring**
 
-The Lottie JSON is parsed once, and every color array is remapped through the same palette map before being handed to the player. Cached per theme, so switching themes doesn't refetch the 776 KB asset.
+The Lottie JSON is parsed once, and every color array matching one of the three hues is remapped through the palette; paper and ink arrays are left untouched. Cached per theme, so switching themes doesn't refetch the 776 KB asset.
 
 **4. Game-integrity guardrails**
 
 Color is a real matching attribute, so a theme whose three hues aren't clearly distinguishable would make the game unfair or unplayable. Each palette is checked at authoring time for:
 
 - pairwise separation between the three hues (perceptual distance, not just hex difference)
-- each hue against paper for card legibility
-- ink against paper for linework
+- each hue against the fixed paper for card legibility, and against ink where hue and linework meet
 
 Palettes that fail don't ship. Color-blind-safe hue triples are preferred, as the current red/blue/orange set already is.
 
 ## Technical notes
 
-- Palette lives alongside `src/lib/tokens.ts` and is exposed through the existing theme context; UI tokens (`COLORS.red`, `.blue`, `.orange`, `.surface`, `.ink`) resolve from the active palette rather than fixed literals, so buttons, chips and the die art follow automatically.
+- Palette lives alongside `src/lib/tokens.ts` and is exposed through the existing theme context; the hue tokens (`COLORS.red`, `.blue`, `.orange` and their hover variants) resolve from the active palette rather than fixed literals, so buttons, chips and the die art follow automatically. `COLORS.surface` and `COLORS.ink` stay literal.
 - Die faces in `public/dice/*.svg` go through the same SVG recolor path.
-- Recolor is a whole-token hex replace on the SVG text, case-insensitive, restricted to the four known brand values — no parsing, no DOM inlining, no layout risk.
+- Recolor is a whole-token hex replace on the SVG text, case-insensitive, restricted to the three known hue values — no parsing, no DOM inlining, no layout risk.
 - Blob URLs are revoked when a theme is swapped out to avoid leaks across switches.
-- Reduced-motion, deal/select/match animations, and all engine code are untouched. Animation CSS that hardcodes brand hex (`ww-select-ring` `#0072B2`, `ww-wrong` `#D72229`, `ww-great` `#59CD90`) moves to CSS variables fed by the palette.
+- Reduced-motion, deal/select/match animations, and all engine code are untouched. Animation CSS that hardcodes a hue (`ww-select-ring` `#0072B2`, `ww-wrong` `#D72229`) moves to CSS variables fed by the palette; the green `ww-great` `#59CD90` stays fixed unless you want it themed too.
 
 ## Scope
 
