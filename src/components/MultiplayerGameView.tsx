@@ -582,7 +582,8 @@ const DieBox: React.FC<{
       )}
     </div>
   </div>
-);
+  );
+};
 
 const ActionButton: React.FC<{
   kind: ButtonKind; disabled?: boolean; onClick?: () => void; label?: string;
