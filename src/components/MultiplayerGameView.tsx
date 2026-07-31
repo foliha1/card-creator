@@ -1166,6 +1166,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     <Header
       round={s.roundNum}
       deckCount={s.deckCount}
+      onLeave={() => setShowLeave(true)}
     />
   );
   const opponentRow = <OpponentRow chips={chips} />;
