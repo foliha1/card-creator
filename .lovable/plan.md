@@ -5,17 +5,17 @@ Yes — both are recolorable at runtime. I checked the assets:
 - The 48 card SVGs are flat vector files using exactly four literal hex fills: paper `#f8f2e9`, ink `#231f20`, and the shape hue (`#d72229` red / `#0072b2` blue / `#e79024` yellow). The card back uses all four.
 - The intro Lottie (`whoop-intro.json`, 776 KB) uses the exact same four colors and nothing else (plus one black). Every color lives in plain numeric RGB arrays that can be remapped in JS.
 
-So a single palette of four brand slots drives the entire app: UI, cards, and intro.
+Paper (`#f8f2e9`) and ink (`#231f20`) are fixed and never change. A theme swaps only the three shape hues, everywhere they appear: UI, cards, and intro.
 
 ## What gets built
 
 **1. Palette definition**
 
-A theme is four colors: `paper`, `ink`, and three shape hues (`hue1`, `hue2`, `hue3`). Today's brand values become the default "Classic" theme. Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
+A theme is three colors — the hues currently named red, blue and yellow/orange. Paper and ink stay constant across every theme. Today's values become the default "Classic" theme. Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
 
 **2. Card recoloring**
 
-Cards keep rendering as images, so the grid, flip and deal animations are untouched. On theme change, each card SVG's source text is fetched once, its four known hex values are swapped for the active palette's, and the result is cached as a blob URL keyed by theme. `GameCard` reads the themed URL instead of the raw path. The existing preload pass warms the cache for the active theme so cards never show a back-then-face race.
+Cards keep rendering as images, so the grid, flip and deal animations are untouched. On theme change, each card SVG's source text is fetched once, its three hue hex values are swapped for the active palette's (paper and ink left as-is), and the result is cached as a blob URL keyed by theme. `GameCard` reads the themed URL instead of the raw path. The existing preload pass warms the cache for the active theme so cards never show a back-then-face race.
 
 **3. Intro animation recoloring**
 
