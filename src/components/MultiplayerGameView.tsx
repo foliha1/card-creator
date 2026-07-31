@@ -47,6 +47,7 @@ import {
 } from "@/lib/sounds";
 import { usePalette } from "@/lib/palette";
 import { themedSrc, useArtVersion } from "@/lib/artTheme";
+import ThemePicker from "@/components/ThemePicker";
 
 const prefersReducedMotion = (): boolean => {
   try {
