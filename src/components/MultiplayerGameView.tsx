@@ -1074,7 +1074,9 @@ const MultiplayerGameView: React.FC<Props> = ({
       cancelAnimationFrame(raf);
       target?.removeEventListener("animationend", onEnd);
     };
-  }, [inClaimMode, s.selectedCards, mySeat, onIntent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inClaimMode, s.selectedCards.join(","), mySeat, onIntent]);
+
 
 
   // Optimistic selection: highlight the instant a card is touched, so the
