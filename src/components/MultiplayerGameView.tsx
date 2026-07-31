@@ -1277,13 +1277,13 @@ const MultiplayerGameView: React.FC<Props> = ({
   const availW = Math.max(0, box.w);
   // Free vertical space for the card area: viewport height (already minus the
   // fixed header and its safe-area inset via rootH) minus the page wrapper's
-  // 8px top/bottom padding, the root's own 16px padding, the 44px top bar, the
-  // player panel, the bottom bar, the three 8px column gaps, and the card
-  // area's own 32px of vertical padding. The banner is an overlay on the
-  // player panel, so it needs no reserved height.
+  // 8px top/bottom padding, the root's own 16px padding, the inner column's
+  // 8px top padding, the 44px top bar, the player panel, the bottom bar, the
+  // three 8px column gaps, and the card area's own 32px of vertical padding.
+  // The banner is an overlay on the player panel, so it needs no reserved height.
   const availH = Math.max(
     0,
-    rootH - 16 - 16 - 44 - panelH - 110.94 - 24 - 32,
+    rootH - 16 - 16 - 8 - 44 - panelH - 110.94 - 24 - 32,
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
