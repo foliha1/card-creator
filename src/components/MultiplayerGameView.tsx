@@ -42,6 +42,8 @@ import type { Card } from "@/cardData";
 import { ALL_CARDS, CARD_BACK_PATH } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
+import { usePalette } from "@/lib/palette";
+import { themedSrc, useArtVersion } from "@/lib/artTheme";
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
@@ -759,6 +761,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
 }) => {
   void _mobile;
+  const { palette } = usePalette();
+  useArtVersion();
   const [showSettings, setShowSettings] = React.useState(false);
   const [showLeave, setShowLeave] = React.useState(false);
   const modalOpen = showSettings || showLeave;
@@ -1676,7 +1680,7 @@ const MultiplayerGameView: React.FC<Props> = ({
               }}
             >
               <img
-                src={f.card.svgPath}
+                src={themedSrc(f.card.svgPath, palette)}
                 alt=""
                 draggable={false}
                 style={{ width: "100%", height: "100%", display: "block", borderRadius: R_CARD }}
