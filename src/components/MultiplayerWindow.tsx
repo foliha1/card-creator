@@ -605,7 +605,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
         .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
         .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
-        .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+        .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px var(--ww-hue-2, #0072b2) inset; }
       `}</style>
       {opts?.nav !== false && <SiteHeader />}
       <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
@@ -785,8 +785,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             fontWeight: 400,
             fontSize: 16,
             lineHeight: "20px",
-            color: "#D72229",
-            border: "1.5px solid #D72229",
+            color: "var(--ww-hue-1, #d72229)",
+            border: "1.5px solid var(--ww-hue-1, #d72229)",
             borderRadius: 4,
             padding: "8px 12px",
             background: "#F8F2E9",
@@ -901,7 +901,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               style={{
                 flexGrow: 1,
                 height: 71,
-                background: "#D72229",
+                background: "var(--ww-hue-1, #d72229)",
                 border: "2px solid #231F20",
                 borderRadius: 4,
                 fontFamily: FONT_FAMILY,
@@ -1162,7 +1162,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
           .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
           .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
-          .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
+          .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px var(--ww-hue-2, #0072b2) inset; }
           .mp-shell input::placeholder { color: ${COLORS.panel}; opacity: 1; }
         `}</style>
         <SiteHeader />
@@ -1250,7 +1250,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       style={{
         alignSelf: "stretch",
         height: 56,
-        background: shareFlash ? "#231F20" : "#0072B2",
+        background: shareFlash ? "#231F20" : "var(--ww-hue-2, #0072b2)",
         border: "2px solid #231F20",
         borderRadius: 4,
         fontFamily: FONT_FAMILY,
@@ -1320,7 +1320,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                   height: 188,
                   background: "#D0C3AF",
                   border: `${selected ? 4 : 2}px solid #231F20`,
-                  outline: selected ? "2px solid #D72229" : "none",
+                  outline: selected ? "2px solid var(--ww-hue-1, #d72229)" : "none",
                   outlineOffset: selected ? -8 : 0,
                   borderRadius: 4,
                   padding: 12,
@@ -1471,7 +1471,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       style={{
         alignSelf: "stretch",
         height: 80,
-        background: startDisabled ? "#544C4A" : "#D72229",
+        background: startDisabled ? "#544C4A" : "var(--ww-hue-1, #d72229)",
         border: "2px solid #231F20",
         borderRadius: 4,
         fontFamily: FONT_FAMILY,
@@ -1610,7 +1610,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             style={{
               flexGrow: 1,
               height: 56,
-              background: "#D72229",
+              background: "var(--ww-hue-1, #d72229)",
               border: "2px solid #231F20",
               borderRadius: 4,
               fontFamily: FONT_FAMILY,

@@ -15,6 +15,8 @@
 import { CSSProperties } from "react";
 import { COLORS } from "@/lib/tokens";
 import type { RollAttribute } from "@/lib/multiplayer";
+import { usePalette } from "@/lib/palette";
+import { themedSrc, useArtVersion } from "@/lib/artTheme";
 
 export interface MatchDieProps {
   size: number;
@@ -77,6 +79,8 @@ export const MATCH_ART_SRC: Record<RollAttribute, string> = {
 const FACES: FaceKey[] = ["front", "back", "right", "left", "top", "bottom"];
 
 export function MatchDie({ size, attribute, faceIndex, rotation, transition }: MatchDieProps) {
+  const { palette } = usePalette();
+  useArtVersion();
   const sceneStyle: CSSProperties = {
     width: size,
     height: size,
@@ -137,7 +141,7 @@ export function MatchDie({ size, attribute, faceIndex, rotation, transition }: M
                 }}
               >
                 <img
-                  src={MATCH_ART_SRC[attr]}
+                  src={themedSrc(MATCH_ART_SRC[attr], palette)}
                   alt=""
                   draggable={false}
                   style={{

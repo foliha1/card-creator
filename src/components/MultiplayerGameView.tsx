@@ -45,6 +45,9 @@ import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+import { usePalette } from "@/lib/palette";
+import { themedSrc, useArtVersion } from "@/lib/artTheme";
+import ThemePicker from "@/components/ThemePicker";
 
 const prefersReducedMotion = (): boolean => {
   try {
@@ -533,7 +536,10 @@ const DieBox: React.FC<{
   heroActive: boolean;
   waiting: boolean;
   homeRef?: React.Ref<HTMLDivElement>;
-}> = ({ rule, heroActive, waiting, homeRef }) => (
+}> = ({ rule, heroActive, waiting, homeRef }) => {
+  const { palette } = usePalette();
+  useArtVersion();
+  return (
   <div style={{
     width: 111, flex: "none", boxSizing: "border-box", background: ORANGE,
     border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8,
@@ -569,7 +575,7 @@ const DieBox: React.FC<{
         </span>
       ) : (
         <img
-          src={MATCH_ART_SRC[rule as RollAttribute]}
+          src={themedSrc(MATCH_ART_SRC[rule as RollAttribute], palette)}
           alt={`Match the ${rule}`}
           draggable={false}
           style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
@@ -577,7 +583,8 @@ const DieBox: React.FC<{
       )}
     </div>
   </div>
-);
+  );
+};
 
 const ActionButton: React.FC<{
   kind: ButtonKind; disabled?: boolean; onClick?: () => void; label?: string;
@@ -759,6 +766,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
 }) => {
   void _mobile;
+  const { palette } = usePalette();
+  useArtVersion();
   const [showSettings, setShowSettings] = React.useState(false);
   const [showLeave, setShowLeave] = React.useState(false);
   const modalOpen = showSettings || showLeave;
@@ -1676,7 +1685,7 @@ const MultiplayerGameView: React.FC<Props> = ({
               }}
             >
               <img
-                src={f.card.svgPath}
+                src={themedSrc(f.card.svgPath, palette)}
                 alt=""
                 draggable={false}
                 style={{ width: "100%", height: "100%", display: "block", borderRadius: R_CARD }}
@@ -1703,9 +1712,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           <h2 id="mp-settings-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: INK }}>
             Settings
           </h2>
-          <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, color: MUTED }}>
-            Coming soon.
-          </p>
+          <ThemePicker />
           <a
             href="/about#how-to-play"
             style={{

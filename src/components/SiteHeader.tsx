@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Settings, X } from "lucide-react";
 import { COLORS, FONT_FAMILY, RADIUS, BORDER } from "@/lib/tokens";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+import ThemePicker from "@/components/ThemePicker";
 
 const TOUCH = 44;
 
@@ -177,9 +178,7 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onSettings, onLeave }) => {
                 <X size={20} color={COLORS.ink} aria-hidden="true" />
               </button>
             </div>
-            <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, color: COLORS.inkMuted }}>
-              Coming soon.
-            </p>
+            <ThemePicker />
             <a
               href="/about#how-to-play"
               style={{
