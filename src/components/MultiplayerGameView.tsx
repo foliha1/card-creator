@@ -42,11 +42,11 @@ import type { Card } from "@/cardData";
 import { ALL_CARDS, CARD_BACK_PATH } from "@/cardData";
 import { callClaimLock } from "@/lib/claimLock";
 import {
-import { usePalette } from "@/lib/palette";
-import { themedSrc, useArtVersion } from "@/lib/artTheme";
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+import { usePalette } from "@/lib/palette";
+import { themedSrc, useArtVersion } from "@/lib/artTheme";
 
 const prefersReducedMotion = (): boolean => {
   try {
