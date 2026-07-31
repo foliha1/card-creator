@@ -1354,7 +1354,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       <div style={{
         display: "flex", flexDirection: "column", gap: 8,
         width: "100%", height: "auto", maxHeight: "100%",
-        boxSizing: "border-box",
+        paddingTop: 8, boxSizing: "border-box",
       }}>
       {header}
       <div ref={panelRef} style={{ position: "relative", flex: "none" }}>
