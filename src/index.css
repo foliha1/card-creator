@@ -367,26 +367,44 @@ All colors MUST be HSL.
   .ww-shine-thin, .ww-shine-wide { animation: none; opacity: 0; }
 }
 
-/* ── Highlighted card: pulse + ring + shine (1.6s linear infinite, in sync) ── */
-@keyframes ww-card-pulse {
-  0%   { animation-timing-function: cubic-bezier(.894,.018,.5,1); transform: scale(1); }
-  50%  { animation-timing-function: cubic-bezier(.89,.02,.5,1); transform: scale(.96); }
-  100% { transform: scale(1); }
+/* ── Selected card: single 500ms hold animation (no loop, no shine) ── */
+.ww-select {
+  transform-origin: center;
+  animation: ww-select-scale 500ms linear 1 both;
 }
-@keyframes ww-card-ring {
-  0%   { animation-timing-function: cubic-bezier(.5,0,.5,1); opacity: 0; }
-  50%  { animation-timing-function: cubic-bezier(.5,0,.5,1); opacity: 1; }
-  100% { opacity: 0; }
+.ww-select-wash {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: rgba(0,114,178,0.4); opacity: 0;
+  animation: ww-select-wash 500ms linear 1 both;
 }
-@keyframes ww-card-shine {
-  0%   { animation-timing-function: cubic-bezier(.89,.02,.5,1); transform: translate(0px, 0px) rotate(30deg); }
-  50%  { transform: translate(calc(140px * var(--ww-k)), calc(147px * var(--ww-k))) rotate(30deg); }
-  100% { transform: translate(calc(140px * var(--ww-k)), calc(147px * var(--ww-k))) rotate(30deg); }
+.ww-select-ring {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  animation: ww-select-ring 500ms linear 1 both;
 }
+
+@keyframes ww-select-scale {
+  0%      { animation-timing-function: cubic-bezier(.638,-.001,.272,1.804);
+            transform: scale(1); }
+  79.94%  { transform: scale(.95); }
+  100%    { transform: scale(.95); }
+}
+
+@keyframes ww-select-wash {
+  0%      { animation-timing-function: cubic-bezier(.5,0,.5,1); opacity: 0; }
+  79.94%  { animation-timing-function: linear; opacity: 1; }
+  100%    { opacity: 1; }
+}
+
+@keyframes ww-select-ring {
+  0%      { animation-timing-function: cubic-bezier(.5,0,.5,1);
+            box-shadow: inset 0 0 0 0 #0072B2; }
+  79.94%  { animation-timing-function: linear;
+            box-shadow: inset 0 0 0 calc(2px * var(--ww-k)) #0072B2; }
+  100%    { box-shadow: inset 0 0 0 calc(2px * var(--ww-k)) #0072B2; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ww-card-pulse, .ww-card-ring, .ww-card-shine { animation: none; }
-  .ww-card-ring { opacity: 1; }
-  .ww-card-shine { display: none; }
+  .ww-select { animation: none; }
 }
 
 /* ── Great-match ghost (per-card, 1s @ 300ms delay) ── */
