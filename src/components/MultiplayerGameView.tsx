@@ -1526,6 +1526,8 @@ const MultiplayerGameView: React.FC<Props> = ({
                   fill
                   dealKey={dealInfo.keys[i]}
                   dealIndex={dealInfo.idx[i]}
+                  washRef={(el) => { washRefs.current[i] = el; }}
+
                 />
               </div>
             );
