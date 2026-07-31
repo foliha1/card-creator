@@ -25,7 +25,7 @@
 
 import React from "react";
 import { Settings, X } from "lucide-react";
-import SiteHeader, { SITE_HEADER_H, SITE_HEADER_OFFSET } from "@/components/SiteHeader";
+import SiteHeader, { SITE_HEADER_H } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
 import type { PublicState } from "@/lib/publicState";
@@ -330,7 +330,8 @@ const EndScreen: React.FC<{
 const Header: React.FC<{
   round: number;
   deckCount: number;
-}> = ({ round, deckCount }) => {
+  onLeave: () => void;
+}> = ({ round, deckCount, onLeave }) => {
   const half: React.CSSProperties = {
     flex: "1 1 0", display: "flex", alignItems: "center",
     justifyContent: "center", padding: "0 4px", minWidth: 0,
@@ -343,18 +344,36 @@ const Header: React.FC<{
   };
   return (
     <div style={{
-      display: "flex", flexDirection: "row", height: 30, flex: "none",
+      display: "flex", flexDirection: "row", gap: 8, height: 44, flex: "none",
     }}>
+      {/* 44px bar - 2px borders = 40px content box; 8px inset top and bottom
+          makes the stretched divider exactly 24px tall. */}
       <div style={{
-        flex: "1 1 0", height: 30, boxSizing: "border-box",
+        flex: "1 1 0", height: 44, boxSizing: "border-box",
         display: "flex", alignItems: "center",
-        padding: "0 4px", gap: 4, overflow: "hidden",
+        padding: "8px 4px", gap: 4, overflow: "hidden",
         background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
       }}>
         <div style={half}><span style={text}>Round: {round}</span></div>
         <div aria-hidden="true" style={{ width: 2, background: SURFACE, alignSelf: "stretch", flex: "none" }} />
         <div style={half}><span style={text}>{deckCount} Cards Left</span></div>
       </div>
+      <button
+        type="button"
+        className="mp-header-btn"
+        onClick={onLeave}
+        aria-label="Leave game"
+        style={{
+          all: "unset",
+          boxSizing: "border-box",
+          width: 44, height: 44, flex: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: RED, border: BORDER_HEAVY, borderRadius: R_BOX,
+          cursor: "pointer",
+        }}
+      >
+        <X size={22} color={SURFACE} aria-hidden="true" />
+      </button>
     </div>
   );
 };
@@ -1147,6 +1166,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     <Header
       round={s.roundNum}
       deckCount={s.deckCount}
+      onLeave={() => setShowLeave(true)}
     />
   );
   const opponentRow = <OpponentRow chips={chips} />;
@@ -1255,13 +1275,15 @@ const MultiplayerGameView: React.FC<Props> = ({
   const COLS = 3;
   const ROWS = Math.max(1, Math.ceil(s.grid.length / COLS));
   const availW = Math.max(0, box.w);
-  // Free vertical space for the card area: viewport height minus the root
-  // padding, top bar, player panel, bottom bar, the three 8px column gaps,
-  // and the card area's own 32px of vertical padding. The banner is now an
-  // overlay on the player panel, so it no longer needs reserved height.
+  // Free vertical space for the card area: viewport height (already minus the
+  // fixed header and its safe-area inset via rootH) minus the page wrapper's
+  // 8px top/bottom padding, the root's own 16px padding, the 44px top bar, the
+  // player panel, the bottom bar, the three 8px column gaps, and the card
+  // area's own 32px of vertical padding. The banner is an overlay on the
+  // player panel, so it needs no reserved height.
   const availH = Math.max(
     0,
-    rootH - 16 - 30 - panelH - 110.94 - 24 - 32,
+    rootH - 16 - 16 - 44 - panelH - 110.94 - 24 - 32,
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
@@ -1276,15 +1298,15 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: 8, paddingTop: `calc(8px + ${SITE_HEADER_OFFSET})`,
+      padding: 8, marginTop: SITE_HEADER_H,
       height: "auto", maxHeight: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       <style>{HEADER_FOCUS_CSS}</style>
       <SiteHeader
         onSettings={() => setShowSettings(true)}
-        onLeave={() => setShowLeave(true)}
       />
+
       {activeCommit && heroRects && (
         <RollHeroOverlay
           commit={activeCommit}
