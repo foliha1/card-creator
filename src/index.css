@@ -385,8 +385,8 @@ All colors MUST be HSL.
 @keyframes ww-select-scale {
   0%      { animation-timing-function: cubic-bezier(.638,-.001,.272,1.804);
             transform: scale(1); }
-  79.94%  { transform: scale(.95); }
-  100%    { transform: scale(.95); }
+  79.94%  { transform: scale(.90); }
+  100%    { transform: scale(.90); }
 }
 
 @keyframes ww-select-wash {
