@@ -1,6 +1,4 @@
 // ============================================================================
-import { usePalette } from "@/lib/palette";
-import { themedSrc, useArtVersion } from "@/lib/artTheme";
 // MatchDie — a CSS 3D cube representing the match die. Six faces on a
 // preserve-3d wrapper with perspective. No Three.js, no physics.
 //
@@ -17,6 +15,8 @@ import { themedSrc, useArtVersion } from "@/lib/artTheme";
 import { CSSProperties } from "react";
 import { COLORS } from "@/lib/tokens";
 import type { RollAttribute } from "@/lib/multiplayer";
+import { usePalette } from "@/lib/palette";
+import { themedSrc, useArtVersion } from "@/lib/artTheme";
 
 export interface MatchDieProps {
   size: number;
