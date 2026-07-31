@@ -1328,7 +1328,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           zIndex: -1,
           pointerEvents: "none",
           background:
-            "radial-gradient(circle at center, rgba(35,31,32,0) 0%, rgba(35,31,32,0.68) 55%, rgba(35,31,32,1) 100%)",
+            "radial-gradient(circle at center, rgba(35,31,32,1) 0%, rgba(35,31,32,0.68) 55%, rgba(35,31,32,0) 100%)",
           opacity: bgOverlayVisible ? 1 : 0,
           transition: prefersReducedMotion() ? "none" : "opacity 1200ms cubic-bezier(0.22, 0.61, 0.36, 1)",
         }}
