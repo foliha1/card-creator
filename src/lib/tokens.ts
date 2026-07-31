@@ -82,10 +82,12 @@ export const MOTION = {
   slow: "400ms ease-in-out",
 } as const;
 
+// Background-theme swatches. These are persisted and fed to contrast maths,
+// so they must be real hex values, not themed CSS variables.
 export const THEME_SWATCHES = [
-  { color: COLORS.red, label: "Red" },
-  { color: COLORS.blue, label: "Blue" },
-  { color: COLORS.orange, label: "Orange" },
+  { color: BRAND_HEX.red, label: "Red" },
+  { color: BRAND_HEX.blue, label: "Blue" },
+  { color: BRAND_HEX.orange, label: "Orange" },
   { color: COLORS.offWhite, label: "Off-White" },
   { color: "wild", label: "Wild" },
 ] as const;
