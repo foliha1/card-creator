@@ -38,7 +38,9 @@ const GameCard = ({
   fill,
   dealKey,
   dealIndex,
+  washRef,
 }: GameCardProps) => {
+
 
   const [focusVis, setFocusVis] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
