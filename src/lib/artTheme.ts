@@ -188,3 +188,29 @@ export function themedLottie(data: unknown, palette: Palette): unknown {
   lottieCache.set(palette.id, themed);
   return themed;
 }
+
+// ---- app wiring --------------------------------------------------------
+
+import { useEffect } from "react";
+import { usePalette } from "@/lib/palette";
+
+/** Keeps the themed art cache in sync with the active palette. */
+export function useArtSync(): void {
+  const { palette } = usePalette();
+  useEffect(() => {
+    void prepareArt(palette);
+  }, [palette]);
+}
+
+/** Mount once near the app root. */
+export const ArtThemeSync = (): null => {
+  useArtSync();
+  return null;
+};
+
+/** Resolve one art path against the active palette, re-rendering when ready. */
+export function useThemedSrc(path: string): string {
+  const { palette } = usePalette();
+  useArtVersion();
+  return themedSrc(path, palette);
+}
