@@ -207,7 +207,7 @@ const GameCard = ({
 
       {highlighted && !wrong && !matched && (
         <>
-          <div className="ww-select-wash" style={{ zIndex: 2 }} />
+          <div ref={washRef} className="ww-select-wash" style={{ zIndex: 2 }} />
           <div className="ww-select-ring" style={{ zIndex: 3 }} />
         </>
       )}
