@@ -23,7 +23,7 @@
 // state; the game currently only surfaces it on the SELF banner.
 // ============================================================================
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Settings, X } from "lucide-react";
 import SiteHeader, { SITE_HEADER_H } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
@@ -41,6 +41,14 @@ import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+
+const prefersReducedMotion = (): boolean => {
+  try {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+};
 
 interface Props {
   publicState: PublicState;
@@ -752,6 +760,14 @@ const MultiplayerGameView: React.FC<Props> = ({
   const modalOpen = showSettings || showLeave;
   void _mobile;
 
+  // Fade in a radial vignette over the persistent intro-animation still once
+  // gameplay mounts, softening the background pattern behind the board.
+  const [bgOverlayVisible, setBgOverlayVisible] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setBgOverlayVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   // ---- roll-hero overlay wiring ----------------------------------------
   // Root of the play area — the overlay is absolutely positioned inside it.
   // Home ref points at the 80×80 cream box inside the dice tray.
@@ -1302,6 +1318,21 @@ const MultiplayerGameView: React.FC<Props> = ({
       height: "auto", maxHeight: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
+      {/* Radial vignette over the persistent intro still. z-index:-1 keeps it
+          above the frozen Lottie background and below the game column. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: -1,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(circle at center, rgba(35,31,32,0) 0%, rgba(35,31,32,0.45) 55%, rgba(35,31,32,0.68) 100%)",
+          opacity: bgOverlayVisible ? 1 : 0,
+          transition: prefersReducedMotion() ? "none" : "opacity 700ms ease",
+        }}
+      />
       <style>{HEADER_FOCUS_CSS}</style>
       <SiteHeader
         onSettings={() => setShowSettings(true)}
