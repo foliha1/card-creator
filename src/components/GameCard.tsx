@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CARD_BACK_PATH } from "@/cardData";
 import { COLORS } from "@/lib/tokens";
-import { useThemedSrc } from "@/lib/artTheme";
 
 interface GameCardProps {
   card: Card;
@@ -42,8 +41,6 @@ const GameCard = ({
   washRef,
 }: GameCardProps) => {
 
-  const faceSrc = useThemedSrc(card.svgPath || CARD_BACK_PATH);
-  const backSrc = useThemedSrc(CARD_BACK_PATH);
 
   const [focusVis, setFocusVis] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -172,7 +169,7 @@ const GameCard = ({
               switches at the 250ms midpoint of the 500ms rotateY so the face
               is visible only while pointing at the viewer, not while edge-on. */}
           <img
-            src={faceSrc}
+            src={card.svgPath || CARD_BACK_PATH}
             alt={card.svgPath ? card.id : ""}
             aria-hidden={card.svgPath ? undefined : true}
             style={{
@@ -200,7 +197,7 @@ const GameCard = ({
           }}
         >
           <img
-            src={backSrc}
+            src={CARD_BACK_PATH}
             alt="card back"
             style={{ width: "100%", height: "100%", display: "block" }}
             draggable={false}

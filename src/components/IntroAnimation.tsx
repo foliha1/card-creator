@@ -1,7 +1,5 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
-import { usePalette } from "@/lib/palette";
-import { themedLottie } from "@/lib/artTheme";
 
 const Lottie = React.lazy(() =>
   import("lottie-react").then((m) => ({ default: m.default })),
@@ -80,10 +78,7 @@ const computeDurationMs = (json: unknown): number | null => {
 };
 
 const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }) => {
-  const [rawData, setData] = useState<unknown | null>(preloadedData ?? null);
-  const { palette } = usePalette();
-  // Recolor the three brand hues in the Lottie JSON to match the active theme.
-  const data = React.useMemo(() => themedLottie(rawData, palette), [rawData, palette]);
+  const [data, setData] = useState<unknown | null>(preloadedData ?? null);
   const [phase, setPhase] = useState<Phase>("playing");
   const doneRef = useRef(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);

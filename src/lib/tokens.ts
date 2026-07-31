@@ -1,20 +1,5 @@
 import type { CSSProperties } from "react";
 
-/**
- * Literal brand hues as authored in the source art. These are the values the
- * SVGs and the intro Lottie ship with, and the fallbacks for the themed CSS
- * variables. Use these wherever a real hex is required (contrast maths,
- * canvas, stored theme values) — never for CSS, which should use `COLORS`.
- */
-export const BRAND_HEX = {
-  red: "#d72229",
-  redHover: "#b81b20",
-  blue: "#0072b2",
-  blueHover: "#005a8f",
-  orange: "#e79024",
-  orangeHover: "#c47618",
-} as const;
-
 export const COLORS = {
   // UI surface (window/content backgrounds)
   surface: "#F8F2E9",
@@ -26,14 +11,13 @@ export const COLORS = {
   ink: "#231f20",
   // Darkened from #706662 so it meets WCAG AA (4.5:1) on every surface — including panel (#D0C3AF).
   inkMuted: "#544c4a",
-  // Brand hues — themed at runtime via the palette CSS variables. Paper and
-  // ink above are fixed and never change with a theme.
-  red: `var(--ww-hue-1, ${BRAND_HEX.red})`,
-  redHover: `var(--ww-hue-1-hover, ${BRAND_HEX.redHover})`,
-  blue: `var(--ww-hue-2, ${BRAND_HEX.blue})`,
-  blueHover: `var(--ww-hue-2-hover, ${BRAND_HEX.blueHover})`,
-  orange: `var(--ww-hue-3, ${BRAND_HEX.orange})`,
-  orangeHover: `var(--ww-hue-3-hover, ${BRAND_HEX.orangeHover})`,
+  // Brand tones + their hover states
+  red: "#d72229",
+  redHover: "#b81b20",
+  blue: "#0072B2",
+  blueHover: "#005a8f",
+  orange: "#E79024",
+  orangeHover: "#c47618",
   success: "#59cd90",
   successHover: "#4ab87d",
   // Theme background (backs the "Off-White" theme swatch — distinct from `surface`, the UI background)
@@ -42,7 +26,6 @@ export const COLORS = {
   soloTint: "#97DAFF",
   peepsTint: "#FFC1C3",
 } as const;
-
 
 export const BORDER = {
   standard: `1.5px solid ${COLORS.ink}`,
@@ -82,12 +65,10 @@ export const MOTION = {
   slow: "400ms ease-in-out",
 } as const;
 
-// Background-theme swatches. These are persisted and fed to contrast maths,
-// so they must be real hex values, not themed CSS variables.
 export const THEME_SWATCHES = [
-  { color: BRAND_HEX.red, label: "Red" },
-  { color: BRAND_HEX.blue, label: "Blue" },
-  { color: BRAND_HEX.orange, label: "Orange" },
+  { color: COLORS.red, label: "Red" },
+  { color: COLORS.blue, label: "Blue" },
+  { color: COLORS.orange, label: "Orange" },
   { color: COLORS.offWhite, label: "Off-White" },
   { color: "wild", label: "Wild" },
 ] as const;

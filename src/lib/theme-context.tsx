@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
-import { BRAND_HEX, COLORS } from "@/lib/tokens";
+import { COLORS } from "@/lib/tokens";
 import { ensureAA, pickReadable } from "@/lib/contrast";
 
 export function deriveLogoColor(hex: string): string {
@@ -27,7 +27,7 @@ export function deriveLogoColor(hex: string): string {
   return `#${f(0).toString(16).padStart(2, "0")}${f(8).toString(16).padStart(2, "0")}${f(4).toString(16).padStart(2, "0")}`;
 }
 
-const DEFAULT_THEME = BRAND_HEX.blue;
+const DEFAULT_THEME = COLORS.blue;
 
 interface ThemeContextValue {
   bgTheme: string;
