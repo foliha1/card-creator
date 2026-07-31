@@ -397,22 +397,22 @@ All colors MUST be HSL.
 /* ── Great-match ghost (per-card, 1s @ 300ms delay) ── */
 .ww-great {
   transform-origin: center; overflow: hidden;
-  animation: ww-great-move 1s linear 300ms both,
-             ww-great-fade 1s linear 300ms both;
+  animation: ww-great-move 1s linear var(--ww-great-delay, 300ms) both,
+             ww-great-fade 1s linear var(--ww-great-delay, 300ms) both;
 }
 .ww-great-wash {
   background: rgba(89,205,144,0.5); opacity: 0;
-  animation: ww-great-wash 1s linear 300ms both;
+  animation: ww-great-wash 1s linear var(--ww-great-delay, 300ms) both;
 }
 .ww-great-shine {
   position: absolute; background: #F8F2E9; transform-origin: 0 0;
   width: calc(28.1111px * var(--ww-k)); height: calc(228.331px * var(--ww-k));
   left: calc(33.665px * var(--ww-k)); top: calc(-114.962px * var(--ww-k));
-  animation: ww-great-shine 1s linear 300ms both;
+  animation: ww-great-shine 1s linear var(--ww-great-delay, 300ms) both;
 }
 .ww-great-ring {
   border-radius: inherit;
-  animation: ww-great-ring 1s linear 300ms both;
+  animation: ww-great-ring 1s linear var(--ww-great-delay, 300ms) both;
 }
 
 @keyframes ww-great-move {
@@ -504,15 +504,15 @@ All colors MUST be HSL.
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ww-great { animation: ww-great-fade 1s linear 300ms both; }
+  .ww-great { animation: ww-great-fade 1s linear var(--ww-great-delay, 300ms) both; }
   .ww-great-shine { display: none; }
 }
 
 /* ---- Deal-in animation ------------------------------------------------- */
 .ww-deal {
   transform-origin: center;
-  animation: ww-deal-move 900ms linear calc(var(--ww-deal-i, 0) * 60ms) both,
-             ww-deal-fade 900ms linear calc(var(--ww-deal-i, 0) * 60ms) both;
+  animation: ww-deal-move var(--ww-deal-move, 900ms) linear calc(var(--ww-deal-i, 0) * var(--ww-deal-stagger, 60ms)) both,
+             ww-deal-fade var(--ww-deal-move, 900ms) linear calc(var(--ww-deal-i, 0) * var(--ww-deal-stagger, 60ms)) both;
 }
 
 @keyframes ww-deal-move {
