@@ -1711,9 +1711,7 @@ const MultiplayerGameView: React.FC<Props> = ({
           <h2 id="mp-settings-title" style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 20, fontWeight: 700, color: INK }}>
             Settings
           </h2>
-          <p style={{ margin: 0, fontFamily: FONT_FAMILY, fontSize: 15, color: MUTED }}>
-            Coming soon.
-          </p>
+          <ThemePicker />
           <a
             href="/about#how-to-play"
             style={{
