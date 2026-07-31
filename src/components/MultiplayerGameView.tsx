@@ -1318,6 +1318,21 @@ const MultiplayerGameView: React.FC<Props> = ({
       height: "auto", maxHeight: "100%", boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
+      {/* Radial vignette over the persistent intro still. z-index:-1 keeps it
+          above the frozen Lottie background and below the game column. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: -1,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(circle at center, rgba(35,31,32,0) 0%, rgba(35,31,32,0.45) 55%, rgba(35,31,32,0.68) 100%)",
+          opacity: bgOverlayVisible ? 1 : 0,
+          transition: prefersReducedMotion() ? "none" : "opacity 700ms ease",
+        }}
+      />
       <style>{HEADER_FOCUS_CSS}</style>
       <SiteHeader
         onSettings={() => setShowSettings(true)}
