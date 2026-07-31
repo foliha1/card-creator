@@ -11,7 +11,17 @@ Paper (`#f8f2e9`) and ink (`#231f20`) are fixed and never change. A theme swaps 
 
 **1. Palette definition**
 
-A theme is three colors — the hues currently named red, blue and yellow/orange. Paper and ink stay constant across every theme. Today's values become the default "Classic" theme. Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
+A theme is three colors — the hues currently named red, blue and yellow/orange. Paper and ink stay constant across every theme. Today's values become the default "Classic" theme.
+
+Second theme, "Neon", from your colors, mapped onto the three hue slots:
+
+| Slot | Classic | Neon |
+| --- | --- | --- |
+| hue 1 (red) | `#d72229` | `#FF47DA` magenta |
+| hue 2 (blue) | `#0072b2` | `#46237A` violet |
+| hue 3 (yellow) | `#e79024` | `#3DDC97` mint |
+
+Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
 
 **2. Card recoloring**
 
@@ -23,12 +33,23 @@ The Lottie JSON is parsed once, and every color array matching one of the three 
 
 **4. Game-integrity guardrails**
 
-Color is a real matching attribute, so a theme whose three hues aren't clearly distinguishable would make the game unfair or unplayable. Each palette is checked at authoring time for:
+Color is a real matching attribute, so a theme whose three hues aren't clearly distinguishable would make the game unfair or unplayable. Each palette is checked at authoring time for pairwise separation between the three hues, contrast against the fixed paper, and contrast against ink where hue meets linework.
 
-- pairwise separation between the three hues (perceptual distance, not just hex difference)
-- each hue against the fixed paper for card legibility, and against ink where hue and linework meet
+Measured contrast for the Neon set against the fixed paper `#f8f2e9` and ink `#231f20`:
 
-Palettes that fail don't ship. Color-blind-safe hue triples are preferred, as the current red/blue/orange set already is.
+| Color | vs paper | vs ink |
+| --- | --- | --- |
+| `#FF47DA` | 2.63 | 5.56 |
+| `#46237A` | 10.59 | 1.38 |
+| `#3DDC97` | 1.59 | 9.22 |
+| Classic worst case | 2.24 (orange) | 3.14 (blue) |
+
+Two flags, neither a blocker for shipping the theme as an option:
+
+- `#3DDC97` at 1.59 against paper is the faintest fill in the app — noticeably lighter than today's worst case. Large filled shapes stay readable, but thin strokes on cream will get soft.
+- `#46237A` at 1.38 against ink means violet shapes read as near-black where they sit against linework.
+
+If you want both tightened while keeping the look, darkening the mint and lightening the violet a step each fixes both. I'll build the theme exactly as given first so you can see it, then adjust from the screen rather than from numbers.
 
 ## Technical notes
 
