@@ -11,7 +11,17 @@ Paper (`#f8f2e9`) and ink (`#231f20`) are fixed and never change. A theme swaps 
 
 **1. Palette definition**
 
-A theme is three colors — the hues currently named red, blue and yellow/orange. Paper and ink stay constant across every theme. Today's values become the default "Classic" theme. Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
+A theme is three colors — the hues currently named red, blue and yellow/orange. Paper and ink stay constant across every theme. Today's values become the default "Classic" theme.
+
+Second theme, "Neon", from your colors, mapped onto the three hue slots:
+
+| Slot | Classic | Neon |
+| --- | --- | --- |
+| hue 1 (red) | `#d72229` | `#FF47DA` magenta |
+| hue 2 (blue) | `#0072b2` | `#46237A` violet |
+| hue 3 (yellow) | `#e79024` | `#3DDC97` mint |
+
+Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
 
 **2. Card recoloring**
 
