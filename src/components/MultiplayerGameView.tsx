@@ -535,7 +535,10 @@ const DieBox: React.FC<{
   heroActive: boolean;
   waiting: boolean;
   homeRef?: React.Ref<HTMLDivElement>;
-}> = ({ rule, heroActive, waiting, homeRef }) => (
+}> = ({ rule, heroActive, waiting, homeRef }) => {
+  const { palette } = usePalette();
+  useArtVersion();
+  return (
   <div style={{
     width: 111, flex: "none", boxSizing: "border-box", background: ORANGE,
     border: BORDER_HEAVY, borderRadius: R_BOX, padding: 8,
@@ -571,7 +574,7 @@ const DieBox: React.FC<{
         </span>
       ) : (
         <img
-          src={MATCH_ART_SRC[rule as RollAttribute]}
+          src={themedSrc(MATCH_ART_SRC[rule as RollAttribute], palette)}
           alt={`Match the ${rule}`}
           draggable={false}
           style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", pointerEvents: "none" }}
