@@ -1,32 +1,44 @@
-Goal: make the dark radial center of the multiplayer page background 30% larger, and ensure the pattern reaches every window edge at all breakpoints (stretching vertically and bleeding off the sides on mobile).
+# Global color themes across cards and intro animation
 
-## Current state
-- `src/pages/MultiplayerPage.tsx` renders the pattern on a `::before` pseudo-element at `opacity: 0.6`.
-- Desktop uses `background-size: cover; background-position: center`.
-- Mobile (`max-width: 600px`) uses `background-size: auto 80%;`, leaving a margin and not touching the top/bottom edges.
-- `public/whoop-pattern-bg.svg` contains the radial vignette defined by `gradientTransform="translate(1000 999.5) scale(1000 999.5)"`.
+Yes — both are recolorable at runtime. I checked the assets:
 
-## Proposed changes
+- The 48 card SVGs are flat vector files using exactly four literal hex fills: paper `#f8f2e9`, ink `#231f20`, and the shape hue (`#d72229` red / `#0072b2` blue / `#e79024` yellow). The card back uses all four.
+- The intro Lottie (`whoop-intro.json`, 776 KB) uses the exact same four colors and nothing else (plus one black). Every color lives in plain numeric RGB arrays that can be remapped in JS.
 
-### 1. Enlarge the radial center by 30% in the SVG
-File: `public/whoop-pattern-bg.svg`
-- Update the radial gradient transform from `scale(1000 999.5)` to `scale(1300 1299.35)` (1000 × 1.3 and 999.5 × 1.3).
-- This expands the opaque dark center outward before the fade begins, making the vignette 30% larger while keeping the same fade curve and stops.
+So a single palette of four brand slots drives the entire app: UI, cards, and intro.
 
-### 2. Make the pattern extend to all viewport edges
-File: `src/pages/MultiplayerPage.tsx`
-- Remove the mobile-only `background-size: auto 80%` media query so the pattern is not artificially shrunk on phones.
-- Use a responsive sizing strategy that guarantees edge-to-edge coverage:
-  - Default (desktop / large tablets): `background-size: cover; background-position: center;`
-  - Mobile (`@media (max-width: 600px)`): `background-size: auto 100%; background-position: center;`
-    - `auto 100%` scales the square SVG to full viewport height, so the pattern touches the top and bottom edges and bleeds off the left/right sides.
-- Keep `background-repeat: no-repeat`, `opacity: 0.6`, and the `#231F20` fallback behind it.
+## What gets built
 
-### 3. Verification
-- Run typecheck.
-- Run the existing test suite (105 tests).
-- Visually verify at common viewports that:
-  - The dark center is visibly larger than before.
-  - On mobile (390×844) the pattern reaches the top and bottom and crops/bleeds on the sides.
-  - On tablet (833×910) and desktop (1440×900) the pattern covers the full viewport with no bare edges.
-  - The centered board and all interactive elements remain legible and clickable.
+**1. Palette definition**
+
+A theme is four colors: `paper`, `ink`, and three shape hues (`hue1`, `hue2`, `hue3`). Today's brand values become the default "Classic" theme. Themes are selected at runtime from the existing settings surface and persisted, like the current sfx/music settings.
+
+**2. Card recoloring**
+
+Cards keep rendering as images, so the grid, flip and deal animations are untouched. On theme change, each card SVG's source text is fetched once, its four known hex values are swapped for the active palette's, and the result is cached as a blob URL keyed by theme. `GameCard` reads the themed URL instead of the raw path. The existing preload pass warms the cache for the active theme so cards never show a back-then-face race.
+
+**3. Intro animation recoloring**
+
+The Lottie JSON is parsed once, and every color array is remapped through the same palette map before being handed to the player. Cached per theme, so switching themes doesn't refetch the 776 KB asset.
+
+**4. Game-integrity guardrails**
+
+Color is a real matching attribute, so a theme whose three hues aren't clearly distinguishable would make the game unfair or unplayable. Each palette is checked at authoring time for:
+
+- pairwise separation between the three hues (perceptual distance, not just hex difference)
+- each hue against paper for card legibility
+- ink against paper for linework
+
+Palettes that fail don't ship. Color-blind-safe hue triples are preferred, as the current red/blue/orange set already is.
+
+## Technical notes
+
+- Palette lives alongside `src/lib/tokens.ts` and is exposed through the existing theme context; UI tokens (`COLORS.red`, `.blue`, `.orange`, `.surface`, `.ink`) resolve from the active palette rather than fixed literals, so buttons, chips and the die art follow automatically.
+- Die faces in `public/dice/*.svg` go through the same SVG recolor path.
+- Recolor is a whole-token hex replace on the SVG text, case-insensitive, restricted to the four known brand values — no parsing, no DOM inlining, no layout risk.
+- Blob URLs are revoked when a theme is swapped out to avoid leaks across switches.
+- Reduced-motion, deal/select/match animations, and all engine code are untouched. Animation CSS that hardcodes brand hex (`ww-select-ring` `#0072B2`, `ww-wrong` `#D72229`, `ww-great` `#59CD90`) moves to CSS variables fed by the palette.
+
+## Scope
+
+Not included: per-player themes, user-authored custom palettes, or theming the photographic/pattern background beyond its existing tint.
