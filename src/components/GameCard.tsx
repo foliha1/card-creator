@@ -83,11 +83,8 @@ const GameCard = ({
   // grid; the real card only keeps its green wash + ring in place.
   // Selection is a one-shot hold animation; removing the class ends it
   // immediately with no exit transition.
-  const wrapperClass = wrong
-    ? "ww-wrong"
-    : highlighted && !matched
-    ? "ww-select"
-    : undefined;
+  const wrapperClass = wrong ? "ww-wrong" : undefined;
+
 
 
   return (
