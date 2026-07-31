@@ -1029,31 +1029,89 @@ const MultiplayerGameView: React.FC<Props> = ({
   // exact card that was selected second (DOM order != selection order).
   const washRefs = React.useRef<Record<number, HTMLDivElement | null>>({});
 
-  // Auto-resolve match once two cards are selected during a claim. Driven by
-  // the selection animation finishing (animationend on the second selected
-  // card's wash) so the flip can never start mid-animation. A 700ms fallback
-  // timer covers cases where animationend never fires (reduced motion,
-  // backgrounded tab, cancelled animation, element never mounted). Whichever
-  // fires first wins; dispatch happens once.
-  React.useEffect(() => {
-    if (!inClaimMode) return;
-    if (s.selectedCards.length !== 2 || mySeat === null) return;
+  // Optimistic selection: highlight the instant a card is touched, so the
+  // animation runs for the whole selection hold rather than only
+  // after the intent round-trips back as state.
 
-    const secondIdx = s.selectedCards[s.selectedCards.length - 1];
+  const [optimisticSel, setOptimisticSel] = React.useState<number[]>([]);
+  React.useEffect(() => {
+    if (!inClaimMode) setOptimisticSel([]);
+  }, [inClaimMode]);
+  React.useEffect(() => {
+    if (s.selectedCards.length === 0) setOptimisticSel([]);
+  }, [s.selectedCards.length]);
+
+  // onIntent is not referentially stable (useCallback deps churn), so hold it
+  // in a ref: the resolve effect must not tear down and restart on identity
+  // changes, which would reset the fallback timer and re-bind the listener to
+  // an animation that already finished.
+  const onIntentRef = React.useRef(onIntent);
+  onIntentRef.current = onIntent;
+
+  // Auto-resolve match once two cards are selected during a claim.
+  //
+  // The wash starts animating at click time via optimisticSel, so the effect
+  // keys off the *local* pair rather than waiting for the reducer round-trip.
+  // Dispatch requires BOTH the animation having ended AND the authoritative
+  // state carrying two selections — the reducer drops PLAYER_RESOLVE_MATCH
+  // when selectedCards.length !== 2, which with a single-dispatch guard would
+  // hang the claim forever.
+  const localPair = optimisticSel.length === 2 ? optimisticSel : s.selectedCards;
+  const localPairKey = localPair.length === 2 ? localPair.join(",") : "";
+  const serverPairReady = s.selectedCards.length === 2;
+  const serverReadyRef = React.useRef(serverPairReady);
+  serverReadyRef.current = serverPairReady;
+  // Set by the resolve effect; called again when the server catches up.
+  const maybeResolveRef = React.useRef<(() => void) | null>(null);
+
+  React.useEffect(() => {
+    if (!inClaimMode || !localPairKey || mySeat === null) {
+      maybeResolveRef.current = null;
+      return;
+    }
+
+    const secondIdx = Number(localPairKey.split(",")[1]);
     let done = false;
+    let animEnded = false;
+    let via: "animationend" | "timer" = "animationend";
     let target: HTMLDivElement | null = null;
     let raf = 0;
 
-    const fire = (via: "animationend" | "timer") => () => {
-      if (done) return;
+    const tryFire = () => {
+      if (done || !animEnded || !serverReadyRef.current) return;
       done = true;
+      maybeResolveRef.current = null;
       if (import.meta.env.DEV) {
         console.log(`[resolve] PLAYER_RESOLVE_MATCH via ${via} (card ${secondIdx})`);
       }
-      onIntent({ type: "PLAYER_RESOLVE_MATCH", by: mySeat });
+      onIntentRef.current({ type: "PLAYER_RESOLVE_MATCH", by: mySeat });
     };
-    const onEnd = fire("animationend");
-    const t = setTimeout(fire("timer"), 700);
+    maybeResolveRef.current = tryFire;
+
+    const onEnd = () => {
+      animEnded = true;
+      tryFire();
+    };
+
+    // Fallback: started once per pair, never reset by re-renders (deps are
+    // stable for the life of the pair). If the server never registered both
+    // selections there is nothing to resolve, so cancel the claim instead of
+    // dispatching into a no-op.
+    const t = setTimeout(() => {
+      if (done) return;
+      if (!serverReadyRef.current) {
+        done = true;
+        maybeResolveRef.current = null;
+        if (import.meta.env.DEV) {
+          console.log("[resolve] CANCEL_CLAIM — server never reached 2 selections");
+        }
+        onIntentRef.current({ type: "CANCEL_CLAIM", by: mySeat });
+        return;
+      }
+      animEnded = true;
+      via = "timer";
+      tryFire();
+    }, 700);
 
     // The wash for the second card may not be mounted on this render pass;
     // poll on animation frames until it appears (the timer is the backstop).
@@ -1073,23 +1131,15 @@ const MultiplayerGameView: React.FC<Props> = ({
       clearTimeout(t);
       cancelAnimationFrame(raf);
       target?.removeEventListener("animationend", onEnd);
+      maybeResolveRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inClaimMode, s.selectedCards.join(","), mySeat, onIntent]);
+  }, [inClaimMode, localPairKey, mySeat]);
 
-
-
-  // Optimistic selection: highlight the instant a card is touched, so the
-  // animation runs for the whole selection hold rather than only
-  // after the intent round-trips back as state.
-
-  const [optimisticSel, setOptimisticSel] = React.useState<number[]>([]);
+  // Server caught up after the animation already ended.
   React.useEffect(() => {
-    if (!inClaimMode) setOptimisticSel([]);
-  }, [inClaimMode]);
-  React.useEffect(() => {
-    if (s.selectedCards.length === 0) setOptimisticSel([]);
-  }, [s.selectedCards.length]);
+    if (serverPairReady) maybeResolveRef.current?.();
+  }, [serverPairReady]);
+
 
   const handleCardClick = (i: number) => {
     if (mySeat === null) return;
