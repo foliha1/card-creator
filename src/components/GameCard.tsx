@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CARD_BACK_PATH } from "@/cardData";
-import { COLORS } from "@/lib/tokens";
+import { COLORS, RADIUS, SHADOW } from "@/lib/tokens";
 
 interface GameCardProps {
   card: Card;
@@ -60,7 +60,7 @@ const GameCard = ({
 
   const k = cardW > 0 ? cardW / 104.333 : 0;
 
-  const baseShadow = "0 6px 14px rgba(0,0,0,0.25)";
+  const baseShadow = SHADOW.card;
   const boxShadow = baseShadow;
 
   let outerTransform = "";
@@ -108,7 +108,7 @@ const GameCard = ({
         cursor: "pointer",
         position: "relative",
         overflow: "hidden",
-        borderRadius: 6,
+        borderRadius: RADIUS.md,
         transformOrigin: "center",
         ["--ww-k" as string]: String(k),
         transform: shrinking ? outerTransform : undefined,
@@ -158,7 +158,7 @@ const GameCard = ({
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
-            borderRadius: 6,
+            borderRadius: RADIUS.md,
             overflow: "hidden",
             boxShadow,
           }}
@@ -190,7 +190,7 @@ const GameCard = ({
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
-            borderRadius: 6,
+            borderRadius: RADIUS.md,
             overflow: "hidden",
             boxShadow,
             transform: "rotateY(180deg)",
