@@ -13,14 +13,15 @@ type Pattern = number | number[];
 const canVibrate = (): boolean => {
   if (typeof navigator === "undefined") return false;
   if (typeof navigator.vibrate !== "function") return false;
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
   // Respect users who ask for reduced motion — a buzzing phone is motion too.
-  if (typeof window !== "undefined" && window.matchMedia) {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-    // Only fire on touch-first devices; avoids odd behaviour on hybrid laptops.
-    if (!window.matchMedia("(pointer: coarse)").matches) return false;
-  }
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  // Touch-first devices only: coarse pointer AND a real touch digitiser.
+  if (!window.matchMedia("(pointer: coarse)").matches) return false;
+  if (!("ontouchstart" in window) && (navigator.maxTouchPoints ?? 0) < 1) return false;
   return true;
 };
+
 
 const buzz = (pattern: Pattern) => {
   if (!canVibrate()) return;
