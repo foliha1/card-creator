@@ -628,3 +628,19 @@ All colors MUST be HSL.
   .ww-play-ring { box-shadow: inset 0 0 0 2px #231F20; }
   .ww-play-shine { display: none; }
 }
+
+/* ── Mobile press feedback: uniform 100% → 95% scale + darker surface ── */
+@media (hover: none) and (pointer: coarse) {
+  .ww-press {
+    transition: transform 200ms ease, filter 200ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ww-press:active {
+    transform: scale(0.95);
+    filter: brightness(0.86);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-press:active { transform: none; }
+}
