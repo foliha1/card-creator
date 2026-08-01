@@ -597,19 +597,21 @@ const ActionButton: React.FC<{
   return (
     <button
       type="button"
+      className={isDisabled ? undefined : "ww-press"}
       onClick={isDisabled ? undefined : onClick}
       disabled={isDisabled}
       style={{
         all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
-        flex: "1 1 0", alignSelf: "stretch", background: s.bg, color: s.text,
+        flex: "1 1 0", minWidth: 0, alignSelf: "stretch", background: s.bg, color: s.text,
         border: BORDER_HEAVY, borderRadius: R_BOX, boxSizing: "border-box",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
-        fontSize: 32, lineHeight: 1, textAlign: "center", padding: 12.66,
+        fontSize: "clamp(19px, 6.4vw, 32px)", lineHeight: 1.1, textAlign: "center",
+        padding: "10px 8px",
         position: "relative", overflow: "hidden",
       }}
     >
-      <span style={{ position: "relative", zIndex: 1 }}>{label ?? s.label}</span>
+      <span style={{ position: "relative", zIndex: 1, whiteSpace: "nowrap" }}>{label ?? s.label}</span>
       <span aria-hidden="true" className="ww-shine-thin" style={shineStyle} />
       <span aria-hidden="true" className="ww-shine-wide" style={shineStyle} />
     </button>
@@ -789,7 +791,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   // References are parked in a module-level array so nothing gets evicted.
   React.useEffect(() => {
     if (preloadedArt.length > 0) return;
-    for (const src of [CARD_BACK_PATH, ...ALL_CARDS.map((c) => c.svgPath)]) {
+    for (const src of [CARD_BACK_PATH, ...Object.values(MATCH_ART_SRC), ...ALL_CARDS.map((c) => c.svgPath)]) {
       const img = new Image();
       img.decoding = "async";
       img.src = src;

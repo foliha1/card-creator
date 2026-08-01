@@ -678,17 +678,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             <button
               type="button"
               onClick={() => setView({ kind: "idle" })}
-              style={railButtonStyle()}
+              className="ww-press" style={railButtonStyle()}
             >
               BACK
             </button>
             <button
               type="button"
               onClick={() => setView({ kind: "solo", gridSize: soloGrid })}
-              style={playButtonStyle()}
+              className="ww-press" style={playButtonStyle()}
             >
-              <span className="ww-play-ring" aria-hidden="true" />
-              <span className="ww-play-shine" aria-hidden="true" />
+              <span className="ww-shine-thin" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
+              <span className="ww-shine-wide" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
               Let's Play!
             </button>
           </div>
@@ -1298,7 +1298,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         type="button"
         onClick={() => setShowLeaveConfirm(true)}
         disabled={starting}
-        style={{ ...railButtonStyle(starting), opacity: starting ? 0.6 : 1 }}
+        className="ww-press" style={{ ...railButtonStyle(starting), opacity: starting ? 0.6 : 1 }}
       >
         BACK
       </button>
@@ -1308,12 +1308,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           onClick={handleStartGame}
           disabled={startDisabled}
           aria-busy={starting}
-          style={playButtonStyle(startDisabled)}
+          className={startDisabled ? undefined : "ww-press"} style={playButtonStyle(startDisabled)}
         >
           {!startDisabled ? (
             <>
-              <span className="ww-play-ring" aria-hidden="true" />
-              <span className="ww-play-shine" aria-hidden="true" />
+              <span className="ww-shine-thin" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
+              <span className="ww-shine-wide" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
             </>
           ) : null}
           {starting ? "Starting…" : "Let's Play!"}
