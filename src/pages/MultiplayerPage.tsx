@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
+import { useIsMobile } from "@/hooks/use-mobile";
 const IntroAnimation = React.lazy(() => import("@/components/IntroAnimation"));
 import { hasSeenIntro, preloadIntroJson } from "@/components/IntroAnimation";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
@@ -29,6 +30,7 @@ type IntroStatus = "pending" | "running" | "skipped" | "complete" | "timeout" | 
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
+  const mobile = useIsMobile();
   const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
     if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) {
@@ -156,11 +158,13 @@ const MultiplayerPage: React.FC = () => {
         <div
           style={{
             width: "100%",
-            maxWidth: 420,
-            height: "auto",
-            maxHeight: 900,
+            maxWidth: mobile ? undefined : 420,
+            height: mobile ? "100%" : "auto",
+            maxHeight: mobile ? undefined : 900,
             margin: "auto",
-            padding: "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
+            padding: mobile
+              ? 0
+              : "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",

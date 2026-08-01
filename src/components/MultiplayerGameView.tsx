@@ -755,14 +755,12 @@ const DebugControls: React.FC<{
 const preloadedArt: HTMLImageElement[] = [];
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
+  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
   heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
 }) => {
-  void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
   const [showLeave, setShowLeave] = React.useState(false);
   const modalOpen = showSettings || showLeave;
-  void _mobile;
 
   // Fade in a radial vignette over the persistent intro-animation still once
   // gameplay mounts, softening the background pattern behind the board.
@@ -1431,8 +1429,12 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: 8, marginTop: SITE_HEADER_H,
-      height: "auto", maxHeight: "100%", boxSizing: "border-box",
+      padding: mobile ? 0 : 8, marginTop: SITE_HEADER_H,
+      height: "100%",
+      minHeight: mobile ? `calc(100dvh - ${SITE_HEADER_H}px)` : undefined,
+      maxHeight: mobile ? undefined : "100%",
+      width: "100%",
+      boxSizing: "border-box",
       background: SURFACE, overflow: "hidden", position: "relative",
     }}>
       {/* Radial vignette over the persistent intro still. z-index:-1 keeps it
