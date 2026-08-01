@@ -1143,19 +1143,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const canStart = visibleParticipants.length >= 2;
   const link = shareUrl(room.room_code);
 
-  const sectionTitleStyle: React.CSSProperties = {
-    fontFamily: FONT_FAMILY,
-    fontWeight: 400,
-    fontSize: 24,
-    lineHeight: "29px",
-    textAlign: "center",
-    color: "#231F20",
-  };
+  const sectionTitleStyle = titleStyle;
 
   const wrapperBase: React.CSSProperties = {
-    background: "#D0C3AF",
-    border: "2px solid #231F20",
-    borderRadius: 4,
+    background: COLORS.panel,
+    border: BORDER.heavy,
+    borderRadius: RADIUS.sm,
     boxSizing: "border-box",
   };
 
@@ -1163,7 +1156,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     alignSelf: "stretch",
     display: "flex",
     flexDirection: "column",
-    gap: 8,
+    gap: SPACE[4],
   };
 
   // ---- Section 1: Your Table Info ----
@@ -1171,30 +1164,22 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const tableInfoSection = (
     <div style={sectionStyle}>
       <div style={sectionTitleStyle}>Your Table Info</div>
-      <div style={{ display: "flex", gap: 10, height: 80, alignSelf: "stretch" }}>
+      <div style={{ display: "flex", gap: SPACE[5], height: 80, alignSelf: "stretch" }}>
         <button
           type="button"
           onClick={() => handleCopyCode(room.room_code)}
           aria-label={codeTileLabel}
           aria-live="polite"
           style={{
+            ...buttonStyle("accent", "lg", { mobile }),
+            ...textStyle("action", mobile),
+            color: COLORS.ink,
             flex: "1 1 0",
             minWidth: 0,
-            background: "#E79024",
-            border: "2px solid #231F20",
-            borderRadius: 4,
+            height: "100%",
             padding: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            boxSizing: "border-box",
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 32,
-            lineHeight: 1,
+            fontStyle: "normal",
             letterSpacing: "0.08em",
-            color: "#231F20",
             userSelect: "none",
           }}
         >
@@ -1206,20 +1191,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             onClick={() => handleShare(room.room_code)}
             aria-live="polite"
             style={{
+              ...buttonStyle(shareFlash ? "ink" : "secondary", "lg", { mobile }),
               flex: "0 0 100px",
               width: 100,
-              background: shareFlash ? "#231F20" : "#0072B2",
-              border: "2px solid #231F20",
-              borderRadius: 4,
-              boxSizing: "border-box",
+              height: "100%",
               padding: 0,
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: 20,
-              lineHeight: 1,
-              color: "#F8F2E9",
-              cursor: "pointer",
-              transition: "background 150ms ease",
             }}
           >
             {shareFlash ? "Copied!" : "SHARE"}
@@ -1228,6 +1204,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       </div>
     </div>
   );
+
 
   // ---- Section 2: Choose your grid size ----
   const gridPickerSection = (
