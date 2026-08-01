@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import AutoFitText from "@/components/AutoFitText";
 import {
   COLORS,
   SPACE,
@@ -680,7 +681,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               onClick={() => setView({ kind: "idle" })}
               className="ww-press" style={railButtonStyle()}
             >
-              BACK
+              <AutoFitText minScale={0.6}>BACK</AutoFitText>
             </button>
             <button
               type="button"
@@ -689,7 +690,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             >
               <span className="ww-shine-thin" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
               <span className="ww-shine-wide" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
-              Let's Play!
+              <AutoFitText minScale={0.55}>Let's Play!</AutoFitText>
             </button>
           </div>
         </div>
@@ -929,7 +930,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 opacity: 1,
               }}
             >
-              Cancel
+              <AutoFitText minScale={0.6}>Cancel</AutoFitText>
             </button>
             <button
               type="button"
@@ -944,7 +945,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 opacity: canContinue ? 1 : 0.7,
               }}
             >
-              {busy ? "Connecting…" : "Continue"}
+              <AutoFitText minScale={0.55}>{busy ? "Connecting…" : "Continue"}</AutoFitText>
             </button>
           </div>
         </div>
@@ -1119,7 +1120,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 opacity: codeEnabled && !busy ? 1 : 0.7,
               }}
             >
-              Join
+              <AutoFitText minScale={0.6}>Join</AutoFitText>
             </button>
           </div>
         </div>
@@ -1183,7 +1184,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             userSelect: "none",
           }}
         >
-          {codeFlash ? "Copied" : room.room_code}
+          <AutoFitText minScale={0.5}>{codeFlash ? "Copied" : room.room_code}</AutoFitText>
         </button>
         {isHost ? (
           <button
@@ -1198,7 +1199,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               padding: 0,
             }}
           >
-            {shareFlash ? "Copied!" : "SHARE"}
+            <AutoFitText minScale={0.5}>{shareFlash ? "Copied!" : "SHARE"}</AutoFitText>
           </button>
         ) : null}
       </div>
@@ -1300,7 +1301,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         disabled={starting}
         className="ww-press" style={{ ...railButtonStyle(starting), opacity: starting ? 0.6 : 1 }}
       >
-        BACK
+        <AutoFitText minScale={0.6}>BACK</AutoFitText>
       </button>
       {isHost ? (
         <button
@@ -1316,7 +1317,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               <span className="ww-shine-wide" aria-hidden="true" style={{ pointerEvents: "none", background: "#F8F2E9", transformOrigin: "0 0" }} />
             </>
           ) : null}
-          {starting ? "Starting…" : "Let's Play!"}
+          <AutoFitText minScale={0.55}>{starting ? "Starting…" : "Let's Play!"}</AutoFitText>
         </button>
       ) : null}
     </div>
@@ -1404,7 +1405,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               padding: 0,
             }}
           >
-            Stay
+            <AutoFitText minScale={0.6}>Stay</AutoFitText>
           </button>
           <button
             type="button"
@@ -1417,7 +1418,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               padding: 0,
             }}
           >
-            Leave
+            <AutoFitText minScale={0.6}>Leave</AutoFitText>
           </button>
         </div>
       </div>

@@ -46,6 +46,7 @@ import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+import AutoFitText from "@/components/AutoFitText";
 import { hapticTap, hapticImpact, hapticSuccess, hapticError } from "@/lib/haptics";
 
 const prefersReducedMotion = (): boolean => {
@@ -198,11 +199,11 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         background: c.nameBg, borderRight: `2px solid ${c.border}`,
         boxSizing: "border-box",
       }}>
-        <span style={{
-          margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
+        <AutoFitText minScale={0.8} style={{
+          margin: "0 auto", flex: "1 1 0", minWidth: 0, textAlign: "center",
+          fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
           letterSpacing: "0.04em", color: c.name,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>{chip.name}</span>
+        }}>{chip.name}</AutoFitText>
         {chip.score !== null && (
           <span style={{
             margin: "0 auto", display: "flex", flexDirection: "column",
@@ -223,12 +224,11 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         background: "transparent", boxSizing: "border-box",
       }}>
         {c.labelText && (
-          <span style={{
+          <AutoFitText minScale={0.7} style={{
             margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: 1,
             letterSpacing: "0.04em", color: c.label,
             fontStyle: c.italic ? "italic" : "normal",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>{c.labelText}</span>
+          }}>{c.labelText}</AutoFitText>
         )}
       </div>
     </div>
@@ -368,9 +368,9 @@ const Header: React.FC<{
         padding: "8px 4px", gap: 4, overflow: "hidden",
         background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
       }}>
-        <div style={half}><span style={text}>Round: {round}</span></div>
+        <div style={half}><AutoFitText minScale={0.6} style={text}>Round: {round}</AutoFitText></div>
         <div aria-hidden="true" style={{ width: 2, background: SURFACE, alignSelf: "stretch", flex: "none" }} />
-        <div style={half}><span style={text}>{deckCount} Cards Left</span></div>
+        <div style={half}><AutoFitText minScale={0.6} style={text}>{deckCount} Cards Left</AutoFitText></div>
       </div>
       <button
         type="button"
@@ -500,7 +500,7 @@ const ScoreRow: React.FC<{
           }}
         >
           {b.icon && <CancelX />}
-          {b.label}
+          <AutoFitText minScale={0.55}>{b.label}</AutoFitText>
         </button>
       </div>
     );
@@ -595,11 +595,9 @@ const ActionButton: React.FC<{
     animationPlayState: shineOn ? "running" : "paused",
     opacity: shineOn ? 1 : 0,
   };
-  // Longer labels get a smaller cap so the text never clips inside the
-  // fixed-height button. ~1.9 chars per vw keeps "WHOOP! WHOOP!" inside a
-  // half-width button while short labels ("PLAY") stay large.
+  // Text starts at the ideal size and AutoFitText shrinks it to the measured
+  // width — so long labels ("WHOOP! WHOOP!") never clip at any breakpoint.
   const text = label ?? s.label;
-  const vw = Math.max(3.4, Math.min(6.4, 88 / Math.max(text.length, 1)));
   return (
     <button
       type="button"
@@ -612,12 +610,15 @@ const ActionButton: React.FC<{
         border: BORDER_HEAVY, borderRadius: R_BOX, boxSizing: "border-box",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
-        fontSize: `clamp(13px, ${vw.toFixed(2)}vw, 32px)`, lineHeight: 1.15, textAlign: "center",
+        fontSize: "clamp(19px, 6.4vw, 32px)", lineHeight: 1.15, textAlign: "center",
         padding: "10px 6px",
         position: "relative", overflow: "hidden",
       }}
     >
-      <span style={{ position: "relative", zIndex: 1, whiteSpace: "nowrap", maxWidth: "100%" }}>{text}</span>
+      <AutoFitText minScale={0.55} style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
+        {text}
+      </AutoFitText>
+
 
       <span aria-hidden="true" className="ww-shine-thin" style={shineStyle} />
       <span aria-hidden="true" className="ww-shine-wide" style={shineStyle} />
