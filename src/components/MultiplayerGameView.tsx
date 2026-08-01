@@ -960,7 +960,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       if (e.kind === "GREAT_MATCH") {
         // The ghost animation has a GREAT_MATCH_DELAY_MS animation-delay —
         // hold the sound by the same amount so it lands with the card.
-        const chime = setTimeout(playCorrect, GREAT_MATCH_DELAY_MS);
+        const chime = setTimeout(() => { playCorrect(); hapticSuccess(); }, GREAT_MATCH_DELAY_MS);
         soundTimersRef.current.push(chime);
         const idxs = lastPairRef.current;
         const copies = idxs.flatMap((i) => {
