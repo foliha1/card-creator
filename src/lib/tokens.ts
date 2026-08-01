@@ -57,6 +57,10 @@ export const SPACE = {
 export const SHADOW = {
   windowFocused: "4px 6px 0 rgba(0,0,0,0.3)",
   windowUnfocused: "3px 4px 0 rgba(0,0,0,0.15)",
+  /** Playing-card lift (faces + minis). */
+  card: "0 6px 14px rgba(0,0,0,0.25)",
+  /** Small card mini/tile lift. */
+  cardMini: "0 1.81px 1.81px rgba(0,0,0,0.25)",
 } as const;
 
 export const MOTION = {
@@ -126,7 +130,7 @@ export const TEXT_ROLES = {
   body:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.relaxed },
   label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.label },
   /** Buttons, inputs, code fields, small tiles. Friend has one weight — stay regular. */
-  control:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
+  control:       { step: "lg",  mobileStep: "md",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
   subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.heading },
   /** Section titles inside pre-game cards. */
   title:         { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.heading },
@@ -134,7 +138,7 @@ export const TEXT_ROLES = {
   /** Screen headlines ("How do you want to play?"). */
   hero:          { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.snug },
   /** Primary CTA lettering ("Let's Play!", table code). */
-  action:        { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.tight },
+  action:        { step: "4xl", mobileStep: "3xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.tight },
   display:       { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.black,   italic: false, lineHeight: LINE_HEIGHT.tight },
 } as const satisfies Record<string, TextRoleDef>;
 
@@ -184,13 +188,13 @@ export const TOUCH_MIN = 44;
 export const CONTROL_H = {
   sm: 36,
   md: 44,
-  lg: 52,
+  lg: 48,
 } as const;
 
 export const CONTROL_PAD_X = {
-  sm: SPACE[6],
-  md: SPACE[8],
-  lg: SPACE[10],
+  sm: SPACE[5],
+  md: SPACE[6],
+  lg: SPACE[8],
 } as const;
 
 export type ButtonVariant =

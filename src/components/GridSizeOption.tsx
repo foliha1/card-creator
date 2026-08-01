@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React from "react";
+import { BORDER, RADIUS, SHADOW, SPACE } from "@/lib/tokens";
 
 export type GridSizeKey = "3x2" | "3x3";
 
@@ -20,7 +21,7 @@ export const GRID_OPTIONS: Array<{
 
 const MINI_W = 47.25;
 const MINI_H = 66.15;
-const MINI_GAP = 3.62;
+const MINI_GAP = SPACE[2];
 
 const renderGridMini = (cols: number, rows: number) => (
   <div
@@ -44,8 +45,8 @@ const renderGridMini = (cols: number, rows: number) => (
           width: "100%",
           aspectRatio: `${MINI_W} / ${MINI_H}`,
           display: "block",
-          borderRadius: 2.87,
-          filter: "drop-shadow(0 1.81px 1.81px rgba(0,0,0,0.25))",
+          borderRadius: RADIUS.sm / 2,
+          filter: `drop-shadow(${SHADOW.cardMini})`,
         }}
       />
     ))}
@@ -79,15 +80,15 @@ const GridSizeOption: React.FC<GridSizeOptionProps> = ({
     style={{
       flex: "1 1 0",
       minWidth: 0,
-      border: "2px solid #231F20",
-      borderRadius: 4,
+      border: BORDER.heavy,
+      borderRadius: RADIUS.sm,
       boxSizing: "border-box",
-      padding: 16,
+      padding: SPACE[6],
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
+      gap: SPACE[4],
       cursor: interactive ? "pointer" : "default",
     }}
   >
