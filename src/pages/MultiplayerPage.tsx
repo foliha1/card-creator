@@ -30,6 +30,7 @@ type IntroStatus = "pending" | "running" | "skipped" | "complete" | "timeout" | 
 
 const MultiplayerPage: React.FC = () => {
   const { roomCode } = useParams<{ roomCode?: string }>();
+  const mobile = useIsMobile();
   const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
     if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) {
