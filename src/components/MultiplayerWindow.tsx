@@ -538,32 +538,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   }, []);
 
 
-  const shellStyle: React.CSSProperties = {
-    position: "relative",
-    minHeight: mobile ? "100dvh" : "100%",
-    height: mobile ? "100dvh" : "100%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: mobile ? 12 : 8,
-    paddingTop: mobile ? `calc(12px + ${SITE_HEADER_OFFSET})` : `calc(20px + ${SITE_HEADER_OFFSET})`,
-    paddingBottom: mobile ? "calc(12px + env(safe-area-inset-bottom))" : "calc(8px + env(safe-area-inset-bottom))",
-    paddingLeft: mobile ? "calc(12px + env(safe-area-inset-left))" : "calc(8px + env(safe-area-inset-left))",
-    paddingRight: mobile ? "calc(12px + env(safe-area-inset-right))" : "calc(8px + env(safe-area-inset-right))",
-    boxSizing: "border-box",
-    overflowY: "auto",
-    background: mobile ? COLORS.surface : "transparent",
-  };
+  // Shell + inner-column geometry live in PreGameShell so every pre-game
+  // screen shares the exact same mobile padding.
 
-  const innerColStyle: React.CSSProperties = {
-    width: "100%",
-    maxWidth: 390,
-    height: "auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  };
 
   const cardStyle: React.CSSProperties = {
     alignSelf: "stretch",
