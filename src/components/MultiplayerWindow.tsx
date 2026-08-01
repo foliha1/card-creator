@@ -1453,7 +1453,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           padding: 0,
         }}
       >
-        Leave the Table
+        BACK
       </button>
       {isHost ? (
         <button
