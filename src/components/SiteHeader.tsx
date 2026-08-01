@@ -85,17 +85,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onSettings, onLeave }) => {
             How to Play
           </a>
 
-          <Link
-            to="/"
-            aria-label="WHOOP! WHOOP! home"
-            style={{ ...controlBase, flex: "0 1 auto", minWidth: 0, overflow: "hidden" }}
-          >
-            <img
-              src={whoopLightLogo.url}
-              alt="WHOOP! WHOOP!"
-              style={{ height: 22, display: "block", maxWidth: "100%" }}
-            />
-          </Link>
 
           <div style={{ display: "flex", alignItems: "center", flex: "none" }}>
             <button
