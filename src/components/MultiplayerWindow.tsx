@@ -987,85 +987,65 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     // view intentionally skips wrapInShell's extra inner column so there is
     // exactly one element sized like the card, and that element carries the
     // opacity/pointer-events driven by introStatus. See fix note in commit.
+    const playModeTileStyle = (bg: string): React.CSSProperties => ({
+      flex: 1,
+      height: 101,
+      background: bg,
+      border: BORDER.heavy,
+      borderRadius: RADIUS.md,
+      boxSizing: "border-box",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: SPACE[8],
+      gap: SPACE[4],
+      cursor: busy ? "default" : "pointer",
+      opacity: busy ? 0.7 : 1,
+      transition: `opacity ${MOTION.fast}`,
+    });
+    const playModeLabelStyle = (color: string): React.CSSProperties => ({
+      ...textStyle("title", mobile),
+      color,
+      textAlign: "center",
+    });
+
     const idleCard = (
       <div style={{
+        ...panelStyle("surface", 8),
         width: "100%",
         maxWidth: 390,
-        background: COLORS.surface,
-        border: "2px solid " + COLORS.ink,
-        borderRadius: 4,
-        padding: 16,
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch",
         justifyContent: "center",
-        gap: 16,
+        gap: SPACE[8],
         height: "auto",
-        boxSizing: "border-box",
         ...cardStyleIntro,
       }}>
         {view.error && (
-          <div role="alert" style={{
-            alignSelf: "stretch",
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 16,
-            lineHeight: "20px",
-            color: COLORS.red,
-            border: `1.5px solid ${COLORS.red}`,
-            borderRadius: 4,
-            padding: "8px 12px",
-            background: COLORS.surface,
-          }}>
+          <div role="alert" style={alertStyle}>
             {view.error}
           </div>
         )}
 
-        <div style={{
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 36,
-          lineHeight: "44px",
-          color: COLORS.ink,
-          textAlign: "center",
-        }}>
+        <div style={{ ...textStyle("hero", mobile), color: COLORS.ink, textAlign: "center" }}>
           How do you want to play?
         </div>
 
-        <div style={{ alignSelf: "stretch", display: "flex", gap: 16 }}>
+        <div style={{ alignSelf: "stretch", display: "flex", gap: SPACE[8] }}>
           <button
             type="button"
             onClick={handlePlaySolo}
             disabled={busy}
-            style={{
-              flex: 1,
-              height: 101,
-              background: COLORS.blue,
-              border: "2px solid " + COLORS.ink,
-              borderRadius: 4,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 16,
-              gap: 8,
-              cursor: busy ? "default" : "pointer",
-              opacity: busy ? 0.7 : 1,
-            }}
+            style={playModeTileStyle(COLORS.blue)}
             aria-label="Play Solo"
           >
             <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
               <circle cx="16" cy="11" r="5" fill="none" stroke={COLORS.soloTint} strokeWidth="2.5" />
               <path d="M6 27c2-5 6-7 10-7s8 2 10 7" fill="none" stroke={COLORS.soloTint} strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            <div style={{
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: 24,
-              lineHeight: "29px",
-              color: COLORS.soloTint,
-              textAlign: "center",
-            }}>
+            <div style={playModeLabelStyle(COLORS.soloTint)}>
               Play Solo
             </div>
           </button>
@@ -1074,21 +1054,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             type="button"
             onClick={handleStartRoom}
             disabled={busy}
-            style={{
-              flex: 1,
-              height: 101,
-              background: COLORS.red,
-              border: "2px solid " + COLORS.ink,
-              borderRadius: 4,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 16,
-              gap: 8,
-              cursor: busy ? "default" : "pointer",
-              opacity: busy ? 0.7 : 1,
-            }}
+            style={playModeTileStyle(COLORS.red)}
             aria-label="Play with Peeps"
           >
             <svg width="64" height="32" viewBox="0 0 64 32" aria-hidden="true">
@@ -1097,39 +1063,22 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               <circle cx="48" cy="12" r="5" fill="none" stroke={COLORS.peepsTint} strokeWidth="2.5" />
               <path d="M38 28c2-5 5-7 10-7s8 2 10 7" fill="none" stroke={COLORS.peepsTint} strokeWidth="2.5" strokeLinecap="round" />
             </svg>
-            <div style={{
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: 24,
-              lineHeight: "29px",
-              color: COLORS.peepsTint,
-              textAlign: "center",
-            }}>
+            <div style={playModeLabelStyle(COLORS.peepsTint)}>
               Play with Peeps
             </div>
           </button>
         </div>
 
-        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 20,
-            lineHeight: "24px",
-            color: COLORS.ink,
-            textAlign: "left",
-          }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
+          <div style={{ ...textStyle("control", mobile), color: COLORS.ink, textAlign: "left" }}>
             Already have a table code?
           </div>
           <div style={{
+            ...panelStyle("panel", 4),
             display: "flex",
             alignItems: "center",
-            gap: 8,
-            padding: 8,
-            background: COLORS.panel,
-            border: "2px solid " + COLORS.ink,
-            borderRadius: 4,
-            boxSizing: "border-box",
+            gap: SPACE[4],
+            borderRadius: RADIUS.sm,
           }}>
             <input
               value={codeInput}
@@ -1142,17 +1091,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               maxLength={ROOM_CODE_LENGTH}
               aria-label="Table code"
               style={{
+                ...textStyle("control", mobile),
                 flexGrow: 1,
                 minWidth: 0,
-                padding: "8px 16px",
+                minHeight: TOUCH_MIN,
+                padding: `${SPACE[4]}px ${SPACE[8]}px`,
                 background: COLORS.surface,
-                border: "2px solid " + COLORS.ink,
-                borderRadius: 4,
+                border: BORDER.heavy,
+                borderRadius: RADIUS.sm,
                 boxSizing: "border-box",
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: "24px",
                 letterSpacing: "0.1em",
                 color: COLORS.ink,
                 textTransform: "uppercase",
@@ -1164,18 +1111,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               onClick={handleJoinByCode}
               disabled={busy || !codeEnabled}
               style={{
+                ...buttonStyle("ink", "md", { mobile, disabled: busy || !codeEnabled }),
                 flexShrink: 0,
-                padding: "8px 16px",
-                border: "2px solid " + COLORS.ink,
-                borderRadius: 4,
-                fontFamily: FONT_FAMILY,
                 fontStyle: "italic",
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: "24px",
                 background: COLORS.inkMuted,
                 color: COLORS.panel,
-                cursor: codeEnabled && !busy ? "pointer" : "default",
                 opacity: codeEnabled && !busy ? 1 : 0.7,
               }}
             >
@@ -1185,6 +1125,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         </div>
       </div>
     );
+
 
 
     return (
