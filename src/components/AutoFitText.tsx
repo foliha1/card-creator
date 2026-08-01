@@ -46,7 +46,9 @@ const AutoFitText: React.FC<AutoFitTextProps> = ({
       siblings += (node as HTMLElement).offsetWidth
         + parseFloat(s.marginLeft || "0") + parseFloat(s.marginRight || "0");
     }
-    const available = parent.clientWidth - padX - siblings;
+    // 2px safety margin absorbs sub-pixel rounding so text never touches
+    // a neighbouring badge or the border.
+    const available = parent.clientWidth - padX - siblings - 2;
     if (available <= 0) return;
 
     // Measure at full size, then derive the scale in one pass.
@@ -56,7 +58,7 @@ const AutoFitText: React.FC<AutoFitTextProps> = ({
 
 
     const next = natural <= available ? 1 : Math.max(minScale, available / natural);
-    setScale((prev) => (Math.abs(prev - next) < 0.01 ? prev : next));
+    setScale((prev) => (Math.abs(prev - next) < 0.005 ? prev : next));
   }, [minScale]);
 
   useLayoutEffect(fit, [fit, children]);

@@ -200,7 +200,8 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         boxSizing: "border-box",
       }}>
         <AutoFitText minScale={0.55} style={{
-          margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
+          margin: "0 auto", flex: "1 1 0", minWidth: 0, textAlign: "center",
+          fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
           letterSpacing: "0.04em", color: c.name,
         }}>{chip.name}</AutoFitText>
         {chip.score !== null && (
