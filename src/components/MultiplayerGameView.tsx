@@ -985,6 +985,7 @@ const MultiplayerGameView: React.FC<Props> = ({
 
       else if (e.kind === "NOPE") {
         playWrong();
+        hapticError();
         // Every player sees the wrong pair animate — no seat filter.
         setWrongCards(lastPairRef.current);
         setPenaltySeat(e.seat);
