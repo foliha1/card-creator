@@ -558,9 +558,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
   const innerColStyle: React.CSSProperties = {
     width: "100%",
-    maxWidth: mobile ? "none" : 390,
-    height: mobile ? "100%" : "auto",
-    minHeight: mobile ? "100dvh" : undefined,
+    maxWidth: 390,
+    height: "auto",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
