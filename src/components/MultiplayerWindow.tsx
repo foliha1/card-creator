@@ -1689,17 +1689,16 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     <div style={{
       alignSelf: "stretch",
       background: "#F8F2E9",
-      border: mobile ? "none" : "1.58px solid #231F20",
-      borderRadius: mobile ? 0 : 6.33,
+      border: "1.58px solid #231F20",
+      borderRadius: 6.33,
       padding: 16,
       display: "flex",
       flexDirection: "column",
       alignItems: "stretch",
       gap: 16,
-      height: mobile ? "100%" : "auto",
-      minHeight: mobile ? "100dvh" : undefined,
+      height: "auto",
       boxSizing: "border-box",
-      justifyContent: mobile ? "center" : undefined,
+      justifyContent: "center",
     }}>
       {joinerStatusBar}
       {startingBanner}
