@@ -25,6 +25,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Settings, X } from "lucide-react";
+import { MOBILE_SHELL_PAD } from "@/components/PreGameShell";
 import SiteHeader, { SITE_HEADER_H } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
@@ -1412,7 +1413,7 @@ const MultiplayerGameView: React.FC<Props> = ({
   // 44px top bar, the player panel, the bottom bar, the three 8px column gaps,
   // and the card area's own 32px of vertical padding.
   // The banner is an overlay on the player panel, so it needs no reserved height.
-  const topReserve = mobile ? 12 : 8 + 8 + 8; // mobile root top; desktop wrapper top + root top + inner top
+  const topReserve = mobile ? MOBILE_SHELL_PAD : 8 + 8 + 8; // mobile root top; desktop wrapper top + root top + inner top
   const bottomReserve = mobile ? 0 : 8 + 8;   // desktop wrapper bottom + root bottom
   const availH = Math.max(
     0,
@@ -1431,7 +1432,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: mobile ? "12px 12px 0 12px" : 8, marginTop: SITE_HEADER_H,
+      padding: mobile ? `${MOBILE_SHELL_PAD}px ${MOBILE_SHELL_PAD}px 0 ${MOBILE_SHELL_PAD}px` : 8, marginTop: SITE_HEADER_H,
       height: "100%",
       minHeight: mobile ? `calc(100dvh - ${SITE_HEADER_H}px)` : undefined,
       maxHeight: mobile ? undefined : "100%",
