@@ -557,18 +557,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   // screen shares the exact same mobile padding.
 
 
+  // ---- Design-system derived surfaces / controls -------------------------
   const cardStyle: React.CSSProperties = {
+    ...panelStyle("surface", 8),
     alignSelf: "stretch",
-    background: "#F8F2E9",
-    border: "2px solid #231F20",
-    borderRadius: 4,
-    padding: 16,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: 16,
+    gap: SPACE[8],
     height: "auto",
-    boxSizing: "border-box",
   };
 
   // Legacy card wrapper used by views not yet redesigned in this prompt
@@ -581,8 +578,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   };
 
   const inputStyle: React.CSSProperties = {
-    fontFamily: FONT_FAMILY,
-    fontSize: TEXT.subhead.size,
+    ...textStyle("control", mobile),
     padding: `${SPACE[4]}px ${SPACE[5]}px`,
     border: BORDER.heavy,
     borderRadius: RADIUS.md,
@@ -592,6 +588,47 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     minWidth: 0,
     outline: "none",
   };
+
+  /** Section title inside a pre-game card. */
+  const titleStyle: React.CSSProperties = {
+    ...textStyle("title", mobile),
+    textAlign: "center",
+    color: COLORS.ink,
+  };
+
+  /** Dark utility button (BACK / Cancel) — fixed 100px rail. */
+  const railButtonStyle = (disabled = false): React.CSSProperties => ({
+    ...buttonStyle("ink", "lg", { mobile, disabled }),
+    flex: "0 0 100px",
+    width: 100,
+    height: "100%",
+    padding: 0,
+  });
+
+  /** Big italic CTA. */
+  const playButtonStyle = (disabled = false): React.CSSProperties => ({
+    ...buttonStyle("play", "lg", { mobile, disabled }),
+    position: "relative",
+    overflow: "hidden",
+    flex: "1 1 0",
+    minWidth: 0,
+    height: "100%",
+    padding: 0,
+    opacity: 1,
+    ...(disabled ? { background: COLORS.inkMuted, color: COLORS.panel } : null),
+  });
+
+  /** Inline error/alert strip. */
+  const alertStyle: React.CSSProperties = {
+    ...textStyle("body", mobile),
+    alignSelf: "stretch",
+    color: COLORS.red,
+    border: `1.5px solid ${COLORS.red}`,
+    borderRadius: RADIUS.sm,
+    padding: `${SPACE[4]}px ${SPACE[6]}px`,
+    background: COLORS.surface,
+  };
+
 
   const wrapInShell = (
     content: React.ReactNode,
