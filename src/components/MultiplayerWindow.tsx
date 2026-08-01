@@ -1265,7 +1265,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               transition: "background 150ms ease",
             }}
           >
-            {shareFlash ? "Copied!" : "Share Link"}
+            {shareFlash ? "Copied!" : "SHARE"}
           </button>
         ) : null}
       </div>
