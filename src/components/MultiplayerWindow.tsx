@@ -9,6 +9,7 @@ import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import SiteHeader, { SITE_HEADER_OFFSET } from "@/components/SiteHeader";
+import PreGameShell from "@/components/PreGameShell";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { useSoloGame } from "@/hooks/useSoloGame";
 import GridSizeOption, { GRID_OPTIONS, type GridSizeKey } from "@/components/GridSizeOption";
