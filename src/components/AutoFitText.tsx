@@ -27,6 +27,7 @@ const AutoFitText: React.FC<AutoFitTextProps> = ({
 }) => {
   const spanRef = useRef<HTMLSpanElement | null>(null);
   const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
 
   const fit = useCallback(() => {
     const el = spanRef.current;
@@ -51,13 +52,15 @@ const AutoFitText: React.FC<AutoFitTextProps> = ({
     const available = parent.clientWidth - padX - siblings - 2;
     if (available <= 0) return;
 
-    // Measure at full size, then derive the scale in one pass.
-    el.style.fontSize = "";
-    const natural = el.scrollWidth;
+    // scrollWidth is measured at the CURRENT scale, so divide it back out to
+    // recover the natural (unscaled) width. Resetting inline fontSize here
+    // would fight React's style prop, so we never touch the DOM style.
+    const current = scaleRef.current || 1;
+    const natural = el.scrollWidth / current;
     if (natural <= 0) return;
 
-
     const next = natural <= available ? 1 : Math.max(minScale, available / natural);
+    scaleRef.current = next;
     setScale((prev) => (Math.abs(prev - next) < 0.005 ? prev : next));
   }, [minScale]);
 
@@ -92,8 +95,14 @@ const AutoFitText: React.FC<AutoFitTextProps> = ({
         display: "block",
         whiteSpace: "nowrap",
         maxWidth: "100%",
-        fontSize: scale === 1 ? undefined : `${(scale * 100).toFixed(2)}%`,
         ...style,
+        // Always last: the caller may pass a fontSize we need to scale down.
+        fontSize:
+          scale === 1
+            ? style?.fontSize
+            : typeof style?.fontSize === "number"
+              ? style.fontSize * scale
+              : `${(scale * 100).toFixed(2)}%`,
       }}
     >
       {children}
