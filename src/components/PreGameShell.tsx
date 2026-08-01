@@ -1,14 +1,10 @@
 import React from "react";
 import { COLORS } from "@/lib/tokens";
 import SiteHeader, { SITE_HEADER_OFFSET } from "@/components/SiteHeader";
+import { MOBILE_SHELL_PAD, DESKTOP_SHELL_PAD } from "@/lib/layout";
 
-/**
- * Single source of truth for the mobile edge padding used by every
- * multiplayer screen (play-style, nickname, solo-setup, lobby, in-game).
- * The in-game board imports this too so the screens can't drift apart.
- */
-export const MOBILE_SHELL_PAD = 12;
-const DESKTOP_SHELL_PAD = 8;
+export { MOBILE_SHELL_PAD };
+
 
 export const shellPadding = (mobile: boolean): React.CSSProperties => {
   const p = mobile ? MOBILE_SHELL_PAD : DESKTOP_SHELL_PAD;
