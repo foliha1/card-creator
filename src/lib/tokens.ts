@@ -198,16 +198,22 @@ export type ButtonVariant =
   | "secondary"   // alternate forward action (blue)
   | "accent"      // playful / start (orange)
   | "neutral"     // low-emphasis on cream surfaces
+  | "ink"         // dark utility (BACK / Cancel)
+  | "play"        // the big italic "Let's Play!" CTA
+  | "quiet"       // cream on cream (Stay)
   | "ghost"       // text-only
   | "danger";     // destructive (leave / quit)
 
 const BUTTON_PALETTE: Record<ButtonVariant, { bg: string; bgHover: string; fg: string; border: string }> = {
-  primary:   { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface, border: BORDER.heavy },
-  secondary: { bg: COLORS.blue,       bgHover: COLORS.blueHover,       fg: COLORS.surface, border: BORDER.heavy },
-  accent:    { bg: COLORS.orange,     bgHover: COLORS.orangeHover,     fg: COLORS.ink,     border: BORDER.heavy },
-  neutral:   { bg: COLORS.panel,      bgHover: COLORS.panelMutedHover, fg: COLORS.ink,     border: BORDER.heavy },
-  ghost:     { bg: "transparent",     bgHover: COLORS.surfaceHover,    fg: COLORS.ink,     border: "none" },
-  danger:    { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface, border: BORDER.heavy },
+  primary:   { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface,   border: BORDER.heavy },
+  secondary: { bg: COLORS.blue,       bgHover: COLORS.blueHover,       fg: COLORS.surface,   border: BORDER.heavy },
+  accent:    { bg: COLORS.orange,     bgHover: COLORS.orangeHover,     fg: COLORS.ink,       border: BORDER.heavy },
+  neutral:   { bg: COLORS.panel,      bgHover: COLORS.panelMutedHover, fg: COLORS.ink,       border: BORDER.heavy },
+  ink:       { bg: COLORS.ink,        bgHover: COLORS.inkMuted,        fg: COLORS.surface,   border: BORDER.heavy },
+  play:      { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.peepsTint, border: BORDER.heavy },
+  quiet:     { bg: COLORS.surface,    bgHover: COLORS.surfaceHover,    fg: COLORS.ink,       border: BORDER.heavy },
+  ghost:     { bg: "transparent",     bgHover: COLORS.surfaceHover,    fg: COLORS.ink,       border: "none" },
+  danger:    { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface,   border: BORDER.heavy },
 };
 
 /** Hover background for a variant — pair with `buttonStyle` on pointer events. */
@@ -217,7 +223,8 @@ export function buttonHoverBg(variant: ButtonVariant): string {
 
 /**
  * Canonical button surface. Size drives height + horizontal padding; variant
- * drives colour. Text role is fixed to `label` so buttons never drift.
+ * drives colour. Text role is `control`, or `action` for the big italic CTA,
+ * so buttons never drift.
  */
 export function buttonStyle(
   variant: ButtonVariant = "primary",
@@ -226,7 +233,8 @@ export function buttonStyle(
 ): CSSProperties {
   const p = BUTTON_PALETTE[variant];
   return {
-    ...textStyle("label", opts.mobile),
+    ...textStyle(variant === "play" ? "action" : "control", opts.mobile),
+
     boxSizing: "border-box",
     display: "inline-flex",
     alignItems: "center",
