@@ -1166,6 +1166,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (mySeat === null) return;
     if (modalOpen) return;
     if (inClaimMode) {
+      hapticTap();
       setOptimisticSel((prev) =>
         prev.includes(i) ? prev.filter((x) => x !== i) : prev.length >= 2 ? prev : [...prev, i]
       );
@@ -1176,6 +1177,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (isMyTurnToFlip) {
       const slot = s.grid[i];
       if (!slot.occupied) return;
+      hapticTap();
       onIntent({ type: "FLIP_START", by: mySeat, idx: i, token: Date.now() });
     }
   };
