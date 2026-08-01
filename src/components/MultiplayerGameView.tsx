@@ -595,6 +595,11 @@ const ActionButton: React.FC<{
     animationPlayState: shineOn ? "running" : "paused",
     opacity: shineOn ? 1 : 0,
   };
+  // Longer labels get a smaller cap so the text never clips inside the
+  // fixed-height button. ~1.9 chars per vw keeps "WHOOP! WHOOP!" inside a
+  // half-width button while short labels ("PLAY") stay large.
+  const text = label ?? s.label;
+  const vw = Math.max(3.4, Math.min(6.4, 88 / Math.max(text.length, 1)));
   return (
     <button
       type="button"
@@ -607,12 +612,13 @@ const ActionButton: React.FC<{
         border: BORDER_HEAVY, borderRadius: R_BOX, boxSizing: "border-box",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT_FAMILY, fontStyle: "italic", fontWeight: 400,
-        fontSize: "clamp(19px, 6.4vw, 32px)", lineHeight: 1.1, textAlign: "center",
-        padding: "10px 8px",
+        fontSize: `clamp(13px, ${vw.toFixed(2)}vw, 32px)`, lineHeight: 1.15, textAlign: "center",
+        padding: "10px 6px",
         position: "relative", overflow: "hidden",
       }}
     >
-      <span style={{ position: "relative", zIndex: 1, whiteSpace: "nowrap" }}>{label ?? s.label}</span>
+      <span style={{ position: "relative", zIndex: 1, whiteSpace: "nowrap", maxWidth: "100%" }}>{text}</span>
+
       <span aria-hidden="true" className="ww-shine-thin" style={shineStyle} />
       <span aria-hidden="true" className="ww-shine-wide" style={shineStyle} />
     </button>
