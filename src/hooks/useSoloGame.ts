@@ -8,7 +8,6 @@
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
 import {
   useGameState,
   SETTLE_MATCH_MS,
@@ -33,7 +32,7 @@ import {
   pickReactionDelay,
   type Brain,
 } from "@/lib/auntieOBrain";
-import { pickLine, OPPONENT_NAME } from "@/lib/auntieO";
+const OPPONENT_NAME = "Auntie O.";
 
 const AUNTIE_SEAT = 1;
 const HUMAN_SEAT = 0;
@@ -166,35 +165,14 @@ export function useSoloGame(gridSize: "3x2" | "3x3" = "3x3"): UseSoloGameResult 
     for (let i = 0; i < state.scores.length; i++) {
       if ((ps[i] ?? 0) < (state.scores[i] ?? 0)) {
         emit("GREAT_MATCH", i);
-        toast(pickLine(i === HUMAN_SEAT ? "playerCorrect" : "oppCorrect"));
       }
       if ((pw[i] ?? 0) < (nw[i] ?? 0)) {
         emit("NOPE", i);
-        toast(pickLine(i === HUMAN_SEAT ? "playerWrong" : "oppWrong"));
       }
     }
     prevScoresRef.current = state.scores.slice();
     prevWrongRef.current = nw;
   }, [state.scores, state.wrongBy, emit]);
-
-  // Game start / end quips.
-  const greetedRef = useRef(false);
-  useEffect(() => {
-    if (greetedRef.current) return;
-    if (state.phase === "AWAITING_ROLL" && state.roundNum === 1) {
-      greetedRef.current = true;
-      toast(pickLine("gameStart"));
-    }
-  }, [state.phase, state.roundNum]);
-  const endedRef = useRef(false);
-  useEffect(() => {
-    if (endedRef.current) return;
-    if (state.phase !== "GAME_OVER") return;
-    endedRef.current = true;
-    const aunt = state.scores[AUNTIE_SEAT] ?? 0;
-    const you = state.scores[HUMAN_SEAT] ?? 0;
-    toast(pickLine(aunt >= you ? "win" : "lose"));
-  }, [state.phase, state.scores]);
 
   // ---- Auntie's auto-roll ----
   useEffect(() => {
@@ -202,7 +180,6 @@ export function useSoloGame(gridSize: "3x2" | "3x3" = "3x3"): UseSoloGameResult 
     if (state.roller !== AUNTIE_SEAT) return;
     if (state.rolling) return;
     const t = setTimeout(() => {
-      toast(pickLine("oppRoll"));
       commitAndRoll();
     }, AUNTIE_ROLL_DELAY_MS);
     return () => clearTimeout(t);
@@ -276,7 +253,6 @@ export function useSoloGame(gridSize: "3x2" | "3x3" = "3x3"): UseSoloGameResult 
         return;
       }
       const token = nextToken();
-      toast(pickLine("oppDouble"));
       dispatch({ type: "CLAIM_START", by: AUNTIE_SEAT, a: best.a, b: best.b, token });
       setTimeout(() => dispatch({ type: "CLAIM_RESOLVE", token }), 1600);
     }, delay);
