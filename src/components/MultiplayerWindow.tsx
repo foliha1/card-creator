@@ -585,7 +585,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     ...cardStyle,
     gap: mobile ? SPACE[5] : SPACE[6],
     padding: mobile ? SPACE[6] : SPACE[10],
-    justifyContent: mobile ? "center" : undefined,
+    justifyContent: "center",
   };
 
   const inputStyle: React.CSSProperties = {
