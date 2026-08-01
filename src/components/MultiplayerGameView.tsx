@@ -755,14 +755,12 @@ const DebugControls: React.FC<{
 const preloadedArt: HTMLImageElement[] = [];
 
 const MultiplayerGameView: React.FC<Props> = ({
-  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile: _mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
+  publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
   heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
 }) => {
-  void _mobile;
   const [showSettings, setShowSettings] = React.useState(false);
   const [showLeave, setShowLeave] = React.useState(false);
   const modalOpen = showSettings || showLeave;
-  void _mobile;
 
   // Fade in a radial vignette over the persistent intro-animation still once
   // gameplay mounts, softening the background pattern behind the board.
