@@ -1323,37 +1323,29 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   );
 
 
+  const statusBarStyle: React.CSSProperties = {
+    ...textStyle("control", mobile),
+    ...panelStyle("panel", 8),
+    alignSelf: "stretch",
+    borderRadius: RADIUS.sm,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SPACE[6],
+    fontStyle: "italic",
+    color: COLORS.ink,
+    textAlign: "center",
+  };
+
   const startingBanner = starting ? (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        alignSelf: "stretch",
-        padding: 16,
-        background: "#D0C3AF",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        fontFamily: FONT_FAMILY,
-        fontStyle: "italic",
-        fontWeight: 400,
-        fontSize: 20,
-        lineHeight: "24px",
-        color: "#231F20",
-        textAlign: "center",
-      }}
-    >
+    <div role="status" aria-live="polite" style={statusBarStyle}>
       <span
         aria-hidden="true"
         style={{
-          width: 16,
-          height: 16,
+          width: SPACE[8],
+          height: SPACE[8],
           borderRadius: "50%",
-          border: "2px solid #231F20",
+          border: BORDER.heavy,
           borderTopColor: "transparent",
           animation: "spin 0.8s linear infinite",
           display: "inline-block",
@@ -1377,63 +1369,38 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 16,
+        padding: SPACE[8],
         zIndex: 1000,
       }}
     >
       <div style={{
+        ...panelStyle("surface", 8),
         width: "100%",
         maxWidth: 340,
-        background: "#F8F2E9",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        padding: 16,
         display: "flex",
         flexDirection: "column",
-        gap: 16,
-        boxSizing: "border-box",
+        gap: SPACE[8],
       }}>
         <div
           id="leave-confirm-title"
-          style={{
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: 24,
-            lineHeight: "30px",
-            color: "#231F20",
-          }}
+          style={{ ...textStyle("title", mobile), fontStyle: "italic", color: COLORS.ink }}
         >
           Leave the table?
         </div>
-        <div style={{
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 16,
-          lineHeight: "20px",
-          color: "#231F20",
-        }}>
+        <div style={{ ...textStyle("body", mobile), color: COLORS.ink }}>
           {isHost
             ? "The table will end for everyone if you leave."
             : "You'll drop out of this lobby."}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: SPACE[5] }}>
           <button
             type="button"
             onClick={() => setShowLeaveConfirm(false)}
             autoFocus
             style={{
+              ...buttonStyle("quiet", "lg", { mobile }),
               flexGrow: 1,
-              height: 56,
-              background: "#F8F2E9",
-              border: "2px solid #231F20",
-              borderRadius: 4,
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: 20,
-              lineHeight: "24px",
-              color: "#231F20",
-              cursor: "pointer",
+              height: CONTROL_H.lg + SPACE[2],
               padding: 0,
             }}
           >
@@ -1443,18 +1410,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             type="button"
             onClick={leaveToIdle}
             style={{
-              flexGrow: 1,
-              height: 56,
-              background: "#D72229",
-              border: "2px solid #231F20",
-              borderRadius: 4,
-              fontFamily: FONT_FAMILY,
+              ...buttonStyle("danger", "lg", { mobile }),
               fontStyle: "italic",
-              fontWeight: 400,
-              fontSize: 20,
-              lineHeight: "24px",
-              color: "#F8F2E9",
-              cursor: "pointer",
+              flexGrow: 1,
+              height: CONTROL_H.lg + SPACE[2],
               padding: 0,
             }}
           >
@@ -1467,47 +1426,25 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
 
   const joinerStatusBar = !isHost ? (
-    <div style={{
-      alignSelf: "stretch",
-      padding: 16,
-      height: 56,
-      background: "#D0C3AF",
-      border: "2px solid #231F20",
-      borderRadius: 4,
-      boxSizing: "border-box",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: FONT_FAMILY,
-      fontStyle: "italic",
-      fontWeight: 400,
-      fontSize: 20,
-      lineHeight: "24px",
-      color: "#231F20",
-      textAlign: "center",
-    }}>
+    <div style={{ ...statusBarStyle, height: CONTROL_H.lg + SPACE[2] }}>
       Your host will start the game soon.
     </div>
   ) : null;
 
   const lobbyCard = (
     <div style={{
+      ...panelStyle("surface", 8),
       alignSelf: "stretch",
-      background: "#F8F2E9",
-      border: "1.58px solid #231F20",
-      borderRadius: 6.33,
-      padding: 16,
       display: "flex",
       flexDirection: "column",
       alignItems: "stretch",
-      gap: 16,
+      gap: SPACE[8],
       height: "auto",
-      boxSizing: "border-box",
       justifyContent: "center",
     }}>
       {joinerStatusBar}
       {startingBanner}
-      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[8] }}>
         {tableInfoSection}
         {gridPickerSection}
         {playersSection}
@@ -1515,6 +1452,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       </div>
     </div>
   );
+
 
   return wrapInShell(
     <>
