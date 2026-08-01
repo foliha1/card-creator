@@ -125,10 +125,19 @@ export const TEXT_ROLES = {
   captionItalic: { step: "xs",  mobileStep: "2xs", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.normal },
   body:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.relaxed },
   label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.label },
+  /** Buttons, inputs, code fields, small tiles. Friend has one weight — stay regular. */
+  control:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
   subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.heading },
+  /** Section titles inside pre-game cards. */
+  title:         { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.heading },
   heading:       { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.snug },
+  /** Screen headlines ("How do you want to play?"). */
+  hero:          { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.snug },
+  /** Primary CTA lettering ("Let's Play!", table code). */
+  action:        { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.tight },
   display:       { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.black,   italic: false, lineHeight: LINE_HEIGHT.tight },
 } as const satisfies Record<string, TextRoleDef>;
+
 
 export type TextRole = keyof typeof TEXT_ROLES;
 
