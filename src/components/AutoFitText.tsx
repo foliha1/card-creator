@@ -33,16 +33,27 @@ const AutoFitText: React.FC<AutoFitTextProps> = ({
     const parent = el?.parentElement;
     if (!el || !parent) return;
 
-    // Available inner width of the button, minus its horizontal padding.
+    // Available inner width: parent content box minus its padding minus any
+    // in-flow siblings (icons, dividers, badges). Absolutely positioned
+    // siblings (shine sweeps, washes) take no space and are ignored.
     const cs = window.getComputedStyle(parent);
     const padX = parseFloat(cs.paddingLeft || "0") + parseFloat(cs.paddingRight || "0");
-    const available = parent.clientWidth - padX;
+    let siblings = 0;
+    for (const node of Array.from(parent.children)) {
+      if (node === el) continue;
+      const s = window.getComputedStyle(node);
+      if (s.position === "absolute" || s.position === "fixed" || s.display === "none") continue;
+      siblings += (node as HTMLElement).offsetWidth
+        + parseFloat(s.marginLeft || "0") + parseFloat(s.marginRight || "0");
+    }
+    const available = parent.clientWidth - padX - siblings;
     if (available <= 0) return;
 
     // Measure at full size, then derive the scale in one pass.
     el.style.fontSize = "";
     const natural = el.scrollWidth;
     if (natural <= 0) return;
+
 
     const next = natural <= available ? 1 : Math.max(minScale, available / natural);
     setScale((prev) => (Math.abs(prev - next) < 0.01 ? prev : next));
