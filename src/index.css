@@ -577,35 +577,20 @@ All colors MUST be HSL.
   .ww-deal { animation: ww-deal-fade 300ms linear 0ms both; }
 }
 
-/* ── Grid-size picker selection (from motion spec: 0.6s squeeze + fill) ── */
-.ww-gridpick {
+/* ── Grid-size picker selection ── */
+.ww-grid-option {
   transform-origin: center;
-  transition: none;
+  transition: transform 400ms cubic-bezier(0, .578, .583, 1.208),
+              background-color 400ms cubic-bezier(0, .538, .5, 1);
+  transform: scale(1);
+  background-color: #D0C3AF;
 }
-.ww-gridpick-selected {
-  animation: ww-gridpick-squeeze 600ms linear 1 both,
-             ww-gridpick-fill 600ms linear 1 both;
-}
-.ww-gridpick-deselected {
-  animation: ww-gridpick-squeeze 600ms linear 1 reverse both,
-             ww-gridpick-fill 600ms linear 1 reverse both;
-}
-
-@keyframes ww-gridpick-squeeze {
-  0%      { animation-timing-function: cubic-bezier(0.364, 0.274, 0.098, 1.646);
-            transform: scale(1); }
-  66.67%  { transform: scale(0.9); }
-  100%    { transform: scale(0.9); }
-}
-
-@keyframes ww-gridpick-fill {
-  0%      { animation-timing-function: cubic-bezier(0.29, 0.426, 0.5, 1);
-            background-color: #D0C3AF; }
-  66.67%  { background-color: #0072B2; }
-  100%    { background-color: #0072B2; }
+.ww-grid-option[data-selected="true"] {
+  transform: scale(.90);
+  background-color: #0072B2;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ww-gridpick-selected { animation: none; background-color: #0072B2; transform: scale(0.9); }
-  .ww-gridpick-deselected { animation: none; }
+  .ww-grid-option { transition: background-color 400ms linear; transform: none; }
+  .ww-grid-option[data-selected="true"] { transform: none; }
 }
