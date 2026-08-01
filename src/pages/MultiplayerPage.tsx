@@ -158,11 +158,13 @@ const MultiplayerPage: React.FC = () => {
         <div
           style={{
             width: "100%",
-            maxWidth: 420,
-            height: "auto",
-            maxHeight: 900,
+            maxWidth: mobile ? undefined : 420,
+            height: mobile ? "100%" : "auto",
+            maxHeight: mobile ? undefined : 900,
             margin: "auto",
-            padding: "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
+            padding: mobile
+              ? 0
+              : "calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left))",
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
