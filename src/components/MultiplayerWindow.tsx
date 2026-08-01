@@ -569,14 +569,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const cardStyle: React.CSSProperties = {
     alignSelf: "stretch",
     background: "#F8F2E9",
-    border: "2px solid #231F20",
-    borderRadius: 4,
+    border: mobile ? "none" : "2px solid #231F20",
+    borderRadius: mobile ? 0 : 4,
     padding: 16,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: 16,
-    height: "auto",
+    height: mobile ? "100%" : "auto",
+    minHeight: mobile ? "100dvh" : undefined,
     boxSizing: "border-box",
   };
 
@@ -586,6 +587,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     ...cardStyle,
     gap: mobile ? SPACE[5] : SPACE[6],
     padding: mobile ? SPACE[6] : SPACE[10],
+    justifyContent: mobile ? "center" : undefined,
   };
 
   const inputStyle: React.CSSProperties = {
