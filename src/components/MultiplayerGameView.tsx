@@ -824,6 +824,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     setHeroRects({ home, target, parent });
     setActiveCommit(rollCommit);
     playDiceRoll();
+    hapticImpact();
     // cardAreaRef is declared below; the ref itself is stable so eslint's
     // dependency check is not helpful here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
