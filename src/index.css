@@ -629,12 +629,18 @@ All colors MUST be HSL.
   .ww-play-shine { display: none; }
 }
 
-/* ── Mobile press feedback: uniform 100% → 95% scale + darker surface ── */
+/* ── Mobile press feedback: uniform 100% → 95% scale + darker surface ──
+   Applied to every button by default, plus any element opting in with
+   .ww-press (links, tiles, custom tap targets). Opt out with .ww-no-press. */
 @media (hover: none) and (pointer: coarse) {
+  button:not(.ww-no-press),
+  [role="button"]:not(.ww-no-press),
   .ww-press {
     transition: transform 200ms ease, filter 200ms ease;
     -webkit-tap-highlight-color: transparent;
   }
+  button:not(.ww-no-press):not(:disabled):not([aria-disabled="true"]):active,
+  [role="button"]:not(.ww-no-press):not([aria-disabled="true"]):active,
   .ww-press:active {
     transform: scale(0.95);
     filter: brightness(0.86);
@@ -642,5 +648,7 @@ All colors MUST be HSL.
 }
 
 @media (prefers-reduced-motion: reduce) {
+  button:active,
+  [role="button"]:active,
   .ww-press:active { transform: none; }
 }

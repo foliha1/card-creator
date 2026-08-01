@@ -46,6 +46,7 @@ import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+import { hapticTap, hapticImpact, hapticSuccess, hapticError } from "@/lib/haptics";
 
 const prefersReducedMotion = (): boolean => {
   try {
@@ -598,7 +599,7 @@ const ActionButton: React.FC<{
     <button
       type="button"
       className={isDisabled ? undefined : "ww-press"}
-      onClick={isDisabled ? undefined : onClick}
+      onClick={isDisabled ? undefined : () => { hapticImpact(); onClick?.(); }}
       disabled={isDisabled}
       style={{
         all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
@@ -823,6 +824,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     setHeroRects({ home, target, parent });
     setActiveCommit(rollCommit);
     playDiceRoll();
+    hapticImpact();
     // cardAreaRef is declared below; the ref itself is stable so eslint's
     // dependency check is not helpful here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -958,7 +960,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       if (e.kind === "GREAT_MATCH") {
         // The ghost animation has a GREAT_MATCH_DELAY_MS animation-delay —
         // hold the sound by the same amount so it lands with the card.
-        const chime = setTimeout(playCorrect, GREAT_MATCH_DELAY_MS);
+        const chime = setTimeout(() => { playCorrect(); hapticSuccess(); }, GREAT_MATCH_DELAY_MS);
         soundTimersRef.current.push(chime);
         const idxs = lastPairRef.current;
         const copies = idxs.flatMap((i) => {
@@ -983,6 +985,7 @@ const MultiplayerGameView: React.FC<Props> = ({
 
       else if (e.kind === "NOPE") {
         playWrong();
+        hapticError();
         // Every player sees the wrong pair animate — no seat filter.
         setWrongCards(lastPairRef.current);
         setPenaltySeat(e.seat);
@@ -1163,6 +1166,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (mySeat === null) return;
     if (modalOpen) return;
     if (inClaimMode) {
+      hapticTap();
       setOptimisticSel((prev) =>
         prev.includes(i) ? prev.filter((x) => x !== i) : prev.length >= 2 ? prev : [...prev, i]
       );
@@ -1173,6 +1177,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     if (isMyTurnToFlip) {
       const slot = s.grid[i];
       if (!slot.occupied) return;
+      hapticTap();
       onIntent({ type: "FLIP_START", by: mySeat, idx: i, token: Date.now() });
     }
   };
