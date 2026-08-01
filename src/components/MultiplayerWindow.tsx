@@ -11,9 +11,10 @@ import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import SiteHeader, { SITE_HEADER_OFFSET } from "@/components/SiteHeader";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { useSoloGame } from "@/hooks/useSoloGame";
+import GridSizeOption, { GRID_OPTIONS, type GridSizeKey } from "@/components/GridSizeOption";
 
-const SoloView: React.FC<{ onLeave: () => void; mobile: boolean }> = ({ onLeave, mobile }) => {
-  const solo = useSoloGame();
+const SoloView: React.FC<{ onLeave: () => void; mobile: boolean; gridSize: GridSizeKey }> = ({ onLeave, mobile, gridSize }) => {
+  const solo = useSoloGame(gridSize);
   return (
     <MultiplayerGameView
       publicState={solo.publicState}
@@ -58,7 +59,8 @@ type PendingAction =
 
 type View =
   | { kind: "idle"; error?: string }
-  | { kind: "solo" }
+  | { kind: "solo"; gridSize: GridSizeKey }
+  | { kind: "solo-setup" }
   | { kind: "name-prompt"; pending: PendingAction; error?: string }
   | { kind: "host"; room: RoomRow }
   | { kind: "joiner"; room: RoomRow }
@@ -355,7 +357,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const handlePlaySolo = useCallback(() => {
     if (busy) return;
     unlockAudio();
-    setView({ kind: "solo" });
+    setView({ kind: "solo-setup" });
   }, [busy]);
 
 
@@ -618,7 +620,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
   // ---------- SOLO ----------
   if (view.kind === "solo") {
-    return <SoloView onLeave={leaveToIdle} mobile={mobile} />;
+    return <SoloView onLeave={leaveToIdle} mobile={mobile} gridSize={view.gridSize} />;
   }
 
 
@@ -1266,84 +1268,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   );
 
   // ---- Section 2: Choose your grid size ----
-  const gridOptions: Array<{ key: "3x2" | "3x3"; label: string; cols: number; rows: number }> = [
-    { key: "3x2", label: "6 cards", cols: 3, rows: 2 },
-    { key: "3x3", label: "9 cards", cols: 3, rows: 3 },
-  ];
-
-  const MINI_W = 47.25;
-  const MINI_H = 66.15;
-  const MINI_GAP = 3.62;
-
-  const renderGridMini = (cols: number, rows: number) => (
-    <div
-      aria-hidden="true"
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, minmax(0, ${MINI_W}px))`,
-        gap: MINI_GAP,
-        justifyContent: "center",
-        width: "100%",
-        maxWidth: cols * MINI_W + (cols - 1) * MINI_GAP,
-      }}
-    >
-      {Array.from({ length: cols * rows }).map((_, i) => (
-        <img
-          key={i}
-          src="/cards/card-back.svg"
-          alt=""
-          draggable={false}
-          style={{
-            width: "100%",
-            aspectRatio: `${MINI_W} / ${MINI_H}`,
-            display: "block",
-            borderRadius: 2.87,
-            filter: "drop-shadow(0 1.81px 1.81px rgba(0,0,0,0.25))",
-          }}
-        />
-      ))}
-    </div>
-  );
-
   const gridPickerSection = (
     <div style={sectionStyle}>
       <div style={sectionTitleStyle}>Choose your grid size</div>
       <div style={{ display: "flex", gap: 16, alignSelf: "stretch", alignItems: "stretch" }}>
-        {gridOptions.map((opt) => {
-          const selected = lobbyGrid === opt.key;
-          const interactive = isHost && !starting;
-          return (
-            <button
-              key={opt.key}
-              type="button"
-              data-selected={selected}
-              onClick={() => {
-                if (!interactive) return;
-                setLobbyGrid(opt.key);
-              }}
-              aria-pressed={selected}
-              aria-label={`${opt.label} grid`}
-              disabled={!interactive}
-              className="ww-grid-option"
-              style={{
-                flex: "1 1 0",
-                minWidth: 0,
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                boxSizing: "border-box",
-                padding: 16,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                cursor: interactive ? "pointer" : "default",
-              }}
-            >
-              {renderGridMini(opt.cols, opt.rows)}
-            </button>
-          );
-        })}
+        {GRID_OPTIONS.map((opt) => (
+          <GridSizeOption
+            key={opt.key}
+            option={opt}
+            selected={lobbyGrid === opt.key}
+            interactive={isHost && !starting}
+            onSelect={setLobbyGrid}
+          />
+        ))}
       </div>
     </div>
   );
