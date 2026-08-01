@@ -1,0 +1,98 @@
+// ============================================================================
+// GridSizeOption — the single grid-size picker panel used by both the
+// multiplayer lobby and the solo setup screen. Carries `ww-grid-option` and
+// `data-selected` so it picks up the shared select/deselect transitions.
+// ============================================================================
+
+import React from "react";
+
+export type GridSizeKey = "3x2" | "3x3";
+
+export const GRID_OPTIONS: Array<{
+  key: GridSizeKey;
+  label: string;
+  cols: number;
+  rows: number;
+}> = [
+  { key: "3x2", label: "6 cards", cols: 3, rows: 2 },
+  { key: "3x3", label: "9 cards", cols: 3, rows: 3 },
+];
+
+const MINI_W = 47.25;
+const MINI_H = 66.15;
+const MINI_GAP = 3.62;
+
+const renderGridMini = (cols: number, rows: number) => (
+  <div
+    aria-hidden="true"
+    style={{
+      display: "grid",
+      gridTemplateColumns: `repeat(${cols}, minmax(0, ${MINI_W}px))`,
+      gap: MINI_GAP,
+      justifyContent: "center",
+      width: "100%",
+      maxWidth: cols * MINI_W + (cols - 1) * MINI_GAP,
+    }}
+  >
+    {Array.from({ length: cols * rows }).map((_, i) => (
+      <img
+        key={i}
+        src="/cards/card-back.svg"
+        alt=""
+        draggable={false}
+        style={{
+          width: "100%",
+          aspectRatio: `${MINI_W} / ${MINI_H}`,
+          display: "block",
+          borderRadius: 2.87,
+          filter: "drop-shadow(0 1.81px 1.81px rgba(0,0,0,0.25))",
+        }}
+      />
+    ))}
+  </div>
+);
+
+interface GridSizeOptionProps {
+  option: { key: GridSizeKey; label: string; cols: number; rows: number };
+  selected: boolean;
+  interactive?: boolean;
+  onSelect: (key: GridSizeKey) => void;
+}
+
+const GridSizeOption: React.FC<GridSizeOptionProps> = ({
+  option,
+  selected,
+  interactive = true,
+  onSelect,
+}) => (
+  <button
+    type="button"
+    data-selected={selected}
+    onClick={() => {
+      if (!interactive) return;
+      onSelect(option.key);
+    }}
+    aria-pressed={selected}
+    aria-label={`${option.label} grid`}
+    disabled={!interactive}
+    className="ww-grid-option"
+    style={{
+      flex: "1 1 0",
+      minWidth: 0,
+      border: "2px solid #231F20",
+      borderRadius: 4,
+      boxSizing: "border-box",
+      padding: 16,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      cursor: interactive ? "pointer" : "default",
+    }}
+  >
+    {renderGridMini(option.cols, option.rows)}
+  </button>
+);
+
+export default GridSizeOption;

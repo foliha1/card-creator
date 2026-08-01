@@ -59,8 +59,8 @@ export interface UseSoloGameResult {
   rollCommit: RollCommitPayload | null;
 }
 
-export function useSoloGame(): UseSoloGameResult {
-  const g = useGameState("3x3", {
+export function useSoloGame(gridSize: "3x2" | "3x3" = "3x3"): UseSoloGameResult {
+  const g = useGameState(gridSize, {
     seatCount: 2,
     botSeats: [],
     names: ["You", OPPONENT_NAME],
