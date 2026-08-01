@@ -821,74 +821,43 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
     const nameCard = (
       <div style={{
+        ...panelStyle("surface", 8),
         alignSelf: "stretch",
-        background: "#F8F2E9",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        padding: 16,
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch",
-        gap: 24,
+        gap: SPACE[12],
         height: "auto",
-        boxSizing: "border-box",
         justifyContent: "center",
       }}>
-        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: 36,
-            lineHeight: "44px",
-            color: "#231F20",
-          }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
+          <div style={{ ...textStyle("hero", mobile), fontStyle: "italic", color: COLORS.ink }}>
             Pick a nickname
           </div>
-          <div style={{
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 14,
-            lineHeight: "17px",
-            color: "#231F20",
-          }}>
+          <div style={{ ...textStyle("caption", mobile), color: COLORS.ink }}>
             Your nickname will be shown during game play. Up to 6 characters.
           </div>
         </div>
 
         {view.error && (
-          <div role="alert" style={{
-            alignSelf: "stretch",
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 16,
-            lineHeight: "20px",
-            color: "#D72229",
-            border: "1.5px solid #D72229",
-            borderRadius: 4,
-            padding: "8px 12px",
-            background: "#F8F2E9",
-          }}>
+          <div role="alert" style={alertStyle}>
             {view.error}
           </div>
         )}
 
-        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[8] }}>
           {/* Character display row — single overlaid input for real keyboard/paste/autofill */}
           <div
             onMouseDown={(e) => { e.preventDefault(); focusHiddenInput(); }}
             onTouchStart={() => { focusHiddenInput(); }}
             style={{
+              ...panelStyle("panel", 4),
               position: "relative",
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              padding: 8,
+              gap: SPACE[4],
               height: 72,
-              background: "#D0C3AF",
-              border: "2px solid #231F20",
-              borderRadius: 4,
-              boxSizing: "border-box",
+              borderRadius: RADIUS.sm,
               cursor: "text",
             }}
           >
@@ -896,22 +865,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               <div
                 key={i}
                 style={{
+                  ...textStyle("control", mobile),
                   flexGrow: 1,
                   flexBasis: 0,
                   minWidth: 0,
-                  height: 56,
-                  background: "#F8F2E9",
-                  border: "2px solid #231F20",
-                  borderRadius: 6.33043,
+                  height: CONTROL_H.lg + SPACE[2],
+                  background: COLORS.surface,
+                  border: BORDER.heavy,
+                  borderRadius: RADIUS.md,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   boxSizing: "border-box",
-                  fontFamily: FONT_FAMILY,
-                  fontWeight: 400,
-                  fontSize: 20,
-                  lineHeight: "24px",
-                  color: ch ? "#231F20" : "#D0C3AF",
+                  color: ch ? COLORS.ink : COLORS.panel,
                   textAlign: "center",
                 }}
               >
@@ -949,25 +915,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           </div>
 
           {/* Button row */}
-          <div style={{ alignSelf: "stretch", display: "flex", gap: 10, height: 71 }}>
+          <div style={{ alignSelf: "stretch", display: "flex", gap: SPACE[5], height: 71 }}>
             <button
               type="button"
               onClick={leaveToIdle}
               disabled={busy}
               style={{
+                ...buttonStyle("ink", "lg", { mobile, disabled: busy }),
                 width: 87,
-                height: 71,
+                height: "100%",
                 flexShrink: 0,
-                background: "#231F20",
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: "24px",
-                color: "#F8F2E9",
-                cursor: busy ? "default" : "pointer",
                 padding: 0,
+                opacity: 1,
               }}
             >
               Cancel
@@ -977,26 +936,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               onClick={handleConfirmName}
               disabled={!canContinue}
               style={{
+                ...buttonStyle("primary", "lg", { mobile, disabled: !canContinue }),
+                ...textStyle("action", mobile),
                 flexGrow: 1,
-                height: 71,
-                background: "#D72229",
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                fontFamily: FONT_FAMILY,
-                fontStyle: "italic",
-                fontWeight: 400,
-                fontSize: 32,
-                lineHeight: "39px",
-                color: "#F8F2E9",
-                cursor: canContinue ? "pointer" : "default",
-                opacity: canContinue ? 1 : 0.7,
+                height: "100%",
                 padding: 0,
+                opacity: canContinue ? 1 : 0.7,
               }}
             >
               {busy ? "Connecting…" : "Continue"}
             </button>
           </div>
         </div>
+
       </div>
     );
 
