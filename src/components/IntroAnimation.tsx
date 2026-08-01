@@ -204,7 +204,9 @@ const IntroAnimation: React.FC<IntroAnimationProps> = ({ onDone, preloadedData }
         // Once persistent: drop behind all UI so the frozen final frame
         // becomes the background layer for the rest of the session.
         zIndex: isActive ? 2147483000 : -1,
-        background: "transparent",
+        // Brand black behind the animation while it plays; transparent once it
+        // becomes the persistent background layer.
+        background: isActive ? COLORS.ink : "transparent",
         pointerEvents: isActive ? "auto" : "none",
         cursor: isActive ? "pointer" : "default",
         overflow: "hidden",
