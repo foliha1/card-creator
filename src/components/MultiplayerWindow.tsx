@@ -92,13 +92,6 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const [shareFlash, setShareFlash] = useState(false);
   const [codeFlash, setCodeFlash] = useState(false);
   const [lobbyGrid, setLobbyGrid] = useState<"3x2" | "3x3">("3x2");
-  const [pickNonce, setPickNonce] = useState(0);
-  // Previous grid selection — lets the outgoing panel play the reverse animation
-  // without it firing on first mount.
-  const prevLobbyGridRef = useRef<"3x2" | "3x3" | null>(null);
-  useEffect(() => {
-    prevLobbyGridRef.current = lobbyGrid;
-  }, [lobbyGrid]);
   const shareFlashTimerRef = useRef<number | null>(null);
   const codeFlashTimerRef = useRef<number | null>(null);
 
