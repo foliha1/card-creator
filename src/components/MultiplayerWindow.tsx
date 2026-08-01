@@ -845,17 +845,16 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       <div style={{
         alignSelf: "stretch",
         background: "#F8F2E9",
-        border: mobile ? "none" : "2px solid #231F20",
-        borderRadius: mobile ? 0 : 4,
+        border: "2px solid #231F20",
+        borderRadius: 4,
         padding: 16,
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch",
         gap: 24,
-        height: mobile ? "100%" : "auto",
-        minHeight: mobile ? "100dvh" : undefined,
+        height: "auto",
         boxSizing: "border-box",
-        justifyContent: mobile ? "center" : undefined,
+        justifyContent: "center",
       }}>
         <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{
