@@ -130,7 +130,7 @@ export const TEXT_ROLES = {
   body:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.relaxed },
   label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.label },
   /** Buttons, inputs, code fields, small tiles. Friend has one weight — stay regular. */
-  control:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
+  control:       { step: "lg",  mobileStep: "md",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
   subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.heading },
   /** Section titles inside pre-game cards. */
   title:         { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.heading },
