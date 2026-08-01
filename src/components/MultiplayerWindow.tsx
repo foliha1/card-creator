@@ -1482,9 +1482,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           disabled={startDisabled}
           aria-busy={starting}
           style={{
+            position: "relative",
+            overflow: "hidden",
             flex: "1 1 0",
             minWidth: 0,
-            background: startDisabled ? "#544C4A" : "#E79024",
+            background: startDisabled ? "#544C4A" : "#D72229",
             border: "2px solid #231F20",
             borderRadius: 4,
             boxSizing: "border-box",
@@ -1493,11 +1495,17 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             fontWeight: 400,
             fontSize: 32,
             lineHeight: 1,
-            color: startDisabled ? "#D0C3AF" : "#231F20",
+            color: startDisabled ? "#D0C3AF" : "#FFC1C3",
             cursor: startDisabled ? "default" : "pointer",
             padding: 0,
           }}
         >
+          {!startDisabled ? (
+            <>
+              <span className="ww-play-ring" aria-hidden="true" />
+              <span className="ww-play-shine" aria-hidden="true" />
+            </>
+          ) : null}
           {starting ? "Starting…" : "Let's Play!"}
         </button>
       ) : null}
