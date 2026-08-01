@@ -75,18 +75,81 @@ export const THEME_SWATCHES = [
 
 export const FONT_FAMILY = '"Friend", Georgia, "Times New Roman", serif';
 
-export const TEXT = {
-  // role: { size, mobileSize, weight, italic, lineHeight }
-  caption: { size: 14, mobileSize: 12, weight: 400, italic: false, lineHeight: 1.4 },
-  captionItalic: { size: 14, mobileSize: 12, weight: 400, italic: true, lineHeight: 1.4 },
-  body: { size: 17, mobileSize: 15, weight: 400, italic: false, lineHeight: 1.55 },
-  label: { size: 17, mobileSize: 15, weight: 700, italic: false, lineHeight: 1.3 },
-  subhead: { size: 21, mobileSize: 18, weight: 700, italic: false, lineHeight: 1.25 },
-  heading: { size: 26, mobileSize: 22, weight: 700, italic: false, lineHeight: 1.2 },
-  display: { size: 34, mobileSize: 28, weight: 900, italic: false, lineHeight: 1.1 },
+/* ------------------------------------------------------------------ *
+ * Type scale — the ONLY place raw font sizes live.
+ * Roughly a 1.22 ratio ladder; every role below picks two steps
+ * (desktop + mobile) so sizing can never drift ad hoc.
+ * ------------------------------------------------------------------ */
+export const FONT_SIZE = {
+  "3xs": 11,
+  "2xs": 12,
+  xs: 14,
+  sm: 15,
+  md: 17,
+  lg: 18,
+  xl: 21,
+  "2xl": 22,
+  "3xl": 26,
+  "4xl": 28,
+  "5xl": 34,
 } as const;
 
-export function textStyle(role: keyof typeof TEXT, mobile = false): CSSProperties {
+export type FontSizeStep = keyof typeof FONT_SIZE;
+
+export const FONT_WEIGHT = {
+  regular: 400,
+  bold: 700,
+  black: 900,
+} as const;
+
+export const LINE_HEIGHT = {
+  tight: 1.1,
+  snug: 1.2,
+  heading: 1.25,
+  label: 1.3,
+  normal: 1.4,
+  relaxed: 1.55,
+} as const;
+
+type TextRoleDef = {
+  step: FontSizeStep;
+  mobileStep: FontSizeStep;
+  weight: number;
+  italic: boolean;
+  lineHeight: number;
+};
+
+/** Role -> scale step mapping. Components reference roles, never raw px. */
+export const TEXT_ROLES = {
+  caption:       { step: "xs",  mobileStep: "2xs", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.normal },
+  captionItalic: { step: "xs",  mobileStep: "2xs", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.normal },
+  body:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.relaxed },
+  label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.label },
+  subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.heading },
+  heading:       { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.snug },
+  display:       { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.black,   italic: false, lineHeight: LINE_HEIGHT.tight },
+} as const satisfies Record<string, TextRoleDef>;
+
+export type TextRole = keyof typeof TEXT_ROLES;
+
+/**
+ * Resolved roles: same shape as before (`size` / `mobileSize` / `weight` /
+ * `italic` / `lineHeight`) but derived from the scale above.
+ */
+export const TEXT = Object.fromEntries(
+  (Object.keys(TEXT_ROLES) as TextRole[]).map((role) => {
+    const r = TEXT_ROLES[role];
+    return [role, {
+      size: FONT_SIZE[r.step],
+      mobileSize: FONT_SIZE[r.mobileStep],
+      weight: r.weight,
+      italic: r.italic,
+      lineHeight: r.lineHeight,
+    }];
+  }),
+) as Record<TextRole, { size: number; mobileSize: number; weight: number; italic: boolean; lineHeight: number }>;
+
+export function textStyle(role: TextRole, mobile = false): CSSProperties {
   const t = TEXT[role];
   return {
     fontFamily: FONT_FAMILY,
@@ -95,6 +158,11 @@ export function textStyle(role: keyof typeof TEXT, mobile = false): CSSPropertie
     fontStyle: t.italic ? "italic" : "normal",
     lineHeight: t.lineHeight,
   };
+}
+
+/** Escape hatch for one-off sizing that still respects the scale. */
+export function fontSize(step: FontSizeStep, mobileStep?: FontSizeStep, mobile = false): number {
+  return FONT_SIZE[mobile && mobileStep ? mobileStep : step];
 }
 
 /* ------------------------------------------------------------------ *
