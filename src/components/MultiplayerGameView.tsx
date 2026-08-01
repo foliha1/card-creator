@@ -1408,13 +1408,15 @@ const MultiplayerGameView: React.FC<Props> = ({
   const availW = Math.max(0, box.w);
   // Free vertical space for the card area: viewport height (already minus the
   // fixed header and its safe-area inset via rootH) minus the page wrapper's
-  // 8px top/bottom padding, the root's own 16px padding, the inner column's
-  // 8px top padding, the 44px top bar, the player panel, the bottom bar, the
-  // three 8px column gaps, and the card area's own 32px of vertical padding.
+  // top padding, the root's top padding, the inner column's top padding, the
+  // 44px top bar, the player panel, the bottom bar, the three 8px column gaps,
+  // and the card area's own 32px of vertical padding.
   // The banner is an overlay on the player panel, so it needs no reserved height.
+  const topReserve = mobile ? 12 : 8 + 8 + 8; // mobile root top; desktop wrapper top + root top + inner top
+  const bottomReserve = mobile ? 0 : 8 + 8;   // desktop wrapper bottom + root bottom
   const availH = Math.max(
     0,
-    rootH - 16 - 16 - 8 - 44 - panelH - 110.94 - 24 - 32,
+    rootH - topReserve - bottomReserve - 44 - panelH - 110.94 - 24 - 32,
   );
   const byWidth = (availW - (COLS - 1) * GAP) / COLS;
   const byHeight = ((availH - (ROWS - 1) * GAP) / ROWS) / RATIO;
@@ -1429,7 +1431,7 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: mobile ? "0 12px" : 8, marginTop: SITE_HEADER_H,
+      padding: mobile ? "12px 12px 0 12px" : 8, marginTop: SITE_HEADER_H,
       height: "100%",
       minHeight: mobile ? `calc(100dvh - ${SITE_HEADER_H}px)` : undefined,
       maxHeight: mobile ? undefined : "100%",
@@ -1504,7 +1506,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       <div style={{
         display: "flex", flexDirection: "column", gap: 8,
         width: "100%", height: "auto", maxHeight: "100%",
-        paddingTop: 8, boxSizing: "border-box",
+        paddingTop: mobile ? 0 : 8, boxSizing: "border-box",
       }}>
       {header}
       <div ref={panelRef} style={{ position: "relative", flex: "none" }}>
