@@ -92,6 +92,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const [shareFlash, setShareFlash] = useState(false);
   const [codeFlash, setCodeFlash] = useState(false);
   const [lobbyGrid, setLobbyGrid] = useState<"3x2" | "3x3">("3x2");
+  // Previous grid selection — lets the outgoing panel play the reverse animation
+  // without it firing on first mount.
+  const prevLobbyGridRef = useRef<"3x2" | "3x3" | null>(null);
+  useEffect(() => {
+    prevLobbyGridRef.current = lobbyGrid;
+  }, [lobbyGrid]);
   const shareFlashTimerRef = useRef<number | null>(null);
   const codeFlashTimerRef = useRef<number | null>(null);
 
@@ -1312,6 +1318,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         {gridOptions.map((opt) => {
           const selected = lobbyGrid === opt.key;
           const interactive = isHost && !starting;
+          const wasSelected = prevLobbyGridRef.current === opt.key;
           return (
             <button
               key={opt.key}
@@ -1320,6 +1327,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               aria-pressed={selected}
               aria-label={`${opt.label} grid`}
               disabled={!interactive}
+              className={`ww-gridpick ${
+                selected ? "ww-gridpick-selected" : wasSelected ? "ww-gridpick-deselected" : ""
+              }`}
               style={{
                 flex: "1 1 0",
                 minWidth: 0,
@@ -1331,7 +1341,6 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 justifyContent: "center",
                 gap: 8,
                 cursor: interactive ? "pointer" : "default",
-                boxShadow: selected ? "inset 0 0 0 3px #D72229" : "none",
               }}
             >
               {renderGridMini(opt.cols, opt.rows)}
