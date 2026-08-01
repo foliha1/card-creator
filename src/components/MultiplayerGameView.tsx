@@ -1414,7 +1414,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   // and the card area's own 32px of vertical padding.
   // The banner is an overlay on the player panel, so it needs no reserved height.
   const topReserve = mobile ? MOBILE_SHELL_PAD : 8 + 8 + 8; // mobile root top; desktop wrapper top + root top + inner top
-  const bottomReserve = mobile ? 0 : 8 + 8;   // desktop wrapper bottom + root bottom
+  const bottomReserve = mobile ? MOBILE_SHELL_PAD : 8 + 8;   // mobile root bottom matches side/top; desktop wrapper + root bottom
+
   const availH = Math.max(
     0,
     rootH - topReserve - bottomReserve - 44 - panelH - 110.94 - 24 - 32,
