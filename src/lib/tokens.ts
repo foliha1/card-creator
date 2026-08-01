@@ -57,6 +57,10 @@ export const SPACE = {
 export const SHADOW = {
   windowFocused: "4px 6px 0 rgba(0,0,0,0.3)",
   windowUnfocused: "3px 4px 0 rgba(0,0,0,0.15)",
+  /** Playing-card lift (faces + minis). */
+  card: "0 6px 14px rgba(0,0,0,0.25)",
+  /** Small card mini/tile lift. */
+  cardMini: "0 1.81px 1.81px rgba(0,0,0,0.25)",
 } as const;
 
 export const MOTION = {
