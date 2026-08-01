@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { Settings, X } from "lucide-react";
 import { COLORS, FONT_FAMILY, RADIUS, BORDER } from "@/lib/tokens";
-import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+
 
 const TOUCH = 44;
 
@@ -85,17 +84,6 @@ const SiteHeader: React.FC<SiteHeaderProps> = ({ onSettings, onLeave }) => {
             How to Play
           </a>
 
-          <Link
-            to="/"
-            aria-label="WHOOP! WHOOP! home"
-            style={{ ...controlBase, flex: "0 1 auto", minWidth: 0, overflow: "hidden" }}
-          >
-            <img
-              src={whoopLightLogo.url}
-              alt="WHOOP! WHOOP!"
-              style={{ height: 22, display: "block", maxWidth: "100%" }}
-            />
-          </Link>
 
           <div style={{ display: "flex", alignItems: "center", flex: "none" }}>
             <button
