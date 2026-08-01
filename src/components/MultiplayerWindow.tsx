@@ -1335,16 +1335,6 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               }}
             >
               {renderGridMini(opt.cols, opt.rows)}
-              <div style={{
-                fontFamily: FONT_FAMILY,
-                fontStyle: selected ? "italic" : "normal",
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: 1,
-                color: "#231F20",
-              }}>
-                {opt.label}
-              </div>
             </button>
           );
         })}
