@@ -138,7 +138,7 @@ export const TEXT_ROLES = {
   /** Screen headlines ("How do you want to play?"). */
   hero:          { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.snug },
   /** Primary CTA lettering ("Let's Play!", table code). */
-  action:        { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.tight },
+  action:        { step: "4xl", mobileStep: "3xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.tight },
   display:       { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.black,   italic: false, lineHeight: LINE_HEIGHT.tight },
 } as const satisfies Record<string, TextRoleDef>;
 
