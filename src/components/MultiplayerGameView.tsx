@@ -199,11 +199,10 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         background: c.nameBg, borderRight: `2px solid ${c.border}`,
         boxSizing: "border-box",
       }}>
-        <span style={{
+        <AutoFitText minScale={0.55} style={{
           margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
           letterSpacing: "0.04em", color: c.name,
-          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-        }}>{chip.name}</span>
+        }}>{chip.name}</AutoFitText>
         {chip.score !== null && (
           <span style={{
             margin: "0 auto", display: "flex", flexDirection: "column",
@@ -224,12 +223,11 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         background: "transparent", boxSizing: "border-box",
       }}>
         {c.labelText && (
-          <span style={{
+          <AutoFitText minScale={0.5} style={{
             margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: 1,
             letterSpacing: "0.04em", color: c.label,
             fontStyle: c.italic ? "italic" : "normal",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>{c.labelText}</span>
+          }}>{c.labelText}</AutoFitText>
         )}
       </div>
     </div>
@@ -369,9 +367,9 @@ const Header: React.FC<{
         padding: "8px 4px", gap: 4, overflow: "hidden",
         background: INK, border: BORDER_HEAVY, borderRadius: R_BOX,
       }}>
-        <div style={half}><span style={text}>Round: {round}</span></div>
+        <div style={half}><AutoFitText minScale={0.6} style={text}>Round: {round}</AutoFitText></div>
         <div aria-hidden="true" style={{ width: 2, background: SURFACE, alignSelf: "stretch", flex: "none" }} />
-        <div style={half}><span style={text}>{deckCount} Cards Left</span></div>
+        <div style={half}><AutoFitText minScale={0.6} style={text}>{deckCount} Cards Left</AutoFitText></div>
       </div>
       <button
         type="button"
@@ -501,7 +499,7 @@ const ScoreRow: React.FC<{
           }}
         >
           {b.icon && <CancelX />}
-          {b.label}
+          <AutoFitText minScale={0.55}>{b.label}</AutoFitText>
         </button>
       </div>
     );
