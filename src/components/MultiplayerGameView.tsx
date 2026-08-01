@@ -199,7 +199,7 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         background: c.nameBg, borderRight: `2px solid ${c.border}`,
         boxSizing: "border-box",
       }}>
-        <AutoFitText minScale={0.55} style={{
+        <AutoFitText minScale={0.8} style={{
           margin: "0 auto", flex: "1 1 0", minWidth: 0, textAlign: "center",
           fontFamily: FONT_FAMILY, fontSize: 14, lineHeight: 1,
           letterSpacing: "0.04em", color: c.name,
@@ -224,7 +224,7 @@ const ChipCell: React.FC<{ chip: DerivedChip }> = ({ chip }) => {
         background: "transparent", boxSizing: "border-box",
       }}>
         {c.labelText && (
-          <AutoFitText minScale={0.5} style={{
+          <AutoFitText minScale={0.7} style={{
             margin: "0 auto", fontFamily: FONT_FAMILY, fontSize: 12, lineHeight: 1,
             letterSpacing: "0.04em", color: c.label,
             fontStyle: c.italic ? "italic" : "normal",
