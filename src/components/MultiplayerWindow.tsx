@@ -602,7 +602,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   ) => (
     <div className="mp-shell" style={shellStyle}>
       <style>{`
-        .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
+        .mp-shell button:not(.ww-grid-option) { transition: filter 120ms ease, background 120ms ease; }
         .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
         .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
         .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
@@ -1159,7 +1159,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     return (
       <div className="mp-shell" style={shellStyle}>
         <style>{`
-          .mp-shell button { transition: filter 120ms ease, background 120ms ease; }
+          .mp-shell button:not(.ww-grid-option) { transition: filter 120ms ease, background 120ms ease; }
           .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
           .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
           .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
@@ -1328,7 +1328,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               style={{
                 flex: "1 1 0",
                 minWidth: 0,
-                ...wrapperBase,
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                boxSizing: "border-box",
                 padding: 16,
                 display: "flex",
                 flexDirection: "column",
