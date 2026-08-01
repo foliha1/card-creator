@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { Settings, X } from "lucide-react";
 import { COLORS, FONT_FAMILY, RADIUS, BORDER } from "@/lib/tokens";
-import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
+
 
 const TOUCH = 44;
 
