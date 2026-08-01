@@ -46,6 +46,7 @@ import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
   unlockAudio,
 } from "@/lib/sounds";
+import { hapticTap, hapticImpact, hapticSuccess, hapticError } from "@/lib/haptics";
 
 const prefersReducedMotion = (): boolean => {
   try {
