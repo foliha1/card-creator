@@ -594,3 +594,37 @@ All colors MUST be HSL.
   .ww-grid-option { transition: background-color 400ms linear; transform: none; }
   .ww-grid-option[data-selected="true"] { transform: none; }
 }
+
+/* ── "Let's Play!" enabled-state motion ── */
+.ww-play-ring {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  animation: ww-play-ring 1s linear infinite;
+}
+.ww-play-shine {
+  position: absolute; background: #F8F2E9; transform-origin: 0 0;
+  pointer-events: none;
+  width: 28.1111px; height: 228.331px;
+  left: 30.165px; top: -117.701px;
+  animation: ww-play-shine 1s linear infinite;
+}
+
+@keyframes ww-play-ring {
+  0%   { animation-timing-function: cubic-bezier(.01,.412,.424,1.001);
+         box-shadow: inset 0 0 0 2px #231F20; }
+  50%  { animation-timing-function: cubic-bezier(.58,0,.99,.59);
+         box-shadow: inset 0 0 0 6px #231F20; }
+  100% { box-shadow: inset 0 0 0 2px #231F20; }
+}
+
+@keyframes ww-play-shine {
+  0%   { animation-timing-function: cubic-bezier(.89,.02,.5,1);
+         transform: translate(0px, 0px) rotate(30deg); }
+  50%  { transform: translate(312.845px, 117.884px) rotate(30deg); }
+  100% { transform: translate(312.845px, 117.884px) rotate(30deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-play-ring, .ww-play-shine { animation: none; }
+  .ww-play-ring { box-shadow: inset 0 0 0 2px #231F20; }
+  .ww-play-shine { display: none; }
+}
