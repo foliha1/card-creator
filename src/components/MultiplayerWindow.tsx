@@ -9,6 +9,7 @@ import { useRoomPresence } from "@/hooks/useRoomPresence";
 import { useMultiplayerHost, useMultiplayerJoiner, useTransientEvents, type SeatMapEntry } from "@/hooks/useMultiplayerGame";
 import { useHeartbeatSender, useHeartbeatMonitor } from "@/hooks/useHeartbeat";
 import SiteHeader, { SITE_HEADER_OFFSET } from "@/components/SiteHeader";
+import PreGameShell from "@/components/PreGameShell";
 import MultiplayerGameView from "@/components/MultiplayerGameView";
 import { useSoloGame } from "@/hooks/useSoloGame";
 import GridSizeOption, { GRID_OPTIONS, type GridSizeKey } from "@/components/GridSizeOption";
@@ -538,32 +539,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   }, []);
 
 
-  const shellStyle: React.CSSProperties = {
-    position: "relative",
-    minHeight: mobile ? "100dvh" : "100%",
-    height: mobile ? "100dvh" : "100%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: mobile ? 12 : 8,
-    paddingTop: mobile ? `calc(12px + ${SITE_HEADER_OFFSET})` : `calc(20px + ${SITE_HEADER_OFFSET})`,
-    paddingBottom: mobile ? "calc(12px + env(safe-area-inset-bottom))" : "calc(8px + env(safe-area-inset-bottom))",
-    paddingLeft: mobile ? "calc(12px + env(safe-area-inset-left))" : "calc(8px + env(safe-area-inset-left))",
-    paddingRight: mobile ? "calc(12px + env(safe-area-inset-right))" : "calc(8px + env(safe-area-inset-right))",
-    boxSizing: "border-box",
-    overflowY: "auto",
-    background: mobile ? COLORS.surface : "transparent",
-  };
+  // Shell + inner-column geometry live in PreGameShell so every pre-game
+  // screen shares the exact same mobile padding.
 
-  const innerColStyle: React.CSSProperties = {
-    width: "100%",
-    maxWidth: 390,
-    height: "auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  };
 
   const cardStyle: React.CSSProperties = {
     alignSelf: "stretch",
@@ -605,19 +583,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     content: React.ReactNode,
     opts?: { above?: React.ReactNode; gap?: number; nav?: boolean },
   ) => (
-    <div className="mp-shell" style={shellStyle}>
-      <style>{`
-        .mp-shell button:not(.ww-grid-option) { transition: filter 120ms ease, background 120ms ease; }
-        .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
-        .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
-        .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
-      `}</style>
-      {opts?.nav !== false && <SiteHeader />}
-      <div style={{ ...innerColStyle, gap: opts?.gap ?? 0 }}>
-        {opts?.above}
-        {content}
-      </div>
-    </div>
+    <PreGameShell mobile={mobile} nav={opts?.nav !== false} gap={opts?.gap ?? 0}>
+      {opts?.above}
+      {content}
+    </PreGameShell>
   );
 
 
@@ -1258,17 +1227,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
 
     return (
-      <div className="mp-shell" style={shellStyle}>
-        <style>{`
-          .mp-shell button:not(.ww-grid-option) { transition: filter 120ms ease, background 120ms ease; }
-          .mp-shell button:not(:disabled):hover { filter: brightness(1.15); }
-          .mp-shell button:not(:disabled):active { filter: brightness(0.95); }
-          .mp-shell [role="textbox"]:focus { box-shadow: 0 0 0 2px #0072B2 inset; }
-          .mp-shell input::placeholder { color: ${COLORS.panel}; opacity: 1; }
-        `}</style>
-        <SiteHeader />
+      <PreGameShell mobile={mobile} bare>
         {idleCard}
-      </div>
+      </PreGameShell>
     );
   }
 
