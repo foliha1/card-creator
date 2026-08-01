@@ -80,15 +80,15 @@ const GridSizeOption: React.FC<GridSizeOptionProps> = ({
     style={{
       flex: "1 1 0",
       minWidth: 0,
-      border: "2px solid #231F20",
-      borderRadius: 4,
+      border: BORDER.heavy,
+      borderRadius: RADIUS.sm,
       boxSizing: "border-box",
-      padding: 16,
+      padding: SPACE[6],
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
+      gap: SPACE[4],
       cursor: interactive ? "pointer" : "default",
     }}
   >
