@@ -1,32 +1,50 @@
-Goal: make the dark radial center of the multiplayer page background 30% larger, and ensure the pattern reaches every window edge at all breakpoints (stretching vertically and bleeding off the sides on mobile).
+Goal: on mobile, make every cream surface fill the viewport so the pattern background is completely hidden behind it. Desktop keeps the current centered-card treatment.
 
 ## Current state
-- `src/pages/MultiplayerPage.tsx` renders the pattern on a `::before` pseudo-element at `opacity: 0.6`.
-- Desktop uses `background-size: cover; background-position: center`.
-- Mobile (`max-width: 600px`) uses `background-size: auto 80%;`, leaving a margin and not touching the top/bottom edges.
-- `public/whoop-pattern-bg.svg` contains the radial vignette defined by `gradientTransform="translate(1000 999.5) scale(1000 999.5)"`.
+- `src/pages/MultiplayerPage.tsx` centers a 420×900 max column over the dark `#231F20` page and the `/whoop-pattern-bg.svg` still.
+- `src/components/MultiplayerWindow.tsx` wraps every pre-game screen in a transparent `.mp-shell` with an inner column capped at `maxWidth: 390`. The cream cards inside (play-style, name-prompt, lobby, solo-setup, full/host-left) are `height: "auto"` and do not reach the viewport edges.
+- `src/components/MultiplayerGameView.tsx` has a cream root (`background: SURFACE` / `#F8F2E9`) with `height: "auto"` and `maxHeight: "100%"`, so it hugs content and leaves the pattern visible around it on short screens.
+- The existing plan proposed scaling the SVG radial center and forcing the pattern to the viewport edges. On mobile that still leaves a busy pattern behind small cream cards, so the new direction is to cover the pattern with cream instead.
 
 ## Proposed changes
 
-### 1. Enlarge the radial center by 30% in the SVG
-File: `public/whoop-pattern-bg.svg`
-- Update the radial gradient transform from `scale(1000 999.5)` to `scale(1300 1299.35)` (1000 × 1.3 and 999.5 × 1.3).
-- This expands the opaque dark center outward before the fade begins, making the vignette 30% larger while keeping the same fade curve and stops.
-
-### 2. Make the pattern extend to all viewport edges
+### 1. Let the page column fill the viewport on mobile
 File: `src/pages/MultiplayerPage.tsx`
-- Remove the mobile-only `background-size: auto 80%` media query so the pattern is not artificially shrunk on phones.
-- Use a responsive sizing strategy that guarantees edge-to-edge coverage:
-  - Default (desktop / large tablets): `background-size: cover; background-position: center;`
-  - Mobile (`@media (max-width: 600px)`): `background-size: auto 100%; background-position: center;`
-    - `auto 100%` scales the square SVG to full viewport height, so the pattern touches the top and bottom edges and bleeds off the left/right sides.
-- Keep `background-repeat: no-repeat`, `opacity: 0.6`, and the `#231F20` fallback behind it.
+- Read `useIsMobile()` (or a CSS media query) inside the page.
+- On mobile only:
+  - Remove the inner column's `maxWidth` and `maxHeight` caps.
+  - Set the inner column to `width: 100%`, `height: 100%`, `padding: 0`.
+  - Keep safe-area insets for children; the column itself should not add horizontal padding that prevents edge-to-edge cream.
+- Desktop remains exactly as-is.
 
-### 3. Verification
+### 2. Expand the MultiplayerWindow shell and every cream card to the viewport on mobile
+File: `src/components/MultiplayerWindow.tsx`
+- Use the existing `mobile` flag from `useIsMobile()`.
+- On mobile:
+  - Change `shellStyle` to `background: COLORS.surface`, `minHeight: "100dvh"`, `width: "100%"`, `padding: 0` (safe areas applied to inner cards), and `alignItems: "stretch"`.
+  - Change `innerColStyle` to `maxWidth: "none"`, `width: "100%"`, `height: "100%"`, `minHeight: "100dvh"`.
+  - Update every cream card style (`cardStyle`, `containerStyle`, idle play-style card, name-prompt card, lobby card, solo-setup card) to `width: "100%"`, `height: "100%"`, `minHeight: "100dvh"`, `borderRadius: 0`, and keep their internal padding/gaps.
+  - Keep the `overflowY: "auto"` behavior on the shell so tall content remains scrollable.
+- Desktop keeps current transparent shell, 390px max inner column, and rounded cream cards.
+
+### 3. Expand the in-game board to the viewport on mobile
+File: `src/components/MultiplayerGameView.tsx`
+- On mobile only:
+  - Change the root cream div to `height: "100%"`, `minHeight: "calc(100dvh - ${SITE_HEADER_H}px)"`, remove `maxHeight: "100%"`, and set `width: "100%"`.
+  - Keep the 8px padding or adjust to safe-area insets so content is not flush with edges.
+  - Ensure the inner column (`header` + panel + card area + bottom row) stretches to fill the available height.
+- Desktop remains unchanged.
+
+### 4. Preserve safe areas and scrollability
+- Horizontal safe-area insets should be applied to the cream cards, not the transparent shell, so cream still reaches the physical edges.
+- Vertical safe-area insets should be respected at the bottom so controls are not obscured.
+- Any screen whose content exceeds the viewport must remain scrollable (`overflowY: "auto"`).
+
+### 5. Verification
 - Run typecheck.
-- Run the existing test suite (105 tests).
-- Visually verify at common viewports that:
-  - The dark center is visibly larger than before.
-  - On mobile (390×844) the pattern reaches the top and bottom and crops/bleeds on the sides.
-  - On tablet (833×910) and desktop (1440×900) the pattern covers the full viewport with no bare edges.
-  - The centered board and all interactive elements remain legible and clickable.
+- Run the existing test suite.
+- Visually verify on mobile (≈402×725) that:
+  - The play-style screen, name prompt, lobby, solo-setup, and in-game board each have cream filling the entire viewport.
+  - No pattern background is visible behind or around the cream surface.
+  - Content remains centered/readable and does not overflow in a broken way.
+- Visually verify on desktop (≥768px) that the existing centered-card layout is unchanged and the pattern still shows around the cream container.
