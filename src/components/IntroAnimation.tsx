@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
+import { COLORS } from "@/lib/tokens";
 
 const Lottie = React.lazy(() =>
   import("lottie-react").then((m) => ({ default: m.default })),
