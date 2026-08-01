@@ -648,33 +648,21 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
 
   // ---------- SOLO SETUP (grid-size choice) ----------
   if (view.kind === "solo-setup") {
-    const titleStyle: React.CSSProperties = {
-      fontFamily: FONT_FAMILY,
-      fontWeight: 400,
-      fontSize: 24,
-      lineHeight: "29px",
-      textAlign: "center",
-      color: "#231F20",
-    };
     return wrapInShell(
       <div style={{
+        ...panelStyle("surface", 8),
         alignSelf: "stretch",
-        background: "#F8F2E9",
-        border: "1.58px solid #231F20",
-        borderRadius: 6.33,
-        padding: 16,
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch",
-        gap: 8,
+        gap: SPACE[4],
         height: "auto",
-        boxSizing: "border-box",
         justifyContent: "center",
       }}>
-        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[8] }}>
+          <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
             <div style={titleStyle}>Choose your grid size</div>
-            <div style={{ display: "flex", gap: 16, alignSelf: "stretch", alignItems: "stretch" }}>
+            <div style={{ display: "flex", gap: SPACE[8], alignSelf: "stretch", alignItems: "stretch" }}>
               {GRID_OPTIONS.map((opt) => (
                 <GridSizeOption
                   key={opt.key}
@@ -686,49 +674,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 8, height: 80, alignSelf: "stretch" }}>
+          <div style={{ display: "flex", gap: SPACE[4], height: 80, alignSelf: "stretch" }}>
             <button
               type="button"
               onClick={() => setView({ kind: "idle" })}
-              style={{
-                flex: "0 0 100px",
-                width: 100,
-                background: "#231F20",
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                boxSizing: "border-box",
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 20,
-                lineHeight: 1,
-                color: "#F8F2E9",
-                cursor: "pointer",
-                padding: 0,
-              }}
+              style={railButtonStyle()}
             >
               BACK
             </button>
             <button
               type="button"
               onClick={() => setView({ kind: "solo", gridSize: soloGrid })}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                flex: "1 1 0",
-                minWidth: 0,
-                background: "#D72229",
-                border: "2px solid #231F20",
-                borderRadius: 4,
-                boxSizing: "border-box",
-                fontFamily: FONT_FAMILY,
-                fontStyle: "italic",
-                fontWeight: 400,
-                fontSize: 32,
-                lineHeight: 1,
-                color: "#FFC1C3",
-                cursor: "pointer",
-                padding: 0,
-              }}
+              style={playButtonStyle()}
             >
               <span className="ww-play-ring" aria-hidden="true" />
               <span className="ww-play-shine" aria-hidden="true" />
@@ -739,6 +696,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       </div>,
     );
   }
+
 
 
   // ---------- GAME IN PROGRESS: HOST ----------
