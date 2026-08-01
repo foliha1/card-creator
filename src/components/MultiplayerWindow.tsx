@@ -688,9 +688,11 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               type="button"
               onClick={() => setView({ kind: "solo", gridSize: soloGrid })}
               style={{
+                position: "relative",
+                overflow: "hidden",
                 flex: "1 1 0",
                 minWidth: 0,
-                background: "#E79024",
+                background: "#D72229",
                 border: "2px solid #231F20",
                 borderRadius: 4,
                 boxSizing: "border-box",
@@ -699,11 +701,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 fontWeight: 400,
                 fontSize: 32,
                 lineHeight: 1,
-                color: "#231F20",
+                color: "#FFC1C3",
                 cursor: "pointer",
                 padding: 0,
               }}
             >
+              <span className="ww-play-ring" aria-hidden="true" />
+              <span className="ww-play-shine" aria-hidden="true" />
               Let's Play!
             </button>
           </div>
