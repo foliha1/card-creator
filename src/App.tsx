@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-context";
 import MultiplayerPage from "./pages/MultiplayerPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
+import TypographyPage from "./pages/TypographyPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
