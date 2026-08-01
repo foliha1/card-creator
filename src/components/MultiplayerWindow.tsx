@@ -1179,11 +1179,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const canStart = visibleParticipants.length >= 2;
   const link = shareUrl(room.room_code);
 
-  const sectionLabelStyle: React.CSSProperties = {
+  const sectionTitleStyle: React.CSSProperties = {
     fontFamily: FONT_FAMILY,
     fontWeight: 400,
-    fontSize: 20,
-    lineHeight: "24px",
+    fontSize: 24,
+    lineHeight: "29px",
+    textAlign: "center",
     color: "#231F20",
   };
 
@@ -1194,191 +1195,175 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     boxSizing: "border-box",
   };
 
+  const sectionStyle: React.CSSProperties = {
+    alignSelf: "stretch",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  };
+
+  // ---- Section 1: Your Table Info ----
   const codeTileLabel = codeFlash ? "Copied" : `Tap to copy code ${room.room_code}`;
-  const codeSection = (
-    <button
-      type="button"
-      onClick={() => handleCopyCode(room.room_code)}
-      aria-label={codeTileLabel}
-      aria-live="polite"
-      style={{
-        alignSelf: "stretch",
-        background: "#D0C3AF",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        padding: "16px 8px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 4,
-        cursor: "pointer",
-        boxSizing: "border-box",
-        fontFamily: FONT_FAMILY,
-        color: "#231F20",
-        userSelect: "none",
-      }}
-    >
-      <div style={{
-        fontFamily: FONT_FAMILY,
-        fontWeight: 400,
-        fontSize: 48,
-        lineHeight: "56px",
-        letterSpacing: "0.1em",
-        color: "#231F20",
-      }}>
-        {room.room_code}
+  const tableInfoSection = (
+    <div style={sectionStyle}>
+      <div style={sectionTitleStyle}>Your Table Info</div>
+      <div style={{ display: "flex", gap: 10, height: 80, alignSelf: "stretch" }}>
+        <button
+          type="button"
+          onClick={() => handleCopyCode(room.room_code)}
+          aria-label={codeTileLabel}
+          aria-live="polite"
+          style={{
+            flex: "1 1 0",
+            minWidth: 0,
+            background: "#E79024",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxSizing: "border-box",
+            fontFamily: FONT_FAMILY,
+            fontWeight: 400,
+            fontSize: 32,
+            lineHeight: 1,
+            letterSpacing: "0.08em",
+            color: "#231F20",
+            userSelect: "none",
+          }}
+        >
+          {codeFlash ? "Copied" : room.room_code}
+        </button>
+        {isHost ? (
+          <button
+            type="button"
+            onClick={() => handleShare(room.room_code)}
+            aria-live="polite"
+            style={{
+              flex: "0 0 100px",
+              width: 100,
+              background: shareFlash ? "#231F20" : "#0072B2",
+              border: "2px solid #231F20",
+              borderRadius: 4,
+              boxSizing: "border-box",
+              padding: 0,
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 20,
+              lineHeight: 1,
+              color: "#F8F2E9",
+              cursor: "pointer",
+              transition: "background 150ms ease",
+            }}
+          >
+            {shareFlash ? "Copied!" : "Share Link"}
+          </button>
+        ) : null}
       </div>
-      <div style={{
-        fontFamily: FONT_FAMILY,
-        fontStyle: "italic",
-        fontWeight: 400,
-        fontSize: 16,
-        lineHeight: "20px",
-        color: "#544C4A",
-      }}>
-        {codeFlash ? "Copied" : "Tap to copy"}
-      </div>
-    </button>
+    </div>
   );
 
-  const shareSection = isHost ? (
-    <button
-      type="button"
-      onClick={() => handleShare(room.room_code)}
-      aria-live="polite"
-      style={{
-        alignSelf: "stretch",
-        height: 56,
-        background: shareFlash ? "#231F20" : "#0072B2",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        fontFamily: FONT_FAMILY,
-        fontWeight: 400,
-        fontSize: 20,
-        lineHeight: "24px",
-        color: "#F8F2E9",
-        cursor: "pointer",
-        padding: 0,
-        transition: "background 150ms ease",
-      }}
-    >
-      {shareFlash ? "Copied!" : "Share"}
-    </button>
-  ) : null;
-
+  // ---- Section 2: Choose your grid size ----
   const gridOptions: Array<{ key: "3x2" | "3x3"; label: string; cols: number; rows: number }> = [
     { key: "3x2", label: "6 cards", cols: 3, rows: 2 },
     { key: "3x3", label: "9 cards", cols: 3, rows: 3 },
   ];
 
-  const renderGridMini = (cols: number, rows: number, selected: boolean) => (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-      gridTemplateRows: `repeat(${rows}, 1fr)`,
-      gap: 4,
-      width: "70%",
-      aspectRatio: `${cols} / ${rows * 1.35}`,
-      maxHeight: 110,
-    }}>
+  const MINI_W = 47.25;
+  const MINI_H = 66.15;
+  const MINI_GAP = 3.62;
+
+  const renderGridMini = (cols: number, rows: number) => (
+    <div
+      aria-hidden="true"
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${cols}, minmax(0, ${MINI_W}px))`,
+        gap: MINI_GAP,
+        justifyContent: "center",
+        width: "100%",
+        maxWidth: cols * MINI_W + (cols - 1) * MINI_GAP,
+      }}
+    >
       {Array.from({ length: cols * rows }).map((_, i) => (
-        <div key={i} style={{
-          background: "#F8F2E9",
-          border: `${selected ? 2 : 1}px solid #231F20`,
-          borderRadius: 3,
-        }} />
+        <img
+          key={i}
+          src="/cards/card-back.svg"
+          alt=""
+          draggable={false}
+          style={{
+            width: "100%",
+            aspectRatio: `${MINI_W} / ${MINI_H}`,
+            display: "block",
+            borderRadius: 2.87,
+            filter: "drop-shadow(0 1.81px 1.81px rgba(0,0,0,0.25))",
+          }}
+        />
       ))}
     </div>
   );
 
   const gridPickerSection = (
-    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{
-        fontFamily: FONT_FAMILY,
-        fontWeight: 400,
-        fontSize: 36,
-        lineHeight: "44px",
-        color: "#231F20",
-      }}>
-        Choose a grid size
+    <div style={sectionStyle}>
+      <div style={sectionTitleStyle}>Choose your grid size</div>
+      <div style={{ display: "flex", gap: 16, alignSelf: "stretch", alignItems: "stretch" }}>
+        {gridOptions.map((opt) => {
+          const selected = lobbyGrid === opt.key;
+          const interactive = isHost && !starting;
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => interactive && setLobbyGrid(opt.key)}
+              aria-pressed={selected}
+              aria-label={`${opt.label} grid`}
+              disabled={!interactive}
+              style={{
+                flex: "1 1 0",
+                minWidth: 0,
+                ...wrapperBase,
+                padding: 16,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                cursor: interactive ? "pointer" : "default",
+                boxShadow: selected ? "inset 0 0 0 3px #D72229" : "none",
+              }}
+            >
+              {renderGridMini(opt.cols, opt.rows)}
+              <div style={{
+                fontFamily: FONT_FAMILY,
+                fontStyle: selected ? "italic" : "normal",
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: 1,
+                color: "#231F20",
+              }}>
+                {opt.label}
+              </div>
+            </button>
+          );
+        })}
       </div>
-      {isHost ? (
-        <div style={{ display: "flex", gap: 12, alignSelf: "stretch" }}>
-          {gridOptions.map((opt) => {
-            const selected = lobbyGrid === opt.key;
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => !starting && setLobbyGrid(opt.key)}
-                aria-pressed={selected}
-                aria-label={`${opt.label} grid`}
-                disabled={starting}
-                style={{
-                  flex: 1,
-                  height: 188,
-                  background: "#D0C3AF",
-                  border: `${selected ? 4 : 2}px solid #231F20`,
-                  outline: selected ? "2px solid #D72229" : "none",
-                  outlineOffset: selected ? -8 : 0,
-                  borderRadius: 4,
-                  padding: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  cursor: starting ? "default" : "pointer",
-                  boxShadow: selected ? "inset 0 0 0 2px #F8F2E9" : "none",
-                  boxSizing: "border-box",
-                }}
-              >
-                {renderGridMini(opt.cols, opt.rows, selected)}
-                <div style={{
-                  fontFamily: FONT_FAMILY,
-                  fontStyle: selected ? "italic" : "normal",
-                  fontWeight: 400,
-                  fontSize: 20,
-                  lineHeight: "24px",
-                  color: "#231F20",
-                }}>
-                  {opt.label}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div style={{
-          ...wrapperBase,
-          padding: "12px 16px",
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 20,
-          lineHeight: "24px",
-          color: "#231F20",
-        }}>
-          {gridOptions.find((g) => g.key === lobbyGrid)?.label ?? "6 cards"}
-        </div>
-      )}
     </div>
   );
 
-
-
+  // ---- Section 3: Players ----
   const seatSlots = Array.from({ length: ROOM_CAPACITY }, (_, i) => visibleParticipants[i] ?? null);
 
   const playersSection = (
-    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={sectionLabelStyle}>Players (must have at least 2)</div>
+    <div style={sectionStyle}>
+      <div style={sectionTitleStyle}>Players (must have at least 2)</div>
       <div style={{
         ...wrapperBase,
         padding: 8,
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gridTemplateRows: "repeat(3, auto)",
-        gap: 10,
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: 8,
       }}>
         {seatSlots.map((p, i) => {
           const isYou = !!p && p.visitor_id === visitorId;
@@ -1386,8 +1371,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           const label = p ? (isYou ? `${name} (you)` : name) : "---";
           return (
             <div key={i} style={{
-              height: 32,
-              padding: 4,
+              height: 36,
+              padding: 8,
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -1398,17 +1383,18 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               minWidth: 0,
             }}>
               <div style={{
-                width: 16,
-                alignSelf: "stretch",
+                width: 20,
+                height: 20,
                 background: "#231F20",
-                borderRadius: 4,
+                borderRadius: 2,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontFamily: FONT_FAMILY,
                 fontWeight: 400,
-                fontSize: 14,
-                lineHeight: "17px",
+                fontSize: 16,
+                lineHeight: 1,
+                letterSpacing: "0.02em",
                 color: "#D0C3AF",
                 flexShrink: 0,
               }}>
@@ -1417,9 +1403,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               <div style={{
                 fontFamily: FONT_FAMILY,
                 fontWeight: 400,
-                fontSize: 20,
-                lineHeight: "24px",
-                letterSpacing: "0.02em",
+                fontSize: 16,
+                lineHeight: 1,
+                letterSpacing: "0.04em",
                 color: "#231F20",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -1436,57 +1422,61 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     </div>
   );
 
-  const leaveButton = (
-    <button
-      type="button"
-      onClick={() => setShowLeaveConfirm(true)}
-      disabled={starting}
-      style={{
-        alignSelf: "stretch",
-        height: 40,
-        background: "#231F20",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        fontFamily: FONT_FAMILY,
-        fontWeight: 400,
-        fontSize: 20,
-        lineHeight: "24px",
-        color: "#F8F2E9",
-        cursor: starting ? "default" : "pointer",
-        opacity: starting ? 0.6 : 1,
-        padding: 0,
-      }}
-    >
-      Leave the Table
-    </button>
-  );
-
+  // ---- Section 4: Buttons ----
   const startDisabled = !canStart || starting;
-  const startButton = isHost ? (
-    <button
-      type="button"
-      onClick={handleStartGame}
-      disabled={startDisabled}
-      aria-busy={starting}
-      style={{
-        alignSelf: "stretch",
-        height: 80,
-        background: startDisabled ? "#544C4A" : "#D72229",
-        border: "2px solid #231F20",
-        borderRadius: 4,
-        fontFamily: FONT_FAMILY,
-        fontStyle: "italic",
-        fontWeight: 400,
-        fontSize: 32,
-        lineHeight: "39px",
-        color: startDisabled ? "#D0C3AF" : "#F8F2E9",
-        cursor: startDisabled ? "default" : "pointer",
-        padding: 0,
-      }}
-    >
-      {starting ? "Starting…" : "Lets do it!"}
-    </button>
-  ) : null;
+  const buttonsSection = (
+    <div style={{ display: "flex", gap: 8, height: 80, alignSelf: "stretch" }}>
+      <button
+        type="button"
+        onClick={() => setShowLeaveConfirm(true)}
+        disabled={starting}
+        style={{
+          flex: "0 0 100px",
+          width: 100,
+          background: "#231F20",
+          border: "2px solid #231F20",
+          borderRadius: 4,
+          boxSizing: "border-box",
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 20,
+          lineHeight: 1,
+          color: "#F8F2E9",
+          cursor: starting ? "default" : "pointer",
+          opacity: starting ? 0.6 : 1,
+          padding: 0,
+        }}
+      >
+        Leave the Table
+      </button>
+      {isHost ? (
+        <button
+          type="button"
+          onClick={handleStartGame}
+          disabled={startDisabled}
+          aria-busy={starting}
+          style={{
+            flex: "1 1 0",
+            minWidth: 0,
+            background: startDisabled ? "#544C4A" : "#E79024",
+            border: "2px solid #231F20",
+            borderRadius: 4,
+            boxSizing: "border-box",
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: 32,
+            lineHeight: 1,
+            color: startDisabled ? "#D0C3AF" : "#231F20",
+            cursor: startDisabled ? "default" : "pointer",
+            padding: 0,
+          }}
+        >
+          {starting ? "Starting…" : "Let's Play!"}
+        </button>
+      ) : null}
+    </div>
+  );
 
   const startingBanner = starting ? (
     <div
@@ -1659,25 +1649,23 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
     <div style={{
       alignSelf: "stretch",
       background: "#F8F2E9",
-      border: "2px solid #231F20",
-      borderRadius: 4,
+      border: "1.58px solid #231F20",
+      borderRadius: 6.33,
       padding: 16,
       display: "flex",
       flexDirection: "column",
       alignItems: "stretch",
-      gap: 24,
+      gap: 16,
       height: "auto",
       boxSizing: "border-box",
     }}>
       {joinerStatusBar}
       {startingBanner}
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
-        {codeSection}
-        {shareSection}
+        {tableInfoSection}
         {gridPickerSection}
         {playersSection}
-        {startButton}
-        {leaveButton}
+        {buttonsSection}
       </div>
     </div>
   );
