@@ -1705,9 +1705,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       boxSizing: "border-box",
       justifyContent: mobile ? "center" : undefined,
     }}>
+      {joinerStatusBar}
+      {startingBanner}
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
-        {joinerStatusBar}
-        {startingBanner}
         {tableInfoSection}
         {gridPickerSection}
         {playersSection}
