@@ -92,6 +92,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const [shareFlash, setShareFlash] = useState(false);
   const [codeFlash, setCodeFlash] = useState(false);
   const [lobbyGrid, setLobbyGrid] = useState<"3x2" | "3x3">("3x2");
+  const [pickNonce, setPickNonce] = useState(0);
   // Previous grid selection — lets the outgoing panel play the reverse animation
   // without it firing on first mount.
   const prevLobbyGridRef = useRef<"3x2" | "3x3" | null>(null);
@@ -1321,9 +1322,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           const wasSelected = prevLobbyGridRef.current === opt.key;
           return (
             <button
-              key={opt.key}
+              // Nonce in the key remounts the panel on every pick so the
+              // animation replays, even when re-picking the current grid.
+              key={`${opt.key}-${pickNonce}`}
               type="button"
-              onClick={() => interactive && setLobbyGrid(opt.key)}
+              onClick={() => {
+                if (!interactive) return;
+                setPickNonce((n) => n + 1);
+                setLobbyGrid(opt.key);
+              }}
               aria-pressed={selected}
               aria-label={`${opt.label} grid`}
               disabled={!interactive}
