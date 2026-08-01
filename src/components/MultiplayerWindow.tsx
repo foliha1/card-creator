@@ -94,6 +94,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   const [shareFlash, setShareFlash] = useState(false);
   const [codeFlash, setCodeFlash] = useState(false);
   const [lobbyGrid, setLobbyGrid] = useState<"3x2" | "3x3">("3x2");
+  const [soloGrid, setSoloGrid] = useState<GridSizeKey>("3x2");
   const shareFlashTimerRef = useRef<number | null>(null);
   const codeFlashTimerRef = useRef<number | null>(null);
 
@@ -621,6 +622,94 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   // ---------- SOLO ----------
   if (view.kind === "solo") {
     return <SoloView onLeave={leaveToIdle} mobile={mobile} gridSize={view.gridSize} />;
+  }
+
+  // ---------- SOLO SETUP (grid-size choice) ----------
+  if (view.kind === "solo-setup") {
+    const titleStyle: React.CSSProperties = {
+      fontFamily: FONT_FAMILY,
+      fontWeight: 400,
+      fontSize: 24,
+      lineHeight: "29px",
+      textAlign: "center",
+      color: "#231F20",
+    };
+    return wrapInShell(
+      <div style={{
+        alignSelf: "stretch",
+        background: "#F8F2E9",
+        border: "1.58px solid #231F20",
+        borderRadius: 6.33,
+        padding: 16,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "stretch",
+        gap: 8,
+        boxSizing: "border-box",
+      }}>
+        <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={titleStyle}>Choose your grid size</div>
+            <div style={{ display: "flex", gap: 16, alignSelf: "stretch", alignItems: "stretch" }}>
+              {GRID_OPTIONS.map((opt) => (
+                <GridSizeOption
+                  key={opt.key}
+                  option={opt}
+                  selected={soloGrid === opt.key}
+                  onSelect={setSoloGrid}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, height: 80, alignSelf: "stretch" }}>
+            <button
+              type="button"
+              onClick={() => setView({ kind: "idle" })}
+              style={{
+                flex: "0 0 100px",
+                width: 100,
+                background: "#231F20",
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                boxSizing: "border-box",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 20,
+                lineHeight: 1,
+                color: "#F8F2E9",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              BACK
+            </button>
+            <button
+              type="button"
+              onClick={() => setView({ kind: "solo", gridSize: soloGrid })}
+              style={{
+                flex: "1 1 0",
+                minWidth: 0,
+                background: "#E79024",
+                border: "2px solid #231F20",
+                borderRadius: 4,
+                boxSizing: "border-box",
+                fontFamily: FONT_FAMILY,
+                fontStyle: "italic",
+                fontWeight: 400,
+                fontSize: 32,
+                lineHeight: 1,
+                color: "#231F20",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              Let's Play!
+            </button>
+          </div>
+        </div>
+      </div>,
+    );
   }
 
 
