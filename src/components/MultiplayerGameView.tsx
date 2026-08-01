@@ -1433,7 +1433,11 @@ const MultiplayerGameView: React.FC<Props> = ({
     <div ref={rootRef} style={{
       display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: mobile ? `${MOBILE_SHELL_PAD}px ${MOBILE_SHELL_PAD}px 0 ${MOBILE_SHELL_PAD}px` : 8, marginTop: SITE_HEADER_H,
+      padding: mobile
+        ? `${MOBILE_SHELL_PAD}px ${MOBILE_SHELL_PAD}px calc(${MOBILE_SHELL_PAD}px + env(safe-area-inset-bottom)) ${MOBILE_SHELL_PAD}px`
+        : 8,
+      marginTop: SITE_HEADER_H,
+
       height: "100%",
       minHeight: mobile ? `calc(100dvh - ${SITE_HEADER_H}px)` : undefined,
       maxHeight: mobile ? undefined : "100%",
