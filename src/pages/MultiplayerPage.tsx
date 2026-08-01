@@ -158,9 +158,9 @@ const MultiplayerPage: React.FC = () => {
         <div
           style={{
             width: "100%",
-            maxWidth: mobile ? undefined : 420,
-            height: mobile ? "100%" : "auto",
-            maxHeight: mobile ? undefined : 900,
+            maxWidth: 420,
+            height: "auto",
+            maxHeight: 900,
             margin: "auto",
             padding: mobile
               ? 0
