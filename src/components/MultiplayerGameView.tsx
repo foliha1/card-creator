@@ -599,7 +599,7 @@ const ActionButton: React.FC<{
     <button
       type="button"
       className={isDisabled ? undefined : "ww-press"}
-      onClick={isDisabled ? undefined : onClick}
+      onClick={isDisabled ? undefined : () => { hapticImpact(); onClick?.(); }}
       disabled={isDisabled}
       style={{
         all: "unset", cursor: isDisabled ? "not-allowed" : "pointer",
