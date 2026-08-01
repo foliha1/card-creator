@@ -1232,10 +1232,10 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       <div style={sectionTitleStyle}>Players (must have at least 2)</div>
       <div style={{
         ...wrapperBase,
-        padding: 8,
+        padding: SPACE[4],
         display: "grid",
         gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-        gap: 8,
+        gap: SPACE[4],
       }}>
         {seatSlots.map((p, i) => {
           const isYou = !!p && p.visitor_id === visitorId;
@@ -1243,42 +1243,38 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           const label = p ? (isYou ? `${name} (you)` : name) : "---";
           return (
             <div key={i} style={{
-              height: 36,
-              padding: 8,
+              height: CONTROL_H.sm,
+              padding: SPACE[4],
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              background: "#F8F2E9",
-              border: "2px solid #231F20",
-              borderRadius: 4,
+              gap: SPACE[4],
+              background: COLORS.surface,
+              border: BORDER.heavy,
+              borderRadius: RADIUS.sm,
               boxSizing: "border-box",
               minWidth: 0,
             }}>
               <div style={{
-                width: 20,
-                height: 20,
-                background: "#231F20",
+                ...textStyle("body", mobile),
+                lineHeight: 1,
+                width: SPACE[10],
+                height: SPACE[10],
+                background: COLORS.ink,
                 borderRadius: 2,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 16,
-                lineHeight: 1,
                 letterSpacing: "0.02em",
-                color: "#D0C3AF",
+                color: COLORS.panel,
                 flexShrink: 0,
               }}>
                 {i + 1}
               </div>
               <div style={{
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 16,
+                ...textStyle("body", mobile),
                 lineHeight: 1,
                 letterSpacing: "0.04em",
-                color: "#231F20",
+                color: COLORS.ink,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -1297,27 +1293,12 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
   // ---- Section 4: Buttons ----
   const startDisabled = !canStart || starting;
   const buttonsSection = (
-    <div style={{ display: "flex", gap: 8, height: 80, alignSelf: "stretch" }}>
+    <div style={{ display: "flex", gap: SPACE[4], height: 80, alignSelf: "stretch" }}>
       <button
         type="button"
         onClick={() => setShowLeaveConfirm(true)}
         disabled={starting}
-        style={{
-          flex: "0 0 100px",
-          width: 100,
-          background: "#231F20",
-          border: "2px solid #231F20",
-          borderRadius: 4,
-          boxSizing: "border-box",
-          fontFamily: FONT_FAMILY,
-          fontWeight: 400,
-          fontSize: 20,
-          lineHeight: 1,
-          color: "#F8F2E9",
-          cursor: starting ? "default" : "pointer",
-          opacity: starting ? 0.6 : 1,
-          padding: 0,
-        }}
+        style={{ ...railButtonStyle(starting), opacity: starting ? 0.6 : 1 }}
       >
         BACK
       </button>
@@ -1327,24 +1308,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           onClick={handleStartGame}
           disabled={startDisabled}
           aria-busy={starting}
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            flex: "1 1 0",
-            minWidth: 0,
-            background: startDisabled ? "#544C4A" : "#D72229",
-            border: "2px solid #231F20",
-            borderRadius: 4,
-            boxSizing: "border-box",
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontWeight: 400,
-            fontSize: 32,
-            lineHeight: 1,
-            color: startDisabled ? "#D0C3AF" : "#FFC1C3",
-            cursor: startDisabled ? "default" : "pointer",
-            padding: 0,
-          }}
+          style={playButtonStyle(startDisabled)}
         >
           {!startDisabled ? (
             <>
@@ -1357,6 +1321,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
       ) : null}
     </div>
   );
+
 
   const startingBanner = starting ? (
     <div
