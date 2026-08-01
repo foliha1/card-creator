@@ -1,6 +1,20 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { COLORS, SPACE, BORDER, RADIUS, textStyle, TEXT, FONT_FAMILY } from "@/lib/tokens";
+import {
+  COLORS,
+  SPACE,
+  BORDER,
+  RADIUS,
+  MOTION,
+  textStyle,
+  TEXT,
+  FONT_FAMILY,
+  buttonStyle,
+  panelStyle,
+  CONTROL_H,
+  TOUCH_MIN,
+} from "@/lib/tokens";
+
 import { AppButton } from "@/components/ui/AppButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getVisitorId, getDisplayName, setDisplayName } from "@/lib/visitor";
