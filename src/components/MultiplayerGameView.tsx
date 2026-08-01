@@ -25,7 +25,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Settings, X } from "lucide-react";
-import { MOBILE_SHELL_PAD } from "@/components/PreGameShell";
+import { MOBILE_SHELL_PAD } from "@/lib/layout";
 import SiteHeader, { SITE_HEADER_H } from "@/components/SiteHeader";
 import GameCard from "@/components/GameCard";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
