@@ -1321,9 +1321,15 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
           const wasSelected = prevLobbyGridRef.current === opt.key;
           return (
             <button
-              key={opt.key}
+              // Nonce in the key remounts the panel on every pick so the
+              // animation replays, even when re-picking the current grid.
+              key={`${opt.key}-${pickNonce}`}
               type="button"
-              onClick={() => interactive && setLobbyGrid(opt.key)}
+              onClick={() => {
+                if (!interactive) return;
+                setPickNonce((n) => n + 1);
+                setLobbyGrid(opt.key);
+              }}
               aria-pressed={selected}
               aria-label={`${opt.label} grid`}
               disabled={!interactive}
