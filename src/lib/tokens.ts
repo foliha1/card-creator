@@ -188,13 +188,13 @@ export const TOUCH_MIN = 44;
 export const CONTROL_H = {
   sm: 36,
   md: 44,
-  lg: 52,
+  lg: 48,
 } as const;
 
 export const CONTROL_PAD_X = {
-  sm: SPACE[6],
-  md: SPACE[8],
-  lg: SPACE[10],
+  sm: SPACE[5],
+  md: SPACE[6],
+  lg: SPACE[8],
 } as const;
 
 export type ButtonVariant =
