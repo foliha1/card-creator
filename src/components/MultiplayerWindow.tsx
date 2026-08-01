@@ -1312,6 +1312,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
         {gridOptions.map((opt) => {
           const selected = lobbyGrid === opt.key;
           const interactive = isHost && !starting;
+          const wasSelected = prevLobbyGridRef.current === opt.key;
           return (
             <button
               key={opt.key}
@@ -1320,6 +1321,9 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
               aria-pressed={selected}
               aria-label={`${opt.label} grid`}
               disabled={!interactive}
+              className={`ww-gridpick ${
+                selected ? "ww-gridpick-selected" : wasSelected ? "ww-gridpick-deselected" : ""
+              }`}
               style={{
                 flex: "1 1 0",
                 minWidth: 0,
@@ -1331,7 +1335,6 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, 
                 justifyContent: "center",
                 gap: 8,
                 cursor: interactive ? "pointer" : "default",
-                boxShadow: selected ? "inset 0 0 0 3px #D72229" : "none",
               }}
             >
               {renderGridMini(opt.cols, opt.rows)}
