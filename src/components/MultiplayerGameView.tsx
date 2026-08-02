@@ -841,6 +841,11 @@ const MultiplayerGameView: React.FC<Props> = ({
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
   // NOTE: the old ~500ms "flip rotation freeze" on WHOOP was removed — a
   // player may claim mid-flip, so there is no window where the button is inert.
+  // Cards must LOOK inert while another seat holds an open claim — otherwise a
+  // player taps, nothing happens, and the game reads as frozen.
+  const otherSeatClaiming =
+    mySeat !== null && s.claimBy !== null && s.claimBy !== mySeat;
+  const cardsInteractive = !otherSeatClaiming;
   // RULES: a player may call out at ANY moment once the round's rule is
   // rolled — during someone else's flip, between turns, before a single card
   // has been turned. There is deliberately NO flip requirement here: the only
