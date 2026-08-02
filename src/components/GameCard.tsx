@@ -14,6 +14,10 @@ interface GameCardProps {
   enterDelay?: number;
   shaking?: boolean;
   fill?: boolean;
+  /** When false the card is presentational only: no cursor, no press/hover
+   *  feedback, no keyboard/click handling. Used while another seat holds an
+   *  open claim so taps read as "not my turn" rather than "game frozen". */
+  interactive?: boolean;
   /** Remount key for the deal-in wrapper; changing it replays the animation. */
   dealKey?: string | number;
   /** Stagger index for the deal-in animation (`--ww-deal-i`). */
