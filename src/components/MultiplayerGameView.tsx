@@ -839,21 +839,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   const heroActive = activeCommit !== null;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
-  // Block WHOOP for ~500ms during the flip rotation itself (matches
-  // GameCard's `transform 0.5s` transition). Once the face has settled the
-  // full hold window remains claimable.
-  const [isAnimating, setIsAnimating] = React.useState(false);
-  const prevPeekRef = React.useRef<number | null>(s.peekingCard);
-  React.useEffect(() => {
-    const prev = prevPeekRef.current;
-    prevPeekRef.current = s.peekingCard;
-    if (prev === null && s.peekingCard !== null) {
-      setIsAnimating(true);
-      const t = setTimeout(() => setIsAnimating(false), 500);
-      return () => clearTimeout(t);
-    }
-    if (s.peekingCard === null) setIsAnimating(false);
-  }, [s.peekingCard]);
+  // NOTE: the old ~500ms "flip rotation freeze" on WHOOP was removed — a
+  // player may claim mid-flip, so there is no window where the button is inert.
   // RULES: a player may call out at ANY moment once the round's rule is
   // rolled — during someone else's flip, between turns, before a single card
   // has been turned. There is deliberately NO flip requirement here: the only
