@@ -1268,15 +1268,6 @@ const MultiplayerGameView: React.FC<Props> = ({
       }
     };
     if (claimBusy) { buttonKind = "DISABLED"; buttonOnClick = undefined; }
-  } else if (
-    mySeat !== null &&
-    s.phase === "FLIPPING" &&
-    s.claimBy === null &&
-    isAnimating
-  ) {
-    // Flip animation freeze: WHOOP stays red but is inert.
-    buttonKind = "WHOOP";
-    buttonOnClick = undefined;
   }
 
   // Derive a descriptive label for the muted disabled state so players can
