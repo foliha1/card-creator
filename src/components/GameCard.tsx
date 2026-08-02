@@ -100,9 +100,10 @@ const GameCard = ({
   return (
     <div
       ref={wrapperRef}
-      role="button"
-      tabIndex={0}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : -1}
       aria-label={ariaLabel}
+      aria-disabled={interactive ? undefined : true}
       className={wrapperClass}
 
       style={{
@@ -110,7 +111,7 @@ const GameCard = ({
         width: "100%",
         height: fill ? "100%" : undefined,
         aspectRatio: fill ? undefined : "5/7",
-        cursor: "pointer",
+        cursor: interactive ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         borderRadius: RADIUS.md,
@@ -122,14 +123,16 @@ const GameCard = ({
         animation: animStyle,
         outline: focusVis ? `2px solid ${COLORS.blue}` : "none",
         outlineOffset: 2,
+        WebkitTapHighlightColor: interactive ? undefined : "transparent",
       }}
-      onClick={onClick}
-      onKeyDown={(e) => {
+      onClick={interactive ? onClick : undefined}
+      onKeyDown={interactive ? (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onClick?.();
         }
-      }}
+      } : undefined}
+
       onFocus={(e) => { if (e.currentTarget.matches(":focus-visible")) setFocusVis(true); }}
       onBlur={() => setFocusVis(false)}
     >
