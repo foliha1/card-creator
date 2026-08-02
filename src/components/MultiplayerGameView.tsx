@@ -1595,7 +1595,8 @@ const MultiplayerGameView: React.FC<Props> = ({
                 <GameCard
                   card={cardForRender}
                   faceUp={faceUp}
-                  onClick={() => handleCardClick(i)}
+                  interactive={cardsInteractive}
+                  onClick={cardsInteractive ? () => handleCardClick(i) : undefined}
                   highlighted={selected}
                   wrong={wrongCards.includes(i)}
                   shaking={false}
