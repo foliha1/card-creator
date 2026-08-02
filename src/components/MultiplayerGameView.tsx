@@ -854,11 +854,18 @@ const MultiplayerGameView: React.FC<Props> = ({
     }
     if (s.peekingCard === null) setIsAnimating(false);
   }, [s.peekingCard]);
+  // RULES: a player may call out at ANY moment once the round's rule is
+  // rolled — during someone else's flip, between turns, before a single card
+  // has been turned. There is deliberately NO flip requirement here: the only
+  // guards are the rolled-rule gate (phase), an open claim, SETTLING, game
+  // over, and a seat that is out of the game.
+  const seatOutOfGame =
+    mySeat !== null && (s.disconnectedSeats?.includes(mySeat) ?? false);
   const canClaim =
     mySeat !== null &&
+    !seatOutOfGame &&
     s.phase === "FLIPPING" &&
-    s.claimBy === null &&
-    !isAnimating;
+    s.claimBy === null;
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
   const [claimBusy, setClaimBusy] = React.useState(false);
   const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
