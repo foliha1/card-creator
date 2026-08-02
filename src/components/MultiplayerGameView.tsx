@@ -839,26 +839,25 @@ const MultiplayerGameView: React.FC<Props> = ({
   const heroActive = activeCommit !== null;
   const isMyTurnToRoll = mySeat !== null && s.roller === mySeat && s.phase === "AWAITING_ROLL" && !s.rolling;
   const isMyTurnToFlip = mySeat !== null && s.flipper === mySeat && s.phase === "FLIPPING" && s.peekingCard === null;
-  // Block WHOOP for ~500ms during the flip rotation itself (matches
-  // GameCard's `transform 0.5s` transition). Once the face has settled the
-  // full hold window remains claimable.
-  const [isAnimating, setIsAnimating] = React.useState(false);
-  const prevPeekRef = React.useRef<number | null>(s.peekingCard);
-  React.useEffect(() => {
-    const prev = prevPeekRef.current;
-    prevPeekRef.current = s.peekingCard;
-    if (prev === null && s.peekingCard !== null) {
-      setIsAnimating(true);
-      const t = setTimeout(() => setIsAnimating(false), 500);
-      return () => clearTimeout(t);
-    }
-    if (s.peekingCard === null) setIsAnimating(false);
-  }, [s.peekingCard]);
+  // NOTE: the old ~500ms "flip rotation freeze" on WHOOP was removed — a
+  // player may claim mid-flip, so there is no window where the button is inert.
+  // Cards must LOOK inert while another seat holds an open claim — otherwise a
+  // player taps, nothing happens, and the game reads as frozen.
+  const otherSeatClaiming =
+    mySeat !== null && s.claimBy !== null && s.claimBy !== mySeat;
+  const cardsInteractive = !otherSeatClaiming;
+  // RULES: a player may call out at ANY moment once the round's rule is
+  // rolled — during someone else's flip, between turns, before a single card
+  // has been turned. There is deliberately NO flip requirement here: the only
+  // guards are the rolled-rule gate (phase), an open claim, SETTLING, game
+  // over, and a seat that is out of the game.
+  const seatOutOfGame =
+    mySeat !== null && (s.disconnectedSeats?.includes(mySeat) ?? false);
   const canClaim =
     mySeat !== null &&
+    !seatOutOfGame &&
     s.phase === "FLIPPING" &&
-    s.claimBy === null &&
-    !isAnimating;
+    s.claimBy === null;
   const inClaimMode = s.phase === "CLAIM_SELECTING" && s.claimBy === mySeat;
   const [claimBusy, setClaimBusy] = React.useState(false);
   const [tooSlowAt, setTooSlowAt] = React.useState<number | null>(null);
@@ -1261,15 +1260,6 @@ const MultiplayerGameView: React.FC<Props> = ({
       }
     };
     if (claimBusy) { buttonKind = "DISABLED"; buttonOnClick = undefined; }
-  } else if (
-    mySeat !== null &&
-    s.phase === "FLIPPING" &&
-    s.claimBy === null &&
-    isAnimating
-  ) {
-    // Flip animation freeze: WHOOP stays red but is inert.
-    buttonKind = "WHOOP";
-    buttonOnClick = undefined;
   }
 
   // Derive a descriptive label for the muted disabled state so players can
@@ -1610,7 +1600,8 @@ const MultiplayerGameView: React.FC<Props> = ({
                 <GameCard
                   card={cardForRender}
                   faceUp={faceUp}
-                  onClick={() => handleCardClick(i)}
+                  interactive={cardsInteractive}
+                  onClick={cardsInteractive ? () => handleCardClick(i) : undefined}
                   highlighted={selected}
                   wrong={wrongCards.includes(i)}
                   shaking={false}
