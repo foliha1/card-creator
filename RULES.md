@@ -148,3 +148,20 @@ came around, persisting across round boundaries.
 
 ### v6.1 — Single-die core
 Every round rolls exactly one die and one matching attribute.
+
+### v6.8 — Daily puzzle: three rounds (digital only)
+
+- `/today` opens on a static ready screen (puzzle number, date, Play). Nothing
+  runs until Play is pressed; if today's attempt is already stored, the result
+  screen shows instead.
+- Nine cards deal face down (3×3), flip face up for a 5-second countdown, then
+  flip down for good. There is no second reveal.
+- Three rounds. Each round rolls one fresh die from the daily seed. A correct
+  pair is removed from the board permanently (9 → 7 → 5); no refills.
+- A wrong pair adds 1 second, increments wrong calls, and the round continues
+  with the cards still down.
+- One clock across all three rounds, paused during every roll animation.
+- All three rolls are drawn from the seeded stream at init and validated so that
+  every reachable board still holds a pair — the player never sees a re-roll.
+- One attempt per day (localStorage). Result screen: puzzle number, total time,
+  wrong calls, and the three rules rolled.

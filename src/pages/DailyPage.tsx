@@ -6,7 +6,12 @@ import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatSeconds, type DailyPhase } from "@/lib/dailyEngine";
+import {
+  formatSeconds,
+  DAILY_ROUNDS,
+  remainingCount,
+  type DailyPhase,
+} from "@/lib/dailyEngine";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
 import {
@@ -28,16 +33,17 @@ const ATTR_LABEL: Record<string, string> = {
 };
 
 /**
- * The die. Hidden behind a blank until the roll, so the day's rule can never
- * leak while the board is still face up — the whole point of the mode.
+ * The die. Hidden behind a blank until the first roll, so the round's rule can
+ * never leak while the board is still face up — the whole point of the mode.
  */
 const DailyDie: React.FC<{
   phase: DailyPhase;
+  roundIndex: number;
   attribute: "SHAPE" | "NUMBER" | "COLOR";
   faceIndex: 0 | 1;
   tumbleSeed: number;
   size: number;
-}> = ({ phase, attribute, faceIndex, tumbleSeed, size }) => {
+}> = ({ phase, roundIndex, attribute, faceIndex, tumbleSeed, size }) => {
   const landed = landedRotationFor(attribute, faceIndex);
   const spins = 2 + (tumbleSeed & 1);
   const dir = (tumbleSeed >> 2) & 1 ? 1 : -1;
@@ -49,9 +55,10 @@ const DailyDie: React.FC<{
     setRotation(spun);
     const id = requestAnimationFrame(() => setRotation(landed));
     return () => cancelAnimationFrame(id);
-  }, [phase, spun, landed]);
+  }, [phase, roundIndex, spun, landed]);
 
-  const preRoll = phase === "DEAL" || phase === "STUDY" || phase === "HIDE";
+  const preRoll =
+    roundIndex === 1 && (phase === "DEAL" || phase === "STUDY" || phase === "HIDE");
   const rolling = phase === "ROLL";
 
   if (preRoll) {
@@ -91,13 +98,13 @@ const DailyDie: React.FC<{
 
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
-  attribute: "SHAPE" | "NUMBER" | "COLOR";
+  attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
   elapsedMs: number;
   wrongCalls: number;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
-}> = ({ puzzleNumber, attribute, elapsedMs, wrongCalls, mobile, revisit, onLeave }) => {
+}> = ({ puzzleNumber, attributes, elapsedMs, wrongCalls, mobile, revisit, onLeave }) => {
   const stat = (label: string, value: string) => (
     <div
       key={label}
@@ -134,21 +141,28 @@ const DailyResultCard: React.FC<{
       <p style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}>
         {revisit
           ? "Already solved today. One puzzle a day — come back tomorrow."
-          : "Solved. One puzzle a day — come back tomorrow for the next one."}
+          : "Three rounds down. One puzzle a day — come back tomorrow for the next one."}
       </p>
-      <div
-        style={{
-          ...textStyle("caption", mobile),
-          color: COLORS.ink,
-          textTransform: "uppercase",
-          letterSpacing: 1,
-        }}
-      >
-        {ATTR_LABEL[attribute]}
-      </div>
       <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-        {stat("Time", `${formatSeconds(elapsedMs)}s`)}
+        {stat("Total time", `${formatSeconds(elapsedMs)}s`)}
         {stat("Wrong calls", String(wrongCalls))}
+      </div>
+      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
+        {attributes.map((attr, i) => (
+          <div
+            key={`${attr}-${i}`}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: SPACE[3],
+              ...textStyle("caption", mobile),
+              color: COLORS.ink,
+            }}
+          >
+            <span style={{ color: COLORS.inkMuted }}>Round {i + 1}</span>
+            <span>{ATTR_LABEL[attr]}</span>
+          </div>
+        ))}
       </div>
       <button
         type="button"
@@ -171,9 +185,9 @@ const DailyPage: React.FC = () => {
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
-    if (phase === "STUDY") playDeal(6);
+    if (phase === "STUDY") playDeal(9);
     if (phase === "ROLL") playDiceRoll();
-  }, [phase]);
+  }, [phase, state.roundIndex]);
 
   useEffect(() => {
     if (state.wrongToken === 0) return;
@@ -182,12 +196,18 @@ const DailyPage: React.FC = () => {
   }, [state.wrongToken]);
 
   useEffect(() => {
-    if (phase !== "DONE") return;
+    if (state.matchedPair.length === 0) return;
     playCorrect();
+    hapticSuccess();
+  }, [state.matchedPair.length, state.roundIndex]);
+
+  useEffect(() => {
+    if (phase !== "DONE") return;
     hapticSuccess();
   }, [phase]);
 
   const finished = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
+  const ready = !finished && phase === "READY";
 
   const readout = (() => {
     switch (phase) {
@@ -206,6 +226,12 @@ const DailyPage: React.FC = () => {
 
   const canClaim = phase === "PLAY" && !state.claiming;
   const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <>
@@ -213,12 +239,12 @@ const DailyPage: React.FC = () => {
         <title>{`Daily Puzzle #${daily.puzzleNumber} | Whoop Whoop`}</title>
         <meta
           name="description"
-          content="One board, five seconds, one die. Everyone plays the same Whoop Whoop daily recall puzzle — how fast can you call the pair?"
+          content="Nine cards, five seconds, three rules. Everyone plays the same Whoop Whoop daily recall puzzle — how fast can you call all three pairs?"
         />
         <meta property="og:title" content={`Whoop Whoop Daily Puzzle #${daily.puzzleNumber}`} />
         <meta
           property="og:description"
-          content="One board, five seconds, one die. Everyone plays the same Whoop Whoop daily recall puzzle."
+          content="Nine cards, five seconds, three rules. Everyone plays the same Whoop Whoop daily recall puzzle."
         />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -229,13 +255,59 @@ const DailyPage: React.FC = () => {
           {finished ? (
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
-              attribute={daily.result!.attribute}
+              attributes={daily.result!.attributes}
               elapsedMs={daily.result!.elapsedMs}
               wrongCalls={daily.result!.wrongCalls}
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
             />
+          ) : ready ? (
+            <div
+              style={{
+                ...panelStyle("surface", 8),
+                alignSelf: "stretch",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: SPACE[6],
+                padding: mobile ? SPACE[6] : SPACE[10],
+              }}
+            >
+              <h1
+                style={{
+                  ...textStyle("title", mobile),
+                  color: COLORS.ink,
+                  textAlign: "center",
+                  margin: 0,
+                }}
+              >
+                Daily Puzzle #{daily.puzzleNumber}
+              </h1>
+              <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>{today}</div>
+              <p
+                style={{
+                  ...textStyle("body", mobile),
+                  color: COLORS.inkMuted,
+                  textAlign: "center",
+                  margin: 0,
+                }}
+              >
+                Nine cards face up for five seconds. Then they go down and the die decides the rule
+                — three rounds, one clock. You get one attempt today.
+              </p>
+              <button
+                type="button"
+                className="ww-press"
+                onClick={() => {
+                  hapticTap();
+                  daily.start();
+                }}
+                style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
+              >
+                PLAY
+              </button>
+            </div>
           ) : (
             <div
               style={{
@@ -256,7 +328,7 @@ const DailyPage: React.FC = () => {
               >
                 <div>
                   <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
-                    Daily Puzzle #{daily.puzzleNumber}
+                    Round {state.roundIndex} of {DAILY_ROUNDS} · {remainingCount(state)} cards
                   </div>
                   <div
                     aria-live="polite"
@@ -267,8 +339,9 @@ const DailyPage: React.FC = () => {
                 </div>
                 <DailyDie
                   phase={phase}
-                  attribute={state.attribute}
-                  faceIndex={state.faceIndex}
+                  roundIndex={state.roundIndex}
+                  attribute={daily.roll.attribute}
+                  faceIndex={daily.roll.faceIndex}
                   tumbleSeed={daily.tumbleSeed}
                   size={56}
                 />
@@ -281,23 +354,36 @@ const DailyPage: React.FC = () => {
                   gap: SPACE[3],
                 }}
               >
-                {state.grid.map((card, idx) => (
-                  <GameCard
-                    key={card.id}
-                    card={card}
-                    faceUp={state.faceUp}
-                    highlighted={state.selected.includes(idx)}
-                    matched={state.matchedPair.includes(idx)}
-                    wrong={state.wrongPair.includes(idx)}
-                    interactive={cardsTappable}
-                    dealIndex={idx}
-                    dealKey={daily.seed}
-                    onClick={() => {
-                      hapticTap();
-                      daily.select(idx);
-                    }}
-                  />
-                ))}
+                {state.grid.map((card, idx) =>
+                  card === null ? (
+                    <div
+                      key={`empty-${idx}`}
+                      aria-hidden="true"
+                      style={{
+                        aspectRatio: "2 / 3",
+                        borderRadius: RADIUS.sm,
+                        border: `2px dashed ${COLORS.inkMuted}`,
+                        opacity: 0.25,
+                      }}
+                    />
+                  ) : (
+                    <GameCard
+                      key={card.id}
+                      card={card}
+                      faceUp={state.faceUp}
+                      highlighted={state.selected.includes(idx)}
+                      matched={state.matchedPair.includes(idx)}
+                      wrong={state.wrongPair.includes(idx)}
+                      interactive={cardsTappable}
+                      dealIndex={idx}
+                      dealKey={daily.seed}
+                      onClick={() => {
+                        hapticTap();
+                        daily.select(idx);
+                      }}
+                    />
+                  )
+                )}
               </div>
 
               {state.claiming ? (
@@ -347,8 +433,8 @@ const DailyPage: React.FC = () => {
                 }}
               >
                 {phase === "PLAY"
-                  ? `${ATTR_LABEL[state.attribute]} — a wrong pair costs 1 second.`
-                  : "Six cards, five seconds. Then the die decides the rule."}
+                  ? `${ATTR_LABEL[daily.roll.attribute]} — a wrong pair costs 1 second.`
+                  : "Nine cards, five seconds. Then the die decides each round's rule."}
               </p>
             </div>
           )}

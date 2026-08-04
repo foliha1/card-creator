@@ -2,18 +2,20 @@
 // useDailyGame — drives the daily puzzle's phase sequence and clock.
 //
 // The daily runs on its own tiny machine (src/lib/dailyEngine.ts), NOT on the
-// full game engine: no draw pile, no refills, no rounds, no re-rolls, no bot.
-// This hook only owns timing (study countdown, roll, clock ticks) and the
+// full game engine: no draw pile, no refills, no re-rolls, no bot. This hook
+// owns timing (start gate, study countdown, three rolls, clock ticks) and the
 // one-attempt-per-day persistence.
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
+  currentRoll,
   dailyReducer,
   initDailyState,
   liveElapsedMs,
   STUDY_MS,
   type DailyPhase,
+  type DailyRoll,
   type DailyState,
 } from "@/lib/dailyEngine";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
@@ -29,6 +31,7 @@ import {
 const DEAL_MS = 700;      // deal-in settles before the reveal
 const FLIP_MS = 500;      // card flip duration (matches GameCard)
 const WRONG_ANIM_MS = 900;
+const MATCH_ANIM_MS = 700;
 
 export interface UseDailyGameResult {
   state: DailyState;
@@ -37,11 +40,13 @@ export interface UseDailyGameResult {
   studyRemaining: number;
   /** Live clock in ms, including penalties. Frozen once solved. */
   elapsedMs: number;
+  roll: DailyRoll;
   tumbleSeed: number;
   seed: string;
   puzzleNumber: number;
   result: DailyResult | null;
   alreadyPlayed: boolean;
+  start: () => void;
   claim: () => void;
   cancelClaim: () => void;
   select: (idx: number) => void;
@@ -60,15 +65,13 @@ export function useDailyGame(): UseDailyGameResult {
   const [tumbleSeed] = useState(() => pickTumbleSeed());
   const [result, setResult] = useState<DailyResult | null>(stored);
   const alreadyPlayed = stored !== null;
-  const locked = alreadyPlayed;
 
-  // ---- phase sequence: deal → study → hide → roll → play ----
+  // ---- phase sequence: (start gate) deal → study → hide → roll → play ----
   useEffect(() => {
-    if (locked) return;
     if (state.phase !== "DEAL") return;
     const t = setTimeout(() => dispatch({ type: "REVEAL" }), DEAL_MS);
     return () => clearTimeout(t);
-  }, [state.phase, locked]);
+  }, [state.phase]);
 
   useEffect(() => {
     if (state.phase !== "STUDY") return;
@@ -76,11 +79,15 @@ export function useDailyGame(): UseDailyGameResult {
     return () => clearTimeout(t);
   }, [state.phase]);
 
+  // HIDE is entered both after the study window and after each solved round.
   useEffect(() => {
     if (state.phase !== "HIDE") return;
-    const t = setTimeout(() => dispatch({ type: "ROLL_START" }), FLIP_MS);
+    const t = setTimeout(
+      () => dispatch({ type: "ROLL_START" }),
+      state.roundIndex === 1 ? FLIP_MS : MATCH_ANIM_MS
+    );
     return () => clearTimeout(t);
-  }, [state.phase]);
+  }, [state.phase, state.roundIndex]);
 
   useEffect(() => {
     if (state.phase !== "ROLL") return;
@@ -106,7 +113,7 @@ export function useDailyGame(): UseDailyGameResult {
     return () => clearInterval(id);
   }, [state.phase]);
 
-  // ---- running clock ----
+  // ---- running clock (paused whenever startedAt is null, e.g. during rolls) ----
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (state.phase !== "PLAY") return;
@@ -121,12 +128,18 @@ export function useDailyGame(): UseDailyGameResult {
 
   const elapsedMs = liveElapsedMs(state, now);
 
-  // ---- wrong-call flash cleanup ----
+  // ---- animation cleanup ----
   useEffect(() => {
     if (state.wrongPair.length === 0) return;
     const t = setTimeout(() => dispatch({ type: "CLEAR_WRONG" }), WRONG_ANIM_MS);
     return () => clearTimeout(t);
   }, [state.wrongToken, state.wrongPair.length]);
+
+  useEffect(() => {
+    if (state.matchedPair.length === 0) return;
+    const t = setTimeout(() => dispatch({ type: "CLEAR_MATCH" }), MATCH_ANIM_MS);
+    return () => clearTimeout(t);
+  }, [state.matchedPair.length, state.roundIndex]);
 
   // ---- auto-resolve once two cards are picked ----
   const resolveRef = useRef(0);
@@ -148,7 +161,7 @@ export function useDailyGame(): UseDailyGameResult {
     const finished: DailyResult = {
       seed,
       puzzleNumber,
-      attribute: state.attribute,
+      attributes: state.rolls.map((r) => r.attribute),
       elapsedMs: state.elapsedMs,
       wrongCalls: state.wrongCalls,
       completedAt: new Date().toISOString(),
@@ -158,13 +171,14 @@ export function useDailyGame(): UseDailyGameResult {
   }, [
     state.phase,
     state.elapsedMs,
-    state.attribute,
+    state.rolls,
     state.wrongCalls,
     result,
     seed,
     puzzleNumber,
   ]);
 
+  const start = useCallback(() => dispatch({ type: "START" }), []);
   const claim = useCallback(() => dispatch({ type: "CLAIM" }), []);
   const cancelClaim = useCallback(() => dispatch({ type: "CANCEL_CLAIM" }), []);
   const select = useCallback((idx: number) => dispatch({ type: "SELECT", idx }), []);
@@ -174,11 +188,13 @@ export function useDailyGame(): UseDailyGameResult {
     phase: state.phase,
     studyRemaining,
     elapsedMs,
+    roll: currentRoll(state),
     tumbleSeed,
     seed,
     puzzleNumber,
     result,
     alreadyPlayed,
+    start,
     claim,
     cancelClaim,
     select,
