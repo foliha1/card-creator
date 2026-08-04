@@ -251,7 +251,30 @@ const DailyPage: React.FC = () => {
       </Helmet>
 
       <div style={{ minHeight: "100dvh", background: PAGE_BG }}>
+        {daily.debugBypass && (
+          <div
+            role="status"
+            style={{
+              position: "fixed",
+              top: 4,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 9999,
+              padding: "2px 8px",
+              borderRadius: 999,
+              background: COLORS.red,
+              color: COLORS.surface,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              pointerEvents: "none",
+            }}
+          >
+            DEBUG — LOCK BYPASSED, NOT A REAL RUN
+          </div>
+        )}
         <PreGameShell mobile={mobile} gap={SPACE[5]}>
+
           {finished ? (
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
