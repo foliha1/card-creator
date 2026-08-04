@@ -7,9 +7,10 @@ import PreGameShell from "@/components/PreGameShell";
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  formatSeconds,
   DAILY_ROUNDS,
+  MAX_MISSES,
   remainingCount,
+  type DailyMark,
   type DailyPhase,
 } from "@/lib/dailyEngine";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
@@ -96,15 +97,59 @@ const DailyDie: React.FC<{
   );
 };
 
+/** Five markers, filled as misses are spent. No numbers. */
+const MissTracker: React.FC<{ used: number }> = ({ used }) => (
+  <div
+    role="img"
+    aria-label={`${used} of ${MAX_MISSES} misses used`}
+    style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}
+  >
+    {Array.from({ length: MAX_MISSES }, (_, i) => (
+      <span
+        key={i}
+        aria-hidden="true"
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: 999,
+          border: BORDER.heavy,
+          background: i < used ? COLORS.red : "transparent",
+          transition: "background 200ms ease",
+        }}
+      />
+    ))}
+  </div>
+);
+
+/** One marker per resolved call, in the order they happened. */
+const MarksRow: React.FC<{ marks: DailyMark[] }> = ({ marks }) => (
+  <div style={{ display: "flex", gap: SPACE[2], flexWrap: "wrap", justifyContent: "center" }}>
+    {marks.map((m, i) => (
+      <span
+        key={i}
+        title={m === "MATCH" ? "Match" : "Miss"}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: m === "MATCH" ? RADIUS.sm : 999,
+          border: BORDER.heavy,
+          background: m === "MATCH" ? COLORS.ink : COLORS.red,
+        }}
+      />
+    ))}
+  </div>
+);
+
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
   attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
-  elapsedMs: number;
-  wrongCalls: number;
+  missesUsed: number;
+  marks: DailyMark[];
+  failed: boolean;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
-}> = ({ puzzleNumber, attributes, elapsedMs, wrongCalls, mobile, revisit, onLeave }) => {
+}> = ({ puzzleNumber, attributes, missesUsed, marks, failed, mobile, revisit, onLeave }) => {
   const stat = (label: string, value: string) => (
     <div
       key={label}
@@ -139,14 +184,17 @@ const DailyResultCard: React.FC<{
         Daily Puzzle #{puzzleNumber}
       </h1>
       <p style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}>
-        {revisit
-          ? "Already solved today. One puzzle a day — come back tomorrow."
-          : "Three rounds down. One puzzle a day — come back tomorrow for the next one."}
+        {failed
+          ? "Run failed — five misses used up."
+          : revisit
+            ? "Already played today. One puzzle a day — come back tomorrow."
+            : "All three rounds called. One puzzle a day — come back tomorrow."}
       </p>
       <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-        {stat("Total time", `${formatSeconds(elapsedMs)}s`)}
-        {stat("Wrong calls", String(wrongCalls))}
+        {stat("Result", failed ? "FAILED" : "COMPLETE")}
+        {stat("Misses", `${missesUsed}/${MAX_MISSES}`)}
       </div>
+      <MarksRow marks={marks} />
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {attributes.map((attr, i) => (
           <div
@@ -220,7 +268,7 @@ const DailyPage: React.FC = () => {
       case "ROLL":
         return "Rolling…";
       default:
-        return `${formatSeconds(daily.elapsedMs)}s`;
+        return ATTR_LABEL[daily.roll.attribute];
     }
   })();
 
@@ -239,12 +287,12 @@ const DailyPage: React.FC = () => {
         <title>{`Daily Puzzle #${daily.puzzleNumber} | Whoop Whoop`}</title>
         <meta
           name="description"
-          content="Nine cards, five seconds, three rules. Everyone plays the same Whoop Whoop daily recall puzzle — how fast can you call all three pairs?"
+          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same Whoop Whoop daily recall puzzle."
         />
         <meta property="og:title" content={`Whoop Whoop Daily Puzzle #${daily.puzzleNumber}`} />
         <meta
           property="og:description"
-          content="Nine cards, five seconds, three rules. Everyone plays the same Whoop Whoop daily recall puzzle."
+          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same Whoop Whoop daily recall puzzle."
         />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -279,8 +327,9 @@ const DailyPage: React.FC = () => {
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
               attributes={daily.result!.attributes}
-              elapsedMs={daily.result!.elapsedMs}
-              wrongCalls={daily.result!.wrongCalls}
+              missesUsed={daily.result!.missesUsed}
+              marks={daily.result!.marks}
+              failed={daily.result!.failed}
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
@@ -316,8 +365,8 @@ const DailyPage: React.FC = () => {
                   margin: 0,
                 }}
               >
-                Nine cards face up for five seconds. Then they go down and the die decides the rule
-                — three rounds, one clock. You get one attempt today.
+                Nine cards face up for ten seconds. Then they go down and the die decides the rule
+                — three rounds, five misses to spend. You get one attempt today.
               </p>
               <button
                 type="button"
@@ -358,6 +407,9 @@ const DailyPage: React.FC = () => {
                     style={{ ...textStyle("display", mobile), color: COLORS.ink, fontVariantNumeric: "tabular-nums" }}
                   >
                     {readout}
+                  </div>
+                  <div style={{ marginTop: SPACE[2] }}>
+                    <MissTracker used={state.missesUsed} />
                   </div>
                 </div>
                 <DailyDie
@@ -456,8 +508,8 @@ const DailyPage: React.FC = () => {
                 }}
               >
                 {phase === "PLAY"
-                  ? `${ATTR_LABEL[daily.roll.attribute]} — a wrong pair costs 1 second.`
-                  : "Nine cards, five seconds. Then the die decides each round's rule."}
+                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MAX_MISSES - state.missesUsed} misses left.`
+                  : "Nine cards, ten seconds. Then the die decides each round's rule."}
               </p>
             </div>
           )}
