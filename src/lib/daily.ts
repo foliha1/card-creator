@@ -56,13 +56,20 @@ export function loadDailyResult(seed: string): DailyResult | null {
   try {
     const raw = window.localStorage.getItem(dailyStorageKey(seed));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as DailyResult;
+    const parsed = JSON.parse(raw) as DailyResult & { attribute?: DailyResult["attributes"][number] };
     if (typeof parsed?.elapsedMs !== "number") return null;
-    return parsed;
+    // Legacy single-round records stored one `attribute` instead of three.
+    const attributes = Array.isArray(parsed.attributes)
+      ? parsed.attributes
+      : parsed.attribute
+        ? [parsed.attribute]
+        : [];
+    return { ...parsed, attributes };
   } catch {
     return null;
   }
 }
+
 
 export function saveDailyResult(result: DailyResult): void {
   try {
