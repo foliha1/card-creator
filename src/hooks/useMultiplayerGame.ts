@@ -16,6 +16,7 @@ import {
   type Action,
 } from "@/hooks/useGameState";
 
+import { pickRoll, pickTumbleSeed, rngOf } from "@/lib/rolls";
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import {
   ISOLATION_SPREAD_MS,
@@ -267,9 +268,8 @@ export function useMultiplayerHost(opts: {
   const commitAndRoll = useCallback(() => {
     const s = latestStateRef.current;
     if (s.phase !== "AWAITING_ROLL" || s.rolling) return;
-    const attribute = rollAttrs[Math.floor(Math.random() * rollAttrs.length)];
-    const faceIndex = (Math.floor(Math.random() * 2) as 0 | 1);
-    const tumbleSeed = Math.floor(Math.random() * 2 ** 31);
+    const { attribute, faceIndex } = pickRoll(rollAttrs, rngOf(s));
+    const tumbleSeed = pickTumbleSeed();
     // startAt is a SERVER-clock timestamp so every client can time the
     // animation against serverNow(), not against message arrival latency.
     const startAt = serverNow() + 150;
