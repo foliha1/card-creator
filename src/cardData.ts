@@ -39,10 +39,10 @@ function generateAllCards(): Card[] {
 
 const ALL_CARDS = generateAllCards();
 
-export function createDeck(): Card[] {
+export function createDeck(rng: () => number = Math.random): Card[] {
   const deck = [...ALL_CARDS];
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   return deck;

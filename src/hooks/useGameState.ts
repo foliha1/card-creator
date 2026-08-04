@@ -2,6 +2,7 @@ import { useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 import { createOpponentMemory, OpponentMemory } from "@/lib/opponentMemory";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
+import { createRng, type Rng } from "@/lib/rng";
 
 type MessageType = "info" | "success" | "error" | "warning";
 
@@ -13,10 +14,10 @@ export const OPPONENT_TUNING = {
 } as const;
 const REVEAL_MS = 2000;
 
-function rollRandomAttributes(count: number): string[] {
+function rollRandomAttributes(count: number, rng: Rng = Math.random): string[] {
   const result: string[] = [];
   for (let i = 0; i < count; i++) {
-    result.push(ATTRIBUTES[Math.floor(Math.random() * ATTRIBUTES.length)]);
+    result.push(ATTRIBUTES[Math.floor(rng() * ATTRIBUTES.length)]);
   }
   return result;
 }
@@ -54,9 +55,9 @@ function hasAnyValidPair(grid: (Card | null)[]): boolean {
   return allRules.some((rule) => hasValidPair(grid, rule));
 }
 
-function shuffleArray<T>(arr: T[]): T[] {
+function shuffleArray<T>(arr: T[], rng: Rng = Math.random): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -172,16 +173,29 @@ export interface State {
   settleKind: "MATCH" | "WRONG" | null;
   settleToken: number;
   settleBy: number | null;
+  // Deterministic randomness source. When a `seed` was supplied at init this
+  // is a seeded PRNG; otherwise it wraps Math.random. Any randomness the
+  // reducer needs after init MUST read from here, never Math.random directly.
+  seed: string | null;
+  rng: Rng;
 }
 
 
 export interface InitOptions {
   seatCount?: number;
   names?: string[];
+  /** When supplied, the deck order and opening roll become reproducible. */
+  seed?: string;
 }
 
 export type Action =
-  | { type: "INIT"; slotCount: number; seatCount?: number; names?: string[] }
+  | {
+      type: "INIT";
+      slotCount: number;
+      seatCount?: number;
+      names?: string[];
+      seed?: string;
+    }
   | { type: "TUMBLE"; values: string[] }
   | { type: "ROLL_START" }
   | { type: "ROLL_LAND"; values: string[]; rule: string[] }
@@ -217,10 +231,12 @@ export function debugFlagOn(): boolean {
 export function initialState(slotCount: number, opts: InitOptions = {}): State {
   const seatCount = opts.seatCount ?? 2;
   const names = opts.names ?? defaultNames(seatCount);
-  const newDeck = createDeck();
+  const seed = opts.seed ?? null;
+  const rng: Rng = seed !== null ? createRng(seed) : Math.random;
+  const newDeck = createDeck(rng);
   const dealt = newDeck.splice(0, slotCount);
   const newGrid = dealt.concat(Array(slotCount - dealt.length).fill(null));
-  const values = rollRandomAttributes(getDieCount());
+  const values = rollRandomAttributes(getDieCount(), rng);
   const { rule } = computeRule(values);
   return {
     phase: "AWAITING_ROLL",
@@ -256,6 +272,8 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     settleKind: null,
     settleToken: 0,
     settleBy: null,
+    seed,
+    rng,
 
   };
 }
@@ -415,6 +433,7 @@ export function reducer(state: State, action: Action): State {
       return initialState(action.slotCount, {
         seatCount: action.seatCount ?? state.seatCount,
         names: action.names ?? state.names,
+        seed: action.seed,
       });
 
     case "TUMBLE":
