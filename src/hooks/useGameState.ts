@@ -179,9 +179,7 @@ export interface State {
   // reducer needs after init MUST read from here, never Math.random directly.
   seed: string | null;
   rng: Rng;
-  // Attempt metrics. Reset on INIT. `flipCount` counts every card flip started
-  // by any seat; `wrongCalls` counts every incorrect claim resolution.
-  flipCount: number;
+  // Attempt metric. Reset on INIT: counts every incorrect claim resolution.
   wrongCalls: number;
 }
 
@@ -279,7 +277,6 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     settleBy: null,
     seed,
     rng,
-    flipCount: 0,
     wrongCalls: 0,
 
   };
@@ -603,7 +600,6 @@ export function reducer(state: State, action: Action): State {
           idx: action.idx,
         },
         peekingCard: action.idx,
-        flipCount: state.flipCount + 1,
       };
     }
 

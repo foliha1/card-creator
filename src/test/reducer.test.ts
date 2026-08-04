@@ -86,7 +86,6 @@ function baseState(overrides: Partial<State> = {}): State {
     settleBy: null,
     seed: null,
     rng: Math.random,
-    flipCount: 0,
     wrongCalls: 0,
 
     ...overrides,
