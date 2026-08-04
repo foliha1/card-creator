@@ -236,7 +236,7 @@ describe("three-round progression and shrinking board", () => {
     expect(remainingCount(s)).toBe(3);
     // 1s + 1s + 1s of play; roll gaps are not counted.
     expect(s.elapsedMs).toBe(3000);
-    expect(s.wrongCalls).toBe(0);
+    expect(s.missesUsed).toBe(0);
     expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
   });
 
