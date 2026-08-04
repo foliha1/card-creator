@@ -93,6 +93,21 @@ correct claim.
 
 ## Version History
 
+### v6.7 — Digital-only daily puzzle mode (`/today`)
+A single-player, digital-only mode that is **not** a game of Whoop Whoop: one
+board, one die, one solve. Six cards deal face down, all six flip face up for
+**five seconds** with a visible countdown, then flip back down. Only then does
+the die roll. A clock counts up, shown to one decimal, from the moment the die
+lands. The player calls WHOOP! WHOOP! and taps two cards: a correct pair stops
+the clock and ends the puzzle; a wrong pair adds **one second** to the final
+time, counts as a wrong call, and play continues with the cards still down.
+There is no draw pile, no refill, no rotation, no re-roll and no opponent. The
+board and the die come from that day's UTC seed, so every player worldwide gets
+the identical puzzle, and one attempt per day is enforced locally.
+**Rationale:** the daily is a recall test, not a game. Because the rule arrives
+after the board is hidden, it isolates The Shift and makes speed a fair measure.
+Table play is unaffected by this mode.
+
 ### v6.6 — Game end requires two consecutive quiet rotations
 Once the draw pile is empty, the game now ends only after **two consecutive**
 full rotations pass with no correct claim. A correct claim resets the count, and
