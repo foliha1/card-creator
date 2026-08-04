@@ -41,9 +41,14 @@ export interface DailyResult {
   puzzleNumber: number;
   /** The three rules the dice landed on, in round order. */
   attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
-  /** Total time across all three rounds, including penalties, in ms. */
+  /** Total run time in ms. Recorded silently as a future tiebreak. */
   elapsedMs: number;
-  wrongCalls: number;
+  /** Misses spent, out of MAX_MISSES. */
+  missesUsed: number;
+  /** Matches and misses in the order they happened. */
+  marks: ("MATCH" | "MISS")[];
+  /** True when the run ended because the miss pool ran out. */
+  failed: boolean;
   completedAt: string;
 }
 
@@ -56,7 +61,10 @@ export function loadDailyResult(seed: string): DailyResult | null {
   try {
     const raw = window.localStorage.getItem(dailyStorageKey(seed));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as DailyResult & { attribute?: DailyResult["attributes"][number] };
+    const parsed = JSON.parse(raw) as DailyResult & {
+      attribute?: DailyResult["attributes"][number];
+      wrongCalls?: number;
+    };
     if (typeof parsed?.elapsedMs !== "number") return null;
     // Legacy single-round records stored one `attribute` instead of three.
     const attributes = Array.isArray(parsed.attributes)
@@ -64,7 +72,10 @@ export function loadDailyResult(seed: string): DailyResult | null {
       : parsed.attribute
         ? [parsed.attribute]
         : [];
-    return { ...parsed, attributes };
+    const missesUsed =
+      typeof parsed.missesUsed === "number" ? parsed.missesUsed : (parsed.wrongCalls ?? 0);
+    const marks = Array.isArray(parsed.marks) ? parsed.marks : [];
+    return { ...parsed, attributes, missesUsed, marks, failed: parsed.failed === true };
   } catch {
     return null;
   }

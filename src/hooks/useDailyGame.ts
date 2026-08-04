@@ -36,9 +36,9 @@ const MATCH_ANIM_MS = 700;
 export interface UseDailyGameResult {
   state: DailyState;
   phase: DailyPhase;
-  /** Seconds remaining in the study window, rounded up (5 → 1). */
+  /** Seconds remaining in the study window, rounded up (10 → 1). */
   studyRemaining: number;
-  /** Live clock in ms, including penalties. Frozen once solved. */
+  /** Live run time in ms. Tracked silently, never scored. */
   elapsedMs: number;
   roll: DailyRoll;
   tumbleSeed: number;
@@ -175,7 +175,9 @@ export function useDailyGame(): UseDailyGameResult {
       puzzleNumber,
       attributes: state.rolls.map((r) => r.attribute),
       elapsedMs: state.elapsedMs,
-      wrongCalls: state.wrongCalls,
+      missesUsed: state.missesUsed,
+      marks: state.marks,
+      failed: state.failed,
       completedAt: new Date().toISOString(),
     };
     if (!debugBypass) saveDailyResult(finished);
@@ -184,7 +186,9 @@ export function useDailyGame(): UseDailyGameResult {
     state.phase,
     state.elapsedMs,
     state.rolls,
-    state.wrongCalls,
+    state.missesUsed,
+    state.marks,
+    state.failed,
     result,
     seed,
     puzzleNumber,
