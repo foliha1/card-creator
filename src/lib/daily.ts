@@ -92,3 +92,26 @@ export function saveDailyResult(result: DailyResult): void {
     /* storage unavailable — the attempt just won't persist */
   }
 }
+
+// ---------------------------------------------------------------------------
+// Shareable result — squares and counts only. Never a card, position or rule.
+// ---------------------------------------------------------------------------
+
+export const DAILY_SHARE_URL = "whoop-whoop.lovable.app/today";
+const DAILY_MAX_MISSES = 5;
+
+/** The share text: title, marks row, misses left (or Failed), URL. */
+export function formatDailyShare(result: DailyResult): string {
+  const squares = (result.marks ?? [])
+    .map((m) => (m === "MATCH" ? "🟦" : "🟥"))
+    .join("");
+  const left = Math.max(0, DAILY_MAX_MISSES - (result.missesUsed ?? 0));
+  const line3 = result.failed ? "Failed" : `${left}/${DAILY_MAX_MISSES} misses left`;
+  return [
+    `WHOOP! WHOOP! #${result.puzzleNumber}`,
+    squares,
+    line3,
+    DAILY_SHARE_URL,
+  ].join("\n");
+}
+
