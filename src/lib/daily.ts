@@ -39,13 +39,14 @@ export function getDailyNumber(date: Date = new Date()): number {
 export interface DailyResult {
   seed: string;
   puzzleNumber: number;
-  /** The rule the die landed on for the day. */
-  attribute: "SHAPE" | "NUMBER" | "COLOR";
-  /** Final time including wrong-call penalties, in ms. */
+  /** The three rules the dice landed on, in round order. */
+  attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
+  /** Total time across all three rounds, including penalties, in ms. */
   elapsedMs: number;
   wrongCalls: number;
   completedAt: string;
 }
+
 
 export function dailyStorageKey(seed: string): string {
   return `ww_daily_${seed}`;
