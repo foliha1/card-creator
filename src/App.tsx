@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-context";
 import MultiplayerPage from "./pages/MultiplayerPage.tsx";
+import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
 import TypographyPage from "./pages/TypographyPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<MultiplayerPage />} />
             <Route path="/play" element={<MultiplayerPage />} />
             <Route path="/play/:roomCode" element={<MultiplayerPage />} />
+            <Route path="/today" element={<DailyPage />} />
             <Route path="/about" element={<SupportPage />} />
             <Route path="/typography" element={<TypographyPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
