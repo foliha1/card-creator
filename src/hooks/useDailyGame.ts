@@ -175,8 +175,9 @@ export function useDailyGame(): UseDailyGameResult {
       wrongCalls: state.wrongCalls,
       completedAt: new Date().toISOString(),
     };
-    saveDailyResult(finished);
+    if (!debugBypass) saveDailyResult(finished);
     setResult(finished);
+
   }, [
     state.phase,
     state.elapsedMs,
