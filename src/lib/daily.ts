@@ -3,6 +3,8 @@
 // so every player worldwide gets the same puzzle on the same calendar day.
 // ============================================================================
 
+import { DAILY_ROUNDS, type DailyMark } from "@/lib/dailyEngine";
+
 /** Fixed launch day (UTC). Puzzle #1. */
 export const DAILY_LAUNCH_UTC = Date.UTC(2026, 7, 1); // 2026-08-01
 
@@ -43,26 +45,35 @@ export interface DailyResult {
   attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
   /** Total run time in ms. Recorded silently as a future tiebreak. */
   elapsedMs: number;
-  /** Misses spent, out of MAX_MISSES. */
-  missesUsed: number;
-  /** Matches and misses in the order they happened. */
-  marks: ("MATCH" | "MISS")[];
-  /** True when the run ended because the miss pool ran out. */
+  /** Rounds solved by a correct call, 0 → 3. */
+  roundsSolved: number;
+  /** Misses spent across the run. */
+  totalMisses: number;
+  /** Per-round event lists, index 0 = round 1. */
+  roundEvents: DailyMark[][];
+  /** Whether the single peek was spent. */
+  peekUsed: boolean;
+  /** The round the peek was used in, or null. */
+  peekRound: number | null;
+  /** True when no round was solved. */
   failed: boolean;
   completedAt: string;
 }
-
 
 export function dailyStorageKey(seed: string): string {
   return `ww_daily_${seed}`;
 }
 
+const emptyRounds = (): DailyMark[][] =>
+  Array.from({ length: DAILY_ROUNDS }, () => [] as DailyMark[]);
+
 export function loadDailyResult(seed: string): DailyResult | null {
   try {
     const raw = window.localStorage.getItem(dailyStorageKey(seed));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as DailyResult & {
+    const parsed = JSON.parse(raw) as Partial<DailyResult> & {
       attribute?: DailyResult["attributes"][number];
+      missesUsed?: number;
       wrongCalls?: number;
     };
     if (typeof parsed?.elapsedMs !== "number") return null;
@@ -72,15 +83,30 @@ export function loadDailyResult(seed: string): DailyResult | null {
       : parsed.attribute
         ? [parsed.attribute]
         : [];
-    const missesUsed =
-      typeof parsed.missesUsed === "number" ? parsed.missesUsed : (parsed.wrongCalls ?? 0);
-    const marks = Array.isArray(parsed.marks) ? parsed.marks : [];
-    return { ...parsed, attributes, missesUsed, marks, failed: parsed.failed === true };
+    const totalMisses =
+      typeof parsed.totalMisses === "number"
+        ? parsed.totalMisses
+        : (parsed.missesUsed ?? parsed.wrongCalls ?? 0);
+    const roundEvents = Array.isArray(parsed.roundEvents)
+      ? parsed.roundEvents
+      : emptyRounds();
+    return {
+      seed: parsed.seed ?? seed,
+      puzzleNumber: parsed.puzzleNumber ?? 1,
+      attributes,
+      elapsedMs: parsed.elapsedMs,
+      roundsSolved: typeof parsed.roundsSolved === "number" ? parsed.roundsSolved : 0,
+      totalMisses,
+      roundEvents,
+      peekUsed: parsed.peekUsed === true,
+      peekRound: typeof parsed.peekRound === "number" ? parsed.peekRound : null,
+      failed: parsed.failed === true,
+      completedAt: parsed.completedAt ?? new Date().toISOString(),
+    };
   } catch {
     return null;
   }
 }
-
 
 export function saveDailyResult(result: DailyResult): void {
   try {
@@ -94,24 +120,38 @@ export function saveDailyResult(result: DailyResult): void {
 }
 
 // ---------------------------------------------------------------------------
-// Shareable result — squares and counts only. Never a card, position or rule.
+// Shareable result — marks and counts only. Never a card, position or rule.
 // ---------------------------------------------------------------------------
 
 export const DAILY_SHARE_URL = "whoop-whoop.lovable.app/today";
-const DAILY_MAX_MISSES = 5;
 
-/** The share text: title, marks row, misses left (or Failed), URL. */
+/**
+ * The share text:
+ *   WHOOP! WHOOP! #14
+ *   R1 🔵 · R2 👀🔴🔵 · R3 🔴🔵
+ *   3 of 3 · 3 misses
+ *
+ *   whoop-whoop.lovable.app/today
+ */
 export function formatDailyShare(result: DailyResult): string {
-  const squares = (result.marks ?? [])
-    .map((m) => (m === "MATCH" ? "🟦" : "🟥"))
-    .join("");
-  const left = Math.max(0, DAILY_MAX_MISSES - (result.missesUsed ?? 0));
-  const line3 = result.failed ? "Failed" : `${left}/${DAILY_MAX_MISSES} misses left`;
+  const rounds = (result.roundEvents ?? []).map((events, i) => {
+    const peek = result.peekUsed && result.peekRound === i + 1 ? "👀" : "";
+    const marks = events.map((m) => (m === "SOLVE" ? "🔵" : "🔴")).join("");
+    return `R${i + 1} ${peek}${marks}`;
+  });
+
+  const solved = result.roundsSolved ?? 0;
+  const misses = result.totalMisses ?? 0;
+  const line3 =
+    solved === 0
+      ? "Whooped! Better luck tomorrow."
+      : `${solved} of ${DAILY_ROUNDS} · ${misses === 0 ? "Clean" : `${misses} misses`}`;
+
   return [
     `WHOOP! WHOOP! #${result.puzzleNumber}`,
-    squares,
+    rounds.join(" · "),
     line3,
+    "",
     DAILY_SHARE_URL,
   ].join("\n");
 }
-
