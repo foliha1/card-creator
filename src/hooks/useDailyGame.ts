@@ -92,14 +92,12 @@ export function useDailyGame(): UseDailyGameResult {
   }, [state.phase]);
 
   // ---- study countdown ----
-  const [studyStart, setStudyStart] = useState<number | null>(null);
   const [studyRemaining, setStudyRemaining] = useState(
     Math.ceil(STUDY_MS / 1000)
   );
   useEffect(() => {
     if (state.phase !== "STUDY") return;
     const start = Date.now();
-    setStudyStart(start);
     setStudyRemaining(Math.ceil(STUDY_MS / 1000));
     const id = setInterval(() => {
       const left = Math.max(0, STUDY_MS - (Date.now() - start));
@@ -107,7 +105,6 @@ export function useDailyGame(): UseDailyGameResult {
     }, 100);
     return () => clearInterval(id);
   }, [state.phase]);
-  void studyStart;
 
   // ---- running clock ----
   const [now, setNow] = useState(() => Date.now());
