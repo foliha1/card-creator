@@ -822,6 +822,8 @@ export interface UseGameStateOptions {
   seatCount?: number;
   botSeats?: number[];
   names?: string[];
+  /** Optional reproducible seed (daily puzzle). Omitted = Math.random. */
+  seed?: string;
 }
 
 export function useGameState(
@@ -844,7 +846,7 @@ export function useGameState(
   const [state, dispatch] = useReducer(
     reducer,
     undefined,
-    () => initialState(slotCount, { seatCount, names })
+    () => initialState(slotCount, { seatCount, names, seed: opts.seed })
   );
 
   const stateRef = useRef(state);
@@ -879,8 +881,8 @@ export function useGameState(
     initKeyRef.current = key;
     memoryRef.current?.reset();
     prevPeekingRef.current = null;
-    dispatch({ type: "INIT", slotCount, seatCount, names });
-  }, [slotCount, seatCount, names]);
+    dispatch({ type: "INIT", slotCount, seatCount, names, seed: opts.seed });
+  }, [slotCount, seatCount, names, opts.seed]);
 
 
   const runRollAnimation = useCallback((predetermined?: string[]): Promise<string[]> => {
