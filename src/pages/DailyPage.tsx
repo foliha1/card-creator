@@ -88,7 +88,7 @@ const DailyPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Daily Puzzle #{daily.puzzleNumber} | Whoop Whoop</title>
+        <title>{`Daily Puzzle #${daily.puzzleNumber} | Whoop Whoop`}</title>
         <meta
           name="description"
           content="One grid, one die, one shot. Everyone plays the same Whoop Whoop daily puzzle — see how few flips it takes you."
