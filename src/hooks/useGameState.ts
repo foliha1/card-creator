@@ -3,6 +3,7 @@ import { Card, createDeck, ATTRIBUTES } from "@/cardData";
 import { createOpponentMemory, OpponentMemory } from "@/lib/opponentMemory";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
 import { createRng, type Rng } from "@/lib/rng";
+import { computeSafetySwap, rngOf } from "@/lib/rolls";
 
 type MessageType = "info" | "success" | "error" | "warning";
 
@@ -880,7 +881,7 @@ export function useGameState(
       const finalValues =
         predetermined && predetermined.length === count
           ? predetermined
-          : rollRandomAttributes(count);
+          : rollRandomAttributes(count, rngOf(stateRef.current));
       const { rule } = computeRule(finalValues);
       if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
       rollIntervalRef.current = setInterval(() => {
@@ -1058,17 +1059,9 @@ export function useGameState(
       .map((c, i) => (c !== null ? i : -1))
       .filter((i) => i !== -1);
     if (filledIndices.length < 2 || deck.length < 2) return;
-    const swapIndices = shuffleArray([...filledIndices]).slice(0, 2);
-    const newDeck = [...deck];
-    const newGrid = [...grid];
-    for (const idx of swapIndices) {
-      if (newGrid[idx]) newDeck.push(newGrid[idx]!);
-    }
-    shuffleArray(newDeck);
-    for (const idx of swapIndices) {
-      newGrid[idx] = newDeck.length > 0 ? newDeck.shift()! : null;
-    }
-    dispatch({ type: "SAFETY_SWAP", grid: newGrid, deck: newDeck });
+    // Seed-aware: draws from the state rng so a reshuffle stays reproducible.
+    const swapped = computeSafetySwap(grid, deck, rngOf(state));
+    dispatch({ type: "SAFETY_SWAP", grid: swapped.grid, deck: swapped.deck });
   }, [state.grid, state.deck, state.phase, state.rolling]);
 
   // Bot memory — only if any bot seat exists

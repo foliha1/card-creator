@@ -14,6 +14,7 @@ import {
   SETTLE_WRONG_MS,
 } from "@/hooks/useGameState";
 
+import { pickRoll, pickTumbleSeed, rngOf } from "@/lib/rolls";
 import { toPublicState, type PublicState } from "@/lib/publicState";
 import type {
   IntentAction,
@@ -93,9 +94,8 @@ export function useSoloGame(gridSize: "3x2" | "3x3" = "3x3"): UseSoloGameResult 
   const commitAndRoll = useCallback(() => {
     const s = stateRef.current;
     if (s.phase !== "AWAITING_ROLL" || s.rolling) return;
-    const attribute = ROLL_ATTRS[Math.floor(Math.random() * ROLL_ATTRS.length)];
-    const faceIndex = (Math.floor(Math.random() * 2) as 0 | 1);
-    const tumbleSeed = Math.floor(Math.random() * 2 ** 31);
+    const { attribute, faceIndex } = pickRoll(ROLL_ATTRS, rngOf(s));
+    const tumbleSeed = pickTumbleSeed();
     const startAt = Date.now() + 150;
     setRollCommit({
       roundId: `solo:${s.roundNum}`,
