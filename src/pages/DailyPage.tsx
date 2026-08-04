@@ -429,11 +429,13 @@ const DailyPage: React.FC = () => {
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
               attributes={daily.result!.attributes}
-              missesUsed={daily.result!.missesUsed}
-              marks={daily.result!.marks}
+              roundsSolved={daily.result!.roundsSolved}
+              totalMisses={daily.result!.totalMisses}
+              roundEvents={daily.result!.roundEvents}
+              peekUsed={daily.result!.peekUsed}
+              peekRound={daily.result!.peekRound}
               failed={daily.result!.failed}
               shareText={formatDailyShare(daily.result!)}
-
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
@@ -513,7 +515,7 @@ const DailyPage: React.FC = () => {
                     {readout}
                   </div>
                   <div style={{ marginTop: SPACE[2] }}>
-                    <MissTracker used={state.missesUsed} />
+                    <MissTracker used={state.roundMisses} />
                   </div>
                 </div>
                 <DailyDie
@@ -549,7 +551,7 @@ const DailyPage: React.FC = () => {
                     <GameCard
                       key={card.id}
                       card={card}
-                      faceUp={state.faceUp}
+                      faceUp={state.faceUp || state.revealPair.includes(idx)}
                       highlighted={state.selected.includes(idx)}
                       matched={state.matchedPair.includes(idx)}
                       wrong={state.wrongPair.includes(idx)}
@@ -603,6 +605,25 @@ const DailyPage: React.FC = () => {
                 </button>
               )}
 
+              <button
+                type="button"
+                className="ww-press"
+                disabled={!daily.canPeek}
+                onClick={() => {
+                  hapticTap();
+                  daily.peek();
+                }}
+                style={{
+                  ...buttonStyle("ink", "md", {
+                    mobile,
+                    fullWidth: true,
+                    disabled: !daily.canPeek,
+                  }),
+                }}
+              >
+                {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
+              </button>
+
               <p
                 style={{
                   ...textStyle("caption", mobile),
@@ -612,7 +633,7 @@ const DailyPage: React.FC = () => {
                 }}
               >
                 {phase === "PLAY"
-                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MAX_MISSES - state.missesUsed} misses left.`
+                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MISSES_PER_ROUND - state.roundMisses} misses left this round.`
                   : "Nine cards, ten seconds. Then the die decides each round's rule."}
               </p>
             </div>
