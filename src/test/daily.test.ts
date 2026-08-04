@@ -17,7 +17,7 @@ import {
   remainingCount,
   currentRoll,
   STUDY_MS,
-  MAX_MISSES,
+  MISSES_PER_ROUND,
   DAILY_ROUNDS,
   type DailyState,
 } from "@/lib/dailyEngine";
@@ -237,7 +237,8 @@ describe("three-round progression and shrinking board", () => {
     expect(remainingCount(s)).toBe(3);
     // 1s + 1s + 1s of play; roll gaps are not counted.
     expect(s.elapsedMs).toBe(3000);
-    expect(s.missesUsed).toBe(0);
+    expect(s.totalMisses).toBe(0);
+    expect(s.roundsSolved).toBe(3);
     expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
   });
 
@@ -258,66 +259,89 @@ describe("three-round progression and shrinking board", () => {
   });
 });
 
-describe("miss cap", () => {
-  const wrongOnce = (s: DailyState, at: number): DailyState => {
-    const [i, j] = pairFor(s, false);
-    let n = dailyReducer(s, { type: "CLAIM" });
-    n = dailyReducer(n, { type: "SELECT", idx: i });
-    n = dailyReducer(n, { type: "SELECT", idx: j });
-    return dailyReducer(n, { type: "RESOLVE", at });
-  };
+const wrongOnce = (s: DailyState, at: number): DailyState => {
+  const [i, j] = pairFor(s, false);
+  let n = dailyReducer(s, { type: "CLAIM" });
+  n = dailyReducer(n, { type: "SELECT", idx: i });
+  n = dailyReducer(n, { type: "SELECT", idx: j });
+  return dailyReducer(n, { type: "RESOLVE", at });
+};
 
-  it("spends one miss, adds no time penalty, and the round continues", () => {
+describe("per-round miss cap", () => {
+  it("spends one miss and the round continues", () => {
     let s = toPlay(0);
-    expect(MAX_MISSES).toBe(5);
+    expect(MISSES_PER_ROUND).toBe(2);
     s = wrongOnce(s, 2000);
     expect(s.phase).toBe("PLAY");
     expect(s.roundIndex).toBe(1);
     expect(remainingCount(s)).toBe(9);
-    expect(s.missesUsed).toBe(1);
-    expect(s.marks).toEqual(["MISS"]);
+    expect(s.roundMisses).toBe(1);
+    expect(s.totalMisses).toBe(1);
+    expect(s.roundEvents[0]).toEqual(["MISS"]);
     expect(s.failed).toBe(false);
-    expect(s.elapsedMs).toBeNull();
-    expect(liveElapsedMs(s, 2000)).toBe(2000);
-    expect(s.faceUp).toBe(false);
     expect(s.claiming).toBe(false);
     expect(s.wrongPair).toHaveLength(2);
   });
 
-  it("accumulates misses across rounds as one pool", () => {
+  it("Whoops the round on the second miss, revealing and removing the answer", () => {
     let s = toPlay(0);
     s = wrongOnce(s, 500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
+    s = wrongOnce(s, 1000);
+    expect(s.roundMisses).toBe(2);
+    expect(s.phase).toBe("WHOOPED");
+    expect(s.revealPair).toHaveLength(2);
+    expect(remainingCount(s)).toBe(9);
+
+    s = dailyReducer(s, { type: "ROUND_END", at: 1500 });
+    expect(s.phase).toBe("HIDE");
+    expect(s.roundIndex).toBe(2);
+    expect(remainingCount(s)).toBe(7);
+    expect(s.roundsSolved).toBe(0);
+    expect(s.revealPair).toEqual([]);
+  });
+
+  it("resets misses each round", () => {
+    let s = toPlay(0);
+    s = wrongOnce(s, 500);
+    s = dailyReducer(s, { type: "CLEAR_WRONG" });
+    expect(s.roundMisses).toBe(1);
     s = solveRound(s, 1000);
+    expect(s.roundMisses).toBe(0);
     s = nextRound(s, 2000);
     s = wrongOnce(s, 2500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
-    s = wrongOnce(s, 2600);
-    s = dailyReducer(s, { type: "CLEAR_WRONG" });
+    expect(s.roundMisses).toBe(1);
+    expect(s.totalMisses).toBe(2);
     s = solveRound(s, 3000);
     s = nextRound(s, 4000);
+    expect(s.roundMisses).toBe(0);
     s = solveRound(s, 5000);
     expect(s.phase).toBe("DONE");
+    expect(s.roundsSolved).toBe(3);
+    expect(s.totalMisses).toBe(2);
+    expect(s.roundEvents).toEqual([["MISS", "SOLVE"], ["MISS", "SOLVE"], ["SOLVE"]]);
     expect(s.failed).toBe(false);
-    expect(s.missesUsed).toBe(3);
-    expect(s.marks).toEqual(["MISS", "MATCH", "MISS", "MISS", "MATCH", "MATCH"]);
-    expect(s.elapsedMs).toBe(3000);
   });
 
-  it("ends the run immediately on the fifth miss", () => {
+  it("never ends the run early — all three rounds are played", () => {
     let s = toPlay(0);
-    for (let i = 0; i < 4; i++) {
-      s = wrongOnce(s, 100 * (i + 1));
+    for (let r = 0; r < DAILY_ROUNDS; r++) {
+      s = wrongOnce(s, 100 * (r + 1));
       s = dailyReducer(s, { type: "CLEAR_WRONG" });
       expect(s.phase).toBe("PLAY");
+      s = wrongOnce(s, 200 * (r + 1));
+      expect(s.phase).toBe("WHOOPED");
+      s = dailyReducer(s, { type: "ROUND_END", at: 300 * (r + 1) });
+      if (r < DAILY_ROUNDS - 1) {
+        s = nextRound(s, 1000 * (r + 1));
+      }
     }
-    s = wrongOnce(s, 5000);
-    expect(s.missesUsed).toBe(5);
     expect(s.phase).toBe("DONE");
+    expect(s.roundsSolved).toBe(0);
+    expect(s.totalMisses).toBe(6);
     expect(s.failed).toBe(true);
-    expect(s.roundIndex).toBe(1);
-    expect(s.elapsedMs).toBe(5000);
-    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+    expect(remainingCount(s)).toBe(3);
   });
 
   it("records zero misses on a clean run", () => {
@@ -328,47 +352,125 @@ describe("miss cap", () => {
     s = nextRound(s, 4000);
     s = solveRound(s, 5000);
     expect(s.phase).toBe("DONE");
-    expect(s.missesUsed).toBe(0);
+    expect(s.totalMisses).toBe(0);
     expect(s.failed).toBe(false);
-    expect(s.marks).toEqual(["MATCH", "MATCH", "MATCH"]);
     expect(formatSeconds(s.elapsedMs!)).toBe("3.0");
+  });
+});
+
+describe("peek", () => {
+  it("reveals the board once per run and then locks out", () => {
+    let s = toPlay(0);
+    expect(canPeek(s)).toBe(true);
+    s = dailyReducer(s, { type: "PEEK" });
+    expect(s.peeking).toBe(true);
+    expect(s.faceUp).toBe(true);
+    expect(s.peekUsed).toBe(true);
+    expect(s.peekRound).toBe(1);
+    // no claiming mid-peek
+    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+
+    s = dailyReducer(s, { type: "PEEK_END" });
+    expect(s.peeking).toBe(false);
+    expect(s.faceUp).toBe(false);
+    expect(canPeek(s)).toBe(false);
+    expect(dailyReducer(s, { type: "PEEK" })).toBe(s);
+  });
+
+  it("is not available mid-claim or before play", () => {
+    const ready = initDailyState(SEED);
+    expect(canPeek(ready)).toBe(false);
+    expect(dailyReducer(ready, { type: "PEEK" })).toBe(ready);
+    const claimed = dailyReducer(toPlay(0), { type: "CLAIM" });
+    expect(canPeek(claimed)).toBe(false);
+    expect(dailyReducer(claimed, { type: "PEEK" })).toBe(claimed);
   });
 });
 
 describe("formatDailyShare", () => {
   const base = {
     seed: "whoop-2026-08-04",
-    puzzleNumber: 114,
+    puzzleNumber: 14,
     attributes: ["SHAPE", "NUMBER", "COLOR"] as ("SHAPE" | "NUMBER" | "COLOR")[],
     elapsedMs: 12345,
     completedAt: "2026-08-04T00:00:00.000Z",
+    peekUsed: false,
+    peekRound: null,
   };
 
   it("formats a clean run", () => {
     expect(
-      formatDailyShare({ ...base, missesUsed: 0, marks: ["MATCH", "MATCH", "MATCH"], failed: false })
-    ).toBe("WHOOP! WHOOP! #114\n🟦🟦🟦\n5/5 misses left\nwhoop-whoop.lovable.app/today");
+      formatDailyShare({
+        ...base,
+        roundsSolved: 3,
+        totalMisses: 0,
+        roundEvents: [["SOLVE"], ["SOLVE"], ["SOLVE"]],
+        failed: false,
+      })
+    ).toBe(
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔵 · R3 🔵\n3 of 3 · Clean\n\nwhoop-whoop.lovable.app/today"
+    );
   });
 
   it("formats a run with misses", () => {
     expect(
       formatDailyShare({
         ...base,
-        missesUsed: 1,
-        marks: ["MATCH", "MISS", "MATCH", "MATCH"],
+        roundsSolved: 3,
+        totalMisses: 2,
+        roundEvents: [["SOLVE"], ["MISS", "SOLVE"], ["MISS", "SOLVE"]],
         failed: false,
       })
-    ).toBe("WHOOP! WHOOP! #114\n🟦🟥🟦🟦\n4/5 misses left\nwhoop-whoop.lovable.app/today");
+    ).toBe(
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴🔵 · R3 🔴🔵\n3 of 3 · 2 misses\n\nwhoop-whoop.lovable.app/today"
+    );
   });
 
-  it("formats a failed run", () => {
+  it("leads the peek round with eyes", () => {
     expect(
       formatDailyShare({
         ...base,
-        missesUsed: 5,
-        marks: ["MISS", "MISS", "MATCH", "MISS", "MISS", "MISS"],
+        peekUsed: true,
+        peekRound: 2,
+        roundsSolved: 3,
+        totalMisses: 3,
+        roundEvents: [["SOLVE"], ["MISS", "SOLVE"], ["MISS", "MISS"]],
+        failed: false,
+      })
+    ).toBe(
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 👀🔴🔵 · R3 🔴🔴\n3 of 3 · 3 misses\n\nwhoop-whoop.lovable.app/today"
+    );
+  });
+
+  it("shows a Whooped round as misses with no solve", () => {
+    expect(
+      formatDailyShare({
+        ...base,
+        roundsSolved: 2,
+        totalMisses: 2,
+        roundEvents: [["SOLVE"], ["MISS", "MISS"], ["SOLVE"]],
+        failed: false,
+      })
+    ).toBe(
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴🔴 · R3 🔵\n2 of 3 · 2 misses\n\nwhoop-whoop.lovable.app/today"
+    );
+  });
+
+  it("replaces the score line when every round fails", () => {
+    expect(
+      formatDailyShare({
+        ...base,
+        roundsSolved: 0,
+        totalMisses: 6,
+        roundEvents: [
+          ["MISS", "MISS"],
+          ["MISS", "MISS"],
+          ["MISS", "MISS"],
+        ],
         failed: true,
       })
-    ).toBe("WHOOP! WHOOP! #114\n🟥🟥🟦🟥🟥🟥\nFailed\nwhoop-whoop.lovable.app/today");
+    ).toBe(
+      "WHOOP! WHOOP! #14\nR1 🔴🔴 · R2 🔴🔴 · R3 🔴🔴\nWhooped! Better luck tomorrow.\n\nwhoop-whoop.lovable.app/today"
+    );
   });
 });
