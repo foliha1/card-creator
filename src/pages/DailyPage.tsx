@@ -13,7 +13,9 @@ import {
   type DailyMark,
   type DailyPhase,
 } from "@/lib/dailyEngine";
+import { formatDailyShare } from "@/lib/daily";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
+
 import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
 import {
   BORDER,
@@ -140,16 +142,70 @@ const MarksRow: React.FC<{ marks: DailyMark[] }> = ({ marks }) => (
   </div>
 );
 
+/** Share block — squares and counts only, never a card, position or rule. */
+const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile }) => {
+  const [copied, setCopied] = useState(false);
+
+  const share = async () => {
+    hapticTap();
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({ text });
+        return;
+      }
+    } catch {
+      /* user dismissed or share unsupported — fall through to clipboard */
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked — nothing more we can do */
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
+      <pre
+        style={{
+          margin: 0,
+          border: BORDER.heavy,
+          borderRadius: RADIUS.sm,
+          background: COLORS.panel,
+          padding: SPACE[4],
+          textAlign: "center",
+          whiteSpace: "pre-wrap",
+          ...textStyle("caption", mobile),
+          color: COLORS.ink,
+        }}
+      >
+        {text}
+      </pre>
+      <button
+        type="button"
+        className="ww-press"
+        onClick={share}
+        style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
+      >
+        {copied ? "COPIED" : "SHARE"}
+      </button>
+    </div>
+  );
+};
+
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
   attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
   missesUsed: number;
   marks: DailyMark[];
   failed: boolean;
+  shareText: string;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
-}> = ({ puzzleNumber, attributes, missesUsed, marks, failed, mobile, revisit, onLeave }) => {
+}> = ({ puzzleNumber, attributes, missesUsed, marks, failed, shareText, mobile, revisit, onLeave }) => {
+
   const stat = (label: string, value: string) => (
     <div
       key={label}
@@ -195,6 +251,8 @@ const DailyResultCard: React.FC<{
         {stat("Misses", `${missesUsed}/${MAX_MISSES}`)}
       </div>
       <MarksRow marks={marks} />
+      <ShareBlock text={shareText} mobile={mobile} />
+
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {attributes.map((attr, i) => (
           <div
@@ -330,6 +388,8 @@ const DailyPage: React.FC = () => {
               missesUsed={daily.result!.missesUsed}
               marks={daily.result!.marks}
               failed={daily.result!.failed}
+              shareText={formatDailyShare(daily.result!)}
+
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
