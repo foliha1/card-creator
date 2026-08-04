@@ -16,6 +16,7 @@ import {
   rollsAreSolvable,
   remainingCount,
   currentRoll,
+  canPeek,
   STUDY_MS,
   MISSES_PER_ROUND,
   DAILY_ROUNDS,
