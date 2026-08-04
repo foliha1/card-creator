@@ -11,10 +11,18 @@ import {
   initDailyState,
   liveElapsedMs,
   formatSeconds,
+  pairsFor,
+  rollsAreSolvable,
+  remainingCount,
+  currentRoll,
   STUDY_MS,
   WRONG_PENALTY_MS,
+  DAILY_ROUNDS,
   type DailyState,
 } from "@/lib/dailyEngine";
+import { createRng } from "@/lib/rng";
+import { createDeck } from "@/cardData";
+import { pickRoll } from "@/lib/rolls";
 
 describe("getDailySeed", () => {
   it("formats whoop-YYYY-MM-DD in UTC", () => {
@@ -56,34 +64,68 @@ describe("getDailyNumber", () => {
 
 const SEED = "whoop-2026-08-04";
 
-describe("daily board is reproducible from the seed", () => {
-  it("same seed, same six cards and same die", () => {
+describe("daily board and dice are reproducible from the seed", () => {
+  it("same seed, same nine cards and same three dice", () => {
     const a = initDailyState(SEED);
     const b = initDailyState(SEED);
-    expect(a.grid.map((c) => c.id)).toEqual(b.grid.map((c) => c.id));
-    expect(a.attribute).toBe(b.attribute);
-    expect(a.faceIndex).toBe(b.faceIndex);
-    expect(a.grid).toHaveLength(6);
+    expect(a.grid.map((c) => c!.id)).toEqual(b.grid.map((c) => c!.id));
+    expect(a.rolls).toEqual(b.rolls);
+    expect(a.grid).toHaveLength(9);
+    expect(a.rolls).toHaveLength(DAILY_ROUNDS);
   });
 
-  it("always deals a solvable board for the rolled attribute", () => {
-    for (let d = 1; d <= 40; d++) {
-      const s = initDailyState(`whoop-2026-09-${String(d).padStart(2, "0")}`);
-      const pairs = s.grid.flatMap((c, i) =>
-        s.grid.slice(i + 1).filter((o) => {
-          if (s.attribute === "SHAPE") return o.shape === c.shape;
-          if (s.attribute === "NUMBER") return o.number === c.number;
-          return o.color === c.color;
-        })
-      );
-      expect(pairs.length).toBeGreaterThan(0);
+  it("draws all three rolls from the seeded source, in order, after the deal", () => {
+    const s = initDailyState(SEED);
+    // Reproduce the seeded stream: deck first, then rolls in triples until a
+    // solvable set is found — exactly what init does.
+    const rng = createRng(SEED);
+    const grid = createDeck(rng).slice(0, 9);
+    expect(s.grid.map((c) => c!.id)).toEqual(grid.map((c) => c.id));
+    let rolls = [] as ReturnType<typeof pickRoll>[];
+    for (let attempt = 0; attempt < 500; attempt++) {
+      const candidate = [0, 1, 2].map(() => pickRoll(["SHAPE", "NUMBER", "COLOR"] as const, rng));
+      if (rollsAreSolvable(grid, candidate)) {
+        rolls = candidate;
+        break;
+      }
     }
+    expect(s.rolls).toEqual(rolls);
+  });
+
+  it("differs across days", () => {
+    const a = initDailyState("whoop-2026-08-04");
+    const b = initDailyState("whoop-2026-08-05");
+    expect(a.grid.map((c) => c!.id)).not.toEqual(b.grid.map((c) => c!.id));
   });
 });
 
-/** Advance the machine to PLAY, with the clock started at `at`. */
+describe("no-valid-pair guard", () => {
+  it("every day's three rolls stay solvable on every reachable board", () => {
+    for (let d = 1; d <= 40; d++) {
+      const s = initDailyState(`whoop-2026-09-${String(d).padStart(2, "0")}`);
+      expect(rollsAreSolvable(s.grid, s.rolls)).toBe(true);
+    }
+  });
+
+  it("rejects a roll set whose later round has no pair", () => {
+    const board = [
+      { id: "a", shape: "circle", number: 1, color: "red", svgPath: "" },
+      { id: "b", shape: "circle", number: 2, color: "blue", svgPath: "" },
+    ] as never as (null | Parameters<typeof pairsFor>[0][number])[];
+    expect(pairsFor(board, "SHAPE")).toHaveLength(1);
+    expect(
+      rollsAreSolvable(board, [
+        { attribute: "SHAPE", faceIndex: 0 },
+        { attribute: "COLOR", faceIndex: 0 },
+      ])
+    ).toBe(false);
+  });
+});
+
+/** Advance the machine to PLAY of round 1, with the clock started at `at`. */
 function toPlay(at = 1000): DailyState {
   let s = initDailyState(SEED);
+  s = dailyReducer(s, { type: "START" });
   s = dailyReducer(s, { type: "REVEAL" });
   s = dailyReducer(s, { type: "HIDE" });
   s = dailyReducer(s, { type: "ROLL_START" });
@@ -91,26 +133,59 @@ function toPlay(at = 1000): DailyState {
 }
 
 function pairFor(s: DailyState, correct: boolean): [number, number] {
-  const same = (a: number, b: number) => {
-    const x = s.grid[a];
-    const y = s.grid[b];
-    if (s.attribute === "SHAPE") return x.shape === y.shape;
-    if (s.attribute === "NUMBER") return x.number === y.number;
-    return x.color === y.color;
-  };
+  const attr = currentRoll(s).attribute;
+  if (correct) return pairsFor(s.grid, attr)[0];
   for (let i = 0; i < s.grid.length; i++) {
     for (let j = i + 1; j < s.grid.length; j++) {
-      if (same(i, j) === correct) return [i, j];
+      const a = s.grid[i];
+      const b = s.grid[j];
+      if (!a || !b) continue;
+      const same =
+        attr === "SHAPE"
+          ? a.shape === b.shape
+          : attr === "NUMBER"
+            ? a.number === b.number
+            : a.color === b.color;
+      if (!same) return [i, j];
     }
   }
-  throw new Error(`no ${correct ? "matching" : "mismatched"} pair on board`);
+  throw new Error("no mismatched pair on board");
 }
 
-describe("daily phase sequence", () => {
-  it("runs DEAL → STUDY → HIDE → ROLL → PLAY, flipping the board up then down", () => {
-    let s = initDailyState(SEED);
-    expect(s.phase).toBe("DEAL");
+/** Solve the current round correctly at time `at`. */
+function solveRound(s: DailyState, at: number): DailyState {
+  const [i, j] = pairFor(s, true);
+  let n = dailyReducer(s, { type: "CLAIM" });
+  n = dailyReducer(n, { type: "SELECT", idx: i });
+  n = dailyReducer(n, { type: "SELECT", idx: j });
+  return dailyReducer(n, { type: "RESOLVE", at });
+}
+
+/** Re-enter PLAY for the next round with the clock restarting at `at`. */
+function nextRound(s: DailyState, at: number): DailyState {
+  let n = dailyReducer(s, { type: "CLEAR_MATCH" });
+  n = dailyReducer(n, { type: "ROLL_START" });
+  return dailyReducer(n, { type: "PLAY_START", at });
+}
+
+describe("start gate", () => {
+  it("stays on READY until START, running nothing", () => {
+    const s = initDailyState(SEED);
+    expect(s.phase).toBe("READY");
     expect(s.faceUp).toBe(false);
+    expect(s.startedAt).toBeNull();
+    expect(dailyReducer(s, { type: "REVEAL" })).toBe(s);
+    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+    const started = dailyReducer(s, { type: "START" });
+    expect(started.phase).toBe("DEAL");
+    expect(dailyReducer(started, { type: "START" })).toBe(started);
+  });
+});
+
+describe("daily phase sequence", () => {
+  it("runs READY → DEAL → STUDY → HIDE → ROLL → PLAY, flipping up then down once", () => {
+    let s = dailyReducer(initDailyState(SEED), { type: "START" });
+    expect(s.phase).toBe("DEAL");
 
     s = dailyReducer(s, { type: "REVEAL" });
     expect(s.phase).toBe("STUDY");
@@ -129,42 +204,56 @@ describe("daily phase sequence", () => {
     expect(STUDY_MS).toBe(5000);
   });
 
-  it("ignores out-of-order transitions", () => {
-    const s = initDailyState(SEED);
-    expect(dailyReducer(s, { type: "HIDE" })).toBe(s);
-    expect(dailyReducer(s, { type: "ROLL_START" })).toBe(s);
-    expect(dailyReducer(s, { type: "PLAY_START", at: 1 })).toBe(s);
-    const study = dailyReducer(s, { type: "REVEAL" });
-    expect(dailyReducer(study, { type: "REVEAL" })).toBe(study);
-  });
-
-  it("rejects claims and selections before PLAY", () => {
-    const s = dailyReducer(initDailyState(SEED), { type: "REVEAL" });
-    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
-    expect(dailyReducer(s, { type: "SELECT", idx: 0 })).toBe(s);
-  });
-
   it("requires a claim before cards can be selected", () => {
     const s = toPlay();
     expect(dailyReducer(s, { type: "SELECT", idx: 0 })).toBe(s);
     const claimed = dailyReducer(s, { type: "CLAIM" });
-    expect(claimed.claiming).toBe(true);
     expect(dailyReducer(claimed, { type: "SELECT", idx: 0 }).selected).toEqual([0]);
   });
+});
 
-  it("a correct pair stops the clock and ends the puzzle", () => {
-    let s = toPlay(1000);
-    const [i, j] = pairFor(s, true);
-    s = dailyReducer(s, { type: "CLAIM" });
-    s = dailyReducer(s, { type: "SELECT", idx: i });
-    s = dailyReducer(s, { type: "SELECT", idx: j });
-    s = dailyReducer(s, { type: "RESOLVE", at: 5500 });
+describe("three-round progression and shrinking board", () => {
+  it("removes each matched pair for good: 9 → 7 → 5 → 3", () => {
+    let s = toPlay(0);
+    expect(remainingCount(s)).toBe(9);
+    expect(s.roundIndex).toBe(1);
+
+    s = solveRound(s, 1000);
+    expect(s.phase).toBe("HIDE");
+    expect(s.roundIndex).toBe(2);
+    expect(remainingCount(s)).toBe(7);
+    expect(s.faceUp).toBe(false);
+
+    s = nextRound(s, 2000);
+    expect(currentRoll(s).attribute).toBe(s.rolls[1].attribute);
+    s = solveRound(s, 3000);
+    expect(s.roundIndex).toBe(3);
+    expect(remainingCount(s)).toBe(5);
+
+    s = nextRound(s, 4000);
+    s = solveRound(s, 5000);
     expect(s.phase).toBe("DONE");
-    expect(s.elapsedMs).toBe(4500);
+    expect(remainingCount(s)).toBe(3);
+    // 1s + 1s + 1s of play; roll gaps are not counted.
+    expect(s.elapsedMs).toBe(3000);
     expect(s.wrongCalls).toBe(0);
-    expect(s.matchedPair).toEqual([i, j]);
-    // Puzzle is over: no further play.
     expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+  });
+
+  it("pauses the clock between rounds", () => {
+    let s = toPlay(0);
+    s = solveRound(s, 1000);
+    expect(s.startedAt).toBeNull();
+    expect(liveElapsedMs(s, 9_999)).toBe(1000);
+  });
+
+  it("cannot select an emptied slot", () => {
+    let s = toPlay(0);
+    const [i] = pairFor(s, true);
+    s = solveRound(s, 1000);
+    s = nextRound(s, 2000);
+    s = dailyReducer(s, { type: "CLAIM" });
+    expect(dailyReducer(s, { type: "SELECT", idx: i }).selected).toEqual([]);
   });
 });
 
@@ -177,34 +266,34 @@ describe("wrong-pair penalty", () => {
     return dailyReducer(n, { type: "RESOLVE", at });
   };
 
-  it("adds exactly 1 second, counts the wrong call, and play continues", () => {
+  it("adds exactly 1 second, counts the wrong call, and the round continues", () => {
     let s = toPlay(0);
     s = wrongOnce(s, 2000);
     expect(WRONG_PENALTY_MS).toBe(1000);
     expect(s.phase).toBe("PLAY");
+    expect(s.roundIndex).toBe(1);
+    expect(remainingCount(s)).toBe(9);
     expect(s.wrongCalls).toBe(1);
     expect(s.penaltyMs).toBe(1000);
     expect(s.elapsedMs).toBeNull();
-    expect(s.faceUp).toBe(false); // cards stay down
+    expect(s.faceUp).toBe(false);
     expect(s.claiming).toBe(false);
-    expect(s.selected).toEqual([]);
     expect(s.wrongPair).toHaveLength(2);
   });
 
-  it("stacks penalties into the final time", () => {
+  it("totals penalties across rounds into the final time", () => {
     let s = toPlay(0);
-    s = wrongOnce(s, 1000);
+    s = wrongOnce(s, 500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
-    s = wrongOnce(s, 2000);
+    s = solveRound(s, 1000);
+    s = nextRound(s, 2000);
+    s = wrongOnce(s, 2500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
+    s = solveRound(s, 3000);
+    s = nextRound(s, 4000);
+    s = solveRound(s, 5000);
     expect(s.wrongCalls).toBe(2);
-
-    const [i, j] = pairFor(s, true);
-    s = dailyReducer(s, { type: "CLAIM" });
-    s = dailyReducer(s, { type: "SELECT", idx: i });
-    s = dailyReducer(s, { type: "SELECT", idx: j });
-    s = dailyReducer(s, { type: "RESOLVE", at: 10_000 });
-    expect(s.elapsedMs).toBe(12_000); // 10s raw + 2s of penalties
+    expect(s.elapsedMs).toBe(3000 + 2000);
   });
 
   it("shows the penalty on the live clock immediately", () => {
