@@ -55,7 +55,15 @@ export interface UseDailyGameResult {
 export function useDailyGame(): UseDailyGameResult {
   const seed = useMemo(() => getDailySeed(), []);
   const puzzleNumber = useMemo(() => getDailyNumber(), []);
-  const stored = useMemo(() => loadDailyResult(seed), [seed]);
+  // Testing-only bypass: ?debug=1 ignores (and never writes) the daily lock.
+  const debugBypass = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("debug") === "1";
+  }, []);
+  const stored = useMemo(
+    () => (debugBypass ? null : loadDailyResult(seed)),
+    [seed, debugBypass]
+  );
 
   const [state, dispatch] = useReducer(
     dailyReducer,
@@ -65,6 +73,7 @@ export function useDailyGame(): UseDailyGameResult {
   const [tumbleSeed] = useState(() => pickTumbleSeed());
   const [result, setResult] = useState<DailyResult | null>(stored);
   const alreadyPlayed = stored !== null;
+
 
   // ---- phase sequence: (start gate) deal → study → hide → roll → play ----
   useEffect(() => {
