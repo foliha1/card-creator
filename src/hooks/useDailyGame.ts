@@ -95,9 +95,6 @@ export function useDailyGame(gridSize: "3x2" | "3x3" = "3x2"): UseDailyGameResul
     setResult(finished);
   }, [state.settleKind, state.flipCount, state.wrongCalls, result, seed, puzzleNumber]);
 
-  const tokenRef = useRef(0);
-  const nextToken = () => ++tokenRef.current;
-
   const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
   const commitAndRoll = useCallback(() => {
     const s = stateRef.current;
