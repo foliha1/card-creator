@@ -10,12 +10,13 @@
 //   STUDY  all nine flip face up and hold for STUDY_MS with a countdown
 //   HIDE   all nine flip back face down — they are never shown again
 //   ROLL   the die rolls for the current round (clock paused)
-//   PLAY   clock runs; player claims, then taps two cards
-//   DONE   all three rounds solved
+//   PLAY   player claims, then taps two cards
+//   DONE   all three rounds solved, or the miss pool ran out
 //
 // A correct pair is removed from the board for good (9 → 7 → 5). A wrong pair
-// adds WRONG_PENALTY_MS to the total, increments wrongCalls, and play continues
-// in the same round with the cards still face down.
+// spends one of MAX_MISSES misses and play continues in the same round with the
+// cards still face down. Spending the fifth miss ends the run as a failure.
+// The run is still timed as elapsedMs, but time is never scored or displayed.
 //
 // All three die rolls are drawn from the daily seed at init time and validated
 // so that every reachable board still holds a pair for that round's rule — the
@@ -27,8 +28,9 @@ import { createRng, type Rng } from "@/lib/rng";
 import { pickRoll } from "@/lib/rolls";
 import type { RollAttribute } from "@/lib/multiplayer";
 
-export const STUDY_MS = 5000;
-export const WRONG_PENALTY_MS = 1000;
+export const STUDY_MS = 10000;
+/** Single pool of wrong calls across all three rounds. */
+export const MAX_MISSES = 5;
 export const DAILY_SLOTS = 9;
 export const DAILY_ROUNDS = 3;
 
@@ -52,6 +54,9 @@ export interface DailyRoll {
   faceIndex: 0 | 1;
 }
 
+/** One entry per resolved call, in the order they happened. */
+export type DailyMark = "MATCH" | "MISS";
+
 export interface DailyState {
   phase: DailyPhase;
   /** Fixed nine slots; a slot becomes null once its card is matched away. */
@@ -63,7 +68,12 @@ export interface DailyState {
   roundIndex: number;
   claiming: boolean;
   selected: number[];
-  wrongCalls: number;
+  /** Misses spent so far, across all three rounds. Caps at MAX_MISSES. */
+  missesUsed: number;
+  /** Matches and misses in the order they happened. */
+  marks: DailyMark[];
+  /** True when the run ended because the miss pool ran out. */
+  failed: boolean;
   /** Bumps on every wrong call so the UI can replay its shake. */
   wrongToken: number;
   /** Indices that were just called wrong (cleared by CLEAR_WRONG). */
@@ -74,9 +84,7 @@ export interface DailyState {
   startedAt: number | null;
   /** Clock time banked from completed rounds, in ms. */
   accumulatedMs: number;
-  /** Accumulated wrong-call penalty, in ms. */
-  penaltyMs: number;
-  /** Final total time including penalties. Null until DONE. */
+  /** Final total time. Null until DONE. Recorded but never scored. */
   elapsedMs: number | null;
 }
 
@@ -177,13 +185,14 @@ export function initDailyState(seed: string, rngIn?: Rng): DailyState {
     roundIndex: 1,
     claiming: false,
     selected: [],
-    wrongCalls: 0,
+    missesUsed: 0,
+    marks: [],
+    failed: false,
     wrongToken: 0,
     wrongPair: [],
     matchedPair: [],
     startedAt: null,
     accumulatedMs: 0,
-    penaltyMs: 0,
     elapsedMs: null,
   };
 }
@@ -246,20 +255,28 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
       const attr = currentRoll(state).attribute;
       const correct = !!a && !!b && matchesOn(a, b, attr);
 
+      const banked =
+        state.accumulatedMs + Math.max(0, action.at - (state.startedAt ?? action.at));
+
       if (!correct) {
+        const missesUsed = state.missesUsed + 1;
+        const out = missesUsed >= MAX_MISSES;
         return {
           ...state,
+          phase: out ? "DONE" : state.phase,
           claiming: false,
           selected: [],
           wrongPair: [i, j],
           wrongToken: state.wrongToken + 1,
-          wrongCalls: state.wrongCalls + 1,
-          penaltyMs: state.penaltyMs + WRONG_PENALTY_MS,
+          missesUsed,
+          marks: [...state.marks, "MISS"],
+          failed: out,
+          startedAt: out ? null : state.startedAt,
+          accumulatedMs: out ? banked : state.accumulatedMs,
+          elapsedMs: out ? banked : null,
         };
       }
 
-      const banked =
-        state.accumulatedMs + Math.max(0, action.at - (state.startedAt ?? action.at));
       const grid = without(state.grid, i, j);
       const last = state.roundIndex >= DAILY_ROUNDS;
 
@@ -271,10 +288,11 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
         claiming: false,
         selected: [],
         matchedPair: [i, j],
+        marks: [...state.marks, "MATCH"],
         wrongPair: [],
         startedAt: null,
         accumulatedMs: banked,
-        elapsedMs: last ? banked + state.penaltyMs : null,
+        elapsedMs: last ? banked : null,
       };
     }
 
@@ -293,7 +311,7 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
 export function liveElapsedMs(state: DailyState, now: number): number {
   if (state.elapsedMs !== null) return state.elapsedMs;
   const running = state.startedAt === null ? 0 : Math.max(0, now - state.startedAt);
-  return state.accumulatedMs + running + state.penaltyMs;
+  return state.accumulatedMs + running;
 }
 
 /** `12.3` — seconds to one decimal. */

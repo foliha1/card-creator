@@ -16,7 +16,7 @@ import {
   remainingCount,
   currentRoll,
   STUDY_MS,
-  WRONG_PENALTY_MS,
+  MAX_MISSES,
   DAILY_ROUNDS,
   type DailyState,
 } from "@/lib/dailyEngine";
@@ -201,7 +201,7 @@ describe("daily phase sequence", () => {
     s = dailyReducer(s, { type: "PLAY_START", at: 500 });
     expect(s.phase).toBe("PLAY");
     expect(s.startedAt).toBe(500);
-    expect(STUDY_MS).toBe(5000);
+    expect(STUDY_MS).toBe(10000);
   });
 
   it("requires a claim before cards can be selected", () => {
@@ -236,7 +236,7 @@ describe("three-round progression and shrinking board", () => {
     expect(remainingCount(s)).toBe(3);
     // 1s + 1s + 1s of play; roll gaps are not counted.
     expect(s.elapsedMs).toBe(3000);
-    expect(s.wrongCalls).toBe(0);
+    expect(s.missesUsed).toBe(0);
     expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
   });
 
@@ -257,7 +257,7 @@ describe("three-round progression and shrinking board", () => {
   });
 });
 
-describe("wrong-pair penalty", () => {
+describe("miss cap", () => {
   const wrongOnce = (s: DailyState, at: number): DailyState => {
     const [i, j] = pairFor(s, false);
     let n = dailyReducer(s, { type: "CLAIM" });
@@ -266,22 +266,24 @@ describe("wrong-pair penalty", () => {
     return dailyReducer(n, { type: "RESOLVE", at });
   };
 
-  it("adds exactly 1 second, counts the wrong call, and the round continues", () => {
+  it("spends one miss, adds no time penalty, and the round continues", () => {
     let s = toPlay(0);
+    expect(MAX_MISSES).toBe(5);
     s = wrongOnce(s, 2000);
-    expect(WRONG_PENALTY_MS).toBe(1000);
     expect(s.phase).toBe("PLAY");
     expect(s.roundIndex).toBe(1);
     expect(remainingCount(s)).toBe(9);
-    expect(s.wrongCalls).toBe(1);
-    expect(s.penaltyMs).toBe(1000);
+    expect(s.missesUsed).toBe(1);
+    expect(s.marks).toEqual(["MISS"]);
+    expect(s.failed).toBe(false);
     expect(s.elapsedMs).toBeNull();
+    expect(liveElapsedMs(s, 2000)).toBe(2000);
     expect(s.faceUp).toBe(false);
     expect(s.claiming).toBe(false);
     expect(s.wrongPair).toHaveLength(2);
   });
 
-  it("totals penalties across rounds into the final time", () => {
+  it("accumulates misses across rounds as one pool", () => {
     let s = toPlay(0);
     s = wrongOnce(s, 500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
@@ -289,19 +291,45 @@ describe("wrong-pair penalty", () => {
     s = nextRound(s, 2000);
     s = wrongOnce(s, 2500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
+    s = wrongOnce(s, 2600);
+    s = dailyReducer(s, { type: "CLEAR_WRONG" });
     s = solveRound(s, 3000);
     s = nextRound(s, 4000);
     s = solveRound(s, 5000);
-    expect(s.wrongCalls).toBe(2);
-    expect(s.elapsedMs).toBe(3000 + 2000);
+    expect(s.phase).toBe("DONE");
+    expect(s.failed).toBe(false);
+    expect(s.missesUsed).toBe(3);
+    expect(s.marks).toEqual(["MISS", "MATCH", "MISS", "MISS", "MATCH", "MATCH"]);
+    expect(s.elapsedMs).toBe(3000);
   });
 
-  it("shows the penalty on the live clock immediately", () => {
+  it("ends the run immediately on the fifth miss", () => {
     let s = toPlay(0);
-    expect(liveElapsedMs(s, 3000)).toBe(3000);
-    s = wrongOnce(s, 3000);
-    expect(liveElapsedMs(s, 3000)).toBe(4000);
-    expect(formatSeconds(4000)).toBe("4.0");
-    expect(formatSeconds(4567)).toBe("4.5");
+    for (let i = 0; i < 4; i++) {
+      s = wrongOnce(s, 100 * (i + 1));
+      s = dailyReducer(s, { type: "CLEAR_WRONG" });
+      expect(s.phase).toBe("PLAY");
+    }
+    s = wrongOnce(s, 5000);
+    expect(s.missesUsed).toBe(5);
+    expect(s.phase).toBe("DONE");
+    expect(s.failed).toBe(true);
+    expect(s.roundIndex).toBe(1);
+    expect(s.elapsedMs).toBe(5000);
+    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+  });
+
+  it("records zero misses on a clean run", () => {
+    let s = toPlay(0);
+    s = solveRound(s, 1000);
+    s = nextRound(s, 2000);
+    s = solveRound(s, 3000);
+    s = nextRound(s, 4000);
+    s = solveRound(s, 5000);
+    expect(s.phase).toBe("DONE");
+    expect(s.missesUsed).toBe(0);
+    expect(s.failed).toBe(false);
+    expect(s.marks).toEqual(["MATCH", "MATCH", "MATCH"]);
+    expect(formatSeconds(s.elapsedMs!)).toBe("3.0");
   });
 });
