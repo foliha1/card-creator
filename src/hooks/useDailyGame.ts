@@ -208,6 +208,8 @@ export function useDailyGame(): UseDailyGameResult {
     puzzleNumber,
     result,
     alreadyPlayed,
+    debugBypass,
+
     start,
     claim,
     cancelClaim,
