@@ -7,7 +7,6 @@ import PreGameShell from "@/components/PreGameShell";
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatSeconds, type DailyPhase } from "@/lib/dailyEngine";
-import { ROLL_HERO_MS } from "@/lib/multiplayer";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
 import {
@@ -261,7 +260,7 @@ const DailyPage: React.FC = () => {
                   <GameCard
                     key={card.id}
                     card={card}
-                    faceUp={state.faceUp || state.selected.includes(idx) === false ? state.faceUp : state.faceUp}
+                    faceUp={state.faceUp}
                     highlighted={state.selected.includes(idx)}
                     matched={state.matchedPair.includes(idx)}
                     wrong={state.wrongPair.includes(idx)}
@@ -335,7 +334,3 @@ const DailyPage: React.FC = () => {
 };
 
 export default DailyPage;
-
-// ROLL_HERO_MS is the shared roll duration; referenced here so the visual and
-// the hook's phase timing stay in step.
-void ROLL_HERO_MS;
