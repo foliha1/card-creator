@@ -384,6 +384,8 @@ const DailyPage: React.FC = () => {
               missesUsed={daily.result!.missesUsed}
               marks={daily.result!.marks}
               failed={daily.result!.failed}
+              shareText={formatDailyShare(daily.result!)}
+
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
