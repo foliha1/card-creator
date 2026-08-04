@@ -249,6 +249,8 @@ const DailyResultCard: React.FC<{
         {stat("Misses", `${missesUsed}/${MAX_MISSES}`)}
       </div>
       <MarksRow marks={marks} />
+      <ShareBlock text={shareText} mobile={mobile} />
+
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {attributes.map((attr, i) => (
           <div
