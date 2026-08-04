@@ -39,7 +39,10 @@ export function getDailyNumber(date: Date = new Date()): number {
 export interface DailyResult {
   seed: string;
   puzzleNumber: number;
-  flips: number;
+  /** The rule the die landed on for the day. */
+  attribute: "SHAPE" | "NUMBER" | "COLOR";
+  /** Final time including wrong-call penalties, in ms. */
+  elapsedMs: number;
   wrongCalls: number;
   completedAt: string;
 }
@@ -53,7 +56,7 @@ export function loadDailyResult(seed: string): DailyResult | null {
     const raw = window.localStorage.getItem(dailyStorageKey(seed));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as DailyResult;
-    if (typeof parsed?.flips !== "number") return null;
+    if (typeof parsed?.elapsedMs !== "number") return null;
     return parsed;
   } catch {
     return null;

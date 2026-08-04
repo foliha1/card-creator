@@ -1,25 +1,23 @@
 // ============================================================================
-// useDailyGame — the daily puzzle: one seat, one seed, one round.
+// useDailyGame — drives the daily puzzle's phase sequence and clock.
 //
-// Reuses the existing engine (useGameState) with seatCount 1 and no bots, so
-// there is no opponent and no rotation to wait on. The puzzle ends on the
-// first correct match; completion is recorded in localStorage so the same day
-// cannot be replayed.
+// The daily runs on its own tiny machine (src/lib/dailyEngine.ts), NOT on the
+// full game engine: no draw pile, no refills, no rounds, no re-rolls, no bot.
+// This hook only owns timing (study countdown, roll, clock ticks) and the
+// one-attempt-per-day persistence.
 // ============================================================================
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
-  useGameState,
-  SETTLE_MATCH_MS,
-  SETTLE_WRONG_MS,
-} from "@/hooks/useGameState";
-import { pickRoll, pickTumbleSeed, rngOf } from "@/lib/rolls";
-import { toPublicState, type PublicState } from "@/lib/publicState";
-import type {
-  IntentAction,
-  RollCommitPayload,
-  RollAttribute,
-} from "@/lib/multiplayer";
+  dailyReducer,
+  initDailyState,
+  liveElapsedMs,
+  STUDY_MS,
+  type DailyPhase,
+  type DailyState,
+} from "@/lib/dailyEngine";
+import { ROLL_HERO_MS } from "@/lib/multiplayer";
+import { pickTumbleSeed } from "@/lib/rolls";
 import {
   getDailyNumber,
   getDailySeed,
@@ -28,145 +26,161 @@ import {
   type DailyResult,
 } from "@/lib/daily";
 
-const SEAT = 0;
-const REVEAL_MS = 2000;
-const ROLL_ATTRS: readonly RollAttribute[] = ["SHAPE", "NUMBER", "COLOR"] as const;
-const SEAT_MAP = [
-  { seat: 0, visitor_id: "daily-you", display_name: "You" },
-];
+const DEAL_MS = 700;      // deal-in settles before the reveal
+const FLIP_MS = 500;      // card flip duration (matches GameCard)
+const WRONG_ANIM_MS = 900;
 
 export interface UseDailyGameResult {
-  publicState: PublicState;
-  onIntent: (a: IntentAction) => void;
-  rollCommit: RollCommitPayload | null;
-  mySeat: 0;
+  state: DailyState;
+  phase: DailyPhase;
+  /** Seconds remaining in the study window, rounded up (5 → 1). */
+  studyRemaining: number;
+  /** Live clock in ms, including penalties. Frozen once solved. */
+  elapsedMs: number;
+  tumbleSeed: number;
   seed: string;
   puzzleNumber: number;
-  flips: number;
-  wrongCalls: number;
-  /** Completed result for today, whether just solved or loaded from storage. */
   result: DailyResult | null;
-  /** True when the stored result was loaded on mount (revisit, not a fresh solve). */
   alreadyPlayed: boolean;
+  claim: () => void;
+  cancelClaim: () => void;
+  select: (idx: number) => void;
 }
 
-export function useDailyGame(gridSize: "3x2" | "3x3" = "3x2"): UseDailyGameResult {
+export function useDailyGame(): UseDailyGameResult {
   const seed = useMemo(() => getDailySeed(), []);
   const puzzleNumber = useMemo(() => getDailyNumber(), []);
   const stored = useMemo(() => loadDailyResult(seed), [seed]);
 
-  const g = useGameState(gridSize, {
-    seatCount: 1,
-    botSeats: [],
-    names: ["You"],
+  const [state, dispatch] = useReducer(
+    dailyReducer,
     seed,
-  });
-  const { state, dispatch, doRollDice } = g;
-
-  const stateRef = useRef(state);
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-
+    (s: string) => initDailyState(s)
+  );
+  const [tumbleSeed] = useState(() => pickTumbleSeed());
   const [result, setResult] = useState<DailyResult | null>(stored);
   const alreadyPlayed = stored !== null;
+  const locked = alreadyPlayed;
 
-  // ---- settle scheduler (mirrors solo/host) ----
+  // ---- phase sequence: deal → study → hide → roll → play ----
   useEffect(() => {
-    if (state.phase !== "SETTLING" || state.settleKind === null) return;
-    const ms = state.settleKind === "MATCH" ? SETTLE_MATCH_MS : SETTLE_WRONG_MS;
-    const token = state.settleToken;
-    const t = setTimeout(() => dispatch({ type: "SETTLE_COMPLETE", token }), ms);
+    if (locked) return;
+    if (state.phase !== "DEAL") return;
+    const t = setTimeout(() => dispatch({ type: "REVEAL" }), DEAL_MS);
     return () => clearTimeout(t);
-  }, [state.phase, state.settleKind, state.settleToken, dispatch]);
+  }, [state.phase, locked]);
 
-  // ---- one round: the first correct match finishes the puzzle ----
+  useEffect(() => {
+    if (state.phase !== "STUDY") return;
+    const t = setTimeout(() => dispatch({ type: "HIDE" }), STUDY_MS);
+    return () => clearTimeout(t);
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (state.phase !== "HIDE") return;
+    const t = setTimeout(() => dispatch({ type: "ROLL_START" }), FLIP_MS);
+    return () => clearTimeout(t);
+  }, [state.phase]);
+
+  useEffect(() => {
+    if (state.phase !== "ROLL") return;
+    const t = setTimeout(
+      () => dispatch({ type: "PLAY_START", at: Date.now() }),
+      ROLL_HERO_MS
+    );
+    return () => clearTimeout(t);
+  }, [state.phase]);
+
+  // ---- study countdown ----
+  const [studyRemaining, setStudyRemaining] = useState(
+    Math.ceil(STUDY_MS / 1000)
+  );
+  useEffect(() => {
+    if (state.phase !== "STUDY") return;
+    const start = Date.now();
+    setStudyRemaining(Math.ceil(STUDY_MS / 1000));
+    const id = setInterval(() => {
+      const left = Math.max(0, STUDY_MS - (Date.now() - start));
+      setStudyRemaining(Math.ceil(left / 1000));
+    }, 100);
+    return () => clearInterval(id);
+  }, [state.phase]);
+
+  // ---- running clock ----
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (state.phase !== "PLAY") return;
+    let raf = 0;
+    const tick = () => {
+      setNow(Date.now());
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [state.phase]);
+
+  const elapsedMs = liveElapsedMs(state, now);
+
+  // ---- wrong-call flash cleanup ----
+  useEffect(() => {
+    if (state.wrongPair.length === 0) return;
+    const t = setTimeout(() => dispatch({ type: "CLEAR_WRONG" }), WRONG_ANIM_MS);
+    return () => clearTimeout(t);
+  }, [state.wrongToken, state.wrongPair.length]);
+
+  // ---- auto-resolve once two cards are picked ----
+  const resolveRef = useRef(0);
+  useEffect(() => {
+    if (state.phase !== "PLAY" || state.selected.length !== 2) return;
+    const token = ++resolveRef.current;
+    const t = setTimeout(() => {
+      if (resolveRef.current === token) {
+        dispatch({ type: "RESOLVE", at: Date.now() });
+      }
+    }, 450);
+    return () => clearTimeout(t);
+  }, [state.phase, state.selected.length]);
+
+  // ---- persist the solve, once ----
   useEffect(() => {
     if (result !== null) return;
-    if (state.settleKind !== "MATCH") return;
+    if (state.phase !== "DONE" || state.elapsedMs === null) return;
     const finished: DailyResult = {
       seed,
       puzzleNumber,
-      flips: state.flipCount,
+      attribute: state.attribute,
+      elapsedMs: state.elapsedMs,
       wrongCalls: state.wrongCalls,
       completedAt: new Date().toISOString(),
     };
     saveDailyResult(finished);
     setResult(finished);
-  }, [state.settleKind, state.flipCount, state.wrongCalls, result, seed, puzzleNumber]);
-
-  const [rollCommit, setRollCommit] = useState<RollCommitPayload | null>(null);
-  const commitAndRoll = useCallback(() => {
-    const s = stateRef.current;
-    if (s.phase !== "AWAITING_ROLL" || s.rolling) return;
-    const { attribute, faceIndex } = pickRoll(ROLL_ATTRS, rngOf(s));
-    const tumbleSeed = pickTumbleSeed();
-    const startAt = Date.now() + 150;
-    setRollCommit({
-      roundId: `daily:${seed}:${s.roundNum}`,
-      attribute,
-      faceIndex,
-      tumbleSeed,
-      startAt,
-    });
-    setTimeout(() => {
-      void doRollDice([attribute]);
-    }, Math.max(0, startAt - Date.now()));
-  }, [doRollDice, seed]);
-
-  const onIntent = useCallback(
-    (action: IntentAction) => {
-      if (result !== null) return; // puzzle over — ignore further play
-      switch (action.type) {
-        case "REQUEST_ROLL":
-          commitAndRoll();
-          return;
-        case "PLAYER_ENTER_CLAIM":
-          dispatch({ type: "PLAYER_ENTER_CLAIM", by: SEAT });
-          return;
-        case "CANCEL_CLAIM":
-          dispatch({ type: "CANCEL_CLAIM", by: SEAT });
-          return;
-        case "PLAYER_SELECT_CARD":
-          dispatch({ type: "PLAYER_SELECT_CARD", by: SEAT, idx: action.idx });
-          return;
-        case "PLAYER_RESOLVE_MATCH":
-          dispatch({ type: "PLAYER_RESOLVE_MATCH", by: SEAT });
-          return;
-        case "FLIP_START":
-          dispatch({
-            type: "FLIP_START",
-            by: SEAT,
-            idx: action.idx,
-            token: action.token,
-          });
-          setTimeout(
-            () => dispatch({ type: "FLIP_COMPLETE", token: action.token }),
-            REVEAL_MS
-          );
-          return;
-        default:
-          return; // no rematch, no debug drains in the daily
-      }
-    },
-    [commitAndRoll, dispatch, result]
-  );
-
-  const publicState = useMemo<PublicState>(
-    () => toPublicState(state, SEAT_MAP, 0, `daily:${seed}`, [], []),
-    [state, seed]
-  );
-
-  return {
-    publicState,
-    onIntent,
-    rollCommit,
-    mySeat: 0,
+  }, [
+    state.phase,
+    state.elapsedMs,
+    state.attribute,
+    state.wrongCalls,
+    result,
     seed,
     puzzleNumber,
-    flips: state.flipCount,
-    wrongCalls: state.wrongCalls,
+  ]);
+
+  const claim = useCallback(() => dispatch({ type: "CLAIM" }), []);
+  const cancelClaim = useCallback(() => dispatch({ type: "CANCEL_CLAIM" }), []);
+  const select = useCallback((idx: number) => dispatch({ type: "SELECT", idx }), []);
+
+  return {
+    state,
+    phase: state.phase,
+    studyRemaining,
+    elapsedMs,
+    tumbleSeed,
+    seed,
+    puzzleNumber,
     result,
     alreadyPlayed,
+    claim,
+    cancelClaim,
+    select,
   };
 }
