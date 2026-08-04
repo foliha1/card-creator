@@ -177,7 +177,6 @@ export function useDailyGame(): UseDailyGameResult {
     };
     if (!debugBypass) saveDailyResult(finished);
     setResult(finished);
-
   }, [
     state.phase,
     state.elapsedMs,
@@ -186,7 +185,9 @@ export function useDailyGame(): UseDailyGameResult {
     result,
     seed,
     puzzleNumber,
+    debugBypass,
   ]);
+
 
   const start = useCallback(() => dispatch({ type: "START" }), []);
   const claim = useCallback(() => dispatch({ type: "CLAIM" }), []);
