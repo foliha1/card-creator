@@ -27,7 +27,10 @@ const ATTR_LABEL: Record<string, string> = {
   COLOR: "Match the colour",
 };
 
-/** The die: spins on ROLL, then holds the landed face for the rest of the run. */
+/**
+ * The die. Hidden behind a blank until the roll, so the day's rule can never
+ * leak while the board is still face up — the whole point of the mode.
+ */
 const DailyDie: React.FC<{
   phase: DailyPhase;
   attribute: "SHAPE" | "NUMBER" | "COLOR";
@@ -38,7 +41,7 @@ const DailyDie: React.FC<{
   const landed = landedRotationFor(attribute, faceIndex);
   const spins = 2 + (tumbleSeed & 1);
   const dir = (tumbleSeed >> 2) & 1 ? 1 : -1;
-  const spun = `rotateX(${dir * spins * 360}deg) rotateY(${-dir * spins * 360}deg)`;
+  const spun = `rotateX(${dir * (spins * 360 + 140)}deg) rotateY(${-dir * (spins * 360 + 55)}deg)`;
   const [rotation, setRotation] = useState(spun);
 
   useEffect(() => {
@@ -48,8 +51,30 @@ const DailyDie: React.FC<{
     return () => cancelAnimationFrame(id);
   }, [phase, spun, landed]);
 
+  const preRoll = phase === "DEAL" || phase === "STUDY" || phase === "HIDE";
   const rolling = phase === "ROLL";
-  const shown = phase === "DEAL" || phase === "STUDY" || phase === "HIDE" ? spun : rotation;
+
+  if (preRoll) {
+    return (
+      <div
+        aria-label="The die has not rolled yet"
+        style={{
+          width: size,
+          height: size,
+          border: BORDER.heavy,
+          borderRadius: RADIUS.sm,
+          background: COLORS.panel,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: COLORS.inkMuted,
+          ...textStyle("title"),
+        }}
+      >
+        ?
+      </div>
+    );
+  }
 
   return (
     <div style={{ transform: rolling ? "scale(1.6)" : "scale(1)", transition: `transform 300ms ease` }}>
@@ -57,7 +82,7 @@ const DailyDie: React.FC<{
         size={size}
         attribute={attribute}
         faceIndex={faceIndex}
-        rotation={shown}
+        rotation={rotation}
         transition={rolling ? `transform ${TUMBLE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)` : undefined}
       />
     </div>
