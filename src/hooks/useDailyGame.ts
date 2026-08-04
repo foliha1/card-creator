@@ -46,6 +46,9 @@ export interface UseDailyGameResult {
   puzzleNumber: number;
   result: DailyResult | null;
   alreadyPlayed: boolean;
+  /** True when ?debug=1 disables the one-attempt-per-day lock. */
+  debugBypass: boolean;
+
   start: () => void;
   claim: () => void;
   cancelClaim: () => void;
