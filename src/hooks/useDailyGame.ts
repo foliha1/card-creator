@@ -3,16 +3,18 @@
 //
 // The daily runs on its own tiny machine (src/lib/dailyEngine.ts), NOT on the
 // full game engine: no draw pile, no refills, no re-rolls, no bot. This hook
-// owns timing (start gate, study countdown, three rolls, clock ticks) and the
-// one-attempt-per-day persistence.
+// owns timing (start gate, study countdown, three rolls, peek window, clock
+// ticks) and the one-attempt-per-day persistence.
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
+  canPeek as canPeekNow,
   currentRoll,
   dailyReducer,
   initDailyState,
   liveElapsedMs,
+  PEEK_MS,
   STUDY_MS,
   type DailyPhase,
   type DailyRoll,
@@ -32,6 +34,7 @@ const DEAL_MS = 700;      // deal-in settles before the reveal
 const FLIP_MS = 500;      // card flip duration (matches GameCard)
 const WRONG_ANIM_MS = 900;
 const MATCH_ANIM_MS = 700;
+const WHOOPED_REVEAL_MS = 1800; // how long the answer shows on a Whooped round
 
 export interface UseDailyGameResult {
   state: DailyState;
@@ -48,11 +51,14 @@ export interface UseDailyGameResult {
   alreadyPlayed: boolean;
   /** True when ?debug=1 disables the one-attempt-per-day lock. */
   debugBypass: boolean;
+  /** True when the single peek can be taken right now. */
+  canPeek: boolean;
 
   start: () => void;
   claim: () => void;
   cancelClaim: () => void;
   select: (idx: number) => void;
+  peek: () => void;
 }
 
 export function useDailyGame(): UseDailyGameResult {
@@ -77,7 +83,6 @@ export function useDailyGame(): UseDailyGameResult {
   const [result, setResult] = useState<DailyResult | null>(stored);
   const alreadyPlayed = stored !== null;
 
-
   // ---- phase sequence: (start gate) deal → study → hide → roll → play ----
   useEffect(() => {
     if (state.phase !== "DEAL") return;
@@ -91,7 +96,7 @@ export function useDailyGame(): UseDailyGameResult {
     return () => clearTimeout(t);
   }, [state.phase]);
 
-  // HIDE is entered both after the study window and after each solved round.
+  // HIDE is entered both after the study window and after each round ends.
   useEffect(() => {
     if (state.phase !== "HIDE") return;
     const t = setTimeout(
@@ -109,6 +114,23 @@ export function useDailyGame(): UseDailyGameResult {
     );
     return () => clearTimeout(t);
   }, [state.phase]);
+
+  // ---- Whooped round: show the answer, then advance ----
+  useEffect(() => {
+    if (state.phase !== "WHOOPED") return;
+    const t = setTimeout(
+      () => dispatch({ type: "ROUND_END", at: Date.now() }),
+      WHOOPED_REVEAL_MS
+    );
+    return () => clearTimeout(t);
+  }, [state.phase, state.roundIndex]);
+
+  // ---- peek window ----
+  useEffect(() => {
+    if (!state.peeking) return;
+    const t = setTimeout(() => dispatch({ type: "PEEK_END" }), PEEK_MS);
+    return () => clearTimeout(t);
+  }, [state.peeking]);
 
   // ---- study countdown ----
   const [studyRemaining, setStudyRemaining] = useState(
@@ -166,7 +188,7 @@ export function useDailyGame(): UseDailyGameResult {
     return () => clearTimeout(t);
   }, [state.phase, state.selected.length]);
 
-  // ---- persist the solve, once ----
+  // ---- persist the run, once ----
   useEffect(() => {
     if (result !== null) return;
     if (state.phase !== "DONE" || state.elapsedMs === null) return;
@@ -175,8 +197,11 @@ export function useDailyGame(): UseDailyGameResult {
       puzzleNumber,
       attributes: state.rolls.map((r) => r.attribute),
       elapsedMs: state.elapsedMs,
-      missesUsed: state.missesUsed,
-      marks: state.marks,
+      roundsSolved: state.roundsSolved,
+      totalMisses: state.totalMisses,
+      roundEvents: state.roundEvents,
+      peekUsed: state.peekUsed,
+      peekRound: state.peekRound,
       failed: state.failed,
       completedAt: new Date().toISOString(),
     };
@@ -186,8 +211,11 @@ export function useDailyGame(): UseDailyGameResult {
     state.phase,
     state.elapsedMs,
     state.rolls,
-    state.missesUsed,
-    state.marks,
+    state.roundsSolved,
+    state.totalMisses,
+    state.roundEvents,
+    state.peekUsed,
+    state.peekRound,
     state.failed,
     result,
     seed,
@@ -195,11 +223,11 @@ export function useDailyGame(): UseDailyGameResult {
     debugBypass,
   ]);
 
-
   const start = useCallback(() => dispatch({ type: "START" }), []);
   const claim = useCallback(() => dispatch({ type: "CLAIM" }), []);
   const cancelClaim = useCallback(() => dispatch({ type: "CANCEL_CLAIM" }), []);
   const select = useCallback((idx: number) => dispatch({ type: "SELECT", idx }), []);
+  const peek = useCallback(() => dispatch({ type: "PEEK" }), []);
 
   return {
     state,
@@ -213,10 +241,12 @@ export function useDailyGame(): UseDailyGameResult {
     result,
     alreadyPlayed,
     debugBypass,
+    canPeek: canPeekNow(state),
 
     start,
     claim,
     cancelClaim,
     select,
+    peek,
   };
 }

@@ -8,7 +8,7 @@ import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DAILY_ROUNDS,
-  MAX_MISSES,
+  MISSES_PER_ROUND,
   remainingCount,
   type DailyMark,
   type DailyPhase,
@@ -99,14 +99,14 @@ const DailyDie: React.FC<{
   );
 };
 
-/** Five markers, filled as misses are spent. No numbers. */
+/** Two markers for the current round, filled as its misses are spent. */
 const MissTracker: React.FC<{ used: number }> = ({ used }) => (
   <div
     role="img"
-    aria-label={`${used} of ${MAX_MISSES} misses used`}
+    aria-label={`${used} of ${MISSES_PER_ROUND} misses used this round`}
     style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}
   >
-    {Array.from({ length: MAX_MISSES }, (_, i) => (
+    {Array.from({ length: MISSES_PER_ROUND }, (_, i) => (
       <span
         key={i}
         aria-hidden="true"
@@ -123,22 +123,26 @@ const MissTracker: React.FC<{ used: number }> = ({ used }) => (
   </div>
 );
 
-/** One marker per resolved call, in the order they happened. */
-const MarksRow: React.FC<{ marks: DailyMark[] }> = ({ marks }) => (
-  <div style={{ display: "flex", gap: SPACE[2], flexWrap: "wrap", justifyContent: "center" }}>
-    {marks.map((m, i) => (
-      <span
-        key={i}
-        title={m === "MATCH" ? "Match" : "Miss"}
-        style={{
-          width: 20,
-          height: 20,
-          borderRadius: m === "MATCH" ? RADIUS.sm : 999,
-          border: BORDER.heavy,
-          background: m === "MATCH" ? COLORS.ink : COLORS.red,
-        }}
-      />
-    ))}
+/** One marker per resolved call in a round, in the order they happened. */
+const RoundMarks: React.FC<{ events: DailyMark[] }> = ({ events }) => (
+  <div style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}>
+    {events.length === 0 ? (
+      <span style={{ width: 20, height: 20, opacity: 0.3, border: BORDER.heavy, borderRadius: 999 }} />
+    ) : (
+      events.map((m, i) => (
+        <span
+          key={i}
+          title={m === "SOLVE" ? "Solved" : "Miss"}
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: m === "SOLVE" ? RADIUS.sm : 999,
+            border: BORDER.heavy,
+            background: m === "SOLVE" ? COLORS.ink : COLORS.red,
+          }}
+        />
+      ))
+    )}
   </div>
 );
 
@@ -197,15 +201,30 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
   attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
-  missesUsed: number;
-  marks: DailyMark[];
+  roundsSolved: number;
+  totalMisses: number;
+  roundEvents: DailyMark[][];
+  peekUsed: boolean;
+  peekRound: number | null;
   failed: boolean;
   shareText: string;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
-}> = ({ puzzleNumber, attributes, missesUsed, marks, failed, shareText, mobile, revisit, onLeave }) => {
-
+}> = ({
+  puzzleNumber,
+  attributes,
+  roundsSolved,
+  totalMisses,
+  roundEvents,
+  peekUsed,
+  peekRound,
+  failed,
+  shareText,
+  mobile,
+  revisit,
+  onLeave,
+}) => {
   const stat = (label: string, value: string) => (
     <div
       key={label}
@@ -241,16 +260,39 @@ const DailyResultCard: React.FC<{
       </h1>
       <p style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}>
         {failed
-          ? "Run failed — five misses used up."
+          ? "Whooped! Better luck tomorrow."
           : revisit
             ? "Already played today. One puzzle a day — come back tomorrow."
-            : "All three rounds called. One puzzle a day — come back tomorrow."}
+            : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
       <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-        {stat("Result", failed ? "FAILED" : "COMPLETE")}
-        {stat("Misses", `${missesUsed}/${MAX_MISSES}`)}
+        {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
+        {stat("Misses", `${totalMisses}`)}
+        {stat("Peek", peekUsed ? `R${peekRound ?? "?"}` : "Unused")}
       </div>
-      <MarksRow marks={marks} />
+
+      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
+        {roundEvents.map((events, i) => (
+          <div
+            key={`events-${i}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: SPACE[3],
+              ...textStyle("caption", mobile),
+              color: COLORS.inkMuted,
+            }}
+          >
+            <span>
+              Round {i + 1}
+              {peekUsed && peekRound === i + 1 ? " 👀" : ""}
+            </span>
+            <RoundMarks events={events} />
+          </div>
+        ))}
+      </div>
+
       <ShareBlock text={shareText} mobile={mobile} />
 
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
@@ -325,12 +367,14 @@ const DailyPage: React.FC = () => {
         return "Cards down";
       case "ROLL":
         return "Rolling…";
+      case "WHOOPED":
+        return "Whooped!";
       default:
-        return ATTR_LABEL[daily.roll.attribute];
+        return state.peeking ? "Peeking…" : ATTR_LABEL[daily.roll.attribute];
     }
   })();
 
-  const canClaim = phase === "PLAY" && !state.claiming;
+  const canClaim = phase === "PLAY" && !state.claiming && !state.peeking;
   const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
@@ -385,11 +429,13 @@ const DailyPage: React.FC = () => {
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
               attributes={daily.result!.attributes}
-              missesUsed={daily.result!.missesUsed}
-              marks={daily.result!.marks}
+              roundsSolved={daily.result!.roundsSolved}
+              totalMisses={daily.result!.totalMisses}
+              roundEvents={daily.result!.roundEvents}
+              peekUsed={daily.result!.peekUsed}
+              peekRound={daily.result!.peekRound}
               failed={daily.result!.failed}
               shareText={formatDailyShare(daily.result!)}
-
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
@@ -469,7 +515,7 @@ const DailyPage: React.FC = () => {
                     {readout}
                   </div>
                   <div style={{ marginTop: SPACE[2] }}>
-                    <MissTracker used={state.missesUsed} />
+                    <MissTracker used={state.roundMisses} />
                   </div>
                 </div>
                 <DailyDie
@@ -505,7 +551,7 @@ const DailyPage: React.FC = () => {
                     <GameCard
                       key={card.id}
                       card={card}
-                      faceUp={state.faceUp}
+                      faceUp={state.faceUp || state.revealPair.includes(idx)}
                       highlighted={state.selected.includes(idx)}
                       matched={state.matchedPair.includes(idx)}
                       wrong={state.wrongPair.includes(idx)}
@@ -559,6 +605,25 @@ const DailyPage: React.FC = () => {
                 </button>
               )}
 
+              <button
+                type="button"
+                className="ww-press"
+                disabled={!daily.canPeek}
+                onClick={() => {
+                  hapticTap();
+                  daily.peek();
+                }}
+                style={{
+                  ...buttonStyle("ink", "md", {
+                    mobile,
+                    fullWidth: true,
+                    disabled: !daily.canPeek,
+                  }),
+                }}
+              >
+                {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
+              </button>
+
               <p
                 style={{
                   ...textStyle("caption", mobile),
@@ -568,7 +633,7 @@ const DailyPage: React.FC = () => {
                 }}
               >
                 {phase === "PLAY"
-                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MAX_MISSES - state.missesUsed} misses left.`
+                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MISSES_PER_ROUND - state.roundMisses} misses left this round.`
                   : "Nine cards, ten seconds. Then the die decides each round's rule."}
               </p>
             </div>
