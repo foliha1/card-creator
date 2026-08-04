@@ -179,6 +179,10 @@ export interface State {
   // reducer needs after init MUST read from here, never Math.random directly.
   seed: string | null;
   rng: Rng;
+  // Attempt metrics. Reset on INIT. `flipCount` counts every card flip started
+  // by any seat; `wrongCalls` counts every incorrect claim resolution.
+  flipCount: number;
+  wrongCalls: number;
 }
 
 
@@ -275,6 +279,8 @@ export function initialState(slotCount: number, opts: InitOptions = {}): State {
     settleBy: null,
     seed,
     rng,
+    flipCount: 0,
+    wrongCalls: 0,
 
   };
 }
@@ -537,6 +543,7 @@ export function reducer(state: State, action: Action): State {
         settleToken: state.settleToken + 1,
         settleBy: by,
         wrongBy: nextWrongBy,
+        wrongCalls: state.wrongCalls + 1,
         scores: returned.scores,
         piles: returned.piles,
         deck: returned.deck,
@@ -596,6 +603,7 @@ export function reducer(state: State, action: Action): State {
           idx: action.idx,
         },
         peekingCard: action.idx,
+        flipCount: state.flipCount + 1,
       };
     }
 
@@ -687,6 +695,7 @@ export function reducer(state: State, action: Action): State {
         ...state,
         phase: "FLIPPING",
         wrongBy: nextWrongBy,
+        wrongCalls: state.wrongCalls + 1,
         scores: returned.scores,
         piles: returned.piles,
         deck: returned.deck,
@@ -813,6 +822,8 @@ export interface UseGameStateOptions {
   seatCount?: number;
   botSeats?: number[];
   names?: string[];
+  /** Optional reproducible seed (daily puzzle). Omitted = Math.random. */
+  seed?: string;
 }
 
 export function useGameState(
@@ -835,7 +846,7 @@ export function useGameState(
   const [state, dispatch] = useReducer(
     reducer,
     undefined,
-    () => initialState(slotCount, { seatCount, names })
+    () => initialState(slotCount, { seatCount, names, seed: opts.seed })
   );
 
   const stateRef = useRef(state);
@@ -870,8 +881,8 @@ export function useGameState(
     initKeyRef.current = key;
     memoryRef.current?.reset();
     prevPeekingRef.current = null;
-    dispatch({ type: "INIT", slotCount, seatCount, names });
-  }, [slotCount, seatCount, names]);
+    dispatch({ type: "INIT", slotCount, seatCount, names, seed: opts.seed });
+  }, [slotCount, seatCount, names, opts.seed]);
 
 
   const runRollAnimation = useCallback((predetermined?: string[]): Promise<string[]> => {
