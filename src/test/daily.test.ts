@@ -4,6 +4,7 @@ import {
   getDailyNumber,
   getDailySeed,
   dailyStorageKey,
+  formatDailyShare,
   DAILY_LAUNCH_UTC,
 } from "@/lib/daily";
 import {
@@ -331,5 +332,43 @@ describe("miss cap", () => {
     expect(s.failed).toBe(false);
     expect(s.marks).toEqual(["MATCH", "MATCH", "MATCH"]);
     expect(formatSeconds(s.elapsedMs!)).toBe("3.0");
+  });
+});
+
+describe("formatDailyShare", () => {
+  const base = {
+    seed: "whoop-2026-08-04",
+    puzzleNumber: 114,
+    attributes: ["SHAPE", "NUMBER", "COLOR"] as ("SHAPE" | "NUMBER" | "COLOR")[],
+    elapsedMs: 12345,
+    completedAt: "2026-08-04T00:00:00.000Z",
+  };
+
+  it("formats a clean run", () => {
+    expect(
+      formatDailyShare({ ...base, missesUsed: 0, marks: ["MATCH", "MATCH", "MATCH"], failed: false })
+    ).toBe("WHOOP! WHOOP! #114\n🟦🟦🟦\n5/5 misses left\nwhoop-whoop.lovable.app/today");
+  });
+
+  it("formats a run with misses", () => {
+    expect(
+      formatDailyShare({
+        ...base,
+        missesUsed: 1,
+        marks: ["MATCH", "MISS", "MATCH", "MATCH"],
+        failed: false,
+      })
+    ).toBe("WHOOP! WHOOP! #114\n🟦🟥🟦🟦\n4/5 misses left\nwhoop-whoop.lovable.app/today");
+  });
+
+  it("formats a failed run", () => {
+    expect(
+      formatDailyShare({
+        ...base,
+        missesUsed: 5,
+        marks: ["MISS", "MISS", "MATCH", "MISS", "MISS", "MISS"],
+        failed: true,
+      })
+    ).toBe("WHOOP! WHOOP! #114\n🟥🟥🟦🟥🟥🟥\nFailed\nwhoop-whoop.lovable.app/today");
   });
 });
