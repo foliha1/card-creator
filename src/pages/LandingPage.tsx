@@ -52,10 +52,10 @@ const HowItWorksItem: React.FC<{ title: string; line: string }> = ({ title, line
   </div>
 );
 
-const SecondaryWay: React.FC<{ label: string; line: string }> = ({ label, line }) => (
+const SecondaryWay: React.FC<{ label: string; line: string; to: string }> = ({ label, line, to }) => (
   <div style={{ flex: "1 1 160px", display: "flex", flexDirection: "column", gap: 8 }}>
     <Link
-      to="/play"
+      to={to}
       className="ww-press"
       style={{
         display: "flex",
@@ -69,7 +69,7 @@ const SecondaryWay: React.FC<{ label: string; line: string }> = ({ label, line }
         textDecoration: "none",
         fontFamily: FONT_FAMILY,
         fontSize: 20,
-        lineHeight: 1,
+        lineHeight: 1.15,
       }}
     >
       {label}
@@ -77,6 +77,7 @@ const SecondaryWay: React.FC<{ label: string; line: string }> = ({ label, line }
     <p style={fineStyle}>{line}</p>
   </div>
 );
+
 
 /**
  * Landing page at `/`. Single scrolling page that reuses the daily screen's
