@@ -126,6 +126,10 @@ All colors MUST be HSL.
     overscroll-behavior: none;
   }
 
+  html {
+    color-scheme: light;
+  }
+
   body.ww-locked,
   html:has(body.ww-locked) {
     overflow: hidden;
@@ -1049,6 +1053,21 @@ All colors MUST be HSL.
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(120, 84, 52, 0.22);
   }
+}
+
+/* Focus-visible rings for landing page controls */
+.ww-landing-play:focus-visible,
+.ww-landing-way-solo:focus-visible,
+.ww-landing-way-multi:focus-visible,
+.ww-landing-shell input:focus-visible,
+.ww-landing-shell button:focus-visible {
+  outline: 2px solid #0072B2;
+  outline-offset: 2px;
+}
+
+/* Cream outline on the dark full-bleed band so focus stays visible */
+.ww-landing-band :focus-visible {
+  outline-color: #F8F2E9;
 }
 
 @media (prefers-reduced-motion: reduce) {
