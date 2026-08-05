@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import DailyShapeRule from "@/components/DailyShapeRule";
@@ -41,8 +41,69 @@ const section: React.CSSProperties = {
   gap: 12,
 };
 
-const HowItWorksItem: React.FC<{ title: string; line: string }> = ({ title, line }) => (
-  <div className="ww-landing-hiw-item">
+/**
+ * Reveals every `[data-reveal]` element inside `root` once, as it scrolls into
+ * view. Fire-once: elements are unobserved after revealing and never re-hidden.
+ * Purely visual — nothing here blocks pointer events.
+ */
+const useScrollReveal = (root: React.RefObject<HTMLElement>) => {
+  useEffect(() => {
+    const node = root.current;
+    if (!node) return;
+    const targets = Array.from(node.querySelectorAll<HTMLElement>("[data-reveal]"));
+    if (targets.length === 0) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      targets.forEach((el) => el.classList.add("ww-reveal-in"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("ww-reveal-in");
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.05 },
+    );
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [root]);
+};
+
+/** Staggered child delay, 60ms apart. */
+const stagger = (i: number) => ({ "--reveal-delay": `${i * 60}ms` }) as React.CSSProperties;
+
+const playButtonStyle: React.CSSProperties = {
+  height: 80,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
+  background: COLORS.red,
+  border: BORDER.heavy,
+  borderRadius: RADIUS.sm,
+  color: COLORS.surface,
+  textDecoration: "none",
+  fontFamily: FONT_FAMILY,
+  fontStyle: "italic",
+  lineHeight: 1.15,
+};
+
+const PlayCta: React.FC = () => (
+  <Link to="/today" className="ww-press ww-landing-play" style={playButtonStyle}>
+    <span style={{ display: "block", paddingBottom: 6 }}>Play Today's Daily</span>
+  </Link>
+);
+
+const HowItWorksItem: React.FC<{ title: string; line: string; index: number }> = ({
+  title,
+  line,
+  index,
+}) => (
+  <div className="ww-landing-hiw-item" data-reveal style={stagger(index)}>
     <h3 style={subheadStyle}>{title}</h3>
     <p style={bodyStyle}>{line}</p>
   </div>
@@ -54,8 +115,12 @@ const DIE_RULES: { src: string; label: string }[] = [
   { src: "/dice/match-color.svg", label: "COLOR" },
 ];
 
-const DieRuleTile: React.FC<{ src: string; label: string }> = ({ src, label }) => (
-  <div className="ww-landing-dice-tile">
+const DieRuleTile: React.FC<{ src: string; label: string; index: number }> = ({
+  src,
+  label,
+  index,
+}) => (
+  <div className="ww-landing-dice-tile" data-reveal style={stagger(index)}>
     {/* The die SVG carries its own "Match the SHAPE/NUMBER/COLOR" lockup, so the
         visible label lives in the art; keep it announced once for screen readers. */}
     <img src={src} alt={label} />
@@ -68,11 +133,12 @@ const SecondaryWay: React.FC<{
   to: string;
   background: string;
   color: string;
-}> = ({ label, line, to, background, color }) => (
+  className: string;
+}> = ({ label, line, to, background, color, className }) => (
   <div style={{ flex: "1 1 160px", display: "flex", flexDirection: "column", gap: 8 }}>
     <Link
       to={to}
-      className="ww-press"
+      className={`ww-press ${className}`}
       style={{
         display: "flex",
         alignItems: "center",
@@ -121,7 +187,11 @@ const DecorativeBoard: React.FC = () => (
  * visual language: cream field, pattern strips top and tail, Friend headings,
  * Geist body copy.
  */
-const LandingPage: React.FC = () => (
+const LandingPage: React.FC = () => {
+  const shellRef = useRef<HTMLDivElement>(null);
+  useScrollReveal(shellRef);
+
+  return (
   <>
     <Helmet>
       <title>Whoop Whoop — Nine cards. Ten seconds. Then the rules change.</title>
@@ -142,6 +212,7 @@ const LandingPage: React.FC = () => (
     </Helmet>
 
     <div
+      ref={shellRef}
       className="ww-landing-shell"
       style={
         {
@@ -166,27 +237,7 @@ const LandingPage: React.FC = () => (
           <p style={bodyStyle}>
             A memory game that moves the target on you. New puzzle every day.
           </p>
-          <Link
-            to="/today"
-            className="ww-press ww-landing-play"
-            style={{
-              height: 80,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxSizing: "border-box",
-              background: COLORS.red,
-              border: BORDER.heavy,
-              borderRadius: RADIUS.sm,
-              color: COLORS.surface,
-              textDecoration: "none",
-              fontFamily: FONT_FAMILY,
-              fontStyle: "italic",
-              lineHeight: 1.15,
-            }}
-          >
-            <span style={{ display: "block", paddingBottom: 6 }}>Play Today's Daily</span>
-          </Link>
+          <PlayCta />
 
           <p className="ww-landing-fine" style={fineStyle}>
             Free. No signup. About 30 seconds.
@@ -199,9 +250,14 @@ const LandingPage: React.FC = () => (
         <div className="ww-landing-below">
         {/* 2. How it works */}
         <section style={{ ...section, gap: 0 }}>
-          <HowItWorksItem title="See them." line="All nine cards face up for ten seconds." />
-          <HowItWorksItem title="Lose them." line="The board flips down." />
           <HowItWorksItem
+            index={0}
+            title="See them."
+            line="All nine cards face up for ten seconds."
+          />
+          <HowItWorksItem index={1} title="Lose them." line="The board flips down." />
+          <HowItWorksItem
+            index={2}
             title="Find them."
             line="The die decides what a match means. Three rounds, and it changes every time."
           />
@@ -209,18 +265,20 @@ const LandingPage: React.FC = () => (
 
         {/* 3. One die. Three rules. */}
         <section style={{ ...section, gap: 16 }}>
-          <h2 style={subheadStyle}>One die. Three rules.</h2>
+          <h2 style={subheadStyle} data-reveal>One die. Three rules.</h2>
           <div className="ww-landing-dice-row">
-            {DIE_RULES.map((r) => (
-              <DieRuleTile key={r.label} src={r.src} label={r.label} />
+            {DIE_RULES.map((r, i) => (
+              <DieRuleTile key={r.label} src={r.src} label={r.label} index={i} />
             ))}
           </div>
-          <p style={bodyStyle}>Whichever face lands is what counts. Until the next round.</p>
+          <p style={bodyStyle} data-reveal style-reveal-order="">
+            Whichever face lands is what counts. Until the next round.
+          </p>
         </section>
 
         {/* 4. The hook — full-bleed dark band */}
         <section className="ww-landing-band">
-          <div className="ww-landing-band-inner">
+          <div className="ww-landing-band-inner" data-reveal>
             <h2 style={{ ...headingStyle, color: COLORS.surface }}>
               The cards never move. What matters about them does.
             </h2>
@@ -231,12 +289,13 @@ const LandingPage: React.FC = () => (
         </section>
 
         {/* 4. Two more ways to play */}
-        <section style={{ ...section, gap: 16 }}>
+        <section style={{ ...section, gap: 16 }} data-reveal>
           <h2 style={subheadStyle}>Two more ways to play</h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <SecondaryWay
               label="Solo"
               to="/play?mode=solo"
+              className="ww-landing-way-solo"
               background={COLORS.blue}
               color={COLORS.surface}
               line="Play the full game against Felix O. He remembers. Mostly."
@@ -244,6 +303,7 @@ const LandingPage: React.FC = () => (
             <SecondaryWay
               label="Multiplayer"
               to="/play?mode=multiplayer"
+              className="ww-landing-way-multi"
               background={COLORS.orange}
               color={COLORS.ink}
               line="Get four friends around one board. This is the real thing."
@@ -253,11 +313,16 @@ const LandingPage: React.FC = () => (
         </section>
 
         {/* 5. Email capture */}
-        <section style={section}>
+        <section style={section} data-reveal>
           <DailyEmailCapture source="landing" />
         </section>
 
-        {/* 6. Footer */}
+        {/* 6. Foot CTA */}
+        <section style={{ ...section, gap: 12 }} data-reveal>
+          <PlayCta />
+        </section>
+
+        {/* 7. Footer */}
         <footer style={{ ...section, gap: 4 }}>
           <p style={subheadStyle}>A game from Oleeha &amp; Co.</p>
           <p className="ww-landing-fine" style={fineStyle}>
@@ -270,6 +335,7 @@ const LandingPage: React.FC = () => (
       <DailyShapeRule />
     </div>
   </>
-);
+  );
+};
 
 export default LandingPage;
