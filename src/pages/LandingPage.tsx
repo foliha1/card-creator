@@ -271,7 +271,7 @@ const LandingPage: React.FC = () => {
               <DieRuleTile key={r.label} src={r.src} label={r.label} index={i} />
             ))}
           </div>
-          <p style={bodyStyle} data-reveal style-reveal-order="">
+          <p style={bodyStyle} data-reveal>
             Whichever face lands is what counts. Until the next round.
           </p>
         </section>
