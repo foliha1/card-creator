@@ -440,53 +440,7 @@ const DailyPage: React.FC = () => {
               revisit={daily.alreadyPlayed}
               onLeave={leave}
             />
-          ) : ready ? (
-            <div
-              style={{
-                ...panelStyle("surface", 8),
-                alignSelf: "stretch",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: SPACE[6],
-                padding: mobile ? SPACE[6] : SPACE[10],
-              }}
-            >
-              <h1
-                style={{
-                  ...textStyle("title", mobile),
-                  color: COLORS.ink,
-                  textAlign: "center",
-                  margin: 0,
-                }}
-              >
-                Daily Puzzle #{daily.puzzleNumber}
-              </h1>
-              <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>{today}</div>
-              <p
-                style={{
-                  ...textStyle("body", mobile),
-                  color: COLORS.inkMuted,
-                  textAlign: "center",
-                  margin: 0,
-                }}
-              >
-                Nine cards face up for ten seconds. Then they go down and the die decides the rule
-                — three rounds, five misses to spend. You get one attempt today.
-              </p>
-              <button
-                type="button"
-                className="ww-press"
-                onClick={() => {
-                  hapticTap();
-                  daily.start();
-                }}
-                style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
-              >
-                PLAY
-              </button>
-            </div>
-          ) : (
+          ) : ready ? null : (
             <div
               style={{
                 ...panelStyle("surface", 6),
