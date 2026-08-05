@@ -226,10 +226,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      subscribe_daily: {
-        Args: { p_email: string; p_visitor_id?: string }
-        Returns: boolean
-      }
+      subscribe_daily:
+        | { Args: { p_email: string; p_visitor_id?: string }; Returns: boolean }
+        | {
+            Args: { p_email: string; p_source: string; p_visitor_id: string }
+            Returns: boolean
+          }
     }
     Enums: {
       [_ in never]: never
