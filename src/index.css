@@ -331,25 +331,21 @@ All colors MUST be HSL.
    anchored to the centred content container via CSS variables so the repeated
    shapes stay aligned with the date/button container edges when padding or
    max-width changes. */
+/* Painted band is sized/positioned in DailyShapeRule.tsx so edges always fall
+   on shape-cell boundaries and the daily offset stays seamless. */
 .daily-shape-rule {
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
   width: 100%;
   height: 19px;
   flex-shrink: 0;
-  background-image: var(--daily-rule-bg);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
 }
 
 @media (min-width: 768px) {
   .daily-shape-rule {
     height: 24px;
-    background-size: auto 100%;
-    background-repeat: repeat-x;
-    /* Tile is palindromic, so centring it puts the circle dead-centre and the
-       square/star/triangle rings mirror outwards — matching the mobile strip. */
-    background-position: center center;
   }
 }
 
