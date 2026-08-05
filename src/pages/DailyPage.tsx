@@ -366,13 +366,7 @@ const DailyReadyScreen: React.FC<{
         gap: 40,
       }}
     >
-      <div style={{ width: "100%", maxWidth: 251, aspectRatio: "251 / 211" }}>
-        <img
-          src={dailyLockup.url}
-          alt="Whoop Whoop Daily"
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
-      </div>
+      <DailyLogoLockup />
 
       <div
         style={{
