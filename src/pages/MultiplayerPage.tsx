@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -33,8 +33,14 @@ const MultiplayerPage: React.FC = () => {
   useBodyScrollLock();
   const { roomCode } = useParams<{ roomCode?: string }>();
   const [searchParams] = useSearchParams();
+  const { pathname } = useLocation();
   const modeParam = searchParams.get("mode");
-  const initialMode = modeParam === "solo" || modeParam === "multiplayer" ? modeParam : undefined;
+  const initialMode: "solo" | "multiplayer" | undefined =
+    pathname === "/solo"
+      ? "solo"
+      : modeParam === "solo" || modeParam === "multiplayer"
+        ? modeParam
+        : undefined;
   const mobile = useIsMobile();
 
   const initialIntroStatus = (): IntroStatus => {
