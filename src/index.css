@@ -1055,6 +1055,21 @@ All colors MUST be HSL.
   }
 }
 
+/* Focus-visible rings for landing page controls */
+.ww-landing-play:focus-visible,
+.ww-landing-way-solo:focus-visible,
+.ww-landing-way-multi:focus-visible,
+.ww-landing-shell input:focus-visible,
+.ww-landing-shell button:focus-visible {
+  outline: 2px solid #0072B2;
+  outline-offset: 2px;
+}
+
+/* Cream outline on the dark full-bleed band so focus stays visible */
+.ww-landing-band :focus-visible {
+  outline-color: #F8F2E9;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] {
     transform: none;
