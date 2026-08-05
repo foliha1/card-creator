@@ -508,7 +508,8 @@ const DailyReadyScreen: React.FC<{
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: 16,
-            lineHeight: 1,
+            lineHeight: 1.15,
+
           }}
         >
           <HelpCircle size={16} aria-hidden="true" />
