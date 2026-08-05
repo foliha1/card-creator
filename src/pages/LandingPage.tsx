@@ -244,10 +244,6 @@ const LandingPage: React.FC = () => {
             A memory game that moves the target on you. New puzzle every day.
           </p>
           <PlayCta />
-
-          <p className="ww-landing-fine" style={fineStyle}>
-            Free. No signup. About 30 seconds.
-          </p>
           </div>
 
           <DecorativeBoard />
