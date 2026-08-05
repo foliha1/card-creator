@@ -130,12 +130,8 @@ const LandingPage: React.FC = () => (
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 40,
-          padding: 24,
           paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
           boxSizing: "border-box",
-          "--daily-content-max-width": "402px",
-          "--daily-content-padding-x": "24px",
         } as React.CSSProperties
       }
     >
