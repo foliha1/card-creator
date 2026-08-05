@@ -43,7 +43,9 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
       flexDirection: "column",
       gap: 24,
       overflowY: "auto",
-    }}
+      "--daily-content-max-width": "402px",
+      "--daily-content-padding-x": "24px",
+    } as React.CSSProperties}
   >
     <DailyShapeRule />
 

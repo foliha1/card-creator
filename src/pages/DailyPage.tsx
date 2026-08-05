@@ -352,7 +352,9 @@ const DailyReadyScreen: React.FC<{
       padding: 24,
       paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
       overflowY: "auto",
-    }}
+      "--daily-content-max-width": "402px",
+      "--daily-content-padding-x": "24px",
+    } as React.CSSProperties}
   >
     <DailyShapeRule />
 

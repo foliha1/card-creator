@@ -328,8 +328,9 @@ All colors MUST be HSL.
 
 /* ── Daily pattern strip ──
    Mobile: centred, contained tile. Tablet/desktop: repeat-x and scale up,
-   starting the tile at the left edge of the centred 402px content column so
-   the repeated shapes line up with the date/button container edges. */
+   anchored to the centred content container via CSS variables so the repeated
+   shapes stay aligned with the date/button container edges when padding or
+   max-width changes. */
 .daily-shape-rule {
   display: block;
   width: 100%;
@@ -346,7 +347,7 @@ All colors MUST be HSL.
     height: 24px;
     background-size: auto 100%;
     background-repeat: repeat-x;
-    background-position: calc(50% - 201px) center;
+    background-position: calc(50% - (var(--daily-content-max-width, 402px) / 2) - var(--daily-content-padding-x, 24px)) center;
   }
 }
 
