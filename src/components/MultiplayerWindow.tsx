@@ -1047,6 +1047,19 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
           How do you want to play?
         </div>
 
+        <p
+          style={{
+            margin: 0,
+            fontFamily: '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
+            fontSize: 14,
+            lineHeight: 1.45,
+            color: COLORS.inkMuted,
+            textAlign: "center",
+          }}
+        >
+          Different from the Daily: no timer, no peek, and the round keeps going until someone lands a match.
+        </p>
+
         <div style={{ alignSelf: "stretch", display: "flex", gap: SPACE[8] }}>
           <button
             type="button"
