@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyShapeRule from "@/components/DailyShapeRule";
