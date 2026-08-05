@@ -369,6 +369,7 @@ const DailyReadyScreen: React.FC<{
       <DailyLogoLockup />
 
       <div
+        className="daily-intro"
         style={{
           fontFamily: FONT_FAMILY,
           fontSize: "clamp(22px, 8vw, 32px)",
@@ -382,7 +383,7 @@ const DailyReadyScreen: React.FC<{
 
       <button
         type="button"
-        className="ww-press"
+        className="ww-press daily-intro"
         onClick={onHowToPlay}
         style={{
           display: "inline-flex",
@@ -400,6 +401,7 @@ const DailyReadyScreen: React.FC<{
           fontSize: 16,
           lineHeight: 1,
           color: COLORS.ink,
+          animationDelay: "120ms",
         }}
       >
         <HelpCircle size={16} aria-hidden="true" />
@@ -408,7 +410,7 @@ const DailyReadyScreen: React.FC<{
 
       <button
         type="button"
-        className="ww-press"
+        className="ww-press daily-intro"
         onClick={onPlay}
         style={{
           width: "100%",
@@ -422,6 +424,7 @@ const DailyReadyScreen: React.FC<{
           fontSize: "clamp(22px, 7vw, 32px)",
           lineHeight: 1,
           cursor: "pointer",
+          animationDelay: "240ms",
         }}
       >
         Play Today's Daily
