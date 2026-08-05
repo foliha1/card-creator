@@ -118,6 +118,30 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           created_at: string
@@ -193,6 +217,10 @@ export type Database = {
           p_total_misses: number
           p_visitor_id: string
         }
+        Returns: boolean
+      }
+      subscribe_daily: {
+        Args: { p_email: string; p_visitor_id?: string }
         Returns: boolean
       }
     }
