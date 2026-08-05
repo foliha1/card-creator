@@ -405,9 +405,7 @@ const DailyReadyScreen: React.FC<{
         <HelpCircle size={16} aria-hidden="true" />
         How to Play
       </button>
-    </div>
 
-    <div style={{ width: "100%", maxWidth: 402, display: "flex", flexDirection: "column", gap: 24 }}>
       <button
         type="button"
         className="ww-press"
