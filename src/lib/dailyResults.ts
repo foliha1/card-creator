@@ -5,7 +5,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor";
-import type { DailyResult } from "@/lib/daily";
+import { getLocalDateString, type DailyResult } from "@/lib/daily";
 import type { DailyMark } from "@/lib/dailyEngine";
 
 export interface StoredDailyResult {
@@ -19,11 +19,11 @@ export interface StoredDailyResult {
   created_at: string;
 }
 
-/** `whoop-2026-08-05` → `2026-08-05`. Falls back to today (UTC). */
+/** `whoop-2026-08-05` → `2026-08-05`. Falls back to today (local). */
 function puzzleDateFromSeed(seed: string): string {
   const m = /(\d{4}-\d{2}-\d{2})/.exec(seed ?? "");
   if (m) return m[1];
-  return new Date().toISOString().slice(0, 10);
+  return getLocalDateString();
 }
 
 /**

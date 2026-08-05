@@ -524,7 +524,8 @@ const DailyPage: React.FC = () => {
 
   const canClaim = phase === "PLAY" && !state.claiming && !state.peeking;
   const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
-  const today = new Date().toLocaleDateString("en-US", {
+  const [ty, tm, td] = getLocalDateString().split("-").map(Number);
+  const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",
