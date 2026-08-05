@@ -578,6 +578,7 @@ const DailyPage: React.FC = () => {
             {howTo && <DailyHowToPlay onClose={() => setHowTo(false)} />}
           </>
         )}
+        {!ready && (
         <PreGameShell mobile={mobile} gap={SPACE[5]}>
 
           {finished ? (
@@ -748,6 +749,7 @@ const DailyPage: React.FC = () => {
             </div>
           )}
         </PreGameShell>
+        )}
       </div>
     </>
   );
