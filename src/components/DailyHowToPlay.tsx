@@ -144,8 +144,8 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
         </ul>
       </section>
 
-      <p style={friend(20)}>
-        A new game drops every day at midnight. Sign up for the daily reminder email.
+      <p style={{ ...friend(20), whiteSpace: "pre-line" }}>
+        {"A new game drops every day at midnight.\nSign up for the daily reminder email."}
       </p>
     </div>
 
