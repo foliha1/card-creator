@@ -63,8 +63,11 @@ import { unlockAudio } from "@/lib/sounds";
 
 interface MultiplayerWindowProps {
   initialRoomCode?: string;
+  /** Optional deep-link mode from `?mode=` — skips the idle play-style chooser. */
+  initialMode?: "solo" | "multiplayer";
   introStatus?: "running" | "skipped" | "complete" | "timeout" | "none";
 }
+
 
 const ROOM_CAPACITY = 6;
 
