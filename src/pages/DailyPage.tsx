@@ -468,6 +468,7 @@ const DailyPage: React.FC = () => {
   const daily = useDailyGame();
   const { state, phase } = daily;
   const leave = () => navigate("/");
+  const [howTo, setHowTo] = useState(false);
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
@@ -514,7 +515,7 @@ const DailyPage: React.FC = () => {
 
   const canClaim = phase === "PLAY" && !state.claiming && !state.peeking;
   const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
-  const today = new Date().toLocaleDateString(undefined, {
+  const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -560,6 +561,22 @@ const DailyPage: React.FC = () => {
           >
             DEBUG — LOCK BYPASSED, NOT A REAL RUN
           </div>
+        )}
+        {ready && (
+          <>
+            <DailyReadyScreen
+              today={today}
+              onPlay={() => {
+                hapticTap();
+                daily.start();
+              }}
+              onHowToPlay={() => {
+                hapticTap();
+                setHowTo(true);
+              }}
+            />
+            {howTo && <DailyHowToPlay onClose={() => setHowTo(false)} />}
+          </>
         )}
         <PreGameShell mobile={mobile} gap={SPACE[5]}>
 
