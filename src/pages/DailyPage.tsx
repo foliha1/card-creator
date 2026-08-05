@@ -351,6 +351,8 @@ const DailyResultCard: React.FC<{
 /** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
 const DailyReadyScreen: React.FC<{
   today: string;
+  /** Null hides the streak line — never show a zero. */
+  streak: number | null;
   onPlay: () => void;
   onHowToPlay: () => void;
 }> = ({ today, streak, onPlay, onHowToPlay }) => (
