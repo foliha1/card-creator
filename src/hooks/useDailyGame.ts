@@ -83,6 +83,9 @@ export function useDailyGame(): UseDailyGameResult {
   );
   const [tumbleSeed] = useState(() => pickTumbleSeed());
   const [result, setResult] = useState<DailyResult | null>(stored);
+  // True once the finished run has been persisted (locally + remotely, or
+  // skipped in debug). Gates the streak read so today counts.
+  const [resultSaved, setResultSaved] = useState(stored !== null);
   const alreadyPlayed = stored !== null;
 
   // ---- phase sequence: (start gate) deal → study → hide → roll → play ----
