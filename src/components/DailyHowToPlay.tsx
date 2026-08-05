@@ -83,7 +83,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
 
       <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h3 style={friend(24)}>Find 3 matching pairs from memory.</h3>
-        <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+        <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
           <li>All cards show for 10 seconds. Study them.</li>
           <li>The cards flip over. Then the die decides what a match means.</li>
           <li>Tap WHOOP! WHOOP!, then tap two cards.</li>
