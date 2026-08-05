@@ -41,6 +41,8 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
       boxSizing: "border-box",
       display: "flex",
       flexDirection: "column",
+      justifyContent: "space-between",
+      alignItems: "center",
       gap: 24,
       overflowY: "auto",
       "--daily-content-max-width": "402px",
@@ -52,34 +54,39 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
     <div
       style={{
         width: "100%",
-        maxWidth: 402,
+        maxWidth: 354,
         margin: "0 auto",
+        boxSizing: "border-box",
+        background: COLORS.panel,
+        borderRadius: RADIUS.sm,
+        padding: "24px 32px 32px",
         display: "flex",
         flexDirection: "column",
-        gap: 32,
+        gap: 24,
         textAlign: "left",
-        flex: "1 0 auto",
+        flex: "0 1 auto",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-        <h2 style={friend(36)}>How to Play</h2>
-        <button
-          type="button"
-          aria-label="Close how to play"
-          onClick={onClose}
-          style={{
-            background: "transparent",
-            border: "none",
-            padding: 10,
-            margin: -10,
-            cursor: "pointer",
-            color: COLORS.red,
-            display: "inline-flex",
-          }}
-        >
-          <X size={24} strokeWidth={2.5} />
-        </button>
-      </div>
+      <button
+        type="button"
+        aria-label="Close how to play"
+        onClick={onClose}
+        style={{
+          alignSelf: "flex-end",
+          background: "transparent",
+          border: "none",
+          padding: 10,
+          margin: -10,
+          cursor: "pointer",
+          color: COLORS.ink,
+          display: "inline-flex",
+        }}
+      >
+        <X size={24} strokeWidth={2.5} />
+      </button>
+
+      <h2 style={friend(36, true)}>How to Play</h2>
+
 
       <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h3 style={friend(24)}>Find 3 matching pairs from memory.</h3>
