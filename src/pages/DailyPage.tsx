@@ -616,19 +616,29 @@ const DailyPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{`Daily Puzzle #${daily.puzzleNumber} | Whoop Whoop`}</title>
+        <title>{`Daily Puzzle #${daily.puzzleNumber} | WHOOP! WHOOP!`}</title>
         <meta
           name="description"
-          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same Whoop Whoop daily recall puzzle."
+          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same WHOOP! WHOOP! daily recall puzzle."
         />
-        <meta property="og:title" content={`Whoop Whoop Daily Puzzle #${daily.puzzleNumber}`} />
+        <meta property="og:title" content={`WHOOP! WHOOP! Daily Puzzle #${daily.puzzleNumber}`} />
         <meta
           property="og:description"
-          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same Whoop Whoop daily recall puzzle."
+          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same WHOOP! WHOOP! daily recall puzzle."
         />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://whoop-whoop.lovable.app/today" />
+        <meta property="og:image" content="https://whoop-whoop.lovable.app/og-daily.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+          property="og:image:alt"
+          content="WHOOP! WHOOP! — Nine cards. Ten seconds. Then the rules change."
+        />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://whoop-whoop.lovable.app/og-daily.png" />
       </Helmet>
+
 
       <div style={{ minHeight: "100dvh", background: PAGE_BG }}>
         {daily.debugBypass && (

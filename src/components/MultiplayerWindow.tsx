@@ -518,8 +518,8 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
   const handleShare = useCallback(async (code: string) => {
     const url = shareUrl(code);
     const shareData = {
-      title: "Whoop Whoop",
-      text: `Join my Whoop Whoop table — code ${code}`,
+      title: "WHOOP! WHOOP!",
+      text: `Join my WHOOP! WHOOP! table — code ${code}`,
       url,
     };
     // Feature-detect Web Share API.
