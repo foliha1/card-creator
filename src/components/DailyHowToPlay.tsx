@@ -131,10 +131,11 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
 
       <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h3 style={friend(24)}>Three Rounds:</h3>
-        <p style={geist()}>
-          Each round takes one pair off the board. Nine cards, then seven, then five. Two misses ends
-          a round. One Peek per game shows the board for 5 seconds. It shows up in your score.
-        </p>
+        <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
+          <li>Each round takes one pair off the board. Nine cards, then seven, then five.</li>
+          <li>Two misses ends a round.</li>
+          <li>One Peek per game shows the board for 5 seconds. It shows up in your score.</li>
+        </ul>
       </section>
 
       <p style={friend(24)}>
