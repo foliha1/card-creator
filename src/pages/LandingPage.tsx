@@ -190,12 +190,15 @@ const LandingPage: React.FC = () => (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <SecondaryWay
               label="Solo"
+              to="/play?mode=solo"
               line="Play the full game against Felix O. He remembers. Mostly."
             />
             <SecondaryWay
               label="Multiplayer"
+              to="/play?mode=multiplayer"
               line="Get four friends around one board. This is the real thing."
             />
+
           </div>
         </section>
 
