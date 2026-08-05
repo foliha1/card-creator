@@ -1,5 +1,5 @@
 import React from "react";
-import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern.svg.asset.json";
+import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern_Seamless.svg.asset.json";
 
 /** The brand pattern strip that tops and tails the daily screens. */
 const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
