@@ -793,7 +793,7 @@ All colors MUST be HSL.
 
 .ww-landing-main {
   width: 100%;
-  max-width: 720px;
+  max-width: 402px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -808,10 +808,10 @@ All colors MUST be HSL.
 .ww-landing-play { font-size: clamp(24px, 7vw, 32px); }
 
 .ww-landing-hero {
-  display: grid;
-  grid-template-columns: 1fr;
-  row-gap: 24px;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
   text-align: center;
 }
 
@@ -822,7 +822,6 @@ All colors MUST be HSL.
   align-items: center;
   text-align: center;
   width: 100%;
-  max-width: 402px;
 }
 
 .ww-landing-play {
@@ -836,49 +835,27 @@ All colors MUST be HSL.
   width: 100%;
 }
 
-/* Decorative board — visible on every size; below the CTA on mobile,
-   beside the copy on desktop. */
 .ww-landing-board {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  width: 100%;
-  max-width: 320px;
-  pointer-events: none;
-  user-select: none;
-  transform: rotate(-3deg);
-}
-
-.ww-landing-board img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
-  border-radius: 8px;
-  transform: rotate(var(--card-tilt, 0deg));
-  filter: drop-shadow(0 6px 14px rgba(35, 31, 32, 0.18));
+  display: none;
 }
 
 @media (min-width: 1024px) {
   .ww-landing-shell {
-    --daily-content-max-width: 1200px;
+    --daily-content-max-width: 1100px;
     gap: 64px;
     padding: 40px 32px;
   }
 
   .ww-landing-main {
-    max-width: 720px;
+    max-width: 1100px;
     gap: 72px;
   }
 
-  /* Hero breaks out of the 720px column to a wider 1200px band. */
   .ww-landing-hero {
-    width: min(1200px, calc(100vw - 64px));
-    margin-left: calc((100% - min(1200px, 100vw - 64px)) / 2);
+    display: grid;
     grid-template-columns: 55fr 45fr;
     column-gap: 72px;
     align-items: center;
-    justify-items: stretch;
     text-align: left;
   }
 
@@ -886,7 +863,6 @@ All colors MUST be HSL.
     align-items: flex-start;
     text-align: left;
     gap: 20px;
-    max-width: none;
   }
 
   .ww-landing-hero-copy h1 {
@@ -932,16 +908,28 @@ All colors MUST be HSL.
 
   /* Decorative board */
   .ww-landing-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 14px;
-    width: 100%;
-    max-width: none;
+    width: 112%;
+    margin-left: -6%;
     transform: rotate(-4deg);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .ww-landing-board img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    border-radius: 8px;
+    filter: drop-shadow(0 6px 14px rgba(35, 31, 32, 0.18));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ww-landing-board { transform: none; }
-  .ww-landing-board img { transform: none; }
 }
 
 /* Landing: divided "How it works" list */

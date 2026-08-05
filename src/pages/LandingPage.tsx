@@ -161,29 +161,23 @@ const SecondaryWay: React.FC<{
 );
 
 
-const BOARD_CARDS: { src: string; tilt: number }[] = [
-  { src: "/cards/card-back.svg", tilt: -5 },
-  { src: "/cards/2-star-red.svg", tilt: 3 },
-  { src: "/cards/card-back.svg", tilt: -2 },
-  { src: "/cards/card-back.svg", tilt: 4 },
-  { src: "/cards/card-back.svg", tilt: -3 },
-  { src: "/cards/3-circle-blue.svg", tilt: 6 },
-  { src: "/cards/1-square-yellow.svg", tilt: -6 },
-  { src: "/cards/card-back.svg", tilt: 2 },
-  { src: "/cards/card-back.svg", tilt: -4 },
+const BOARD_CARDS: string[] = [
+  "/cards/card-back.svg",
+  "/cards/2-star-red.svg",
+  "/cards/card-back.svg",
+  "/cards/card-back.svg",
+  "/cards/card-back.svg",
+  "/cards/3-circle-blue.svg",
+  "/cards/1-square-yellow.svg",
+  "/cards/card-back.svg",
+  "/cards/card-back.svg",
 ];
 
-/** Decorative 3x3 board, hidden from assistive tech. */
+/** Decorative 3x3 board, desktop only, hidden from assistive tech. */
 const DecorativeBoard: React.FC = () => (
   <div className="ww-landing-board" aria-hidden="true" role="presentation">
-    {BOARD_CARDS.map((card, i) => (
-      <img
-        key={i}
-        src={card.src}
-        alt=""
-        draggable={false}
-        style={{ ["--card-tilt" as string]: `${card.tilt}deg` } as React.CSSProperties}
-      />
+    {BOARD_CARDS.map((src, i) => (
+      <img key={i} src={src} alt="" draggable={false} />
     ))}
   </div>
 );
@@ -244,6 +238,10 @@ const LandingPage: React.FC = () => {
             A memory game that moves the target on you. New puzzle every day.
           </p>
           <PlayCta />
+
+          <p className="ww-landing-fine" style={fineStyle}>
+            Free. No signup. About 30 seconds.
+          </p>
           </div>
 
           <DecorativeBoard />
@@ -296,7 +294,7 @@ const LandingPage: React.FC = () => {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <SecondaryWay
               label="Solo"
-              to="/solo"
+              to="/play?mode=solo"
               className="ww-landing-way-solo"
               background={COLORS.blue}
               color={COLORS.surface}
@@ -304,7 +302,7 @@ const LandingPage: React.FC = () => {
             />
             <SecondaryWay
               label="Multiplayer"
-              to="/play"
+              to="/play?mode=multiplayer"
               className="ww-landing-way-multi"
               background={COLORS.orange}
               color={COLORS.ink}
@@ -317,9 +315,6 @@ const LandingPage: React.FC = () => {
         {/* 5. Email capture */}
         <section style={section} data-reveal>
           <DailyEmailCapture source="landing" />
-          <p className="ww-landing-fine" style={fineStyle}>
-            Free. No signup. About 30 seconds.
-          </p>
         </section>
 
         {/* 6. Foot CTA */}

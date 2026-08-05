@@ -41,7 +41,6 @@ const AnimatedRoutes: React.FC = () => {
       <Routes location={displayLocation}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/play" element={<MultiplayerPage />} />
-        <Route path="/solo" element={<MultiplayerPage />} />
         <Route path="/play/:roomCode" element={<MultiplayerPage />} />
         <Route path="/today" element={<DailyPage />} />
         <Route path="/about" element={<SupportPage />} />
