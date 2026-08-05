@@ -208,6 +208,78 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
   );
 };
 
+/**
+ * Secondary share options. All three reuse the exact string from
+ * formatDailyShare — never a second, chattier variant.
+ */
+const SharePills: React.FC<{ text: string }> = ({ text }) => {
+  const [copiedKey, setCopiedKey] = useState<"text" | "copy" | null>(null);
+
+  const flash = (key: "text" | "copy") => {
+    setCopiedKey(key);
+    window.setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2000);
+  };
+
+  const copy = async (key: "text" | "copy") => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked — nothing more we can do */
+    }
+    flash(key);
+  };
+
+  const isMobile = () =>
+    typeof navigator !== "undefined" &&
+    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  const onText = () => {
+    hapticTap();
+    if (isMobile()) {
+      window.location.href = `sms:?body=${encodeURIComponent(text)}`;
+      return;
+    }
+    void copy("text");
+  };
+
+  const onX = () => {
+    hapticTap();
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  const pill = (label: string, onClick: () => void, key?: string) => (
+    <button
+      key={label}
+      type="button"
+      className="ww-press daily-share-pill"
+      onClick={onClick}
+    >
+      {key && copiedKey === key ? "Copied!" : label}
+    </button>
+  );
+
+  return (
+    <div
+      style={{
+        alignSelf: "stretch",
+        display: "flex",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: SPACE[2],
+      }}
+    >
+      {pill("Text a Friend", onText, "text")}
+      {pill("Share on X", onX)}
+      {pill("Copy", () => void copy("copy"), "copy")}
+    </div>
+  );
+};
+
+
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
   attributes: ("SHAPE" | "NUMBER" | "COLOR")[];
@@ -313,6 +385,9 @@ const DailyResultCard: React.FC<{
       </div>
 
       <ShareBlock text={shareText} mobile={mobile} />
+
+      <SharePills text={shareText} />
+
 
       {!hasSubscribed() && <DailyEmailCapture />}
 
