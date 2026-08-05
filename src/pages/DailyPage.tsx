@@ -7,6 +7,7 @@ import DailyShapeRule from "@/components/DailyShapeRule";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
+import dailyLockup from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
