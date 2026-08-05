@@ -322,7 +322,138 @@ const DailyResultCard: React.FC<{
       </button>
     </div>
   );
-};
+
+/** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
+const DailyReadyScreen: React.FC<{
+  today: string;
+  onPlay: () => void;
+  onHowToPlay: () => void;
+}> = ({ today, onPlay, onHowToPlay }) => (
+  <div
+    style={{
+      position: "relative",
+      minHeight: "100dvh",
+      height: "100dvh",
+      boxSizing: "border-box",
+      background: COLORS.surface,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 24,
+      padding: 24,
+      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+      overflowY: "auto",
+    }}
+  >
+    <DailyShapeRule />
+
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 402,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 40,
+      }}
+    >
+      <div style={{ position: "relative", width: "100%", maxWidth: 251, aspectRatio: "251 / 199" }}>
+        <img
+          src="/WhoopWhoop_Dark_Logo.svg"
+          alt="Whoop Whoop"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            left: "68.9%",
+            top: "84.4%",
+            width: "31.1%",
+            height: "21.6%",
+            background: COLORS.red,
+            border: BORDER.heavy,
+            borderRadius: RADIUS.sm,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: COLORS.surface,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: "clamp(14px, 4.5vw, 20px)",
+            lineHeight: 1,
+          }}
+        >
+          Daily
+        </span>
+      </div>
+
+      <div
+        style={{
+          fontFamily: FONT_FAMILY,
+          fontSize: "clamp(22px, 8vw, 32px)",
+          lineHeight: "1.22",
+          textAlign: "center",
+          color: COLORS.ink,
+        }}
+      >
+        {today}
+      </div>
+
+      <button
+        type="button"
+        className="ww-press"
+        onClick={onHowToPlay}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          minHeight: 32,
+          padding: "8px 16px",
+          background: COLORS.panel,
+          border: "none",
+          borderRadius: RADIUS.sm,
+          cursor: "pointer",
+          fontFamily: FONT_FAMILY,
+          fontStyle: "italic",
+          fontSize: 16,
+          lineHeight: 1,
+          color: COLORS.ink,
+        }}
+      >
+        <HelpCircle size={16} aria-hidden="true" />
+        How to Play
+      </button>
+    </div>
+
+    <div style={{ width: "100%", maxWidth: 402, display: "flex", flexDirection: "column", gap: 24 }}>
+      <button
+        type="button"
+        className="ww-press"
+        onClick={onPlay}
+        style={{
+          width: "100%",
+          height: 80,
+          background: COLORS.red,
+          border: BORDER.heavy,
+          borderRadius: RADIUS.sm,
+          color: COLORS.surface,
+          fontFamily: FONT_FAMILY,
+          fontStyle: "italic",
+          fontSize: "clamp(22px, 7vw, 32px)",
+          lineHeight: 1,
+          cursor: "pointer",
+        }}
+      >
+        Play Today's Daily
+      </button>
+    </div>
+
+    <DailyShapeRule />
+  </div>
+);
+
 
 const DailyPage: React.FC = () => {
   const mobile = useIsMobile();
