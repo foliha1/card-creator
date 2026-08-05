@@ -209,8 +209,11 @@ export function useDailyGame(): UseDailyGameResult {
     };
     if (!debugBypass) {
       saveDailyResult(finished);
-      // Fire-and-forget: the result screen never waits on the network.
-      void saveDailyResultRemote(finished);
+      // Fire-and-forget: the result screen never waits on the network. The
+      // streak read is gated on this settling so it counts today's run.
+      void saveDailyResultRemote(finished).then(() => setResultSaved(true));
+    } else {
+      setResultSaved(true);
     }
     setResult(finished);
 
