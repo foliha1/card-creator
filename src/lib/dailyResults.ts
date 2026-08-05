@@ -67,3 +67,38 @@ export async function fetchDailyResults(
     return [];
   }
 }
+
+export interface DailyStreak {
+  current: number;
+  longest: number;
+}
+
+/**
+ * Streak = consecutive puzzle numbers played (playing counts, solving does not).
+ * Computed in SQL. Returns null when the fetch fails so callers can hide the line.
+ */
+export async function fetchStreak(
+  currentPuzzleNumber: number,
+  visitorId: string = getVisitorId()
+): Promise<DailyStreak | null> {
+  try {
+    const { data, error } = await supabase.rpc("get_streak", {
+      p_visitor_id: visitorId,
+      p_current_puzzle_number: currentPuzzleNumber,
+    });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    return {
+      current: Number(row.current_streak ?? 0),
+      longest: Number(row.longest_streak ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** "Streak: 1 day" / "Streak: 4 days". */
+export function formatStreakLine(days: number): string {
+  return `Streak: ${days} ${days === 1 ? "day" : "days"}`;
+}
