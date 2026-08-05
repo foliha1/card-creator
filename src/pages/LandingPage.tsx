@@ -317,6 +317,9 @@ const LandingPage: React.FC = () => {
         {/* 5. Email capture */}
         <section style={section} data-reveal>
           <DailyEmailCapture source="landing" />
+          <p className="ww-landing-fine" style={fineStyle}>
+            Free. No signup. About 30 seconds.
+          </p>
         </section>
 
         {/* 6. Foot CTA */}
