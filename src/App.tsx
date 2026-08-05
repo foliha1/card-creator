@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-context";
+import LandingPage from "./pages/LandingPage.tsx";
 import MultiplayerPage from "./pages/MultiplayerPage.tsx";
 import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
@@ -38,7 +39,7 @@ const AnimatedRoutes: React.FC = () => {
       }}
     >
       <Routes location={displayLocation}>
-        <Route path="/" element={<MultiplayerPage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/play" element={<MultiplayerPage />} />
         <Route path="/play/:roomCode" element={<MultiplayerPage />} />
         <Route path="/today" element={<DailyPage />} />
