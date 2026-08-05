@@ -8,6 +8,9 @@ import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
 import DailyLogoLockup from "@/components/DailyLogoLockup";
+import DailyEmailCapture from "@/components/DailyEmailCapture";
+import { hasSubscribed } from "@/lib/dailySubscribe";
+
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -299,6 +302,9 @@ const DailyResultCard: React.FC<{
       </div>
 
       <ShareBlock text={shareText} mobile={mobile} />
+
+      {!hasSubscribed() && <DailyEmailCapture />}
+
 
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {attributes.map((attr, i) => (
