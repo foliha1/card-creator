@@ -326,6 +326,45 @@ All colors MUST be HSL.
   }
 }
 
+/* ── Daily ready screen buttons ──
+   Maps to COLORS tokens: panel / panelMutedHover / red / redHover / blue */
+.daily-btn-howto,
+.daily-btn-play {
+  transition: background 150ms ease-out, transform 200ms ease, filter 200ms ease;
+  cursor: pointer;
+}
+
+.daily-btn-howto {
+  background: #D0C3AF; /* COLORS.panel */
+  color: #231F20;      /* COLORS.ink */
+}
+.daily-btn-howto:hover:not(:disabled),
+.daily-btn-howto:focus-visible {
+  background: #BDB5A4; /* COLORS.panelMutedHover */
+}
+
+.daily-btn-play {
+  background: #D72229; /* COLORS.red */
+  color: #F8F2E9;      /* COLORS.surface */
+}
+.daily-btn-play:hover:not(:disabled),
+.daily-btn-play:focus-visible {
+  background: #B81B20; /* COLORS.redHover */
+}
+
+.daily-btn-howto:focus-visible,
+.daily-btn-play:focus-visible {
+  outline: 2px solid #0072B2; /* COLORS.blue */
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-btn-howto,
+  .daily-btn-play {
+    transition: none;
+  }
+}
+
 
 
 @media (prefers-reduced-motion: reduce) {

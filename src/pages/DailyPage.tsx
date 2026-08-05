@@ -381,54 +381,50 @@ const DailyReadyScreen: React.FC<{
         {today}
       </div>
 
-      <button
-        type="button"
-        className="ww-press daily-intro"
-        onClick={onHowToPlay}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          minHeight: 32,
-          padding: "8px 16px",
-          background: COLORS.panel,
-          border: "none",
-          borderRadius: RADIUS.sm,
-          cursor: "pointer",
-          fontFamily: FONT_FAMILY,
-          fontStyle: "italic",
-          fontSize: 16,
-          lineHeight: 1,
-          color: COLORS.ink,
-          animationDelay: "120ms",
-        }}
-      >
-        <HelpCircle size={16} aria-hidden="true" />
-        How to Play
-      </button>
+      <div className="daily-intro" style={{ display: "inline-block", animationDelay: "120ms" }}>
+        <button
+          type="button"
+          className="ww-press daily-btn-howto"
+          onClick={onHowToPlay}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            minHeight: 32,
+            padding: "8px 16px",
+            border: "none",
+            borderRadius: RADIUS.sm,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: 16,
+            lineHeight: 1,
+          }}
+        >
+          <HelpCircle size={16} aria-hidden="true" />
+          How to Play
+        </button>
+      </div>
 
-      <button
-        type="button"
-        className="ww-press daily-intro"
-        onClick={onPlay}
-        style={{
-          width: "100%",
-          height: 80,
-          background: COLORS.red,
-          border: BORDER.heavy,
-          borderRadius: RADIUS.sm,
-          color: COLORS.surface,
-          fontFamily: FONT_FAMILY,
-          fontStyle: "italic",
-          fontSize: "clamp(22px, 7vw, 32px)",
-          lineHeight: 1,
-          cursor: "pointer",
-          animationDelay: "240ms",
-        }}
-      >
-        Play Today's Daily
-      </button>
+      <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
+        <button
+          type="button"
+          className="ww-press daily-btn-play"
+          onClick={onPlay}
+          style={{
+            width: "100%",
+            height: 80,
+            border: BORDER.heavy,
+            borderRadius: RADIUS.sm,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: "clamp(22px, 7vw, 32px)",
+            lineHeight: 1,
+          }}
+        >
+          Play Today's Daily
+        </button>
+      </div>
     </div>
 
     <DailyShapeRule />
