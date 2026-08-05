@@ -66,7 +66,7 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
     >
       <img
         src={lockupAsset.url}
-        alt="Whoop Whoop Daily"
+        alt="WHOOP! WHOOP! Daily"
         style={{ ...layer, objectFit: "contain", opacity: ready ? 0 : 1 }}
       />
       {json && (
