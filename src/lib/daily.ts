@@ -1,38 +1,48 @@
 // ============================================================================
-// Daily puzzle helpers — seed + puzzle number, both derived from the UTC date
-// so every player worldwide gets the same puzzle on the same calendar day.
+// Daily puzzle helpers — seed + puzzle number, both derived from the device's
+// LOCAL calendar date, so the puzzle rolls over at each player's own midnight
+// while everyone on the same calendar date shares the same puzzle.
 // ============================================================================
 
 import { DAILY_ROUNDS, type DailyMark } from "@/lib/dailyEngine";
 
-/** Fixed launch day (UTC). Puzzle #1. */
+/** Fixed launch day. Puzzle #1 is the local calendar date 2026-08-01. */
 export const DAILY_LAUNCH_UTC = Date.UTC(2026, 7, 1); // 2026-08-01
 
 const MS_PER_DAY = 86_400_000;
 
-/** Midnight-UTC timestamp for the day the given date falls on. */
-function utcMidnight(date: Date): number {
-  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+/**
+ * `YYYY-MM-DD` for the given date in the device's local time zone.
+ * Single source of truth for every date the daily puzzle keys off.
+ */
+export function getLocalDateString(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
-/** `YYYY-MM-DD` in UTC. */
+/** `YYYY-MM-DD` (local). */
 export function getDailyDateKey(date: Date = new Date()): string {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(date.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return getLocalDateString(date);
 }
 
 /** The shared seed for the day, e.g. `whoop-2026-08-04`. */
 export function getDailySeed(date: Date = new Date()): string {
-  return `whoop-${getDailyDateKey(date)}`;
+  return `whoop-${getLocalDateString(date)}`;
 }
 
-/** Days elapsed since launch, starting at 1. Never below 1. */
+/**
+ * Days elapsed since launch, starting at 1, counted in whole calendar days.
+ * Calendar parts are projected onto UTC midnight before differencing, so DST
+ * transitions can never skip or repeat a day.
+ */
 export function getDailyNumber(date: Date = new Date()): number {
-  const days = Math.floor((utcMidnight(date) - DAILY_LAUNCH_UTC) / MS_PER_DAY);
+  const [y, m, d] = getLocalDateString(date).split("-").map(Number);
+  const days = Math.round((Date.UTC(y, m - 1, d) - DAILY_LAUNCH_UTC) / MS_PER_DAY);
   return Math.max(1, days + 1);
 }
+
 
 // ---------------------------------------------------------------------------
 // One attempt per day — completion record in localStorage.

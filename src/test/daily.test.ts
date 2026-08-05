@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   getDailyDateKey,
+  getLocalDateString,
   getDailyNumber,
   getDailySeed,
   dailyStorageKey,
@@ -26,22 +27,31 @@ import { createRng } from "@/lib/rng";
 import { createDeck } from "@/cardData";
 import { pickRoll } from "@/lib/rolls";
 
+/** Build a Date whose LOCAL calendar parts are exactly the ones given. */
+const localDate = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h);
+
 describe("getDailySeed", () => {
-  it("formats whoop-YYYY-MM-DD in UTC", () => {
-    expect(getDailySeed(new Date("2026-08-04T05:00:00Z"))).toBe("whoop-2026-08-04");
-    expect(getDailyDateKey(new Date("2026-01-09T23:59:59Z"))).toBe("2026-01-09");
+  it("formats whoop-YYYY-MM-DD from local parts", () => {
+    expect(getDailySeed(localDate(2026, 8, 4, 5))).toBe("whoop-2026-08-04");
+    expect(getDailyDateKey(localDate(2026, 1, 9, 23))).toBe("2026-01-09");
+    expect(getLocalDateString(localDate(2026, 1, 9, 23))).toBe("2026-01-09");
   });
 
-  it("is the same for any time on the same UTC date", () => {
-    expect(getDailySeed(new Date("2026-08-04T00:00:00Z"))).toBe(
-      getDailySeed(new Date("2026-08-04T23:59:59Z"))
-    );
+  it("is the same for any time on the same local date", () => {
+    expect(getDailySeed(localDate(2026, 8, 4, 0))).toBe(getDailySeed(localDate(2026, 8, 4, 23)));
   });
 
-  it("differs for different dates", () => {
-    expect(getDailySeed(new Date("2026-08-04T12:00:00Z"))).not.toBe(
-      getDailySeed(new Date("2026-08-05T12:00:00Z"))
-    );
+  it("differs for consecutive local dates", () => {
+    expect(getDailySeed(localDate(2026, 8, 4))).not.toBe(getDailySeed(localDate(2026, 8, 5)));
+  });
+
+  it("two devices in different time zones on the same calendar date share the seed", () => {
+    // Same wall-clock calendar date, different absolute instants (different
+    // zone offsets) — the local date string is what matters.
+    const tokyo = localDate(2026, 8, 4, 9);
+    const newYork = localDate(2026, 8, 4, 20);
+    expect(getDailySeed(tokyo)).toBe(getDailySeed(newYork));
+    expect(getDailyNumber(tokyo)).toBe(getDailyNumber(newYork));
   });
 
   it("keys storage per seed", () => {
@@ -51,18 +61,34 @@ describe("getDailySeed", () => {
 
 describe("getDailyNumber", () => {
   it("starts at 1 on launch day", () => {
-    expect(getDailyNumber(new Date(DAILY_LAUNCH_UTC))).toBe(1);
+    expect(getDailyNumber(localDate(2026, 8, 1))).toBe(1);
+    expect(DAILY_LAUNCH_UTC).toBe(Date.UTC(2026, 7, 1));
   });
 
-  it("counts days elapsed since launch", () => {
-    expect(getDailyNumber(new Date("2026-08-04T00:00:00Z"))).toBe(4);
-    expect(getDailyNumber(new Date("2026-08-31T18:00:00Z"))).toBe(31);
+  it("counts local calendar days elapsed since launch", () => {
+    expect(getDailyNumber(localDate(2026, 8, 4, 0))).toBe(4);
+    expect(getDailyNumber(localDate(2026, 8, 31, 18))).toBe(31);
   });
 
   it("never drops below 1 before launch", () => {
-    expect(getDailyNumber(new Date("2020-01-01T00:00:00Z"))).toBe(1);
+    expect(getDailyNumber(localDate(2020, 1, 1))).toBe(1);
+  });
+
+  it("advances exactly one day across a daylight saving transition", () => {
+    // US spring forward 2027-03-14, fall back 2027-11-07.
+    const springKeys = [13, 14, 15].map((d) => getLocalDateString(localDate(2027, 3, d)));
+    expect(springKeys).toEqual(["2027-03-13", "2027-03-14", "2027-03-15"]);
+    const spring = [13, 14, 15].map((d) => getDailyNumber(localDate(2027, 3, d)));
+    expect(spring[1] - spring[0]).toBe(1);
+    expect(spring[2] - spring[1]).toBe(1);
+
+    const fall = [6, 7, 8].map((d) => getDailyNumber(localDate(2027, 11, d)));
+    expect(fall[1] - fall[0]).toBe(1);
+    expect(fall[2] - fall[1]).toBe(1);
+    expect(new Set([6, 7, 8].map((d) => getDailySeed(localDate(2027, 11, d)))).size).toBe(3);
   });
 });
+
 
 const SEED = "whoop-2026-08-04";
 
