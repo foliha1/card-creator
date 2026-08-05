@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 const IntroAnimation = React.lazy(() => import("@/components/IntroAnimation"));
 import { hasSeenIntro, preloadIntroJson } from "@/components/IntroAnimation";
 import whoopLightLogo from "@/assets/WhoopWhoop_Light_Logo.svg.asset.json";
@@ -29,6 +30,7 @@ const MultiplayerWindow = React.lazy(() => import("@/components/MultiplayerWindo
 type IntroStatus = "pending" | "running" | "skipped" | "complete" | "timeout" | "none";
 
 const MultiplayerPage: React.FC = () => {
+  useBodyScrollLock();
   const { roomCode } = useParams<{ roomCode?: string }>();
   const mobile = useIsMobile();
   const initialIntroStatus = (): IntroStatus => {
