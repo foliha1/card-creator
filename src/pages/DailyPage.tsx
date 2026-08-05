@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
+import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
+import DailyShapeRule from "@/components/DailyShapeRule";
+import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
 import { useDailyGame } from "@/hooks/useDailyGame";
@@ -20,6 +23,7 @@ import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@
 import {
   BORDER,
   COLORS,
+  FONT_FAMILY,
   RADIUS,
   SPACE,
   buttonStyle,
