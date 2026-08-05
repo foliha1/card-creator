@@ -194,22 +194,32 @@ const LandingPage: React.FC = () => {
   return (
   <>
     <Helmet>
-      <title>Whoop Whoop — Nine cards. Ten seconds. Then the rules change.</title>
+      <title>WHOOP! WHOOP! — Nine cards. Ten seconds. Then the rules change.</title>
       <meta
         name="description"
         content="A memory game that moves the target on you. Nine cards, ten seconds, three rounds. Play the free daily puzzle, solo, or with friends."
       />
       <meta
         property="og:title"
-        content="Whoop Whoop — Nine cards. Ten seconds. Then the rules change."
+        content="WHOOP! WHOOP! — Nine cards. Ten seconds. Then the rules change."
       />
       <meta
         property="og:description"
         content="A memory game that moves the target on you. New puzzle every day. Free, no signup."
       />
       <meta property="og:type" content="website" />
+      <meta property="og:url" content="https://whoop-whoop.lovable.app/" />
+      <meta property="og:image" content="https://whoop-whoop.lovable.app/og-daily.png" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta
+        property="og:image:alt"
+        content="WHOOP! WHOOP! — Nine cards. Ten seconds. Then the rules change."
+      />
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image" content="https://whoop-whoop.lovable.app/og-daily.png" />
     </Helmet>
+
 
     <div
       ref={shellRef}
