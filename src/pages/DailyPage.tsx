@@ -322,6 +322,9 @@ const DailyResultCard: React.FC<{
       </button>
     </div>
   );
+};
+
+
 
 /** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
 const DailyReadyScreen: React.FC<{
