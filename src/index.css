@@ -931,3 +931,65 @@ All colors MUST be HSL.
 @media (prefers-reduced-motion: reduce) {
   .ww-landing-board { transform: none; }
 }
+
+/* Landing: divided "How it works" list */
+.ww-landing-hiw-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid #231f20;
+  padding: 20px 0;
+}
+.ww-landing-hiw-item:last-child { padding-bottom: 0; }
+
+/* Landing: die-rule tiles */
+.ww-landing-dice-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ww-landing-dice-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 2px solid #231f20;
+  border-radius: 4px;
+  padding: 14px 8px;
+  box-sizing: border-box;
+}
+.ww-landing-dice-tile img {
+  display: block;
+  width: 100%;
+  max-width: 96px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
+/* Landing: full-bleed dark band */
+.ww-landing-shell { overflow-x: clip; }
+.ww-landing-band {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  background: #231f20;
+  padding: 40px 24px;
+  box-sizing: border-box;
+}
+.ww-landing-band-inner {
+  width: 100%;
+  max-width: 402px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 1024px) {
+  .ww-landing-hiw-item { padding: 28px 0; }
+  .ww-landing-dice-row { gap: 20px; }
+  .ww-landing-dice-tile { padding: 24px 16px; gap: 12px; }
+  .ww-landing-dice-tile img { max-width: 140px; }
+  .ww-landing-band { padding: 72px 32px; }
+  .ww-landing-band-inner { max-width: 720px; }
+}
