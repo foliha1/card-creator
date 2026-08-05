@@ -102,10 +102,13 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
   introStatus = "none",
 }) => {
   const mobile = useIsMobile();
-  const [view, setView] = useState<View>(() =>
+  const [view, setView] = useState<View>(() => {
     // Join-by-link wins over ?mode=; the room-code effect below handles it.
-    !initialRoomCode && initialMode === "solo" ? { kind: "solo-setup" } : { kind: "idle" },
-  );
+    if (initialRoomCode) return { kind: "idle" };
+    if (initialMode === "solo") return { kind: "solo-setup" };
+    if (initialMode === "multiplayer") return { kind: "name-prompt", pending: { kind: "create" } };
+    return { kind: "idle" };
+  });
   const [busy, setBusy] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [nameInput, setNameInput] = useState<string>(() => getDisplayName());
