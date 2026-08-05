@@ -472,7 +472,10 @@ const DailyPage: React.FC = () => {
   const leave = () => navigate("/");
   const [howTo, setHowTo] = useState(false);
   // Read after the run is persisted so today counts toward the streak.
-  const streak = useDailyStreak(daily.puzzleNumber, daily.resultSaved);
+  const streak = useDailyStreak(
+    daily.puzzleNumber,
+    daily.resultSaved || daily.result === null
+  );
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
