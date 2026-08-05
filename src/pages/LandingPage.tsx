@@ -161,23 +161,29 @@ const SecondaryWay: React.FC<{
 );
 
 
-const BOARD_CARDS: string[] = [
-  "/cards/card-back.svg",
-  "/cards/2-star-red.svg",
-  "/cards/card-back.svg",
-  "/cards/card-back.svg",
-  "/cards/card-back.svg",
-  "/cards/3-circle-blue.svg",
-  "/cards/1-square-yellow.svg",
-  "/cards/card-back.svg",
-  "/cards/card-back.svg",
+const BOARD_CARDS: { src: string; tilt: number }[] = [
+  { src: "/cards/card-back.svg", tilt: -5 },
+  { src: "/cards/2-star-red.svg", tilt: 3 },
+  { src: "/cards/card-back.svg", tilt: -2 },
+  { src: "/cards/card-back.svg", tilt: 4 },
+  { src: "/cards/card-back.svg", tilt: -3 },
+  { src: "/cards/3-circle-blue.svg", tilt: 6 },
+  { src: "/cards/1-square-yellow.svg", tilt: -6 },
+  { src: "/cards/card-back.svg", tilt: 2 },
+  { src: "/cards/card-back.svg", tilt: -4 },
 ];
 
-/** Decorative 3x3 board, desktop only, hidden from assistive tech. */
+/** Decorative 3x3 board, hidden from assistive tech. */
 const DecorativeBoard: React.FC = () => (
   <div className="ww-landing-board" aria-hidden="true" role="presentation">
-    {BOARD_CARDS.map((src, i) => (
-      <img key={i} src={src} alt="" draggable={false} />
+    {BOARD_CARDS.map((card, i) => (
+      <img
+        key={i}
+        src={card.src}
+        alt=""
+        draggable={false}
+        style={{ ["--card-tilt" as string]: `${card.tilt}deg` } as React.CSSProperties}
+      />
     ))}
   </div>
 );
