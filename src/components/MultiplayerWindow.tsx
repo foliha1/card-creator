@@ -96,9 +96,16 @@ const sanitizeCodeInput = (raw: string): string => {
   return out;
 };
 
-const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, introStatus = "none" }) => {
+const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
+  initialRoomCode,
+  initialMode,
+  introStatus = "none",
+}) => {
   const mobile = useIsMobile();
-  const [view, setView] = useState<View>({ kind: "idle" });
+  const [view, setView] = useState<View>(() =>
+    // Join-by-link wins over ?mode=; the room-code effect below handles it.
+    !initialRoomCode && initialMode === "solo" ? { kind: "solo-setup" } : { kind: "idle" },
+  );
   const [busy, setBusy] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [nameInput, setNameInput] = useState<string>(() => getDisplayName());
