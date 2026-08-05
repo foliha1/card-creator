@@ -386,6 +386,9 @@ const DailyResultCard: React.FC<{
 
       <ShareBlock text={shareText} mobile={mobile} />
 
+      <SharePills text={shareText} />
+
+
       {!hasSubscribed() && <DailyEmailCapture />}
 
 
