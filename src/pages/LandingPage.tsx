@@ -42,13 +42,42 @@ const section: React.CSSProperties = {
 };
 
 const HowItWorksItem: React.FC<{ title: string; line: string }> = ({ title, line }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+  <div className="ww-landing-hiw-item">
     <h3 style={subheadStyle}>{title}</h3>
     <p style={bodyStyle}>{line}</p>
   </div>
 );
 
-const SecondaryWay: React.FC<{ label: string; line: string; to: string }> = ({ label, line, to }) => (
+const DIE_RULES: { src: string; label: string }[] = [
+  { src: "/dice/match-shape.svg", label: "SHAPE" },
+  { src: "/dice/match-number.svg", label: "NUMBER" },
+  { src: "/dice/match-color.svg", label: "COLOR" },
+];
+
+const DieRuleTile: React.FC<{ src: string; label: string }> = ({ src, label }) => (
+  <div className="ww-landing-dice-tile">
+    <img src={src} alt="" aria-hidden="true" />
+    <span
+      style={{
+        fontFamily: FONT_FAMILY,
+        fontSize: 16,
+        lineHeight: 1.1,
+        color: COLORS.ink,
+        letterSpacing: "0.02em",
+      }}
+    >
+      {label}
+    </span>
+  </div>
+);
+
+const SecondaryWay: React.FC<{
+  label: string;
+  line: string;
+  to: string;
+  background: string;
+  color: string;
+}> = ({ label, line, to, background, color }) => (
   <div style={{ flex: "1 1 160px", display: "flex", flexDirection: "column", gap: 8 }}>
     <Link
       to={to}
@@ -60,8 +89,8 @@ const SecondaryWay: React.FC<{ label: string; line: string; to: string }> = ({ l
         minHeight: 48,
         border: BORDER.heavy,
         borderRadius: RADIUS.sm,
-        background: "transparent",
-        color: COLORS.ink,
+        background,
+        color,
         textDecoration: "none",
         fontFamily: FONT_FAMILY,
         fontSize: 20,
@@ -178,7 +207,7 @@ const LandingPage: React.FC = () => (
 
         <div className="ww-landing-below">
         {/* 2. How it works */}
-        <section style={{ ...section, gap: 20 }}>
+        <section style={{ ...section, gap: 0 }}>
           <HowItWorksItem title="See them." line="All nine cards face up for ten seconds." />
           <HowItWorksItem title="Lose them." line="The board flips down." />
           <HowItWorksItem
@@ -187,12 +216,27 @@ const LandingPage: React.FC = () => (
           />
         </section>
 
-        {/* 3. The hook */}
-        <section style={section}>
-          <h2 style={headingStyle}>The cards never move. What matters about them does.</h2>
-          <p style={bodyStyle}>
-            You spent ten seconds learning shapes. The die says color. Good luck.
-          </p>
+        {/* 3. One die. Three rules. */}
+        <section style={{ ...section, gap: 16 }}>
+          <h2 style={subheadStyle}>One die. Three rules.</h2>
+          <div className="ww-landing-dice-row">
+            {DIE_RULES.map((r) => (
+              <DieRuleTile key={r.label} src={r.src} label={r.label} />
+            ))}
+          </div>
+          <p style={bodyStyle}>Whichever face lands is what counts. Until the next round.</p>
+        </section>
+
+        {/* 4. The hook — full-bleed dark band */}
+        <section className="ww-landing-band">
+          <div className="ww-landing-band-inner">
+            <h2 style={{ ...headingStyle, color: COLORS.surface }}>
+              The cards never move. What matters about them does.
+            </h2>
+            <p style={{ ...bodyStyle, color: COLORS.surface }}>
+              You spent ten seconds learning shapes. The die says color. Good luck.
+            </p>
+          </div>
         </section>
 
         {/* 4. Two more ways to play */}
@@ -202,11 +246,15 @@ const LandingPage: React.FC = () => (
             <SecondaryWay
               label="Solo"
               to="/play?mode=solo"
+              background={COLORS.blue}
+              color={COLORS.surface}
               line="Play the full game against Felix O. He remembers. Mostly."
             />
             <SecondaryWay
               label="Multiplayer"
               to="/play?mode=multiplayer"
+              background={COLORS.orange}
+              color={COLORS.ink}
               line="Get four friends around one board. This is the real thing."
             />
 
