@@ -181,8 +181,10 @@ const MultiplayerPage: React.FC = () => {
           <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
             <MultiplayerWindow
               initialRoomCode={roomCode}
+              initialMode={initialMode}
               introStatus={introStatus === "pending" ? "running" : introStatus}
             />
+
           </Suspense>
         </div>
       </div>
