@@ -394,6 +394,40 @@ All colors MUST be HSL.
   }
 }
 
+/* Secondary share pills on the daily result screen. */
+.daily-share-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: 1px solid #231F20;
+  border-radius: 999px;
+  background: transparent;
+  color: #231F20;
+  font-family: "Friend", Geist, system-ui, sans-serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease-out, color 150ms ease-out;
+}
+.daily-share-pill:hover,
+.daily-share-pill:focus-visible {
+  background: #231F20;
+  color: #F8F2E9;
+}
+.daily-share-pill:focus-visible {
+  outline: 2px solid #0072B2;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-share-pill {
+    transition: none;
+  }
+}
+
+
 
 
 @media (prefers-reduced-motion: reduce) {
