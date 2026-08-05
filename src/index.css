@@ -941,6 +941,7 @@ All colors MUST be HSL.
 
 @media (prefers-reduced-motion: reduce) {
   .ww-landing-board { transform: none; }
+  .ww-landing-board img { transform: none; }
 }
 
 /* Landing: divided "How it works" list */
