@@ -326,6 +326,34 @@ All colors MUST be HSL.
   }
 }
 
+/* ── Daily pattern strip ──
+   Mobile: centred, contained tile. Tablet/desktop: repeat-x and scale up. */
+.daily-shape-rule {
+  display: block;
+  width: 100%;
+  height: 19px;
+  flex-shrink: 0;
+  background-image: var(--daily-rule-bg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+@media (min-width: 768px) {
+  .daily-shape-rule {
+    height: 24px;
+    background-size: auto 100%;
+    background-repeat: repeat-x;
+    background-position: left center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .daily-shape-rule {
+    height: 28px;
+  }
+}
+
 /* ── Daily ready screen buttons ──
    Maps to COLORS tokens: panel / panelMutedHover / red / redHover / blue */
 .daily-btn-howto,
