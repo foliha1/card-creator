@@ -524,13 +524,16 @@ const DailyReadyScreen: React.FC<{
           style={{
             width: "100%",
             height: 80,
+            boxSizing: "border-box",
+            paddingBottom: 6,
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
             fontFamily: FONT_FAMILY,
             fontStyle: "italic",
             fontSize: "clamp(22px, 7vw, 32px)",
-            lineHeight: 1,
+            lineHeight: 1.15,
           }}
+
         >
           Play Today's Daily
         </button>
