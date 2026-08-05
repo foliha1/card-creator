@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import React, { Suspense, useEffect, useState } from "react";
 import { COLORS } from "@/lib/tokens";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -32,7 +32,11 @@ type IntroStatus = "pending" | "running" | "skipped" | "complete" | "timeout" | 
 const MultiplayerPage: React.FC = () => {
   useBodyScrollLock();
   const { roomCode } = useParams<{ roomCode?: string }>();
+  const [searchParams] = useSearchParams();
+  const modeParam = searchParams.get("mode");
+  const initialMode = modeParam === "solo" || modeParam === "multiplayer" ? modeParam : undefined;
   const mobile = useIsMobile();
+
   const initialIntroStatus = (): IntroStatus => {
     const alreadySeen = hasSeenIntro();
     if (!FORCE_INTRO_EVERY_RELOAD_FOR_TESTING && alreadySeen) {
@@ -177,8 +181,10 @@ const MultiplayerPage: React.FC = () => {
           <Suspense fallback={<div style={{ margin: "auto", color: COLORS.ink }}>Loading…</div>}>
             <MultiplayerWindow
               initialRoomCode={roomCode}
+              initialMode={initialMode}
               introStatus={introStatus === "pending" ? "running" : introStatus}
             />
+
           </Suspense>
         </div>
       </div>

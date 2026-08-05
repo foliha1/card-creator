@@ -52,10 +52,10 @@ const HowItWorksItem: React.FC<{ title: string; line: string }> = ({ title, line
   </div>
 );
 
-const SecondaryWay: React.FC<{ label: string; line: string }> = ({ label, line }) => (
+const SecondaryWay: React.FC<{ label: string; line: string; to: string }> = ({ label, line, to }) => (
   <div style={{ flex: "1 1 160px", display: "flex", flexDirection: "column", gap: 8 }}>
     <Link
-      to="/play"
+      to={to}
       className="ww-press"
       style={{
         display: "flex",
@@ -69,7 +69,7 @@ const SecondaryWay: React.FC<{ label: string; line: string }> = ({ label, line }
         textDecoration: "none",
         fontFamily: FONT_FAMILY,
         fontSize: 20,
-        lineHeight: 1,
+        lineHeight: 1.15,
       }}
     >
       {label}
@@ -77,6 +77,7 @@ const SecondaryWay: React.FC<{ label: string; line: string }> = ({ label, line }
     <p style={fineStyle}>{line}</p>
   </div>
 );
+
 
 /**
  * Landing page at `/`. Single scrolling page that reuses the daily screen's
@@ -157,11 +158,12 @@ const LandingPage: React.FC = () => (
               fontFamily: FONT_FAMILY,
               fontStyle: "italic",
               fontSize: "clamp(24px, 7vw, 32px)",
-              lineHeight: 1,
+              lineHeight: 1.15,
             }}
           >
-            Play Today's Daily
+            <span style={{ display: "block", paddingBottom: 6 }}>Play Today's Daily</span>
           </Link>
+
           <p style={fineStyle}>Free. No signup. About 30 seconds.</p>
         </section>
 
@@ -189,12 +191,15 @@ const LandingPage: React.FC = () => (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <SecondaryWay
               label="Solo"
+              to="/play?mode=solo"
               line="Play the full game against Felix O. He remembers. Mostly."
             />
             <SecondaryWay
               label="Multiplayer"
+              to="/play?mode=multiplayer"
               line="Get four friends around one board. This is the real thing."
             />
+
           </div>
         </section>
 

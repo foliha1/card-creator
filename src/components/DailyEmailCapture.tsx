@@ -121,7 +121,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
           fontFamily: FONT_FAMILY,
           fontStyle: "italic",
           fontSize: 20,
-          lineHeight: 1,
+          lineHeight: 1.15,
           cursor: status === "sending" ? "default" : "pointer",
           opacity: status === "sending" ? 0.7 : 1,
         }}

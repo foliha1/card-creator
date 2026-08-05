@@ -63,8 +63,11 @@ import { unlockAudio } from "@/lib/sounds";
 
 interface MultiplayerWindowProps {
   initialRoomCode?: string;
+  /** Optional deep-link mode from `?mode=` — skips the idle play-style chooser. */
+  initialMode?: "solo" | "multiplayer";
   introStatus?: "running" | "skipped" | "complete" | "timeout" | "none";
 }
+
 
 const ROOM_CAPACITY = 6;
 
@@ -93,9 +96,19 @@ const sanitizeCodeInput = (raw: string): string => {
   return out;
 };
 
-const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({ initialRoomCode, introStatus = "none" }) => {
+const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
+  initialRoomCode,
+  initialMode,
+  introStatus = "none",
+}) => {
   const mobile = useIsMobile();
-  const [view, setView] = useState<View>({ kind: "idle" });
+  const [view, setView] = useState<View>(() => {
+    // Join-by-link wins over ?mode=; the room-code effect below handles it.
+    if (initialRoomCode) return { kind: "idle" };
+    if (initialMode === "solo") return { kind: "solo-setup" };
+    if (initialMode === "multiplayer") return { kind: "name-prompt", pending: { kind: "create" } };
+    return { kind: "idle" };
+  });
   const [busy, setBusy] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [nameInput, setNameInput] = useState<string>(() => getDisplayName());
