@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyShapeRule from "@/components/DailyShapeRule";
@@ -389,6 +389,38 @@ const DailyResultCard: React.FC<{
 
       <SharePills text={shareText} />
 
+      <div
+        style={{
+          alignSelf: "stretch",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: SPACE[2],
+        }}
+      >
+        <p
+          style={{
+            ...textStyle("subhead", mobile),
+            color: COLORS.ink,
+            textAlign: "center",
+            margin: 0,
+          }}
+        >
+          Liked that? The full game has a table, an opponent, and a lot more shouting.
+        </p>
+        <Link
+          to="/play"
+          style={{
+            ...textStyle("body", mobile),
+            color: COLORS.blue,
+            textAlign: "center",
+            textDecoration: "underline",
+            textUnderlineOffset: 3,
+          }}
+        >
+          Play the full game
+        </Link>
+      </div>
 
       {!hasSubscribed() && <DailyEmailCapture />}
 
