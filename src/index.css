@@ -784,6 +784,13 @@ All colors MUST be HSL.
    Landing page desktop composition (>= 1024px). Below that, the mobile
    single-column layout stays exactly as it was.
    --------------------------------------------------------------------------- */
+.ww-landing-shell {
+  --daily-content-max-width: 402px;
+  --daily-content-padding-x: 24px;
+  gap: 40px;
+  padding: 24px;
+}
+
 .ww-landing-main {
   width: 100%;
   max-width: 402px;
