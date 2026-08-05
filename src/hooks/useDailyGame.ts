@@ -29,6 +29,8 @@ import {
   saveDailyResult,
   type DailyResult,
 } from "@/lib/daily";
+import { saveDailyResultRemote } from "@/lib/dailyResults";
+
 
 const DEAL_MS = 700;      // deal-in settles before the reveal
 const FLIP_MS = 500;      // card flip duration (matches GameCard)
@@ -205,8 +207,13 @@ export function useDailyGame(): UseDailyGameResult {
       failed: state.failed,
       completedAt: new Date().toISOString(),
     };
-    if (!debugBypass) saveDailyResult(finished);
+    if (!debugBypass) {
+      saveDailyResult(finished);
+      // Fire-and-forget: the result screen never waits on the network.
+      void saveDailyResultRemote(finished);
+    }
     setResult(finished);
+
   }, [
     state.phase,
     state.elapsedMs,
