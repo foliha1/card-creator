@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
+import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
+import DailyShapeRule from "@/components/DailyShapeRule";
+import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
 import { useDailyGame } from "@/hooks/useDailyGame";
@@ -20,6 +23,7 @@ import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@
 import {
   BORDER,
   COLORS,
+  FONT_FAMILY,
   RADIUS,
   SPACE,
   buttonStyle,
@@ -324,12 +328,147 @@ const DailyResultCard: React.FC<{
   );
 };
 
+
+
+/** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
+const DailyReadyScreen: React.FC<{
+  today: string;
+  onPlay: () => void;
+  onHowToPlay: () => void;
+}> = ({ today, onPlay, onHowToPlay }) => (
+  <div
+    style={{
+      position: "relative",
+      minHeight: "100dvh",
+      height: "100dvh",
+      boxSizing: "border-box",
+      background: COLORS.surface,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 24,
+      padding: 24,
+      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+      overflowY: "auto",
+    }}
+  >
+    <DailyShapeRule />
+
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 402,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 40,
+      }}
+    >
+      <div style={{ position: "relative", width: "100%", maxWidth: 251, aspectRatio: "251 / 199" }}>
+        <img
+          src="/WhoopWhoop_Dark_Logo.svg"
+          alt="Whoop Whoop"
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+        <span
+          style={{
+            position: "absolute",
+            left: "68.9%",
+            top: "84.4%",
+            width: "31.1%",
+            height: "21.6%",
+            background: COLORS.red,
+            border: BORDER.heavy,
+            borderRadius: RADIUS.sm,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: COLORS.surface,
+            fontFamily: FONT_FAMILY,
+            fontStyle: "italic",
+            fontSize: "clamp(14px, 4.5vw, 20px)",
+            lineHeight: 1,
+          }}
+        >
+          Daily
+        </span>
+      </div>
+
+      <div
+        style={{
+          fontFamily: FONT_FAMILY,
+          fontSize: "clamp(22px, 8vw, 32px)",
+          lineHeight: "1.22",
+          textAlign: "center",
+          color: COLORS.ink,
+        }}
+      >
+        {today}
+      </div>
+
+      <button
+        type="button"
+        className="ww-press"
+        onClick={onHowToPlay}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          minHeight: 32,
+          padding: "8px 16px",
+          background: COLORS.panel,
+          border: "none",
+          borderRadius: RADIUS.sm,
+          cursor: "pointer",
+          fontFamily: FONT_FAMILY,
+          fontStyle: "italic",
+          fontSize: 16,
+          lineHeight: 1,
+          color: COLORS.ink,
+        }}
+      >
+        <HelpCircle size={16} aria-hidden="true" />
+        How to Play
+      </button>
+    </div>
+
+    <div style={{ width: "100%", maxWidth: 402, display: "flex", flexDirection: "column", gap: 24 }}>
+      <button
+        type="button"
+        className="ww-press"
+        onClick={onPlay}
+        style={{
+          width: "100%",
+          height: 80,
+          background: COLORS.red,
+          border: BORDER.heavy,
+          borderRadius: RADIUS.sm,
+          color: COLORS.surface,
+          fontFamily: FONT_FAMILY,
+          fontStyle: "italic",
+          fontSize: "clamp(22px, 7vw, 32px)",
+          lineHeight: 1,
+          cursor: "pointer",
+        }}
+      >
+        Play Today's Daily
+      </button>
+    </div>
+
+    <DailyShapeRule />
+  </div>
+);
+
+
 const DailyPage: React.FC = () => {
   const mobile = useIsMobile();
   const navigate = useNavigate();
   const daily = useDailyGame();
   const { state, phase } = daily;
   const leave = () => navigate("/");
+  const [howTo, setHowTo] = useState(false);
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
@@ -376,7 +515,7 @@ const DailyPage: React.FC = () => {
 
   const canClaim = phase === "PLAY" && !state.claiming && !state.peeking;
   const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
-  const today = new Date().toLocaleDateString(undefined, {
+  const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -423,6 +562,23 @@ const DailyPage: React.FC = () => {
             DEBUG — LOCK BYPASSED, NOT A REAL RUN
           </div>
         )}
+        {ready && (
+          <>
+            <DailyReadyScreen
+              today={today}
+              onPlay={() => {
+                hapticTap();
+                daily.start();
+              }}
+              onHowToPlay={() => {
+                hapticTap();
+                setHowTo(true);
+              }}
+            />
+            {howTo && <DailyHowToPlay onClose={() => setHowTo(false)} />}
+          </>
+        )}
+        {!ready && (
         <PreGameShell mobile={mobile} gap={SPACE[5]}>
 
           {finished ? (
@@ -440,53 +596,7 @@ const DailyPage: React.FC = () => {
               revisit={daily.alreadyPlayed}
               onLeave={leave}
             />
-          ) : ready ? (
-            <div
-              style={{
-                ...panelStyle("surface", 8),
-                alignSelf: "stretch",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: SPACE[6],
-                padding: mobile ? SPACE[6] : SPACE[10],
-              }}
-            >
-              <h1
-                style={{
-                  ...textStyle("title", mobile),
-                  color: COLORS.ink,
-                  textAlign: "center",
-                  margin: 0,
-                }}
-              >
-                Daily Puzzle #{daily.puzzleNumber}
-              </h1>
-              <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>{today}</div>
-              <p
-                style={{
-                  ...textStyle("body", mobile),
-                  color: COLORS.inkMuted,
-                  textAlign: "center",
-                  margin: 0,
-                }}
-              >
-                Nine cards face up for ten seconds. Then they go down and the die decides the rule
-                — three rounds, five misses to spend. You get one attempt today.
-              </p>
-              <button
-                type="button"
-                className="ww-press"
-                onClick={() => {
-                  hapticTap();
-                  daily.start();
-                }}
-                style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
-              >
-                PLAY
-              </button>
-            </div>
-          ) : (
+          ) : ready ? null : (
             <div
               style={{
                 ...panelStyle("surface", 6),
@@ -639,6 +749,7 @@ const DailyPage: React.FC = () => {
             </div>
           )}
         </PreGameShell>
+        )}
       </div>
     </>
   );
