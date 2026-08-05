@@ -7,7 +7,7 @@ import DailyShapeRule from "@/components/DailyShapeRule";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
-import dailyLockup from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
+import DailyLogoLockup from "@/components/DailyLogoLockup";
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -366,13 +366,7 @@ const DailyReadyScreen: React.FC<{
         gap: 40,
       }}
     >
-      <div style={{ width: "100%", maxWidth: 251, aspectRatio: "251 / 211" }}>
-        <img
-          src={dailyLockup.url}
-          alt="Whoop Whoop Daily"
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
-      </div>
+      <DailyLogoLockup />
 
       <div
         style={{
