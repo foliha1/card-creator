@@ -50,6 +50,8 @@ export interface UseDailyGameResult {
   seed: string;
   puzzleNumber: number;
   result: DailyResult | null;
+  /** True once the finished run has been persisted. Gates the streak read. */
+  resultSaved: boolean;
   alreadyPlayed: boolean;
   /** True when ?debug=1 disables the one-attempt-per-day lock. */
   debugBypass: boolean;
@@ -83,6 +85,9 @@ export function useDailyGame(): UseDailyGameResult {
   );
   const [tumbleSeed] = useState(() => pickTumbleSeed());
   const [result, setResult] = useState<DailyResult | null>(stored);
+  // True once the finished run has been persisted (locally + remotely, or
+  // skipped in debug). Gates the streak read so today counts.
+  const [resultSaved, setResultSaved] = useState(stored !== null);
   const alreadyPlayed = stored !== null;
 
   // ---- phase sequence: (start gate) deal → study → hide → roll → play ----
@@ -209,8 +214,11 @@ export function useDailyGame(): UseDailyGameResult {
     };
     if (!debugBypass) {
       saveDailyResult(finished);
-      // Fire-and-forget: the result screen never waits on the network.
-      void saveDailyResultRemote(finished);
+      // Fire-and-forget: the result screen never waits on the network. The
+      // streak read is gated on this settling so it counts today's run.
+      void saveDailyResultRemote(finished).then(() => setResultSaved(true));
+    } else {
+      setResultSaved(true);
     }
     setResult(finished);
 
@@ -246,6 +254,7 @@ export function useDailyGame(): UseDailyGameResult {
     seed,
     puzzleNumber,
     result,
+    resultSaved,
     alreadyPlayed,
     debugBypass,
     canPeek: canPeekNow(state),

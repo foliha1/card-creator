@@ -205,6 +205,13 @@ export type Database = {
           status: string
         }[]
       }
+      get_streak: {
+        Args: { p_current_puzzle_number: number; p_visitor_id: string }
+        Returns: {
+          current_streak: number
+          longest_streak: number
+        }[]
+      }
       save_daily_result: {
         Args: {
           p_elapsed_ms: number

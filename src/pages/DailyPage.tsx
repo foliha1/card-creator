@@ -21,6 +21,8 @@ import {
   type DailyPhase,
 } from "@/lib/dailyEngine";
 import { formatDailyShare } from "@/lib/daily";
+import { formatStreakLine } from "@/lib/dailyResults";
+import { useDailyStreak } from "@/hooks/useDailyStreak";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 
 import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
@@ -216,6 +218,8 @@ const DailyResultCard: React.FC<{
   peekRound: number | null;
   failed: boolean;
   shareText: string;
+  /** Null hides the streak line entirely — never show a zero. */
+  streak: number | null;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
@@ -229,6 +233,7 @@ const DailyResultCard: React.FC<{
   peekRound,
   failed,
   shareText,
+  streak,
   mobile,
   revisit,
   onLeave,
@@ -278,6 +283,12 @@ const DailyResultCard: React.FC<{
         {stat("Misses", `${totalMisses}`)}
         {stat("Peek", peekUsed ? `R${peekRound ?? "?"}` : "Unused")}
       </div>
+
+      {streak !== null && streak >= 1 && (
+        <p style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
+          {formatStreakLine(streak)}
+        </p>
+      )}
 
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {roundEvents.map((events, i) => (
@@ -340,9 +351,11 @@ const DailyResultCard: React.FC<{
 /** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
 const DailyReadyScreen: React.FC<{
   today: string;
+  /** Null hides the streak line — never show a zero. */
+  streak: number | null;
   onPlay: () => void;
   onHowToPlay: () => void;
-}> = ({ today, onPlay, onHowToPlay }) => (
+}> = ({ today, streak, onPlay, onHowToPlay }) => (
   <div
     style={{
       position: "relative",
@@ -387,6 +400,19 @@ const DailyReadyScreen: React.FC<{
         }}
       >
         {today}
+        {streak !== null && streak >= 1 && (
+          <div
+            style={{
+              marginTop: 8,
+              fontFamily: FONT_FAMILY,
+              fontSize: 16,
+              lineHeight: 1.2,
+              color: COLORS.inkMuted,
+            }}
+          >
+            {formatStreakLine(streak)}
+          </div>
+        )}
       </div>
 
       <div className="daily-intro" style={{ display: "inline-block", animationDelay: "120ms" }}>
@@ -447,6 +473,11 @@ const DailyPage: React.FC = () => {
   const { state, phase } = daily;
   const leave = () => navigate("/");
   const [howTo, setHowTo] = useState(false);
+  // Read after the run is persisted so today counts toward the streak.
+  const streak = useDailyStreak(
+    daily.puzzleNumber,
+    daily.resultSaved || daily.result === null
+  );
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
@@ -544,6 +575,7 @@ const DailyPage: React.FC = () => {
           <>
             <DailyReadyScreen
               today={today}
+              streak={streak?.current ?? null}
               onPlay={() => {
                 hapticTap();
                 daily.start();
@@ -569,7 +601,8 @@ const DailyPage: React.FC = () => {
               peekUsed={daily.result!.peekUsed}
               peekRound={daily.result!.peekRound}
               failed={daily.result!.failed}
-              shareText={formatDailyShare(daily.result!)}
+              shareText={formatDailyShare(daily.result!, streak?.current ?? null)}
+              streak={streak?.current ?? null}
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={leave}
