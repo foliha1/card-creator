@@ -243,7 +243,7 @@ const LandingPage: React.FC = () => {
         <section className="ww-landing-hero">
           <div className="ww-landing-hero-copy">
           <DailyLogoLockup />
-          <h1 style={headingStyle}>Nine cards. Ten seconds. Then the rules change.</h1>
+          <h1 style={headingStyle}>Nine cards. Ten seconds.<br />Then the rules change.</h1>
           <p style={bodyStyle}>
             A memory game that moves the target on you. New puzzle every day.
           </p>
