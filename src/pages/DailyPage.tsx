@@ -365,34 +365,12 @@ const DailyReadyScreen: React.FC<{
         gap: 40,
       }}
     >
-      <div style={{ position: "relative", width: "100%", maxWidth: 251, aspectRatio: "251 / 199" }}>
+      <div style={{ width: "100%", maxWidth: 251, aspectRatio: "251 / 211" }}>
         <img
-          src="/WhoopWhoop_Dark_Logo.svg"
-          alt="Whoop Whoop"
+          src={dailyLockup.url}
+          alt="Whoop Whoop Daily"
           style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
-        <span
-          style={{
-            position: "absolute",
-            left: "68.9%",
-            top: "84.4%",
-            width: "31.1%",
-            height: "21.6%",
-            background: COLORS.red,
-            border: BORDER.heavy,
-            borderRadius: RADIUS.sm,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: COLORS.surface,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontSize: "clamp(14px, 4.5vw, 20px)",
-            lineHeight: 1,
-          }}
-        >
-          Daily
-        </span>
       </div>
 
       <div
