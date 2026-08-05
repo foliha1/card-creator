@@ -133,7 +133,10 @@ export const DAILY_SHARE_URL = "whoop-whoop.lovable.app/today";
  *
  *   whoop-whoop.lovable.app/today
  */
-export function formatDailyShare(result: DailyResult): string {
+/** Streaks only make the share block at 3+ days — below that it's clutter. */
+const SHARE_STREAK_MIN = 3;
+
+export function formatDailyShare(result: DailyResult, streak?: number | null): string {
   const rounds = (result.roundEvents ?? []).map((events, i) => {
     const peek = result.peekUsed && result.peekRound === i + 1 ? "👀" : "";
     const marks = events.map((m) => (m === "SOLVE" ? "🔵" : "🔴")).join("");
@@ -142,10 +145,15 @@ export function formatDailyShare(result: DailyResult): string {
 
   const solved = result.roundsSolved ?? 0;
   const misses = result.totalMisses ?? 0;
+  const streakTag =
+    typeof streak === "number" && streak >= SHARE_STREAK_MIN
+      ? ` · ${streak} day streak`
+      : "";
   const line3 =
-    solved === 0
+    (solved === 0
       ? "Whooped! Better luck tomorrow."
-      : `${solved} of ${DAILY_ROUNDS} · ${misses === 0 ? "Clean" : `${misses} misses`}`;
+      : `${solved} of ${DAILY_ROUNDS} · ${misses === 0 ? "Clean" : `${misses} misses`}`) +
+    streakTag;
 
   return [
     `WHOOP! WHOOP! #${result.puzzleNumber}`,
