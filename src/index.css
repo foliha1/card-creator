@@ -779,3 +779,155 @@ All colors MUST be HSL.
   [role="button"]:active,
   .ww-press:active { transform: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Landing page desktop composition (>= 1024px). Below that, the mobile
+   single-column layout stays exactly as it was.
+   --------------------------------------------------------------------------- */
+.ww-landing-shell {
+  --daily-content-max-width: 402px;
+  --daily-content-padding-x: 24px;
+  gap: 40px;
+  padding: 24px;
+}
+
+.ww-landing-main {
+  width: 100%;
+  max-width: 402px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 48px;
+}
+
+.ww-landing-main h1 { font-size: clamp(24px, 8vw, 36px); }
+.ww-landing-main h2,
+.ww-landing-main h3 { font-size: clamp(20px, 6vw, 26px); }
+.ww-landing-main p { font-size: 14px; }
+.ww-landing-main p.ww-landing-fine { font-size: 12px; }
+.ww-landing-play { font-size: clamp(24px, 7vw, 32px); }
+
+.ww-landing-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+}
+
+.ww-landing-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.ww-landing-play {
+  width: 100%;
+}
+
+.ww-landing-below {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  width: 100%;
+}
+
+.ww-landing-board {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .ww-landing-shell {
+    --daily-content-max-width: 1100px;
+    gap: 64px;
+    padding: 40px 32px;
+  }
+
+  .ww-landing-main {
+    max-width: 1100px;
+    gap: 72px;
+  }
+
+  .ww-landing-hero {
+    display: grid;
+    grid-template-columns: 55fr 45fr;
+    column-gap: 72px;
+    align-items: center;
+    text-align: left;
+  }
+
+  .ww-landing-hero-copy {
+    align-items: flex-start;
+    text-align: left;
+    gap: 20px;
+  }
+
+  .ww-landing-hero-copy h1 {
+    font-size: 52px;
+  }
+
+  .ww-landing-hero-copy p {
+    font-size: 17px;
+  }
+
+  .ww-landing-hero-copy p.ww-landing-fine {
+    font-size: 13px;
+  }
+
+  .ww-landing-play {
+    width: auto;
+    padding: 0 40px;
+    font-size: 30px;
+  }
+
+  .ww-landing-below {
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+    gap: 64px;
+  }
+
+  .ww-landing-below h2 {
+    font-size: 34px;
+  }
+
+  .ww-landing-below h3 {
+    font-size: 28px;
+  }
+
+  .ww-landing-below p {
+    font-size: 17px;
+  }
+
+  .ww-landing-below p.ww-landing-fine {
+    font-size: 14px;
+  }
+
+  /* Decorative board */
+  .ww-landing-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    width: 112%;
+    margin-left: -6%;
+    transform: rotate(-4deg);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .ww-landing-board img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    border-radius: 8px;
+    filter: drop-shadow(0 6px 14px rgba(35, 31, 32, 0.18));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-landing-board { transform: none; }
+}

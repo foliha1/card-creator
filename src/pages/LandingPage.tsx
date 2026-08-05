@@ -11,7 +11,6 @@ const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans
 const headingStyle: React.CSSProperties = {
   margin: 0,
   fontFamily: FONT_FAMILY,
-  fontSize: "clamp(24px, 8vw, 36px)",
   lineHeight: 1.15,
   color: COLORS.ink,
 };
@@ -19,7 +18,6 @@ const headingStyle: React.CSSProperties = {
 const subheadStyle: React.CSSProperties = {
   margin: 0,
   fontFamily: FONT_FAMILY,
-  fontSize: "clamp(20px, 6vw, 26px)",
   lineHeight: 1.2,
   color: COLORS.ink,
 };
@@ -27,14 +25,12 @@ const subheadStyle: React.CSSProperties = {
 const bodyStyle: React.CSSProperties = {
   margin: 0,
   fontFamily: GEIST,
-  fontSize: 14,
   lineHeight: 1.45,
   color: COLORS.ink,
 };
 
 const fineStyle: React.CSSProperties = {
   ...bodyStyle,
-  fontSize: 12,
   color: COLORS.inkMuted,
 };
 
@@ -74,10 +70,31 @@ const SecondaryWay: React.FC<{ label: string; line: string; to: string }> = ({ l
     >
       {label}
     </Link>
-    <p style={fineStyle}>{line}</p>
+    <p className="ww-landing-fine" style={fineStyle}>{line}</p>
   </div>
 );
 
+
+const BOARD_CARDS: string[] = [
+  "/cards/card-back.svg",
+  "/cards/2-star-red.svg",
+  "/cards/card-back.svg",
+  "/cards/card-back.svg",
+  "/cards/card-back.svg",
+  "/cards/3-circle-blue.svg",
+  "/cards/1-square-yellow.svg",
+  "/cards/card-back.svg",
+  "/cards/card-back.svg",
+];
+
+/** Decorative 3x3 board, desktop only, hidden from assistive tech. */
+const DecorativeBoard: React.FC = () => (
+  <div className="ww-landing-board" aria-hidden="true" role="presentation">
+    {BOARD_CARDS.map((src, i) => (
+      <img key={i} src={src} alt="" draggable={false} />
+    ))}
+  </div>
+);
 
 /**
  * Landing page at `/`. Single scrolling page that reuses the daily screen's
@@ -105,6 +122,7 @@ const LandingPage: React.FC = () => (
     </Helmet>
 
     <div
+      className="ww-landing-shell"
       style={
         {
           minHeight: "100dvh",
@@ -112,29 +130,17 @@ const LandingPage: React.FC = () => (
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 40,
-          padding: 24,
           paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
           boxSizing: "border-box",
-          "--daily-content-max-width": "402px",
-          "--daily-content-padding-x": "24px",
         } as React.CSSProperties
       }
     >
       <DailyShapeRule />
 
-      <main
-        style={{
-          width: "100%",
-          maxWidth: 402,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "stretch",
-          gap: 48,
-        }}
-      >
+      <main className="ww-landing-main">
         {/* 1. Hero */}
-        <section style={{ ...section, alignItems: "center", textAlign: "center" }}>
+        <section className="ww-landing-hero">
+          <div className="ww-landing-hero-copy">
           <DailyLogoLockup />
           <h1 style={headingStyle}>Nine cards. Ten seconds. Then the rules change.</h1>
           <p style={bodyStyle}>
@@ -142,9 +148,8 @@ const LandingPage: React.FC = () => (
           </p>
           <Link
             to="/today"
-            className="ww-press"
+            className="ww-press ww-landing-play"
             style={{
-              width: "100%",
               height: 80,
               display: "flex",
               alignItems: "center",
@@ -157,16 +162,21 @@ const LandingPage: React.FC = () => (
               textDecoration: "none",
               fontFamily: FONT_FAMILY,
               fontStyle: "italic",
-              fontSize: "clamp(24px, 7vw, 32px)",
               lineHeight: 1.15,
             }}
           >
             <span style={{ display: "block", paddingBottom: 6 }}>Play Today's Daily</span>
           </Link>
 
-          <p style={fineStyle}>Free. No signup. About 30 seconds.</p>
+          <p className="ww-landing-fine" style={fineStyle}>
+            Free. No signup. About 30 seconds.
+          </p>
+          </div>
+
+          <DecorativeBoard />
         </section>
 
+        <div className="ww-landing-below">
         {/* 2. How it works */}
         <section style={{ ...section, gap: 20 }}>
           <HowItWorksItem title="See them." line="All nine cards face up for ten seconds." />
@@ -211,8 +221,11 @@ const LandingPage: React.FC = () => (
         {/* 6. Footer */}
         <footer style={{ ...section, gap: 4 }}>
           <p style={subheadStyle}>A game from Oleeha &amp; Co.</p>
-          <p style={fineStyle}>Coming to a table near you.</p>
+          <p className="ww-landing-fine" style={fineStyle}>
+            Coming to a table near you.
+          </p>
         </footer>
+        </div>
       </main>
 
       <DailyShapeRule />
