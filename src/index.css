@@ -962,7 +962,7 @@ All colors MUST be HSL.
 .ww-landing-dice-tile img {
   display: block;
   width: 100%;
-  max-width: 64px;
+  max-width: 96px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
 }
@@ -989,7 +989,7 @@ All colors MUST be HSL.
   .ww-landing-hiw-item { padding: 28px 0; }
   .ww-landing-dice-row { gap: 20px; }
   .ww-landing-dice-tile { padding: 24px 16px; gap: 12px; }
-  .ww-landing-dice-tile img { max-width: 88px; }
+  .ww-landing-dice-tile img { max-width: 140px; }
   .ww-landing-band { padding: 72px 32px; }
   .ww-landing-band-inner { max-width: 720px; }
 }

@@ -56,18 +56,9 @@ const DIE_RULES: { src: string; label: string }[] = [
 
 const DieRuleTile: React.FC<{ src: string; label: string }> = ({ src, label }) => (
   <div className="ww-landing-dice-tile">
-    <img src={src} alt="" aria-hidden="true" />
-    <span
-      style={{
-        fontFamily: FONT_FAMILY,
-        fontSize: 16,
-        lineHeight: 1.1,
-        color: COLORS.ink,
-        letterSpacing: "0.02em",
-      }}
-    >
-      {label}
-    </span>
+    {/* The die SVG carries its own "Match the SHAPE/NUMBER/COLOR" lockup, so the
+        visible label lives in the art; keep it announced once for screen readers. */}
+    <img src={src} alt={label} />
   </div>
 );
 
