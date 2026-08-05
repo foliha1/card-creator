@@ -50,6 +50,8 @@ export interface UseDailyGameResult {
   seed: string;
   puzzleNumber: number;
   result: DailyResult | null;
+  /** True once the finished run has been persisted. Gates the streak read. */
+  resultSaved: boolean;
   alreadyPlayed: boolean;
   /** True when ?debug=1 disables the one-attempt-per-day lock. */
   debugBypass: boolean;
@@ -252,6 +254,7 @@ export function useDailyGame(): UseDailyGameResult {
     seed,
     puzzleNumber,
     result,
+    resultSaved,
     alreadyPlayed,
     debugBypass,
     canPeek: canPeekNow(state),
