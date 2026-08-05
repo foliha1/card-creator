@@ -1,16 +1,83 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern_Seamless.svg.asset.json";
 
-/** The brand pattern strip that tops and tails the daily screens. */
-const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
-  <div
-    className="daily-shape-rule"
-    aria-hidden="true"
-    style={{
-      "--daily-rule-bg": `url(${patternAsset.url})`,
-      ...style,
-    } as React.CSSProperties}
-  />
-);
+/** Natural tile geometry — 15 shapes on a 24px pitch, 19px tall. */
+const TILE_W = 360;
+const TILE_H = 19;
+const PITCH = 24;
+const SHAPES_PER_TILE = TILE_W / PITCH; // 15
+
+/**
+ * Deterministic per-day shift, in shape cells. Same for everyone on a given
+ * UTC date, and always a whole cell so the seamless loop is never broken.
+ */
+const dayCellOffset = (now = new Date()) => {
+  const days = Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 86400000);
+  return ((days % SHAPES_PER_TILE) + SHAPES_PER_TILE) % SHAPES_PER_TILE;
+};
+
+/**
+ * The brand pattern strip that tops and tails the daily screens.
+ *
+ * The painted band is snapped to an odd whole number of shape cells and
+ * centred, so a shape always sits dead-centre and no shape is ever clipped at
+ * either edge. Each day the tile slides by a whole number of cells.
+ */
+const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const measure = () =>
+      setBox({ width: el.clientWidth, height: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const { width, height } = box;
+  const scale = height > 0 ? height / TILE_H : 1;
+  const pitch = PITCH * scale;
+
+  let bandStyle: React.CSSProperties = { width: 0 };
+  if (width > 0 && pitch > 0) {
+    if (width < TILE_W * scale) {
+      // Narrow (mobile): scale one whole tile down to fit — nothing to clip.
+      bandStyle = {
+        width: "100%",
+        height: "100%",
+        backgroundImage: `url(${patternAsset.url})`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundSize: "contain",
+      };
+    } else {
+      let cells = Math.floor(width / pitch);
+      if (cells % 2 === 0) cells -= 1; // odd → a shape lands dead-centre
+      bandStyle = {
+        width: cells * pitch,
+        height: "100%",
+        backgroundImage: `url(${patternAsset.url})`,
+        backgroundRepeat: "repeat-x",
+        backgroundSize: `auto 100%`,
+        backgroundPosition: `calc(50% + ${dayCellOffset() * pitch}px) center`,
+      };
+    }
+  }
+
+  return (
+    <div
+      ref={hostRef}
+      className="daily-shape-rule"
+      aria-hidden="true"
+      style={style}
+    >
+      <div style={bandStyle} />
+    </div>
+  );
+};
 
 export default DailyShapeRule;
