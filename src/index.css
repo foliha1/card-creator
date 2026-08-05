@@ -126,6 +126,10 @@ All colors MUST be HSL.
     overscroll-behavior: none;
   }
 
+  html {
+    color-scheme: light;
+  }
+
   body.ww-locked,
   html:has(body.ww-locked) {
     overflow: hidden;

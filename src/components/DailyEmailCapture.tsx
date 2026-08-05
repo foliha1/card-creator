@@ -98,6 +98,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
         }}
         style={{
           ...bodyStyle,
+          fontSize: 16,
           width: "100%",
           boxSizing: "border-box",
           minHeight: 44,
