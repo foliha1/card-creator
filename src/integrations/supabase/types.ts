@@ -76,6 +76,48 @@ export type Database = {
           },
         ]
       }
+      daily_results: {
+        Row: {
+          created_at: string
+          elapsed_ms: number
+          email: string | null
+          id: string
+          peek_used: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events: Json
+          rounds_solved: number
+          total_misses: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          elapsed_ms?: number
+          email?: string | null
+          id?: string
+          peek_used?: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events?: Json
+          rounds_solved?: number
+          total_misses?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          elapsed_ms?: number
+          email?: string | null
+          id?: string
+          peek_used?: boolean
+          puzzle_date?: string
+          puzzle_number?: number
+          round_events?: Json
+          rounds_solved?: number
+          total_misses?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           created_at: string
@@ -117,6 +159,19 @@ export type Database = {
           status: string
         }[]
       }
+      get_daily_results: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          created_at: string
+          elapsed_ms: number
+          peek_used: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events: Json
+          rounds_solved: number
+          total_misses: number
+        }[]
+      }
       get_room_by_code: {
         Args: { p_code: string; p_visitor_id: string }
         Returns: {
@@ -125,6 +180,20 @@ export type Database = {
           room_code: string
           status: string
         }[]
+      }
+      save_daily_result: {
+        Args: {
+          p_elapsed_ms: number
+          p_email?: string
+          p_peek_used: boolean
+          p_puzzle_date: string
+          p_puzzle_number: number
+          p_round_events: Json
+          p_rounds_solved: number
+          p_total_misses: number
+          p_visitor_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
