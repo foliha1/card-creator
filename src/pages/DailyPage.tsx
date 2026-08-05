@@ -12,6 +12,7 @@ import DailyEmailCapture from "@/components/DailyEmailCapture";
 import { hasSubscribed } from "@/lib/dailySubscribe";
 
 import { useDailyGame } from "@/hooks/useDailyGame";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DAILY_ROUNDS,
@@ -542,6 +543,7 @@ const DailyReadyScreen: React.FC<{
 
 
 const DailyPage: React.FC = () => {
+  useBodyScrollLock();
   const mobile = useIsMobile();
   const navigate = useNavigate();
   const daily = useDailyGame();
