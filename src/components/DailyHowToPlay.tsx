@@ -87,8 +87,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
 
       <h2 style={friend(36, true)}>How to Play</h2>
 
-
-      <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h3 style={friend(24)}>Find 3 matching pairs from memory.</h3>
         <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
           <li>All cards show for 10 seconds. Study them.</li>
@@ -97,7 +96,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
         </ul>
       </section>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h3 style={friend(24)}>The Die:</h3>
         <div
           style={{
@@ -136,7 +135,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
         </p>
       </section>
 
-      <section style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <h3 style={friend(24)}>Three Rounds:</h3>
         <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
           <li>Each round takes one pair off the board. Nine cards, then seven, then five.</li>
@@ -145,7 +144,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => (
         </ul>
       </section>
 
-      <p style={friend(24)}>
+      <p style={friend(20)}>
         A new game drops every day at midnight. Sign up for the daily reminder email.
       </p>
     </div>
