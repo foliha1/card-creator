@@ -793,7 +793,7 @@ All colors MUST be HSL.
 
 .ww-landing-main {
   width: 100%;
-  max-width: 402px;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -808,10 +808,10 @@ All colors MUST be HSL.
 .ww-landing-play { font-size: clamp(24px, 7vw, 32px); }
 
 .ww-landing-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 24px;
+  justify-items: center;
   text-align: center;
 }
 
@@ -822,6 +822,7 @@ All colors MUST be HSL.
   align-items: center;
   text-align: center;
   width: 100%;
+  max-width: 402px;
 }
 
 .ww-landing-play {
@@ -835,8 +836,27 @@ All colors MUST be HSL.
   width: 100%;
 }
 
+/* Decorative board — visible on every size; below the CTA on mobile,
+   beside the copy on desktop. */
 .ww-landing-board {
-  display: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  pointer-events: none;
+  user-select: none;
+  transform: rotate(-3deg);
+}
+
+.ww-landing-board img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 8px;
+  transform: rotate(var(--card-tilt, 0deg));
+  filter: drop-shadow(0 6px 14px rgba(35, 31, 32, 0.18));
 }
 
 @media (min-width: 1024px) {
