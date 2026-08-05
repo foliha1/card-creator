@@ -347,7 +347,9 @@ All colors MUST be HSL.
     height: 24px;
     background-size: auto 100%;
     background-repeat: repeat-x;
-    background-position: calc(50% - (var(--daily-content-max-width, 402px) / 2) - var(--daily-content-padding-x, 24px)) center;
+    /* Tile is palindromic, so centring it puts the circle dead-centre and the
+       square/star/triangle rings mirror outwards — matching the mobile strip. */
+    background-position: center center;
   }
 }
 
