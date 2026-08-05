@@ -20,7 +20,7 @@ import {
   type DailyMark,
   type DailyPhase,
 } from "@/lib/dailyEngine";
-import { formatDailyShare } from "@/lib/daily";
+import { formatDailyShare, getLocalDateString } from "@/lib/daily";
 import { formatStreakLine } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
