@@ -158,11 +158,12 @@ const LandingPage: React.FC = () => (
               fontFamily: FONT_FAMILY,
               fontStyle: "italic",
               fontSize: "clamp(24px, 7vw, 32px)",
-              lineHeight: 1,
+              lineHeight: 1.15,
             }}
           >
-            Play Today's Daily
+            <span style={{ display: "block", paddingBottom: 6 }}>Play Today's Daily</span>
           </Link>
+
           <p style={fineStyle}>Free. No signup. About 30 seconds.</p>
         </section>
 
