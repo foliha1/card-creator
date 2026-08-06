@@ -737,7 +737,10 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               mobile={mobile}
               revisit={daily.alreadyPlayed}
-              onLeave={leave}
+              onLeave={() => {
+                hapticTap();
+                setShowResult(false);
+              }}
             />
           ) : ready ? null : (
             <div
