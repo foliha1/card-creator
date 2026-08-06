@@ -809,42 +809,53 @@ const DailyPage: React.FC = () => {
                 rows={Math.max(1, Math.ceil(state.grid.length / 3))}
                 onGridWidth={setGridWidth}
               >
-                {state.grid.map((card, idx) =>
-                  card === null ? (
-                    <div
-                      key={`empty-${idx}`}
-                      aria-hidden="true"
-                      style={{
-                        height: "100%",
-                        borderRadius: RADIUS.sm,
-                        border: `2px dashed ${COLORS.inkMuted}`,
-                        opacity: 0.25,
-                      }}
-                    />
-                  ) : (
-                    <GameCard
-                      key={card.id}
-                      card={card}
-                      fill
-                      faceUp={state.faceUp}
-                      highlighted={state.selected.includes(idx)}
-                      matched={state.matchedPair.includes(idx)}
-                      wrong={state.wrongPair.includes(idx)}
-                      interactive={cardsTappable}
-                      dealIndex={idx}
-                      dealKey={daily.seed}
-                      onClick={() => {
-                        hapticTap();
-                        // The second, distinct tap locks the claim — call it.
-                        if (state.selected.length === 1 && !state.selected.includes(idx)) {
-                          playWhoopCall();
-                        }
-                        daily.select(idx);
-                      }}
-                    />
-                  )
-                )}
+                {state.grid.map((card, idx) => (
+                  // Persistent slot wrapper: it outlives the card, so the
+                  // ghost layer can still measure the slot a solved pair left.
+                  <div
+                    key={`slot-${idx}`}
+                    ref={(el) => { slotRefs.current[idx] = el; }}
+                    style={{ position: "relative", width: "100%", height: "100%" }}
+                  >
+                    {card === null ? (
+                      <div
+                        aria-hidden="true"
+                        style={{
+                          height: "100%",
+                          borderRadius: RADIUS.sm,
+                          border: `2px dashed ${COLORS.inkMuted}`,
+                          opacity: 0.25,
+                        }}
+                      />
+                    ) : (
+                      <GameCard
+                        card={card}
+                        fill
+                        faceUp={state.faceUp}
+                        highlighted={state.selected.includes(idx)}
+                        matched={state.matchedPair.includes(idx)}
+                        wrong={state.wrongPair.includes(idx)}
+                        interactive={cardsTappable}
+                        dealIndex={idx}
+                        dealKey={daily.seed}
+                        onClick={() => {
+                          hapticTap();
+                          // The second, distinct tap locks the claim — call it.
+                          if (state.selected.length === 1 && !state.selected.includes(idx)) {
+                            playWhoopCall();
+                          }
+                          daily.select(idx);
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
               </DailyBoard>
+
+              {ghost.length > 0 && (
+                <DailyMatchGhost pair={ghost} onDone={() => setGhost([])} />
+              )}
+
 
               {/* Fixed overlay: never affects the board's measured size. */}
               <DailyRoundIntro
