@@ -615,10 +615,12 @@ const DailyPage: React.FC = () => {
   useEffect(() => {
     if (phase !== "DONE") return;
     hapticSuccess();
+    setShowResult(true);
   }, [phase]);
 
-  const finished = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
-  const ready = !finished && phase === "READY";
+  const playedToday = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
+  const finished = playedToday && showResult;
+  const ready = !finished && (phase === "READY" || playedToday);
 
   const readout = (() => {
     switch (phase) {
