@@ -900,7 +900,7 @@ const DailyPage: React.FC = () => {
 
         </DailyFrame>
         )}
-      </div>
+      </DailyScreenFade>
     </>
   );
 };
