@@ -80,7 +80,10 @@ export const THEME_SWATCHES = [
 export const FONT_FAMILY = '"Friend", Georgia, "Times New Roman", serif';
 
 /** UI/caption stack — Geist. Used for small metadata lines. */
-export const FONT_FAMILY_UI = '"Geist", system-ui, -apple-system, sans-serif';
+export const FONT_FAMILY_UI = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
+
+/** Every Geist instance ships at medium weight. */
+export const FONT_WEIGHT_UI = 500;
 
 /* ------------------------------------------------------------------ *
  * Type scale — the ONLY place raw font sizes live.
@@ -106,6 +109,8 @@ export type FontSizeStep = keyof typeof FONT_SIZE;
 
 export const FONT_WEIGHT = {
   regular: 400,
+  /** Geist UI stack only — every Geist instance renders at medium. */
+  medium: 500,
   bold: 700,
   black: 900,
 } as const;
