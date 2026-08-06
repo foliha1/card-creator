@@ -29,6 +29,7 @@ import { useDailyStreak } from "@/hooks/useDailyStreak";
 import {
   DAILY_MATCH_HOLD_MS,
   DAILY_MATCH_REVEAL_MS,
+  DAILY_FINAL_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
 } from "@/lib/animationTiming";
 
