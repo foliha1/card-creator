@@ -349,7 +349,7 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
         roundMisses: last ? state.roundMisses : 0,
         wrongPair: [],
         selected: [],
-        claiming: false,
+        
         faceUp: false,
         failed: last ? state.roundsSolved === 0 : false,
         startedAt: null,
