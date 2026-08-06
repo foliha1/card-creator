@@ -159,16 +159,28 @@ export type TextRole = keyof typeof TEXT_ROLES;
  */
 export const TEXT = Object.fromEntries(
   (Object.keys(TEXT_ROLES) as TextRole[]).map((role) => {
-    const r = TEXT_ROLES[role];
+    const r = TEXT_ROLES[role] as TextRoleDef;
     return [role, {
       size: FONT_SIZE[r.step],
       mobileSize: FONT_SIZE[r.mobileStep],
       weight: r.weight,
       italic: r.italic,
       lineHeight: r.lineHeight,
+      letterSpacing: r.letterSpacing,
+      textTransform: r.textTransform,
+      fontVariantNumeric: r.fontVariantNumeric,
     }];
   }),
-) as Record<TextRole, { size: number; mobileSize: number; weight: number; italic: boolean; lineHeight: number }>;
+) as Record<TextRole, {
+  size: number;
+  mobileSize: number;
+  weight: number;
+  italic: boolean;
+  lineHeight: number;
+  letterSpacing?: string;
+  textTransform?: CSSProperties["textTransform"];
+  fontVariantNumeric?: string;
+}>;
 
 export function textStyle(role: TextRole, mobile = false): CSSProperties {
   const t = TEXT[role];
@@ -178,6 +190,9 @@ export function textStyle(role: TextRole, mobile = false): CSSProperties {
     fontWeight: t.weight,
     fontStyle: t.italic ? "italic" : "normal",
     lineHeight: t.lineHeight,
+    ...(t.letterSpacing ? { letterSpacing: t.letterSpacing } : {}),
+    ...(t.textTransform ? { textTransform: t.textTransform } : {}),
+    ...(t.fontVariantNumeric ? { fontVariantNumeric: t.fontVariantNumeric } : {}),
   };
 }
 
