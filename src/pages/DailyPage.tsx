@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router-dom";
 import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
@@ -583,10 +582,8 @@ const DailyBoard: React.FC<{
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
-  const navigate = useNavigate();
   const daily = useDailyGame();
   const { state, phase } = daily;
-  const leave = () => navigate("/");
   const [howTo, setHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
   // Read after the run is persisted so today counts toward the streak.
