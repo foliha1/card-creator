@@ -40,6 +40,7 @@ import {
   playCorrect,
   playDeal,
   playDiceRoll,
+  playFlip,
   playPeek,
   playReveal,
   playSelect,
