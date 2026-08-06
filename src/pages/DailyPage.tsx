@@ -753,20 +753,6 @@ const DailyPage: React.FC = () => {
                   gap: SPACE[3],
                 }}
               >
-                {/* The die's resting slot: top left, and the fly-to target. */}
-                <div
-                  ref={dieSlotRef}
-                  style={{ width: DIE_SIZE, height: DIE_SIZE, flex: "0 0 auto" }}
-                >
-                  <DailyDie
-                    phase={phase}
-                    roundIndex={state.roundIndex}
-                    attribute={daily.roll.attribute}
-                    faceIndex={daily.roll.faceIndex}
-                    size={DIE_SIZE}
-                    hidden={introUp}
-                  />
-                </div>
                 <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                   <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
                     Round {state.roundIndex} of {DAILY_ROUNDS} · {remainingCount(state)} cards
@@ -795,7 +781,7 @@ const DailyPage: React.FC = () => {
                     daily.peek();
                   }}
                   style={{
-                    ...buttonStyle("ink", "sm", {
+                    ...buttonStyle("secondary", "sm", {
                       mobile,
                       disabled: !daily.canPeek,
                     }),
