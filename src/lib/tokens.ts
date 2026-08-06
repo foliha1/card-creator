@@ -121,25 +121,33 @@ type TextRoleDef = {
   weight: number;
   italic: boolean;
   lineHeight: number;
+  /** CSS letter-spacing. Friend has one weight, so tracking carries hierarchy. */
+  letterSpacing?: string;
+  textTransform?: CSSProperties["textTransform"];
+  fontVariantNumeric?: string;
 };
 
-/** Role -> scale step mapping. Components reference roles, never raw px. */
+/**
+ * Role -> scale step mapping. Components reference roles, never raw px.
+ * Friend ships Regular + Italic only: every role stays at regular weight and
+ * earns its hierarchy from size, tracking and case instead.
+ */
 export const TEXT_ROLES = {
   caption:       { step: "xs",  mobileStep: "2xs", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.normal },
   captionItalic: { step: "xs",  mobileStep: "2xs", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.normal },
   body:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.relaxed },
-  label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.label },
-  /** Buttons, inputs, code fields, small tiles. Friend has one weight — stay regular. */
+  label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.label, textTransform: "uppercase", letterSpacing: "0.06em" },
+  /** Buttons, inputs, code fields, small tiles. */
   control:       { step: "lg",  mobileStep: "md",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
-  subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.heading },
+  subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.heading, letterSpacing: "-0.01em" },
   /** Section titles inside pre-game cards. */
   title:         { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.heading },
-  heading:       { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.bold,    italic: false, lineHeight: LINE_HEIGHT.snug },
+  heading:       { step: "3xl", mobileStep: "2xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.snug, letterSpacing: "-0.015em" },
   /** Screen headlines ("How do you want to play?"). */
   hero:          { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.snug },
-  /** Primary CTA lettering ("Let's Play!", table code). */
-  action:        { step: "4xl", mobileStep: "3xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.tight },
-  display:       { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.black,   italic: false, lineHeight: LINE_HEIGHT.tight },
+  /** Primary CTA lettering ("Let's Play!", table code). Italic needs descender room. */
+  action:        { step: "4xl", mobileStep: "3xl", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.snug },
+  display:       { step: "5xl", mobileStep: "4xl", weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" },
 } as const satisfies Record<string, TextRoleDef>;
 
 
