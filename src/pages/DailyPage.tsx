@@ -733,6 +733,8 @@ const DailyPage: React.FC = () => {
               peekRound={daily.result!.peekRound}
               failed={daily.result!.failed}
               shareText={formatDailyShare(daily.result!, streak?.current ?? null)}
+              result={daily.result!}
+
               streak={streak?.current ?? null}
               mobile={mobile}
               revisit={daily.alreadyPlayed}
