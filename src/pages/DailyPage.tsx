@@ -240,20 +240,11 @@ const ShareBlock: React.FC<{
     flashCopied();
   };
 
-  // Reuses the multiplayer roll-button sweep, once, no loop.
+  // One-shot sweep: travels the full width and exits off the far edge.
   const sweep: React.CSSProperties | null =
     sweepDelayMs === undefined
       ? null
-      : {
-          pointerEvents: "none",
-          background: "#F8F2E9",
-          transformOrigin: "0 0",
-          animationIterationCount: 1,
-          animationDuration: "1s",
-          animationDelay: `${sweepDelayMs}ms`,
-          animationFillMode: "both",
-          opacity: 0.5,
-        };
+      : ({ "--ww-sweep-delay": `${sweepDelayMs}ms` } as React.CSSProperties);
 
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
@@ -270,12 +261,7 @@ const ShareBlock: React.FC<{
         }}
       >
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
-        {sweep && (
-          <>
-            <span aria-hidden="true" className="ww-shine-thin" style={sweep} />
-            <span aria-hidden="true" className="ww-shine-wide" style={sweep} />
-          </>
-        )}
+        {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
       </button>
     </div>
   );
