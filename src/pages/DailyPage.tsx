@@ -41,7 +41,7 @@ const TUMBLE_MS = 800;
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
   NUMBER: "Match the number",
-  COLOR: "Match the colour",
+  COLOR: "Match the color",
 };
 
 /**
@@ -621,7 +621,7 @@ const DailyPage: React.FC = () => {
       case "DEAL":
         return "Dealing…";
       case "STUDY":
-        return `Memorise: ${daily.studyRemaining}`;
+        return `Memorize: ${daily.studyRemaining}`;
       case "HIDE":
         return "Cards down";
       case "ROLL":
