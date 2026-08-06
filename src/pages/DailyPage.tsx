@@ -771,6 +771,18 @@ const DailyPage: React.FC = () => {
   const finished = playedToday && showResult;
   const ready = !finished && (phase === "READY" || playedToday);
 
+  // Background theme: ready and results screens only. It fades out the moment
+  // the run starts and fades back in when the result screen opens. The loop
+  // keeps running underneath so it never restarts from the top.
+  useEffect(() => {
+    if (!audioReady) return;
+    if (ready || finished) startTheme();
+    else stopTheme();
+  }, [audioReady, ready, finished]);
+  useEffect(() => () => stopTheme(), []);
+
+
+
   const readout = (() => {
     switch (phase) {
       case "DEAL":
