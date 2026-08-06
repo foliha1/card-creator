@@ -319,29 +319,44 @@ const DailyResultCard: React.FC<{
       }}
     >
 
-      <h1 style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
+      <h1
+        className="ww-res-in"
+        style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("heading") }}
+      >
         Daily Puzzle #{puzzleNumber}
       </h1>
-      <p style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}>
+      <p
+        className="ww-res-in"
+        style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, ...blockIn("message") }}
+      >
         {failed
           ? "Whooped! Better luck tomorrow."
           : revisit
             ? "Already played today. One puzzle a day — come back tomorrow."
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
-      <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+      <div
+        className="ww-res-in"
+        style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", ...blockIn("stats") }}
+      >
         {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
         {stat("Misses", `${totalMisses}`)}
       </div>
 
 
       {streak !== null && streak >= 1 && (
-        <p style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
+        <p
+          className="ww-res-in"
+          style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("streak") }}
+        >
           {formatStreakLine(streak)}
         </p>
       )}
 
-      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
+      <div
+        className="ww-res-in"
+        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2], ...blockIn("rounds") }}
+      >
         {roundEvents.map((events, i) => (
           <div
             key={`round-${i}`}
@@ -359,17 +374,30 @@ const DailyResultCard: React.FC<{
               {peekUsed && peekRound === i + 1 ? " 👀" : ""}
             </span>
             <span style={{ marginLeft: "auto" }}>
-              <RoundMarks events={events} />
+              <RoundMarks
+                events={events}
+                animateFrom={markOffsets[i]}
+                baseDelayMs={MARKS_BASE_DELAY_MS}
+              />
             </span>
           </div>
         ))}
       </div>
 
-      <ShareBlock text={shareText} result={result} streak={streak} mobile={mobile} />
+      <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
+        <ShareBlock
+          text={shareText}
+          result={result}
+          streak={streak}
+          mobile={mobile}
+          sweepDelayMs={sweepDelayMs}
+        />
+      </div>
 
 
       {!hasSubscribed() && (
         <div
+          className="ww-res-in"
           style={{
             alignSelf: "stretch",
             border: BORDER.heavy,
@@ -377,6 +405,7 @@ const DailyResultCard: React.FC<{
             padding: SPACE[6],
             display: "flex",
             flexDirection: "column",
+            ...blockIn("email"),
           }}
         >
           <DailyEmailCapture />
@@ -385,9 +414,9 @@ const DailyResultCard: React.FC<{
 
       <button
         type="button"
-        className="ww-press"
+        className="ww-press ww-res-in"
         onClick={onLeave}
-        style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch" }}
+        style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch", ...blockIn("done") }}
       >
         DONE
       </button>
