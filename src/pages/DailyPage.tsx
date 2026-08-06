@@ -430,18 +430,25 @@ const DailyReadyScreen: React.FC<{
       >
         {today}
         {played && (
-          <div
-            style={{
-              marginTop: 8,
-              fontFamily: FONT_FAMILY,
-              fontSize: 16,
-              lineHeight: 1.2,
-              color: COLORS.inkMuted,
-            }}
-          >
-            Played today
+          <div style={{ marginTop: 8 }}>
+            <span
+              style={{
+                display: "inline-block",
+                padding: "8px 16px",
+                borderRadius: 999,
+                background: COLORS.orange,
+                border: BORDER.heavy,
+                fontFamily: FONT_FAMILY,
+                fontSize: 16,
+                lineHeight: 1.2,
+                color: COLORS.ink,
+              }}
+            >
+              Played today
+            </span>
           </div>
         )}
+
         {streak !== null && streak >= 1 && (
           <div
             style={{
