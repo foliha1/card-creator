@@ -39,7 +39,7 @@ const AnimatedRoutes: React.FC = () => {
       }}
     >
       <Routes location={displayLocation}>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<DailyPage />} />
         <Route path="/play" element={<MultiplayerPage />} />
         <Route path="/play/:roomCode" element={<MultiplayerPage />} />
         <Route path="/today" element={<DailyPage />} />
