@@ -604,19 +604,23 @@ const DailyPage: React.FC = () => {
 
   // Round 3 runs the identical success sequence: the pair flips up, holds, the
   // ghost treatment plays and the cards exit. Only then does the board reveal
-  // and the result screen open.
+  // and the result screen open. `runSettled` keeps the board on screen for the
+  // whole sequence instead of cutting to the ready/result screens.
+  const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
     if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
     setFinalReveal(true);
     const t = setTimeout(() => {
       hapticSuccess();
+      setRunSettled(true);
       setShowResult(true);
     }, DAILY_FINAL_REVEAL_MS);
     return () => clearTimeout(t);
   }, [phase, ghost.length]);
 
 
-  const playedToday = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
+  const playedToday =
+    daily.result !== null && (daily.alreadyPlayed || (phase === "DONE" && runSettled));
   const finished = playedToday && showResult;
   const ready = !finished && (phase === "READY" || playedToday);
 
