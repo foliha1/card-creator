@@ -179,21 +179,6 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
 
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
-      <pre
-        style={{
-          margin: 0,
-          border: BORDER.heavy,
-          borderRadius: RADIUS.sm,
-          background: COLORS.panel,
-          padding: SPACE[4],
-          textAlign: "center",
-          whiteSpace: "pre-wrap",
-          ...textStyle("caption", mobile),
-          color: COLORS.ink,
-        }}
-      >
-        {text}
-      </pre>
       <button
         type="button"
         className="ww-press"
@@ -205,6 +190,7 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
     </div>
   );
 };
+
 
 /**
  * Secondary share options. All three reuse the exact string from
