@@ -1,11 +1,16 @@
 // Audio effects + persisted settings.
 //
+// Effects are real recordings from /sounds/*.mp3, decoded once into
+// AudioBuffers and played through the shared AudioContext. Buffers have no
+// replay latency and can overlap, so repeated taps never queue up.
+//
 // Two independent flags: sfxEnabled controls the six effect functions;
 // musicEnabled is exposed for future use (theme music, ambience). Both persist
 // to localStorage so a page refresh preserves the user's choice.
 //
-// unlockAudio() must be called from a user gesture — in multiplayer, effects
-// fire from remote broadcasts with no local gesture, so a joiner's AudioContext
+// unlockAudio() must be called from a user gesture — it resumes the context and
+// kicks off the (lazy) fetch+decode of every clip. In multiplayer, effects fire
+// from remote broadcasts with no local gesture, so a joiner's AudioContext
 // would otherwise remain suspended and silent forever.
 
 let audioCtx: AudioContext | null = null;
@@ -48,8 +53,79 @@ function getCtx(): AudioContext {
   return audioCtx;
 }
 
+// ---------------------------------------------------------------------------
+// Clips + balance
+// ---------------------------------------------------------------------------
+
+type ClipName = "flip" | "deal" | "dice" | "correct" | "wrong" | "whoop";
+
+const CLIP_FILES: Record<ClipName, string> = {
+  flip: "/sounds/flip.mp3",
+  deal: "/sounds/deal.mp3",
+  dice: "/sounds/dice.mp3",
+  correct: "/sounds/correct.mp3",
+  wrong: "/sounds/wrong.mp3",
+  whoop: "/sounds/whoop.mp3",
+};
+
+/** Single place to tune the mix. `correct` is the loudest thing in the app. */
+export const CLIP_GAIN: Record<ClipName, number> = {
+  flip: 0.25,
+  deal: 0.20,
+  dice: 0.50,
+  wrong: 0.50,
+  whoop: 0.60,
+  correct: 1.0,
+};
+
+interface Clip {
+  buffer: AudioBuffer;
+  /** Seconds of near-silence to skip so a tap never sounds late. */
+  offset: number;
+}
+
+const clips = new Map<ClipName, Clip>();
+const loading = new Map<ClipName, Promise<void>>();
+
+const SILENCE_THRESHOLD = 0.01;
+const MAX_LEAD_MS = 20;
+
+/** Detects leading near-silence; returns 0 when it is under ~20ms. */
+function leadingSilence(buffer: AudioBuffer): number {
+  try {
+    const data = buffer.getChannelData(0);
+    const limit = Math.min(data.length, Math.floor(buffer.sampleRate * 0.5));
+    let i = 0;
+    while (i < limit && Math.abs(data[i]) < SILENCE_THRESHOLD) i++;
+    const ms = (i / buffer.sampleRate) * 1000;
+    return ms > MAX_LEAD_MS ? i / buffer.sampleRate : 0;
+  } catch { return 0; }
+}
+
+function loadClip(name: ClipName): Promise<void> {
+  const existing = loading.get(name);
+  if (existing) return existing;
+  const p = (async () => {
+    try {
+      const res = await fetch(CLIP_FILES[name]);
+      if (!res.ok) return;
+      const bytes = await res.arrayBuffer();
+      const buffer = await getCtx().decodeAudioData(bytes);
+      clips.set(name, { buffer, offset: leadingSilence(buffer) });
+    } catch {
+      // A missing or undecodable file simply makes that effect a no-op.
+    }
+  })();
+  loading.set(name, p);
+  return p;
+}
+
+function preload(): void {
+  (Object.keys(CLIP_FILES) as ClipName[]).forEach((n) => { void loadClip(n); });
+}
+
 // Safe to call repeatedly. Resumes a suspended context (browsers require a
-// user gesture before audio starts).
+// user gesture before audio starts) and lazily loads the clips.
 export function unlockAudio(): void {
   try {
     const ctx = getCtx();
@@ -57,58 +133,76 @@ export function unlockAudio(): void {
       // Fire-and-forget; resume() returns a Promise but we don't await it.
       void ctx.resume();
     }
+    preload();
   } catch { /* ignore — no AudioContext available */ }
 }
 
-function playTone(freq: number, duration: number, type: OscillatorType = "square", volume = 0.15) {
-  if (!sfxEnabled) return;
-  const ctx = getCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(volume, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + duration / 1000);
+interface PlayOpts {
+  /** Extra multiplier on top of the clip's mix level. */
+  gain?: number;
+  /** Playback rate for subtle detune (1 = no change). */
+  rate?: number;
+  /** Delay before playback, in seconds. */
+  delay?: number;
 }
 
+function play(name: ClipName, opts: PlayOpts = {}): void {
+  if (!sfxEnabled) return;
+  try {
+    const clip = clips.get(name);
+    if (!clip) {
+      // Not decoded yet — start it so the next call has it, then stay silent.
+      void loadClip(name);
+      return;
+    }
+    const ctx = getCtx();
+    if (ctx.state === "suspended") void ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = clip.buffer;
+    src.playbackRate.value = opts.rate ?? 1;
+    const g = ctx.createGain();
+    g.gain.value = CLIP_GAIN[name] * (opts.gain ?? 1);
+    src.connect(g);
+    g.connect(ctx.destination);
+    const when = ctx.currentTime + (opts.delay ?? 0);
+    src.start(when, clip.offset);
+  } catch { /* never throw from audio */ }
+}
+
+// ---------------------------------------------------------------------------
+// Public effects — signatures unchanged
+// ---------------------------------------------------------------------------
+
 export function playFlip() {
-  playTone(800, 80, "square", 0.1);
+  play("flip");
 }
 
 export function playDeal(count: number = 1) {
   if (!sfxEnabled) return;
-  for (let i = 0; i < count; i++) {
-    setTimeout(() => {
-      playTone(320 + Math.random() * 80, 55, "triangle", 0.06);
-      setTimeout(() => playTone(180, 35, "sine", 0.05), 30);
-    }, i * 70);
+  const n = Math.max(1, Math.floor(count));
+  for (let i = 0; i < n; i++) {
+    // ~70ms stagger, with a touch of detune/level jitter so repeated cards
+    // never sound like the same sample twice.
+    play("deal", {
+      delay: i * 0.07,
+      rate: 0.94 + Math.random() * 0.12,
+      gain: 0.85 + Math.random() * 0.3,
+    });
   }
 }
 
 export function playDiceRoll() {
-  if (!sfxEnabled) return;
-  const freqs = [640, 580, 520, 470, 600, 540, 480, 430, 560, 500, 440];
-  freqs.forEach((f, i) => {
-    setTimeout(() => playTone(f, 60, "square", 0.07), i * 75);
-  });
+  play("dice");
 }
 
 export function playCorrect() {
-  if (!sfxEnabled) return;
-  playTone(523, 200, "sine", 0.15);
-  setTimeout(() => playTone(659, 200, "sine", 0.15), 120);
+  play("correct");
 }
 
 export function playWrong() {
-  playTone(200, 150, "sawtooth", 0.1);
+  play("wrong");
 }
 
 export function playWhoopCall() {
-  if (!sfxEnabled) return;
-  playTone(520, 90, "sine", 0.12);
-  setTimeout(() => playTone(720, 90, "sine", 0.12), 110);
+  play("whoop");
 }
