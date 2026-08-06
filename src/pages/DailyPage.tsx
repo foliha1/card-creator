@@ -332,15 +332,15 @@ const DailyResultCard: React.FC<{
   return (
     <div
       style={{
-        ...panelStyle("surface", 8),
+        width: "100%",
         alignSelf: "stretch",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: SPACE[6],
-        padding: mobile ? SPACE[6] : SPACE[10],
       }}
     >
+
       <h1 style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
         Daily Puzzle #{puzzleNumber}
       </h1>
