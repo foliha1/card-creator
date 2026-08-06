@@ -828,6 +828,7 @@ const DailyPage: React.FC = () => {
                   // ghost layer can still measure the slot a solved pair left.
                   <div
                     key={`slot-${idx}`}
+                    data-slot={idx}
                     ref={(el) => { slotRefs.current[idx] = el; }}
                     style={{ position: "relative", width: "100%", height: "100%" }}
                   >
