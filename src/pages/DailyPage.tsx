@@ -6,6 +6,7 @@ import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import DailyRoundIntro from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
+import DailyScreenFade from "@/components/DailyScreenFade";
 
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
@@ -690,7 +691,10 @@ const DailyPage: React.FC = () => {
       </Helmet>
 
 
-      <div style={{ minHeight: "100dvh", background: COLORS.surface }}>
+      <DailyScreenFade
+        screenKey={finished ? "result" : ready ? "ready" : finalReveal ? "reveal" : "play"}
+        background={finished || ready ? COLORS.surface : COLORS.panel}
+      >
         {daily.debugBypass && (
           <div
             role="status"
@@ -897,7 +901,7 @@ const DailyPage: React.FC = () => {
 
         </DailyFrame>
         )}
-      </div>
+      </DailyScreenFade>
     </>
   );
 };
