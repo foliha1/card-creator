@@ -272,6 +272,8 @@ const DailyResultCard: React.FC<{
   peekRound: number | null;
   failed: boolean;
   shareText: string;
+  /** The stored run, used to render the share image. */
+  result: DailyResult;
   /** Null hides the streak line entirely — never show a zero. */
   streak: number | null;
   mobile: boolean;
@@ -287,7 +289,9 @@ const DailyResultCard: React.FC<{
   peekRound,
   failed,
   shareText,
+  result,
   streak,
+
   mobile,
   revisit,
   onLeave,
