@@ -829,7 +829,7 @@ const DailyPage: React.FC = () => {
                       key={card.id}
                       card={card}
                       fill
-                      faceUp={state.faceUp || state.revealPair.includes(idx)}
+                      faceUp={state.faceUp}
                       highlighted={state.selected.includes(idx)}
                       matched={state.matchedPair.includes(idx)}
                       wrong={state.wrongPair.includes(idx)}
