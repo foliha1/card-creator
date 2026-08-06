@@ -79,6 +79,9 @@ export const THEME_SWATCHES = [
 
 export const FONT_FAMILY = '"Friend", Georgia, "Times New Roman", serif';
 
+/** UI/caption stack — Geist. Used for small metadata lines. */
+export const FONT_FAMILY_UI = '"Geist", system-ui, -apple-system, sans-serif';
+
 /* ------------------------------------------------------------------ *
  * Type scale — the ONLY place raw font sizes live.
  * Roughly a 1.22 ratio ladder; every role below picks two steps

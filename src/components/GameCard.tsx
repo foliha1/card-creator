@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CARD_BACK_PATH } from "@/cardData";
-import { COLORS, RADIUS, SHADOW } from "@/lib/tokens";
+import { COLORS, RADIUS } from "@/lib/tokens";
 
 interface GameCardProps {
   card: Card;
@@ -65,8 +65,7 @@ const GameCard = ({
 
   const k = cardW > 0 ? cardW / 104.333 : 0;
 
-  const baseShadow = SHADOW.card;
-  const boxShadow = baseShadow;
+  const boxShadow = undefined;
 
   let outerTransform = "";
   let outerTransition = "transform 0.4s ease, opacity 0.4s ease";
