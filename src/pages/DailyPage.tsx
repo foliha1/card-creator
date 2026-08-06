@@ -6,7 +6,6 @@ import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
-import PreGameShell from "@/components/PreGameShell";
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
 import { hasSubscribed } from "@/lib/dailySubscribe";
@@ -34,11 +33,9 @@ import {
   RADIUS,
   SPACE,
   buttonStyle,
-  panelStyle,
   textStyle,
 } from "@/lib/tokens";
 
-const PAGE_BG = "#231F20";
 const TUMBLE_MS = 800;
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
