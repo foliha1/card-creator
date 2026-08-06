@@ -702,8 +702,9 @@ const DailyPage: React.FC = () => {
   // --- sound + haptic cues, driven off phase / counters ---
   // Safety net: any first gesture anywhere on the page unlocks audio, in case
   // the run was started from something other than the Play button.
+  const [audioReady, setAudioReady] = useState(false);
   useEffect(() => {
-    const on = () => unlockAudio();
+    const on = () => { unlockAudio(); setAudioReady(true); };
     window.addEventListener("pointerdown", on, { once: true });
     window.addEventListener("keydown", on, { once: true });
     return () => {
@@ -711,6 +712,7 @@ const DailyPage: React.FC = () => {
       window.removeEventListener("keydown", on);
     };
   }, []);
+
 
   useEffect(() => {
     if (phase === "STUDY") playDeal(9);
