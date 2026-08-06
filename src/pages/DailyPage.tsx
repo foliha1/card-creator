@@ -601,11 +601,17 @@ const DailyPage: React.FC = () => {
     return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
 
-  // The result screen waits for the final pair to finish leaving the board.
+  // Round 3 runs the identical success sequence: the pair flips up, holds, the
+  // ghost treatment plays and the cards exit. Only then does the board reveal
+  // and the result screen open.
   useEffect(() => {
-    if (phase !== "DONE" || ghost.length > 0) return;
-    hapticSuccess();
-    setShowResult(true);
+    if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
+    setFinalReveal(true);
+    const t = setTimeout(() => {
+      hapticSuccess();
+      setShowResult(true);
+    }, DAILY_FINAL_REVEAL_MS);
+    return () => clearTimeout(t);
   }, [phase, ghost.length]);
 
 
