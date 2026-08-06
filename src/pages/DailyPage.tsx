@@ -548,6 +548,10 @@ const DailyPage: React.FC = () => {
   // capture effect is declared BEFORE the board bookkeeping effect below so it
   // still sees the pre-removal board and the slots' live rects.
   const [ghost, setGhost] = useState<GhostCard[]>([]);
+  // Set synchronously with the capture so the DONE gate below never sees a
+  // stale empty `ghost` on the round-3 solve and skips the success sequence.
+  const ghostPendingRef = React.useRef(false);
+  const [finalReveal, setFinalReveal] = useState(false);
   const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const boardRef = React.useRef(state.grid);
 
@@ -564,7 +568,10 @@ const DailyPage: React.FC = () => {
         rect: { top: r.top, left: r.left, width: r.width, height: r.height },
       }];
     });
-    if (copies.length) setGhost(copies);
+    if (copies.length) {
+      ghostPendingRef.current = true;
+      setGhost(copies);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
 
