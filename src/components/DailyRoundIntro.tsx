@@ -58,6 +58,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   const [reduced] = useState(prefersReducedMotion);
   const [visible, setVisible] = useState(active);
   const [fading, setFading] = useState(false);
+  /** False for the first frames: everything fades up before the tumble. */
+  const [entered, setEntered] = useState(false);
 
   const [big] = useState(() => {
     if (typeof window === "undefined") return 202;
@@ -73,11 +75,12 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   const spun = `rotateX(${dir * (spins * 360 + 140)}deg) rotateY(${-dir * (spins * 360 + 55)}deg)`;
   const [rotation, setRotation] = useState(reduced ? landed : spun);
 
+  // The tumble only begins once the fade-in has finished.
   useEffect(() => {
     if (!active || reduced) return;
     setRotation(spun);
-    const id = requestAnimationFrame(() => setRotation(landed));
-    return () => cancelAnimationFrame(id);
+    const t = window.setTimeout(() => setRotation(landed), DAILY_FADE_IN_MS);
+    return () => window.clearTimeout(t);
   }, [active, roundIndex, spun, landed, reduced]);
 
   // Enter on ROLL; on leave fade the whole overlay out.
@@ -87,13 +90,15 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
     if (active) {
       setVisible(true);
       setFading(false);
-      return;
+      setEntered(false);
+      const raf = requestAnimationFrame(() => setEntered(true));
+      return () => cancelAnimationFrame(raf);
     }
     if (!visibleRef.current) return;
     const raf = requestAnimationFrame(() => setFading(true));
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, roundIndex]);
 
   useEffect(() => {
     if (!fading) return;
