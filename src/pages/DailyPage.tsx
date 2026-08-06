@@ -44,54 +44,6 @@ const ATTR_LABEL: Record<string, string> = {
   COLOR: "Match the color",
 };
 
-/**
- * The resting die in the header. Hidden behind a blank until the first roll, so
- * the round's rule can never leak while the board is still face up — the whole
- * point of the mode. The roll itself belongs to DailyRoundIntro; here the die is
- * inert and only reminds the player of the rule.
- */
-const DailyDie: React.FC<{
-  phase: DailyPhase;
-  roundIndex: number;
-  attribute: "SHAPE" | "NUMBER" | "COLOR";
-  faceIndex: 0 | 1;
-  size: number;
-  /** True while the round intro overlay owns the die. */
-  hidden: boolean;
-}> = ({ phase, roundIndex, attribute, faceIndex, size, hidden }) => {
-  const preRoll =
-    roundIndex === 1 && (phase === "DEAL" || phase === "STUDY" || phase === "HIDE");
-
-  if (preRoll) {
-    return (
-      <div
-        aria-label="The die has not rolled yet"
-        style={{
-          width: size,
-          height: size,
-          border: BORDER.heavy,
-          borderRadius: RADIUS.sm,
-          background: COLORS.panel,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: COLORS.inkMuted,
-          ...textStyle("title"),
-        }}
-      >
-        ?
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ visibility: hidden ? "hidden" : "visible" }}>
-      <MatchDie size={size} attribute={attribute} faceIndex={faceIndex} />
-    </div>
-  );
-};
-
-
 /** Two markers for the current round, filled as its misses are spent. */
 const MissTracker: React.FC<{ used: number }> = ({ used }) => (
   <div
@@ -559,8 +511,6 @@ const DailyBoard: React.FC<{
 };
 
 
-const DIE_SIZE = 56;
-
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
@@ -568,9 +518,8 @@ const DailyPage: React.FC = () => {
   const { state, phase } = daily;
   const [howTo, setHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  // True while the round intro overlay owns the die (roll + fly to corner).
+  // True while the round intro overlay is up: taps stay locked.
   const [introUp, setIntroUp] = useState(false);
-  const dieSlotRef = React.useRef<HTMLDivElement | null>(null);
   // Read after the run is persisted so today counts toward the streak.
   const streak = useDailyStreak(
     daily.puzzleNumber,
