@@ -452,8 +452,10 @@ const BOARD_MIN_CARD_W = 44;
 
 const DailyBoard: React.FC<{
   rows: number;
+  /** Reports the measured grid width so the header can share the card edges. */
+  onGridWidth?: (w: number) => void;
   children: React.ReactNode;
-}> = ({ rows, children }) => {
+}> = ({ rows, onGridWidth, children }) => {
   const ref = React.useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
 
@@ -480,6 +482,11 @@ const DailyBoard: React.FC<{
     Math.max(BOARD_MIN_CARD_W, Number.isFinite(raw) && raw > 0 ? raw : BOARD_MIN_CARD_W)
   );
   const cardH = Math.round(cardW * BOARD_RATIO);
+  const gridW = cardW * BOARD_COLS + (BOARD_COLS - 1) * BOARD_GAP;
+
+  useEffect(() => {
+    onGridWidth?.(gridW);
+  }, [gridW, onGridWidth]);
 
   return (
     <div
@@ -518,6 +525,8 @@ const DailyPage: React.FC = () => {
   const [showResult, setShowResult] = useState(false);
   // True while the round intro overlay is up: taps stay locked.
   const [introUp, setIntroUp] = useState(false);
+  // Measured card-grid width: the single alignment line for the gameplay screen.
+  const [gridWidth, setGridWidth] = useState(0);
   // Read after the run is persisted so today counts toward the streak.
   const streak = useDailyStreak(
     daily.puzzleNumber,
@@ -656,7 +665,7 @@ const DailyPage: React.FC = () => {
           </>
         )}
         {!ready && (
-        <DailyFrame gap={SPACE[4]} fill={!finished}>
+        <DailyFrame gap={SPACE[4]} fill={!finished} tone={finished ? "surface" : "panel"}>
 
 
           {finished ? (
@@ -697,13 +706,15 @@ const DailyPage: React.FC = () => {
                 style={{
                   flex: "0 0 auto",
                   display: "flex",
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   justifyContent: "space-between",
                   gap: SPACE[3],
+                  width: gridWidth ? gridWidth : "100%",
+                  alignSelf: "center",
                 }}
               >
                 <div style={{ flex: "1 1 auto", minWidth: 0 }}>
-                  <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
+                  <div style={{ ...textStyle("caption", mobile), fontFamily: FONT_FAMILY_UI, color: COLORS.inkMuted }}>
                     Round {state.roundIndex} of {DAILY_ROUNDS} · {remainingCount(state)} cards
                   </div>
                   <div
@@ -743,7 +754,10 @@ const DailyPage: React.FC = () => {
               </div>
 
 
-              <DailyBoard rows={Math.max(1, Math.ceil(state.grid.length / 3))}>
+              <DailyBoard
+                rows={Math.max(1, Math.ceil(state.grid.length / 3))}
+                onGridWidth={setGridWidth}
+              >
                 {state.grid.map((card, idx) =>
                   card === null ? (
                     <div
