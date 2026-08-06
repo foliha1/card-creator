@@ -682,7 +682,8 @@ const DailyPage: React.FC = () => {
           </>
         )}
         {!ready && (
-        <PreGameShell mobile={mobile} gap={SPACE[5]}>
+        <DailyFrame gap={SPACE[5]}>
+
 
           {finished ? (
             <DailyResultCard
