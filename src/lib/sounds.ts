@@ -41,7 +41,12 @@ export function getMusicEnabled(): boolean { return musicEnabled; }
 export function setMusicEnabled(value: boolean): void {
   musicEnabled = value;
   writeFlag(MUSIC_KEY, value);
+  // Honour the flag live: off fades out and stops, on fades back in when the
+  // current screen still wants music.
+  if (!value) fadeOutTheme(true);
+  else if (themeDesired) startTheme();
 }
+
 
 // Back-compat wrappers — GameWindow (solo) uses these. `muted` is the inverse
 // of sfxEnabled.
