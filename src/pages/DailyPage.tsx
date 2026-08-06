@@ -702,8 +702,11 @@ const DailyPage: React.FC = () => {
 
   useEffect(() => {
     if (state.wrongToken === 0) return;
-    playWrong();
     hapticError();
+    // The whoop plays on the second tap; hold the outcome cue back until the
+    // wrong-match animation starts so the two never overlap.
+    const t = setTimeout(() => playWrong(), GREAT_MATCH_DELAY_MS);
+    return () => clearTimeout(t);
   }, [state.wrongToken]);
 
   useEffect(() => {
@@ -716,6 +719,12 @@ const DailyPage: React.FC = () => {
     return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
 
+  // Peek reveals the whole board for 5s — cue it as it opens.
+  useEffect(() => {
+    if (!state.peeking) return;
+    playPeek();
+  }, [state.peeking]);
+
   // Round 3 runs the identical success sequence: the pair flips up, holds, the
   // ghost treatment plays and the cards exit. Only then does the board reveal
   // and the result screen open. `runSettled` keeps the board on screen for the
@@ -724,6 +733,8 @@ const DailyPage: React.FC = () => {
   useEffect(() => {
     if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
     setFinalReveal(true);
+    playReveal();
+
     const t = setTimeout(() => {
       hapticSuccess();
       setRunSettled(true);
