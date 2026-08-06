@@ -749,7 +749,7 @@ const DailyPage: React.FC = () => {
           </>
         )}
         {!ready && (
-        <DailyFrame gap={SPACE[5]}>
+        <DailyFrame gap={SPACE[4]} fill={!finished}>
 
 
           {finished ? (
