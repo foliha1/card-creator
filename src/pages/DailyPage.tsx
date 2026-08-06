@@ -36,7 +36,18 @@ import {
 
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 
-import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
+import {
+  playCorrect,
+  playDeal,
+  playDiceRoll,
+  playFlip,
+  playPeek,
+  playReveal,
+  playSelect,
+  playWhoopCall,
+  playWrong,
+  unlockAudio,
+} from "@/lib/sounds";
 import {
   BORDER,
   COLORS,
@@ -685,15 +696,33 @@ const DailyPage: React.FC = () => {
   }, [state.grid]);
 
   // --- sound + haptic cues, driven off phase / counters ---
+  // Safety net: any first gesture anywhere on the page unlocks audio, in case
+  // the run was started from something other than the Play button.
+  useEffect(() => {
+    const on = () => unlockAudio();
+    window.addEventListener("pointerdown", on, { once: true });
+    window.addEventListener("keydown", on, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", on);
+      window.removeEventListener("keydown", on);
+    };
+  }, []);
+
   useEffect(() => {
     if (phase === "STUDY") playDeal(9);
     if (phase === "ROLL") playDiceRoll();
+    // Cards going face down at the end of the study window.
+    if (phase === "HIDE" && state.roundIndex === 1) playFlip();
   }, [phase, state.roundIndex]);
+
 
   useEffect(() => {
     if (state.wrongToken === 0) return;
-    playWrong();
     hapticError();
+    // The whoop plays on the second tap; hold the outcome cue back until the
+    // wrong-match animation starts so the two never overlap.
+    const t = setTimeout(() => playWrong(), GREAT_MATCH_DELAY_MS);
+    return () => clearTimeout(t);
   }, [state.wrongToken]);
 
   useEffect(() => {
@@ -706,6 +735,12 @@ const DailyPage: React.FC = () => {
     return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
 
+  // Peek reveals the whole board for 5s — cue it as it opens.
+  useEffect(() => {
+    if (!state.peeking) return;
+    playPeek();
+  }, [state.peeking]);
+
   // Round 3 runs the identical success sequence: the pair flips up, holds, the
   // ghost treatment plays and the cards exit. Only then does the board reveal
   // and the result screen open. `runSettled` keeps the board on screen for the
@@ -714,6 +749,8 @@ const DailyPage: React.FC = () => {
   useEffect(() => {
     if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
     setFinalReveal(true);
+    playReveal();
+
     const t = setTimeout(() => {
       hapticSuccess();
       setRunSettled(true);
@@ -869,14 +906,19 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               played={playedToday}
               onPlay={() => {
+                // First user gesture on the page: resume the AudioContext and
+                // kick off the clip decode, or nothing ever plays.
+                unlockAudio();
                 hapticTap();
                 if (playedToday) setShowResult(true);
                 else daily.start();
               }}
               onHowToPlay={() => {
+                unlockAudio();
                 hapticTap();
                 setHowTo(true);
               }}
+
             />
             {howTo && <DailyHowToPlay onClose={() => setHowTo(false)} />}
           </>
@@ -1010,10 +1052,13 @@ const DailyPage: React.FC = () => {
                           // Paint the selection first; haptics and sound are
                           // best-effort and can block, so they follow.
                           const calls = state.selected.length === 1 && !state.selected.includes(idx);
+                          const selects = state.selected.length === 0;
                           daily.select(idx);
                           hapticTap();
                           if (calls) playWhoopCall();
+                          else if (selects) playSelect();
                         }}
+
                       />
                     )}
                   </div>

@@ -57,7 +57,15 @@ function getCtx(): AudioContext {
 // Clips + balance
 // ---------------------------------------------------------------------------
 
-type ClipName = "flip" | "deal" | "dice" | "correct" | "wrong" | "whoop";
+type ClipName =
+  | "flip"
+  | "deal"
+  | "dice"
+  | "correct"
+  | "wrong"
+  | "whoop"
+  | "peek"
+  | "reveal";
 
 const CLIP_FILES: Record<ClipName, string> = {
   flip: "/sounds/flip.mp3",
@@ -66,17 +74,29 @@ const CLIP_FILES: Record<ClipName, string> = {
   correct: "/sounds/correct.mp3",
   wrong: "/sounds/wrong.mp3",
   whoop: "/sounds/whoop.mp3",
+  // NOTE: the shipped file is spelled peak.mp3.
+  peek: "/sounds/peak.mp3",
+  reveal: "/sounds/reveal.mp3",
 };
 
 /** Single place to tune the mix. `correct` is the loudest thing in the app. */
 export const CLIP_GAIN: Record<ClipName, number> = {
   flip: 0.25,
-  deal: 0.20,
+  deal: 0.9,
   dice: 0.50,
   wrong: 0.50,
   whoop: 0.60,
   correct: 1.0,
+  peek: 0.45,
+  reveal: 0.55,
 };
+
+/** Gain for the placeholder select cue (a detuned flip). */
+const SELECT_GAIN = 0.3;
+
+/** A play() request for an undecoded clip is honoured if it arrives by then. */
+const LATE_PLAY_MS = 400;
+
 
 interface Clip {
   buffer: AudioBuffer;
@@ -146,26 +166,39 @@ interface PlayOpts {
   delay?: number;
 }
 
+function emit(name: ClipName, opts: PlayOpts): void {
+  const clip = clips.get(name);
+  if (!clip) return;
+  const ctx = getCtx();
+  // Browsers can suspend the context at any time (tab switch, autoplay
+  // policy), so resume on every play, not just on unlock.
+  if (ctx.state === "suspended") void ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = clip.buffer;
+  src.playbackRate.value = opts.rate ?? 1;
+  const g = ctx.createGain();
+  g.gain.value = CLIP_GAIN[name] * (opts.gain ?? 1);
+  src.connect(g);
+  g.connect(ctx.destination);
+  const when = ctx.currentTime + (opts.delay ?? 0);
+  src.start(when, clip.offset);
+}
+
 function play(name: ClipName, opts: PlayOpts = {}): void {
   if (!sfxEnabled) return;
   try {
-    const clip = clips.get(name);
-    if (!clip) {
-      // Not decoded yet — start it so the next call has it, then stay silent.
-      void loadClip(name);
+    if (clips.has(name)) {
+      emit(name, opts);
       return;
     }
-    const ctx = getCtx();
-    if (ctx.state === "suspended") void ctx.resume();
-    const src = ctx.createBufferSource();
-    src.buffer = clip.buffer;
-    src.playbackRate.value = opts.rate ?? 1;
-    const g = ctx.createGain();
-    g.gain.value = CLIP_GAIN[name] * (opts.gain ?? 1);
-    src.connect(g);
-    g.connect(ctx.destination);
-    const when = ctx.currentTime + (opts.delay ?? 0);
-    src.start(when, clip.offset);
+    // Not decoded yet: load it and still play it when it lands, as long as the
+    // cue has not gone stale. A late sound beats a dropped one.
+    const requestedAt = Date.now();
+    void loadClip(name).then(() => {
+      if (!sfxEnabled) return;
+      if (Date.now() - requestedAt > LATE_PLAY_MS) return;
+      try { emit(name, opts); } catch { /* ignore */ }
+    });
   } catch { /* never throw from audio */ }
 }
 
@@ -206,3 +239,20 @@ export function playWrong() {
 export function playWhoopCall() {
   play("whoop");
 }
+
+export function playPeek() {
+  play("peek");
+}
+
+export function playReveal() {
+  play("reveal");
+}
+
+/**
+ * Card-select cue. Placeholder: a detuned, quiet flip until a real
+ * select.mp3 ships — swap the body, keep the name.
+ */
+export function playSelect() {
+  play("flip", { rate: 1.35, gain: SELECT_GAIN / CLIP_GAIN.flip });
+}
+
