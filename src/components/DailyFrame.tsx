@@ -1,0 +1,57 @@
+import React from "react";
+import DailyShapeRule from "@/components/DailyShapeRule";
+import { COLORS } from "@/lib/tokens";
+
+/** Max width of the content column shared by every daily screen. */
+export const DAILY_CONTENT_MAX_W = 402;
+
+/**
+ * The single outer shell shared by the daily screens (ready, gameplay,
+ * result): cream page, 24px padding, a shape rule top and bottom, and a
+ * centred content column capped at 402px in between. Keeping this in one
+ * place is what stops the screens drifting apart visually.
+ */
+const DailyFrame: React.FC<{
+  /** Gap inside the content column. */
+  gap?: number;
+  children?: React.ReactNode;
+}> = ({ gap = 24, children }) => (
+  <div
+    style={{
+      position: "relative",
+      minHeight: "100dvh",
+      height: "100dvh",
+      boxSizing: "border-box",
+      background: COLORS.surface,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 24,
+      padding: 24,
+      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+      overflowY: "auto",
+      "--daily-content-max-width": `${DAILY_CONTENT_MAX_W}px`,
+      "--daily-content-padding-x": "24px",
+    } as React.CSSProperties}
+  >
+    <DailyShapeRule />
+
+    <div
+      style={{
+        width: "100%",
+        maxWidth: DAILY_CONTENT_MAX_W,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap,
+      }}
+    >
+      {children}
+    </div>
+
+    <DailyShapeRule />
+  </div>
+);
+
+export default DailyFrame;
