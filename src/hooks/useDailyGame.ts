@@ -30,13 +30,16 @@ import {
   type DailyResult,
 } from "@/lib/daily";
 import { saveDailyResultRemote } from "@/lib/dailyResults";
+import { DAILY_MATCH_SETTLE_MS } from "@/lib/animationTiming";
+import { SETTLE_WRONG_MS } from "@/hooks/useGameState";
 
 
 const DEAL_MS = 700;      // deal-in settles before the reveal
 const FLIP_MS = 500;      // card flip duration (matches GameCard)
-const WRONG_ANIM_MS = 900;
-const MATCH_ANIM_MS = 700;
+const WRONG_ANIM_MS = SETTLE_WRONG_MS;
+const MATCH_ANIM_MS = DAILY_MATCH_SETTLE_MS;
 const WHOOPED_PAUSE_MS = 1200; // beat after a Whooped round before the next roll
+
 
 export interface UseDailyGameResult {
   state: DailyState;
@@ -102,14 +105,21 @@ export function useDailyGame(): UseDailyGameResult {
   }, [state.phase]);
 
   // HIDE is entered both after the study window and after each round ends.
+  // A solved round holds for the whole match sequence (reveal → hold → ghost)
+  // so the next round intro only opens once the pair has left the board.
   useEffect(() => {
     if (state.phase !== "HIDE") return;
-    const t = setTimeout(
-      () => dispatch({ type: "ROLL_START" }),
-      state.roundIndex === 1 ? FLIP_MS : MATCH_ANIM_MS
-    );
+    const delay =
+      state.roundIndex === 1
+        ? FLIP_MS
+        : state.matchedPair.length > 0
+        ? MATCH_ANIM_MS
+        : WHOOPED_PAUSE_MS / 2;
+    const t = setTimeout(() => dispatch({ type: "ROLL_START" }), delay);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.roundIndex]);
+
 
   useEffect(() => {
     if (state.phase !== "ROLL") return;
@@ -176,9 +186,12 @@ export function useDailyGame(): UseDailyGameResult {
 
   useEffect(() => {
     if (state.matchedPair.length === 0) return;
-    const t = setTimeout(() => dispatch({ type: "CLEAR_MATCH" }), MATCH_ANIM_MS);
+    // Cleared just after the round advances so the HIDE timer above never
+    // re-reads an emptied pair mid-sequence.
+    const t = setTimeout(() => dispatch({ type: "CLEAR_MATCH" }), MATCH_ANIM_MS + 50);
     return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
+
 
   // ---- auto-resolve once two cards are picked ----
   const resolveRef = useRef(0);

@@ -14,6 +14,21 @@ export const DEAL_MOVE_MS = 900;
 /** Internal per-card step of playDeal()'s multi-card burst (sounds.ts). */
 export const SFX_DEAL_STEP_MS = 70;
 
+// ---- daily-specific match sequence ----------------------------------------
+// The daily needs two beats the multiplayer settle does not have: the pair is
+// face down when it resolves, so it must flip up and then be held long enough
+// to read before the shared ghost treatment plays.
+/** Flip-up of the solved pair on the daily board (matches GameCard's flip). */
+export const DAILY_MATCH_REVEAL_MS = 500;
+/** Beat on the revealed pair before the success animation starts. */
+export const DAILY_MATCH_HOLD_MS = 700;
+/** Ghost treatment window — the same beat as SETTLE_MATCH_MS in useGameState. */
+export const DAILY_MATCH_GREAT_MS = 1300;
+/** Whole daily correct-match sequence: reveal → hold → ghost lift and fade. */
+export const DAILY_MATCH_SETTLE_MS =
+  DAILY_MATCH_REVEAL_MS + DAILY_MATCH_HOLD_MS + DAILY_MATCH_GREAT_MS;
+
+
 export function applyAnimationTimingVars(root: HTMLElement = document.documentElement): void {
   root.style.setProperty("--ww-great-delay", `${GREAT_MATCH_DELAY_MS}ms`);
   root.style.setProperty("--ww-deal-stagger", `${DEAL_STAGGER_MS}ms`);
