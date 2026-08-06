@@ -249,6 +249,7 @@ const ShareBlock: React.FC<{
           background: "#F8F2E9",
           transformOrigin: "0 0",
           animationIterationCount: 1,
+          animationDuration: "1s",
           animationDelay: `${sweepDelayMs}ms`,
           animationFillMode: "both",
           opacity: 0.5,
