@@ -30,13 +30,16 @@ import {
   type DailyResult,
 } from "@/lib/daily";
 import { saveDailyResultRemote } from "@/lib/dailyResults";
+import { DAILY_MATCH_SETTLE_MS } from "@/lib/animationTiming";
+import { SETTLE_WRONG_MS } from "@/hooks/useGameState";
 
 
 const DEAL_MS = 700;      // deal-in settles before the reveal
 const FLIP_MS = 500;      // card flip duration (matches GameCard)
-const WRONG_ANIM_MS = 900;
-const MATCH_ANIM_MS = 700;
+const WRONG_ANIM_MS = SETTLE_WRONG_MS;
+const MATCH_ANIM_MS = DAILY_MATCH_SETTLE_MS;
 const WHOOPED_PAUSE_MS = 1200; // beat after a Whooped round before the next roll
+
 
 export interface UseDailyGameResult {
   state: DailyState;
