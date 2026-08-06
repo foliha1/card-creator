@@ -41,7 +41,12 @@ export function getMusicEnabled(): boolean { return musicEnabled; }
 export function setMusicEnabled(value: boolean): void {
   musicEnabled = value;
   writeFlag(MUSIC_KEY, value);
+  // Honour the flag live: off fades out and stops, on fades back in when the
+  // current screen still wants music.
+  if (!value) fadeOutTheme(true);
+  else if (themeDesired) startTheme();
 }
+
 
 // Back-compat wrappers — GameWindow (solo) uses these. `muted` is the inverse
 // of sfxEnabled.
@@ -65,7 +70,8 @@ type ClipName =
   | "wrong"
   | "whoop"
   | "peek"
-  | "reveal";
+  | "reveal"
+  | "start";
 
 const CLIP_FILES: Record<ClipName, string> = {
   flip: "/sounds/flip.mp3",
@@ -77,6 +83,7 @@ const CLIP_FILES: Record<ClipName, string> = {
   // NOTE: the shipped file is spelled peak.mp3.
   peek: "/sounds/peak.mp3",
   reveal: "/sounds/reveal.mp3",
+  start: "/sounds/start.mp3",
 };
 
 /** Single place to tune the mix. `correct` is the loudest thing in the app. */
@@ -89,7 +96,9 @@ export const CLIP_GAIN: Record<ClipName, number> = {
   correct: 1.0,
   peek: 0.45,
   reveal: 0.55,
+  start: 0.7,
 };
+
 
 /** Gain for the placeholder select cue (a detuned flip). */
 const SELECT_GAIN = 0.3;
@@ -144,6 +153,10 @@ function preload(): void {
   (Object.keys(CLIP_FILES) as ClipName[]).forEach((n) => { void loadClip(n); });
 }
 
+/** True once a user gesture has run through unlockAudio(). */
+let audioUnlocked = false;
+export function hasAudioUnlocked(): boolean { return audioUnlocked; }
+
 // Safe to call repeatedly. Resumes a suspended context (browsers require a
 // user gesture before audio starts) and lazily loads the clips.
 export function unlockAudio(): void {
@@ -153,9 +166,109 @@ export function unlockAudio(): void {
       // Fire-and-forget; resume() returns a Promise but we don't await it.
       void ctx.resume();
     }
+    audioUnlocked = true;
     preload();
+    // A screen that wants music may have asked for it before the gesture.
+    if (themeDesired) startTheme();
   } catch { /* ignore — no AudioContext available */ }
 }
+
+// ---------------------------------------------------------------------------
+// Background theme — music, behind musicEnabled, never an effect
+// ---------------------------------------------------------------------------
+
+const THEME_FILE = "/sounds/theme.mp3";
+const THEME_GAIN = 0.15;
+const THEME_FADE_IN_MS = 600;
+const THEME_FADE_OUT_MS = 400;
+
+let themeBuffer: AudioBuffer | null = null;
+let themeLoading: Promise<void> | null = null;
+let themeSource: AudioBufferSourceNode | null = null;
+let themeGainNode: GainNode | null = null;
+/** The screen wants music, regardless of whether it is audible right now. */
+let themeDesired = false;
+let themeStopTimer: ReturnType<typeof setTimeout> | null = null;
+
+function loadTheme(): Promise<void> {
+  if (themeLoading) return themeLoading;
+  themeLoading = (async () => {
+    try {
+      const res = await fetch(THEME_FILE);
+      if (!res.ok) return;
+      themeBuffer = await getCtx().decodeAudioData(await res.arrayBuffer());
+    } catch { /* missing file: music is simply a no-op */ }
+  })();
+  return themeLoading;
+}
+
+function ramp(node: GainNode, to: number, ms: number) {
+  const ctx = getCtx();
+  const now = ctx.currentTime;
+  const current = node.gain.value;
+  node.gain.cancelScheduledValues(now);
+  node.gain.setValueAtTime(current, now);
+  node.gain.linearRampToValueAtTime(to, now + ms / 1000);
+}
+
+/**
+ * Fade the theme in and keep it looping. Called from screens that should have
+ * music; a no-op until a gesture has unlocked audio, and it never restarts an
+ * already-running loop — it just ramps the level back up.
+ */
+export function startTheme(): void {
+  themeDesired = true;
+  if (!musicEnabled || !audioUnlocked) return;
+  try {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") void ctx.resume();
+    if (themeStopTimer) { clearTimeout(themeStopTimer); themeStopTimer = null; }
+
+    if (themeSource && themeGainNode) {
+      ramp(themeGainNode, THEME_GAIN, THEME_FADE_IN_MS);
+      return;
+    }
+    if (!themeBuffer) {
+      void loadTheme().then(() => { if (themeDesired) startTheme(); });
+      return;
+    }
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.connect(ctx.destination);
+    const src = ctx.createBufferSource();
+    src.buffer = themeBuffer;
+    src.loop = true;
+    src.connect(g);
+    src.start();
+    themeSource = src;
+    themeGainNode = g;
+    ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
+  } catch { /* never throw from audio */ }
+}
+
+function fadeOutTheme(hard: boolean): void {
+  try {
+    if (!themeSource || !themeGainNode) return;
+    ramp(themeGainNode, 0, THEME_FADE_OUT_MS);
+    if (!hard) return;
+    // Only a musicEnabled=false toggle tears the node down; a screen change
+    // leaves the loop running so it resumes mid-phrase, not from the top.
+    if (themeStopTimer) clearTimeout(themeStopTimer);
+    themeStopTimer = setTimeout(() => {
+      try { themeSource?.stop(); } catch { /* ignore */ }
+      themeSource = null;
+      themeGainNode = null;
+      themeStopTimer = null;
+    }, THEME_FADE_OUT_MS + 40);
+  } catch { /* ignore */ }
+}
+
+/** Fade the theme out. The loop keeps running silently underneath. */
+export function stopTheme(): void {
+  themeDesired = false;
+  fadeOutTheme(false);
+}
+
 
 interface PlayOpts {
   /** Extra multiplier on top of the clip's mix level. */
@@ -247,6 +360,12 @@ export function playPeek() {
 export function playReveal() {
   play("reveal");
 }
+
+/** Run-start cue, fired with the Play button's unlockAudio(). */
+export function playStart() {
+  play("start");
+}
+
 
 /**
  * Card-select cue. Placeholder: a detuned, quiet flip until a real

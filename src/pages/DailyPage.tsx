@@ -44,10 +44,14 @@ import {
   playPeek,
   playReveal,
   playSelect,
+  playStart,
   playWhoopCall,
   playWrong,
+  startTheme,
+  stopTheme,
   unlockAudio,
 } from "@/lib/sounds";
+
 import {
   BORDER,
   COLORS,
@@ -698,8 +702,9 @@ const DailyPage: React.FC = () => {
   // --- sound + haptic cues, driven off phase / counters ---
   // Safety net: any first gesture anywhere on the page unlocks audio, in case
   // the run was started from something other than the Play button.
+  const [audioReady, setAudioReady] = useState(false);
   useEffect(() => {
-    const on = () => unlockAudio();
+    const on = () => { unlockAudio(); setAudioReady(true); };
     window.addEventListener("pointerdown", on, { once: true });
     window.addEventListener("keydown", on, { once: true });
     return () => {
@@ -707,6 +712,7 @@ const DailyPage: React.FC = () => {
       window.removeEventListener("keydown", on);
     };
   }, []);
+
 
   useEffect(() => {
     if (phase === "STUDY") playDeal(9);
@@ -764,6 +770,18 @@ const DailyPage: React.FC = () => {
     daily.result !== null && (daily.alreadyPlayed || (phase === "DONE" && runSettled));
   const finished = playedToday && showResult;
   const ready = !finished && (phase === "READY" || playedToday);
+
+  // Background theme: ready and results screens only. It fades out the moment
+  // the run starts and fades back in when the result screen opens. The loop
+  // keeps running underneath so it never restarts from the top.
+  useEffect(() => {
+    if (!audioReady) return;
+    if (ready || finished) startTheme();
+    else stopTheme();
+  }, [audioReady, ready, finished]);
+  useEffect(() => () => stopTheme(), []);
+
+
 
   const readout = (() => {
     switch (phase) {
@@ -909,10 +927,16 @@ const DailyPage: React.FC = () => {
                 // First user gesture on the page: resume the AudioContext and
                 // kick off the clip decode, or nothing ever plays.
                 unlockAudio();
+                setAudioReady(true);
                 hapticTap();
                 if (playedToday) setShowResult(true);
-                else daily.start();
+                else {
+                  // 600ms cue; the deal lands at 700ms, so it clears cleanly.
+                  playStart();
+                  daily.start();
+                }
               }}
+
               onHowToPlay={() => {
                 unlockAudio();
                 hapticTap();
