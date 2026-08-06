@@ -183,8 +183,7 @@ function pairFor(s: DailyState, correct: boolean): [number, number] {
 /** Solve the current round correctly at time `at`. */
 function solveRound(s: DailyState, at: number): DailyState {
   const [i, j] = pairFor(s, true);
-  let n = dailyReducer(s, { type: "CLAIM" });
-  n = dailyReducer(n, { type: "SELECT", idx: i });
+  let n = dailyReducer(s, { type: "SELECT", idx: i });
   n = dailyReducer(n, { type: "SELECT", idx: j });
   return dailyReducer(n, { type: "RESOLVE", at });
 }
@@ -203,7 +202,7 @@ describe("start gate", () => {
     expect(s.faceUp).toBe(false);
     expect(s.startedAt).toBeNull();
     expect(dailyReducer(s, { type: "REVEAL" })).toBe(s);
-    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+    expect(dailyReducer(s, { type: "SELECT", idx: 0 })).toBe(s);
     const started = dailyReducer(s, { type: "START" });
     expect(started.phase).toBe("DEAL");
     expect(dailyReducer(started, { type: "START" })).toBe(started);
@@ -232,11 +231,36 @@ describe("daily phase sequence", () => {
     expect(STUDY_MS).toBe(10000);
   });
 
-  it("requires a claim before cards can be selected", () => {
+  it("takes card taps directly during PLAY — no claim step", () => {
     const s = toPlay();
-    expect(dailyReducer(s, { type: "SELECT", idx: 0 })).toBe(s);
-    const claimed = dailyReducer(s, { type: "CLAIM" });
-    expect(dailyReducer(claimed, { type: "SELECT", idx: 0 }).selected).toEqual([0]);
+    expect(dailyReducer(s, { type: "SELECT", idx: 0 }).selected).toEqual([0]);
+  });
+
+  it("deselects on a second tap of the same card, with no miss", () => {
+    let s = toPlay(0);
+    s = dailyReducer(s, { type: "SELECT", idx: 0 });
+    expect(s.selected).toEqual([0]);
+    s = dailyReducer(s, { type: "SELECT", idx: 0 });
+    expect(s.selected).toEqual([]);
+    expect(s.phase).toBe("PLAY");
+    expect(s.roundMisses).toBe(0);
+    expect(s.totalMisses).toBe(0);
+    expect(s.roundEvents[0]).toEqual([]);
+    expect(s.wrongPair).toEqual([]);
+  });
+
+  it("locks the claim on a second, distinct tap and resolves it", () => {
+    let s = toPlay(0);
+    const [i, j] = pairFor(s, true);
+    s = dailyReducer(s, { type: "SELECT", idx: i });
+    s = dailyReducer(s, { type: "SELECT", idx: j });
+    expect(s.selected).toEqual([i, j]);
+    // a third tap cannot change a locked claim
+    const other = s.grid.findIndex((c, k) => c !== null && k !== i && k !== j);
+    expect(dailyReducer(s, { type: "SELECT", idx: other }).selected).toEqual([i, j]);
+    s = dailyReducer(s, { type: "RESOLVE", at: 1000 });
+    expect(s.roundsSolved).toBe(1);
+    expect(s.roundEvents[0]).toEqual(["SOLVE"]);
   });
 });
 
@@ -266,7 +290,7 @@ describe("three-round progression and shrinking board", () => {
     expect(s.elapsedMs).toBe(3000);
     expect(s.totalMisses).toBe(0);
     expect(s.roundsSolved).toBe(3);
-    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+    expect(dailyReducer(s, { type: "SELECT", idx: 0 })).toBe(s);
   });
 
   it("pauses the clock between rounds", () => {
@@ -281,15 +305,13 @@ describe("three-round progression and shrinking board", () => {
     const [i] = pairFor(s, true);
     s = solveRound(s, 1000);
     s = nextRound(s, 2000);
-    s = dailyReducer(s, { type: "CLAIM" });
     expect(dailyReducer(s, { type: "SELECT", idx: i }).selected).toEqual([]);
   });
 });
 
 const wrongOnce = (s: DailyState, at: number): DailyState => {
   const [i, j] = pairFor(s, false);
-  let n = dailyReducer(s, { type: "CLAIM" });
-  n = dailyReducer(n, { type: "SELECT", idx: i });
+  let n = dailyReducer(s, { type: "SELECT", idx: i });
   n = dailyReducer(n, { type: "SELECT", idx: j });
   return dailyReducer(n, { type: "RESOLVE", at });
 };
@@ -306,26 +328,26 @@ describe("per-round miss cap", () => {
     expect(s.totalMisses).toBe(1);
     expect(s.roundEvents[0]).toEqual(["MISS"]);
     expect(s.failed).toBe(false);
-    expect(s.claiming).toBe(false);
     expect(s.wrongPair).toHaveLength(2);
   });
 
-  it("Whoops the round on the second miss, revealing and removing the answer", () => {
+  it("Whoops the round on the second miss, leaving the board untouched", () => {
     let s = toPlay(0);
     s = wrongOnce(s, 500);
     s = dailyReducer(s, { type: "CLEAR_WRONG" });
     s = wrongOnce(s, 1000);
     expect(s.roundMisses).toBe(2);
     expect(s.phase).toBe("WHOOPED");
-    expect(s.revealPair).toHaveLength(2);
     expect(remainingCount(s)).toBe(9);
+    expect(s.faceUp).toBe(false);
 
     s = dailyReducer(s, { type: "ROUND_END", at: 1500 });
     expect(s.phase).toBe("HIDE");
     expect(s.roundIndex).toBe(2);
-    expect(remainingCount(s)).toBe(7);
+    // a failed round keeps its cards: the board does not shrink
+    expect(remainingCount(s)).toBe(9);
     expect(s.roundsSolved).toBe(0);
-    expect(s.revealPair).toEqual([]);
+    expect(s.faceUp).toBe(false);
   });
 
   it("resets misses each round", () => {
@@ -368,7 +390,8 @@ describe("per-round miss cap", () => {
     expect(s.roundsSolved).toBe(0);
     expect(s.totalMisses).toBe(6);
     expect(s.failed).toBe(true);
-    expect(remainingCount(s)).toBe(3);
+    // three failed rounds remove nothing
+    expect(remainingCount(s)).toBe(9);
   });
 
   it("records zero misses on a clean run", () => {
@@ -394,8 +417,8 @@ describe("peek", () => {
     expect(s.faceUp).toBe(true);
     expect(s.peekUsed).toBe(true);
     expect(s.peekRound).toBe(1);
-    // no claiming mid-peek
-    expect(dailyReducer(s, { type: "CLAIM" })).toBe(s);
+    // no card taps mid-peek
+    expect(dailyReducer(s, { type: "SELECT", idx: 0 })).toBe(s);
 
     s = dailyReducer(s, { type: "PEEK_END" });
     expect(s.peeking).toBe(false);
@@ -408,9 +431,9 @@ describe("peek", () => {
     const ready = initDailyState(SEED);
     expect(canPeek(ready)).toBe(false);
     expect(dailyReducer(ready, { type: "PEEK" })).toBe(ready);
-    const claimed = dailyReducer(toPlay(0), { type: "CLAIM" });
-    expect(canPeek(claimed)).toBe(false);
-    expect(dailyReducer(claimed, { type: "PEEK" })).toBe(claimed);
+    const picked = dailyReducer(toPlay(0), { type: "SELECT", idx: 0 });
+    expect(canPeek(picked)).toBe(false);
+    expect(dailyReducer(picked, { type: "PEEK" })).toBe(picked);
   });
 });
 

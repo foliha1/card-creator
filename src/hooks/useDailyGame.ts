@@ -36,7 +36,7 @@ const DEAL_MS = 700;      // deal-in settles before the reveal
 const FLIP_MS = 500;      // card flip duration (matches GameCard)
 const WRONG_ANIM_MS = 900;
 const MATCH_ANIM_MS = 700;
-const WHOOPED_REVEAL_MS = 1800; // how long the answer shows on a Whooped round
+const WHOOPED_PAUSE_MS = 1200; // beat after a Whooped round before the next roll
 
 export interface UseDailyGameResult {
   state: DailyState;
@@ -59,8 +59,6 @@ export interface UseDailyGameResult {
   canPeek: boolean;
 
   start: () => void;
-  claim: () => void;
-  cancelClaim: () => void;
   select: (idx: number) => void;
   peek: () => void;
 }
@@ -127,7 +125,7 @@ export function useDailyGame(): UseDailyGameResult {
     if (state.phase !== "WHOOPED") return;
     const t = setTimeout(
       () => dispatch({ type: "ROUND_END", at: Date.now() }),
-      WHOOPED_REVEAL_MS
+      WHOOPED_PAUSE_MS
     );
     return () => clearTimeout(t);
   }, [state.phase, state.roundIndex]);
@@ -239,8 +237,6 @@ export function useDailyGame(): UseDailyGameResult {
   ]);
 
   const start = useCallback(() => dispatch({ type: "START" }), []);
-  const claim = useCallback(() => dispatch({ type: "CLAIM" }), []);
-  const cancelClaim = useCallback(() => dispatch({ type: "CANCEL_CLAIM" }), []);
   const select = useCallback((idx: number) => dispatch({ type: "SELECT", idx }), []);
   const peek = useCallback(() => dispatch({ type: "PEEK" }), []);
 
@@ -260,8 +256,6 @@ export function useDailyGame(): UseDailyGameResult {
     canPeek: canPeekNow(state),
 
     start,
-    claim,
-    cancelClaim,
     select,
     peek,
   };
