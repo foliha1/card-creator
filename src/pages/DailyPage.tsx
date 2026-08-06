@@ -619,8 +619,10 @@ const DailyPage: React.FC = () => {
       case "WHOOPED":
         return "Whooped!";
       default:
-        // The die in the corner *is* the rule reminder — never print it twice.
-        return state.peeking ? "Peeking…" : "\u00A0";
+        // No resting die any more: the readout is the only rule reminder.
+        return state.peeking
+          ? "Peeking…"
+          : ATTR_LABEL[daily.roll.attribute] ?? "\u00A0";
     }
   })();
 
