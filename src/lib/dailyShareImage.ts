@@ -59,8 +59,10 @@ const drawShapeRule = (
   size: number
 ) => {
   const pitch = size * 1.5;
-  const count = Math.ceil(width / pitch) + 1;
+  // Whole shapes only, centred — nothing is ever clipped at either edge.
+  const count = Math.floor(width / pitch);
   const startX = (width - count * pitch) / 2 + pitch / 2;
+
 
   for (let i = 0; i < count; i++) {
     const cx = startX + i * pitch;
