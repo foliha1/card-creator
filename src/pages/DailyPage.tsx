@@ -703,13 +703,14 @@ const DailyPage: React.FC = () => {
           ) : ready ? null : (
             <div
               style={{
-                ...panelStyle("surface", 6),
+                width: "100%",
                 alignSelf: "stretch",
                 display: "flex",
                 flexDirection: "column",
                 gap: SPACE[5],
               }}
             >
+
               <div
                 style={{
                   display: "flex",
