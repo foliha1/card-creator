@@ -179,21 +179,6 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
 
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
-      <pre
-        style={{
-          margin: 0,
-          border: BORDER.heavy,
-          borderRadius: RADIUS.sm,
-          background: COLORS.panel,
-          padding: SPACE[4],
-          textAlign: "center",
-          whiteSpace: "pre-wrap",
-          ...textStyle("caption", mobile),
-          color: COLORS.ink,
-        }}
-      >
-        {text}
-      </pre>
       <button
         type="button"
         className="ww-press"
@@ -205,6 +190,7 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
     </div>
   );
 };
+
 
 /**
  * Secondary share options. All three reuse the exact string from
@@ -351,8 +337,8 @@ const DailyResultCard: React.FC<{
       <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
         {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
         {stat("Misses", `${totalMisses}`)}
-        {stat("Peek", peekUsed ? `R${peekRound ?? "?"}` : "Unused")}
       </div>
+
 
       {streak !== null && streak >= 1 && (
         <p style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
@@ -363,21 +349,23 @@ const DailyResultCard: React.FC<{
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {roundEvents.map((events, i) => (
           <div
-            key={`events-${i}`}
+            key={`round-${i}`}
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
               gap: SPACE[3],
               ...textStyle("caption", mobile),
-              color: COLORS.inkMuted,
+              color: COLORS.ink,
             }}
           >
+            <span style={{ color: COLORS.inkMuted }}>Round {i + 1}</span>
             <span>
-              Round {i + 1}
+              {attributes[i] ? ATTR_LABEL[attributes[i]] : ""}
               {peekUsed && peekRound === i + 1 ? " 👀" : ""}
             </span>
-            <RoundMarks events={events} />
+            <span style={{ marginLeft: "auto" }}>
+              <RoundMarks events={events} />
+            </span>
           </div>
         ))}
       </div>
@@ -422,23 +410,8 @@ const DailyResultCard: React.FC<{
       {!hasSubscribed() && <DailyEmailCapture />}
 
 
-      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
-        {attributes.map((attr, i) => (
-          <div
-            key={`${attr}-${i}`}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: SPACE[3],
-              ...textStyle("caption", mobile),
-              color: COLORS.ink,
-            }}
-          >
-            <span style={{ color: COLORS.inkMuted }}>Round {i + 1}</span>
-            <span>{ATTR_LABEL[attr]}</span>
-          </div>
-        ))}
-      </div>
+
+
       <button
         type="button"
         className="ww-press"
