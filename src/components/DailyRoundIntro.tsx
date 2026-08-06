@@ -176,7 +176,9 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
             position: "absolute",
             left: "50%",
             bottom: "100%",
-            marginBottom: 16,
+            marginBottom: 44,
+            zIndex: 2,
+
             transform: "translateX(-50%)",
             whiteSpace: "nowrap",
             ...textStyle("display"),
