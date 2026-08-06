@@ -361,7 +361,7 @@ const DailyResultCard: React.FC<{
         className="ww-res-in"
         style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("heading") }}
       >
-        Daily Puzzle #{puzzleNumber}
+        WHOOP! WHOOP! Daily #{puzzleNumber}
       </h1>
       <p
         className="ww-res-in"
