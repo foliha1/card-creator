@@ -627,8 +627,15 @@ const DailyPage: React.FC = () => {
   })();
 
   // During PLAY a card tap *is* the claim: no button, no intermediate states.
+  // Both settle sequences (wrong shake, match ghost) lock the board.
   const cardsTappable =
-    phase === "PLAY" && !introUp && !state.peeking && state.selected.length < 2;
+    phase === "PLAY" &&
+    !introUp &&
+    !state.peeking &&
+    state.selected.length < 2 &&
+    state.wrongPair.length === 0 &&
+    ghost.length === 0;
+
 
   const [ty, tm, td] = getLocalDateString().split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
