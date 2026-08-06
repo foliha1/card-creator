@@ -5,8 +5,8 @@
 // round, rolls the die large and centred, holds on the landed face, then flies
 // the die to its resting slot in the header.
 //
-// It reuses the daily roll timing: the overlay is up for exactly as long as the
-// engine's ROLL phase (ROLL_HERO_MS), with the tumble taking DAILY_TUMBLE_MS.
+// The overlay is up for the engine's entire ROLL phase. That phase is the sum
+// of DAILY_TUMBLE_MS plus a tunable hold on the landed face (DAILY_HOLD_MS).
 // Under prefers-reduced-motion the tumble and the fly are both skipped — the
 // landed face is shown for the same duration, then cuts to the resting state.
 // ============================================================================
@@ -14,10 +14,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import type { RollAttribute } from "@/lib/multiplayer";
-import { COLORS, textStyle } from "@/lib/tokens";
+import { COLORS, FONT_SIZE, textStyle } from "@/lib/tokens";
 
 /** Tumble duration of the daily die. The single source of truth. */
 export const DAILY_TUMBLE_MS = 800;
+/** Pause on the landed face before the overlay clears and the die flies away. */
+export const DAILY_HOLD_MS = 2400;
+/** Total ROLL phase duration used by the daily engine. */
+export const DAILY_ROLL_HERO_MS = DAILY_TUMBLE_MS + DAILY_HOLD_MS;
 /** Fly-to-corner duration once the overlay clears. */
 export const DAILY_FLY_MS = 420;
 
