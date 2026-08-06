@@ -78,27 +78,54 @@ const MissTracker: React.FC<{ used: number }> = ({ used }) => (
 );
 
 /** One marker per resolved call in a round, in the order they happened. */
-const RoundMarks: React.FC<{ events: DailyMark[] }> = ({ events }) => (
-  <div style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}>
-    {events.length === 0 ? (
-      <span style={{ width: 20, height: 20, opacity: 0.3, border: BORDER.heavy, borderRadius: 999 }} />
-    ) : (
-      events.map((m, i) => (
+const RoundMarks: React.FC<{
+  events: DailyMark[];
+  /** When set, each mark animates in with this running index as its offset. */
+  animateFrom?: number;
+  /** Delay of the first mark in the whole sequence. */
+  baseDelayMs?: number;
+}> = ({ events, animateFrom, baseDelayMs = 0 }) => {
+  const anim = (i: number): React.CSSProperties =>
+    animateFrom === undefined
+      ? {}
+      : ({
+          "--ww-mark-delay": `${baseDelayMs + (animateFrom + i) * MARK_STAGGER_MS}ms`,
+        } as React.CSSProperties);
+  const cls = animateFrom === undefined ? undefined : "ww-mark-in";
+  return (
+    <div style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}>
+      {events.length === 0 ? (
         <span
-          key={i}
-          title={m === "SOLVE" ? "Solved" : "Miss"}
+          className={cls}
           style={{
             width: 20,
             height: 20,
-            borderRadius: m === "SOLVE" ? RADIUS.sm : 999,
+            opacity: 0.3,
             border: BORDER.heavy,
-            background: m === "SOLVE" ? COLORS.ink : COLORS.red,
+            borderRadius: 999,
+            ...anim(0),
           }}
         />
-      ))
-    )}
-  </div>
-);
+      ) : (
+        events.map((m, i) => (
+          <span
+            key={i}
+            className={cls}
+            title={m === "SOLVE" ? "Solved" : "Miss"}
+            style={{
+              width: 20,
+              height: 20,
+              borderRadius: m === "SOLVE" ? RADIUS.sm : 999,
+              border: BORDER.heavy,
+              background: m === "SOLVE" ? COLORS.ink : COLORS.red,
+              ...anim(i),
+            }}
+          />
+        ))
+      )}
+    </div>
+  );
+};
 
 /**
  * Share block — renders the day's result as a PNG and shares it alongside the
