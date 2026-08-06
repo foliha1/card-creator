@@ -411,9 +411,10 @@ const DailyReadyScreen: React.FC<{
   streak: number | null;
   /** True when today's run is already complete. */
   played?: boolean;
+  mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
-}> = ({ today, streak, played = false, onPlay, onHowToPlay }) => (
+}> = ({ today, streak, played = false, mobile = false, onPlay, onHowToPlay }) => (
   <DailyFrame gap={40}>
       <DailyLogoLockup />
 
@@ -421,9 +422,7 @@ const DailyReadyScreen: React.FC<{
       <div
         className="daily-intro"
         style={{
-          fontFamily: FONT_FAMILY,
-          fontSize: "clamp(22px, 8vw, 32px)",
-          lineHeight: "1.22",
+          ...textStyle("hero", mobile),
           textAlign: "center",
           color: COLORS.ink,
         }}
@@ -433,14 +432,12 @@ const DailyReadyScreen: React.FC<{
           <div style={{ marginTop: 8 }}>
             <span
               style={{
+                ...textStyle("pill", mobile),
                 display: "inline-block",
                 padding: "8px 16px",
                 borderRadius: 999,
                 background: COLORS.orange,
                 border: BORDER.heavy,
-                fontFamily: FONT_FAMILY,
-                fontSize: 16,
-                lineHeight: 1.2,
                 color: COLORS.ink,
               }}
             >
@@ -452,10 +449,8 @@ const DailyReadyScreen: React.FC<{
         {streak !== null && streak >= 1 && (
           <div
             style={{
+              ...textStyle("pill", mobile),
               marginTop: 8,
-              fontFamily: FONT_FAMILY,
-              fontSize: 16,
-              lineHeight: 1.2,
               color: COLORS.inkMuted,
             }}
           >
@@ -471,6 +466,7 @@ const DailyReadyScreen: React.FC<{
           className="ww-press daily-btn-howto"
           onClick={onHowToPlay}
           style={{
+            ...textStyle("chip", mobile),
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
@@ -479,11 +475,6 @@ const DailyReadyScreen: React.FC<{
             padding: "8px 16px",
             border: "none",
             borderRadius: RADIUS.sm,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontSize: 16,
-            lineHeight: 1.15,
-
           }}
         >
           <HelpCircle size={16} aria-hidden="true" />
@@ -497,16 +488,12 @@ const DailyReadyScreen: React.FC<{
           className="ww-press daily-btn-play"
           onClick={onPlay}
           style={{
+            ...textStyle("action", mobile),
             width: "100%",
             height: 80,
             boxSizing: "border-box",
-            paddingBottom: 6,
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
-            fontFamily: FONT_FAMILY,
-            fontStyle: "italic",
-            fontSize: "clamp(22px, 7vw, 32px)",
-            lineHeight: 1.15,
           }}
 
         >
