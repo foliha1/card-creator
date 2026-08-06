@@ -502,7 +502,7 @@ const DailyReadyScreen: React.FC<{
           }}
 
         >
-          Play Today's Daily
+          {played ? "See Today's Result" : "Play Today's Daily"}
         </button>
       </div>
   </DailyFrame>
