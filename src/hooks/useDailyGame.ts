@@ -186,9 +186,12 @@ export function useDailyGame(): UseDailyGameResult {
 
   useEffect(() => {
     if (state.matchedPair.length === 0) return;
-    const t = setTimeout(() => dispatch({ type: "CLEAR_MATCH" }), MATCH_ANIM_MS);
+    // Cleared just after the round advances so the HIDE timer above never
+    // re-reads an emptied pair mid-sequence.
+    const t = setTimeout(() => dispatch({ type: "CLEAR_MATCH" }), MATCH_ANIM_MS + 50);
     return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
+
 
   // ---- auto-resolve once two cards are picked ----
   const resolveRef = useRef(0);
