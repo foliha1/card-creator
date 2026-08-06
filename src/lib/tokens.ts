@@ -96,6 +96,7 @@ export const FONT_SIZE = {
   "3xl": 26,
   "4xl": 28,
   "5xl": 34,
+  "6xl": 48,
 } as const;
 
 export type FontSizeStep = keyof typeof FONT_SIZE;

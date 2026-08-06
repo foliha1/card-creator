@@ -4,7 +4,6 @@ import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
-import { MatchDie } from "@/components/MatchDie";
 import DailyRoundIntro from "@/components/DailyRoundIntro";
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
@@ -19,7 +18,6 @@ import {
   MISSES_PER_ROUND,
   remainingCount,
   type DailyMark,
-  type DailyPhase,
 } from "@/lib/dailyEngine";
 import { formatDailyShare, getLocalDateString, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
@@ -43,54 +41,6 @@ const ATTR_LABEL: Record<string, string> = {
   NUMBER: "Match the number",
   COLOR: "Match the color",
 };
-
-/**
- * The resting die in the header. Hidden behind a blank until the first roll, so
- * the round's rule can never leak while the board is still face up — the whole
- * point of the mode. The roll itself belongs to DailyRoundIntro; here the die is
- * inert and only reminds the player of the rule.
- */
-const DailyDie: React.FC<{
-  phase: DailyPhase;
-  roundIndex: number;
-  attribute: "SHAPE" | "NUMBER" | "COLOR";
-  faceIndex: 0 | 1;
-  size: number;
-  /** True while the round intro overlay owns the die. */
-  hidden: boolean;
-}> = ({ phase, roundIndex, attribute, faceIndex, size, hidden }) => {
-  const preRoll =
-    roundIndex === 1 && (phase === "DEAL" || phase === "STUDY" || phase === "HIDE");
-
-  if (preRoll) {
-    return (
-      <div
-        aria-label="The die has not rolled yet"
-        style={{
-          width: size,
-          height: size,
-          border: BORDER.heavy,
-          borderRadius: RADIUS.sm,
-          background: COLORS.panel,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: COLORS.inkMuted,
-          ...textStyle("title"),
-        }}
-      >
-        ?
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ visibility: hidden ? "hidden" : "visible" }}>
-      <MatchDie size={size} attribute={attribute} faceIndex={faceIndex} />
-    </div>
-  );
-};
-
 
 /** Two markers for the current round, filled as its misses are spent. */
 const MissTracker: React.FC<{ used: number }> = ({ used }) => (
@@ -559,8 +509,6 @@ const DailyBoard: React.FC<{
 };
 
 
-const DIE_SIZE = 56;
-
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
@@ -568,9 +516,8 @@ const DailyPage: React.FC = () => {
   const { state, phase } = daily;
   const [howTo, setHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  // True while the round intro overlay owns the die (roll + fly to corner).
+  // True while the round intro overlay is up: taps stay locked.
   const [introUp, setIntroUp] = useState(false);
-  const dieSlotRef = React.useRef<HTMLDivElement | null>(null);
   // Read after the run is persisted so today counts toward the streak.
   const streak = useDailyStreak(
     daily.puzzleNumber,
@@ -619,8 +566,10 @@ const DailyPage: React.FC = () => {
       case "WHOOPED":
         return "Whooped!";
       default:
-        // The die in the corner *is* the rule reminder — never print it twice.
-        return state.peeking ? "Peeking…" : "\u00A0";
+        // No resting die any more: the readout is the only rule reminder.
+        return state.peeking
+          ? "Peeking…"
+          : ATTR_LABEL[daily.roll.attribute] ?? "\u00A0";
     }
   })();
 
@@ -753,20 +702,6 @@ const DailyPage: React.FC = () => {
                   gap: SPACE[3],
                 }}
               >
-                {/* The die's resting slot: top left, and the fly-to target. */}
-                <div
-                  ref={dieSlotRef}
-                  style={{ width: DIE_SIZE, height: DIE_SIZE, flex: "0 0 auto" }}
-                >
-                  <DailyDie
-                    phase={phase}
-                    roundIndex={state.roundIndex}
-                    attribute={daily.roll.attribute}
-                    faceIndex={daily.roll.faceIndex}
-                    size={DIE_SIZE}
-                    hidden={introUp}
-                  />
-                </div>
                 <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                   <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
                     Round {state.roundIndex} of {DAILY_ROUNDS} · {remainingCount(state)} cards
@@ -795,7 +730,7 @@ const DailyPage: React.FC = () => {
                     daily.peek();
                   }}
                   style={{
-                    ...buttonStyle("ink", "sm", {
+                    ...buttonStyle("secondary", "sm", {
                       mobile,
                       disabled: !daily.canPeek,
                     }),
@@ -853,8 +788,6 @@ const DailyPage: React.FC = () => {
                 attribute={daily.roll.attribute}
                 faceIndex={daily.roll.faceIndex}
                 tumbleSeed={daily.tumbleSeed}
-                anchorRef={dieSlotRef}
-                smallSize={DIE_SIZE}
                 onVisibleChange={setIntroUp}
               />
             </div>

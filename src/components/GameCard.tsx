@@ -115,6 +115,7 @@ const GameCard = ({
         position: "relative",
         overflow: "hidden",
         borderRadius: RADIUS.md,
+        boxShadow,
         transformOrigin: "center",
         ["--ww-k" as string]: String(k),
         transform: shrinking ? outerTransform : undefined,

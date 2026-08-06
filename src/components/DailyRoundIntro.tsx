@@ -2,13 +2,14 @@
 // DailyRoundIntro — the round intro for the daily puzzle.
 //
 // An overlay above the card grid (cards stay visible, dimmed) that names the
-// round, rolls the die large and centred, holds on the landed face, then flies
-// the die to its resting slot in the header.
+// round, rolls the die large and centred, holds on the landed face, then fades
+// out together with the scrim. There is no resting die: the readout carries the
+// rule from PLAY onwards.
 //
 // The overlay is up for the engine's entire ROLL phase. That phase is the sum
 // of DAILY_TUMBLE_MS plus a tunable hold on the landed face (DAILY_HOLD_MS).
-// Under prefers-reduced-motion the tumble and the fly are both skipped — the
-// landed face is shown for the same duration, then cuts to the resting state.
+// Under prefers-reduced-motion the tumble is skipped — the landed face is shown
+// for the same duration, then fades out.
 // ============================================================================
 
 import React, { useEffect, useRef, useState } from "react";
@@ -18,12 +19,12 @@ import { COLORS, FONT_SIZE, textStyle } from "@/lib/tokens";
 
 /** Tumble duration of the daily die. The single source of truth. */
 export const DAILY_TUMBLE_MS = 800;
-/** Pause on the landed face before the overlay clears and the die flies away. */
-export const DAILY_HOLD_MS = 2400;
+/** Pause on the landed face before the overlay fades out. */
+export const DAILY_HOLD_MS = 2000;
 /** Total ROLL phase duration used by the daily engine. */
 export const DAILY_ROLL_HERO_MS = DAILY_TUMBLE_MS + DAILY_HOLD_MS;
-/** Fly-to-corner duration once the overlay clears. */
-export const DAILY_FLY_MS = 420;
+/** Fade-out duration once the hold ends. */
+const FADE_MS = 320;
 
 function prefersReducedMotion(): boolean {
   try {
@@ -40,12 +41,7 @@ export interface DailyRoundIntroProps {
   attribute: RollAttribute;
   faceIndex: 0 | 1;
   tumbleSeed: number;
-  /** The resting slot in the header the die flies to. */
-  anchorRef: React.RefObject<HTMLElement>;
-  /** Size of the resting die in the header. */
-  smallSize: number;
-  /** Fires whenever the overlay appears or clears, so the header can hide its
-   *  own die while the overlay owns it. */
+  /** Fires whenever the overlay appears or clears, so taps stay locked. */
   onVisibleChange?: (visible: boolean) => void;
 }
 
@@ -55,20 +51,16 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   attribute,
   faceIndex,
   tumbleSeed,
-  anchorRef,
-  smallSize,
   onVisibleChange,
 }) => {
   const [reduced] = useState(prefersReducedMotion);
   const [visible, setVisible] = useState(active);
-  const [flying, setFlying] = useState(false);
-  const [fly, setFly] = useState<{ dx: number; dy: number; scale: number } | null>(null);
-  const dieRef = useRef<HTMLDivElement | null>(null);
+  const [fading, setFading] = useState(false);
 
   const [big] = useState(() => {
-    if (typeof window === "undefined") return 168;
+    if (typeof window === "undefined") return 202;
     const v = Math.min(window.innerWidth, window.innerHeight);
-    return Math.round(Math.max(120, Math.min(200, v * 0.34)));
+    return Math.round(Math.max(120, Math.min(200, v * 0.34)) * 1.2);
   });
 
   // The landed face is always the seeded value for the round — the tumble only
@@ -86,47 +78,29 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
     return () => cancelAnimationFrame(id);
   }, [active, roundIndex, spun, landed, reduced]);
 
-  // Enter on ROLL; on leave either cut (reduced motion) or fly to the header.
+  // Enter on ROLL; on leave fade the whole overlay out.
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
   useEffect(() => {
     if (active) {
       setVisible(true);
-      setFlying(false);
-      setFly(null);
+      setFading(false);
       return;
     }
     if (!visibleRef.current) return;
-    const el = dieRef.current;
-    const target = anchorRef.current;
-    if (reduced || !el || !target) {
-      setVisible(false);
-      return;
-    }
-    const a = el.getBoundingClientRect();
-    const b = target.getBoundingClientRect();
-    if (a.width === 0) {
-      setVisible(false);
-      return;
-    }
-    let raf = requestAnimationFrame(() => {
-      setFly({ dx: b.left - a.left, dy: b.top - a.top, scale: smallSize / a.width });
-      setFlying(true);
-    });
+    const raf = requestAnimationFrame(() => setFading(true));
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
-
   useEffect(() => {
-    if (!flying) return;
+    if (!fading) return;
     const t = window.setTimeout(() => {
-      setFlying(false);
+      setFading(false);
       setVisible(false);
-      setFly(null);
-    }, DAILY_FLY_MS);
+    }, FADE_MS);
     return () => window.clearTimeout(t);
-  }, [flying]);
+  }, [fading]);
 
   useEffect(() => {
     onVisibleChange?.(visible);
@@ -142,6 +116,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
         inset: 0,
         zIndex: 60,
         pointerEvents: "none",
+        opacity: fading ? 0 : 1,
+        transition: `opacity ${FADE_MS}ms ease`,
       }}
     >
       {/* Dim, not hide: the cards stay visible underneath as faint shapes. */}
@@ -150,13 +126,10 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
           position: "absolute",
           inset: 0,
           background: "rgba(35, 31, 32, 0.75)",
-          opacity: flying ? 0 : 1,
-          transition: `opacity ${DAILY_FLY_MS}ms ease`,
         }}
       />
 
       <div
-        ref={dieRef}
         style={{
           position: "absolute",
           left: "50%",
@@ -165,14 +138,6 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
           height: big,
           marginLeft: -big / 2,
           marginTop: -big / 2,
-          transformOrigin: "top left",
-          transform: fly
-            ? `translate(${fly.dx}px, ${fly.dy}px) scale(${fly.scale})`
-            : "translate(0px, 0px) scale(1)",
-          transition: flying
-            ? `transform ${DAILY_FLY_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`
-            : undefined,
-          willChange: "transform",
         }}
       >
         <div
@@ -186,10 +151,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
             transform: "translateX(-50%)",
             whiteSpace: "nowrap",
             ...textStyle("display"),
-            fontSize: FONT_SIZE["5xl"],
+            fontSize: FONT_SIZE["6xl"],
             color: COLORS.surface,
-            opacity: flying ? 0 : 1,
-            transition: `opacity 200ms ease`,
           }}
         >
           Round {roundIndex}
