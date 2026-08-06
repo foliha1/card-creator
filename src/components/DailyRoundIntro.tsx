@@ -15,6 +15,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import type { RollAttribute } from "@/lib/multiplayer";
+import { playDieLand } from "@/lib/sounds";
 import { COLORS, FONT_SIZE, textStyle } from "@/lib/tokens";
 
 /** Fade-up of the scrim, round title and die before the tumble starts. */
@@ -84,6 +85,14 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
     const t = window.setTimeout(() => setRotation(landed), DAILY_FADE_IN_MS);
     return () => window.clearTimeout(t);
   }, [active, roundIndex, spun, landed, reduced]);
+
+  // The die impact, fired as the tumble stops and the hold begins.
+  useEffect(() => {
+    if (!active) return;
+    const at = reduced ? DAILY_FADE_IN_MS : DAILY_FADE_IN_MS + DAILY_TUMBLE_MS;
+    const t = window.setTimeout(() => playDieLand(), at);
+    return () => window.clearTimeout(t);
+  }, [active, roundIndex, reduced]);
 
   // Enter on ROLL; on leave fade the whole overlay out.
   const visibleRef = useRef(visible);

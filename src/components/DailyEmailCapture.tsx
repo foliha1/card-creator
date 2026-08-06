@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
+import { playSubscribed } from "@/lib/sounds";
 import { BORDER, COLORS, FONT_FAMILY, RADIUS, SPACE } from "@/lib/tokens";
 
 const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -38,6 +39,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
     if (ok) {
       setStatus("done");
       hapticSuccess();
+      playSubscribed();
     } else {
       setStatus("error");
       hapticError();
