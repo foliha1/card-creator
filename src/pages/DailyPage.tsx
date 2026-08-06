@@ -617,12 +617,15 @@ const DailyPage: React.FC = () => {
       case "WHOOPED":
         return "Whooped!";
       default:
-        return state.peeking ? "Peeking…" : ATTR_LABEL[daily.roll.attribute];
+        // The die in the corner *is* the rule reminder — never print it twice.
+        return state.peeking ? "Peeking…" : "\u00A0";
     }
   })();
 
   // During PLAY a card tap *is* the claim: no button, no intermediate states.
-  const cardsTappable = phase === "PLAY" && !state.peeking && state.selected.length < 2;
+  const cardsTappable =
+    phase === "PLAY" && !introUp && !state.peeking && state.selected.length < 2;
+
   const [ty, tm, td] = getLocalDateString().split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
