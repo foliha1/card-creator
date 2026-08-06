@@ -21,12 +21,15 @@ export const SFX_DEAL_STEP_MS = 70;
 /** Flip-up of the solved pair on the daily board (matches GameCard's flip). */
 export const DAILY_MATCH_REVEAL_MS = 500;
 /** Beat on the revealed pair before the success animation starts. */
-export const DAILY_MATCH_HOLD_MS = 700;
+export const DAILY_MATCH_HOLD_MS = 460;
 /** Ghost treatment window — the same beat as SETTLE_MATCH_MS in useGameState. */
 export const DAILY_MATCH_GREAT_MS = 1300;
 /** Whole daily correct-match sequence: reveal → hold → ghost lift and fade. */
 export const DAILY_MATCH_SETTLE_MS =
   DAILY_MATCH_REVEAL_MS + DAILY_MATCH_HOLD_MS + DAILY_MATCH_GREAT_MS;
+
+/** Final beat after round 3: the remaining board is shown before the result. */
+export const DAILY_FINAL_REVEAL_MS = 1200;
 
 
 export function applyAnimationTimingVars(root: HTMLElement = document.documentElement): void {

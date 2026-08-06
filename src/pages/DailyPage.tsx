@@ -29,6 +29,7 @@ import { useDailyStreak } from "@/hooks/useDailyStreak";
 import {
   DAILY_MATCH_HOLD_MS,
   DAILY_MATCH_REVEAL_MS,
+  DAILY_FINAL_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
 } from "@/lib/animationTiming";
 
@@ -548,6 +549,10 @@ const DailyPage: React.FC = () => {
   // capture effect is declared BEFORE the board bookkeeping effect below so it
   // still sees the pre-removal board and the slots' live rects.
   const [ghost, setGhost] = useState<GhostCard[]>([]);
+  // Set synchronously with the capture so the DONE gate below never sees a
+  // stale empty `ghost` on the round-3 solve and skips the success sequence.
+  const ghostPendingRef = React.useRef(false);
+  const [finalReveal, setFinalReveal] = useState(false);
   const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const boardRef = React.useRef(state.grid);
 
@@ -564,7 +569,10 @@ const DailyPage: React.FC = () => {
         rect: { top: r.top, left: r.left, width: r.width, height: r.height },
       }];
     });
-    if (copies.length) setGhost(copies);
+    if (copies.length) {
+      ghostPendingRef.current = true;
+      setGhost(copies);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
 
@@ -594,15 +602,25 @@ const DailyPage: React.FC = () => {
     return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
 
-  // The result screen waits for the final pair to finish leaving the board.
+  // Round 3 runs the identical success sequence: the pair flips up, holds, the
+  // ghost treatment plays and the cards exit. Only then does the board reveal
+  // and the result screen open. `runSettled` keeps the board on screen for the
+  // whole sequence instead of cutting to the ready/result screens.
+  const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
-    if (phase !== "DONE" || ghost.length > 0) return;
-    hapticSuccess();
-    setShowResult(true);
+    if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
+    setFinalReveal(true);
+    const t = setTimeout(() => {
+      hapticSuccess();
+      setRunSettled(true);
+      setShowResult(true);
+    }, DAILY_FINAL_REVEAL_MS);
+    return () => clearTimeout(t);
   }, [phase, ghost.length]);
 
 
-  const playedToday = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
+  const playedToday =
+    daily.result !== null && (daily.alreadyPlayed || (phase === "DONE" && runSettled));
   const finished = playedToday && showResult;
   const ready = !finished && (phase === "READY" || playedToday);
 
@@ -814,6 +832,7 @@ const DailyPage: React.FC = () => {
                   // ghost layer can still measure the slot a solved pair left.
                   <div
                     key={`slot-${idx}`}
+                    data-slot={idx}
                     ref={(el) => { slotRefs.current[idx] = el; }}
                     style={{ position: "relative", width: "100%", height: "100%" }}
                   >
@@ -831,7 +850,7 @@ const DailyPage: React.FC = () => {
                       <GameCard
                         card={card}
                         fill
-                        faceUp={state.faceUp}
+                        faceUp={state.faceUp || finalReveal}
                         highlighted={state.selected.includes(idx)}
                         matched={state.matchedPair.includes(idx)}
                         wrong={state.wrongPair.includes(idx)}
@@ -853,7 +872,13 @@ const DailyPage: React.FC = () => {
               </DailyBoard>
 
               {ghost.length > 0 && (
-                <DailyMatchGhost pair={ghost} onDone={() => setGhost([])} />
+                <DailyMatchGhost
+                  pair={ghost}
+                  onDone={() => {
+                    ghostPendingRef.current = false;
+                    setGhost([]);
+                  }}
+                />
               )}
 
 
