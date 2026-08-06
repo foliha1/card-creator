@@ -26,6 +26,12 @@ import { renderDailyShareImage } from "@/lib/dailyShareImage";
 
 import { formatStreakLine } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
+import {
+  DAILY_MATCH_HOLD_MS,
+  DAILY_MATCH_REVEAL_MS,
+  GREAT_MATCH_DELAY_MS,
+} from "@/lib/animationTiming";
+
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 
 import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
