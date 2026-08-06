@@ -267,6 +267,11 @@ export function buttonStyle(
   opts: { mobile?: boolean; fullWidth?: boolean; disabled?: boolean } = {},
 ): CSSProperties {
   const p = BUTTON_PALETTE[variant];
+  // Spent/disabled controls get a real inactive surface (not a faded live one)
+  // so they read as "unavailable" rather than "broken".
+  const bg = opts.disabled ? COLORS.panelMuted : p.bg;
+  const fg = opts.disabled ? COLORS.inkMuted : p.fg;
+  const border = opts.disabled ? BORDER.heavy : p.border;
   return {
     ...textStyle(variant === "play" ? "action" : "control", opts.mobile),
 
@@ -278,12 +283,12 @@ export function buttonStyle(
     width: opts.fullWidth ? "100%" : undefined,
     minHeight: Math.max(CONTROL_H[size], size === "sm" ? CONTROL_H.sm : TOUCH_MIN),
     padding: `0 ${CONTROL_PAD_X[size]}px`,
-    background: p.bg,
-    color: p.fg,
-    border: p.border,
+    background: bg,
+    color: fg,
+    border,
     borderRadius: RADIUS.sm,
     cursor: opts.disabled ? "not-allowed" : "pointer",
-    opacity: opts.disabled ? 0.5 : 1,
+    opacity: 1,
     textDecoration: "none",
     whiteSpace: "nowrap",
     transition: `background ${MOTION.fast}, opacity ${MOTION.fast}, transform ${MOTION.fast}`,
