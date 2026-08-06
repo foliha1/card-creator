@@ -557,6 +557,8 @@ const DailyBoard: React.FC<{
 };
 
 
+const DIE_SIZE = 56;
+
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
@@ -564,11 +566,15 @@ const DailyPage: React.FC = () => {
   const { state, phase } = daily;
   const [howTo, setHowTo] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  // True while the round intro overlay owns the die (roll + fly to corner).
+  const [introUp, setIntroUp] = useState(false);
+  const dieSlotRef = React.useRef<HTMLDivElement | null>(null);
   // Read after the run is persisted so today counts toward the streak.
   const streak = useDailyStreak(
     daily.puzzleNumber,
     daily.resultSaved || daily.result === null
   );
+
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
