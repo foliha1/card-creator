@@ -464,38 +464,9 @@ const DailyReadyScreen: React.FC<{
   onPlay: () => void;
   onHowToPlay: () => void;
 }> = ({ today, streak, onPlay, onHowToPlay }) => (
-  <div
-    style={{
-      position: "relative",
-      minHeight: "100dvh",
-      height: "100dvh",
-      boxSizing: "border-box",
-      background: COLORS.surface,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 24,
-      padding: 24,
-      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
-      overflowY: "auto",
-      "--daily-content-max-width": "402px",
-      "--daily-content-padding-x": "24px",
-    } as React.CSSProperties}
-  >
-    <DailyShapeRule />
-
-    <div
-      style={{
-        width: "100%",
-        maxWidth: 402,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 40,
-      }}
-    >
+  <DailyFrame gap={40}>
       <DailyLogoLockup />
+
 
       <div
         className="daily-intro"
