@@ -137,6 +137,10 @@ export const TEXT_ROLES = {
   captionItalic: { step: "xs",  mobileStep: "2xs", weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.normal },
   body:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.relaxed },
   label:         { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.label, textTransform: "uppercase", letterSpacing: "0.06em" },
+  /** Pill / marker text (e.g. "Played today"). */
+  pill:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.label },
+  /** Small italic chip link ("How to Play"). */
+  chip:          { step: "md",  mobileStep: "sm",  weight: FONT_WEIGHT.regular, italic: true,  lineHeight: LINE_HEIGHT.label },
   /** Buttons, inputs, code fields, small tiles. */
   control:       { step: "lg",  mobileStep: "md",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.tight },
   subhead:       { step: "xl",  mobileStep: "lg",  weight: FONT_WEIGHT.regular, italic: false, lineHeight: LINE_HEIGHT.heading, letterSpacing: "-0.01em" },
