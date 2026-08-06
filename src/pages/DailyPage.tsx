@@ -3,10 +3,9 @@ import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
-import DailyShapeRule from "@/components/DailyShapeRule";
+import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
-import PreGameShell from "@/components/PreGameShell";
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
 import { hasSubscribed } from "@/lib/dailySubscribe";
@@ -34,11 +33,9 @@ import {
   RADIUS,
   SPACE,
   buttonStyle,
-  panelStyle,
   textStyle,
 } from "@/lib/tokens";
 
-const PAGE_BG = "#231F20";
 const TUMBLE_MS = 800;
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
@@ -332,15 +329,15 @@ const DailyResultCard: React.FC<{
   return (
     <div
       style={{
-        ...panelStyle("surface", 8),
+        width: "100%",
         alignSelf: "stretch",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: SPACE[6],
-        padding: mobile ? SPACE[6] : SPACE[10],
       }}
     >
+
       <h1 style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
         Daily Puzzle #{puzzleNumber}
       </h1>
@@ -464,38 +461,9 @@ const DailyReadyScreen: React.FC<{
   onPlay: () => void;
   onHowToPlay: () => void;
 }> = ({ today, streak, onPlay, onHowToPlay }) => (
-  <div
-    style={{
-      position: "relative",
-      minHeight: "100dvh",
-      height: "100dvh",
-      boxSizing: "border-box",
-      background: COLORS.surface,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 24,
-      padding: 24,
-      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
-      overflowY: "auto",
-      "--daily-content-max-width": "402px",
-      "--daily-content-padding-x": "24px",
-    } as React.CSSProperties}
-  >
-    <DailyShapeRule />
-
-    <div
-      style={{
-        width: "100%",
-        maxWidth: 402,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 40,
-      }}
-    >
+  <DailyFrame gap={40}>
       <DailyLogoLockup />
+
 
       <div
         className="daily-intro"
@@ -571,10 +539,8 @@ const DailyReadyScreen: React.FC<{
           Play Today's Daily
         </button>
       </div>
-    </div>
+  </DailyFrame>
 
-    <DailyShapeRule />
-  </div>
 );
 
 
@@ -672,7 +638,7 @@ const DailyPage: React.FC = () => {
       </Helmet>
 
 
-      <div style={{ minHeight: "100dvh", background: PAGE_BG }}>
+      <div style={{ minHeight: "100dvh", background: COLORS.surface }}>
         {daily.debugBypass && (
           <div
             role="status"
@@ -713,7 +679,8 @@ const DailyPage: React.FC = () => {
           </>
         )}
         {!ready && (
-        <PreGameShell mobile={mobile} gap={SPACE[5]}>
+        <DailyFrame gap={SPACE[5]}>
+
 
           {finished ? (
             <DailyResultCard
@@ -734,13 +701,14 @@ const DailyPage: React.FC = () => {
           ) : ready ? null : (
             <div
               style={{
-                ...panelStyle("surface", 6),
+                width: "100%",
                 alignSelf: "stretch",
                 display: "flex",
                 flexDirection: "column",
                 gap: SPACE[5],
               }}
             >
+
               <div
                 style={{
                   display: "flex",
@@ -883,7 +851,7 @@ const DailyPage: React.FC = () => {
               </p>
             </div>
           )}
-        </PreGameShell>
+        </DailyFrame>
         )}
       </div>
     </>
