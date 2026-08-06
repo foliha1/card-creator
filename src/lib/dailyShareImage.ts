@@ -186,11 +186,12 @@ export async function renderDailyShareImage(
     const label = attr ? ATTR_LABEL[attr] ?? "" : "";
     ctx.fillText(label, left + 86, y + 40);
 
-    const peeked = result.peekUsed && result.peekRound === i + 1;
-    if (peeked) {
-      ctx.font = `36px ${FONT_FAMILY}`;
-      ctx.fillText("👀", left + 86 + ctx.measureText(label).width + 320, y + 38);
+    // The peek marker: a drawn pair of eyes (emoji fonts aren't guaranteed).
+    if (result.peekUsed && result.peekRound === i + 1) {
+      const labelW = ctx.measureText(label).width;
+      drawEyes(ctx, left + 86 + labelW + 24, y + 26);
     }
+
 
     // Marks, right-aligned.
     const markSize = 38;
