@@ -690,7 +690,10 @@ const DailyPage: React.FC = () => {
       </Helmet>
 
 
-      <div style={{ minHeight: "100dvh", background: COLORS.surface }}>
+      <DailyScreenFade
+        screenKey={finished ? "result" : ready ? "ready" : finalReveal ? "reveal" : "play"}
+        background={finished || ready ? COLORS.surface : COLORS.panel}
+      >
         {daily.debugBypass && (
           <div
             role="status"
