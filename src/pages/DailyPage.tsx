@@ -153,27 +153,94 @@ const RoundMarks: React.FC<{ events: DailyMark[] }> = ({ events }) => (
   </div>
 );
 
-/** Share block — squares and counts only, never a card, position or rule. */
-const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile }) => {
+/**
+ * Share block — renders the day's result as a PNG and shares it alongside the
+ * unchanged share text. Every failure path degrades to text, silently.
+ */
+const ShareBlock: React.FC<{
+  text: string;
+  result: DailyResult;
+  streak: number | null;
+  mobile: boolean;
+}> = ({ text, result, streak, mobile }) => {
   const [copied, setCopied] = useState(false);
+  const [working, setWorking] = useState(false);
 
-  const share = async () => {
-    hapticTap();
+  const flashCopied = () => {
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareTextOnly = async () => {
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({ text });
         return;
       }
     } catch {
-      /* user dismissed or share unsupported — fall through to clipboard */
+      /* dismissed or unsupported — fall through to clipboard */
     }
     try {
       await navigator.clipboard.writeText(text);
     } catch {
       /* clipboard blocked — nothing more we can do */
     }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+    flashCopied();
+  };
+
+  const share = async () => {
+    hapticTap();
+    setWorking(true);
+    let blob: Blob | null = null;
+    try {
+      blob = await renderDailyShareImage(result, streak);
+    } catch {
+      blob = null;
+    }
+    setWorking(false);
+
+    if (blob) {
+      const file = new File([blob], `whoop-whoop-${result.puzzleNumber}.png`, {
+        type: "image/png",
+      });
+      try {
+        if (
+          typeof navigator !== "undefined" &&
+          typeof navigator.share === "function" &&
+          navigator.canShare?.({ files: [file] })
+        ) {
+          await navigator.share({ files: [file], text });
+          return;
+        }
+      } catch {
+        /* dismissed or file share refused — fall back below */
+      }
+    }
+
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      await shareTextOnly();
+      return;
+    }
+
+    // No web share at all — download the image and copy the text.
+    if (blob) {
+      try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `whoop-whoop-${result.puzzleNumber}.png`;
+        a.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch {
+        /* download blocked — the text copy below is still useful */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard blocked */
+    }
+    flashCopied();
   };
 
   return (
@@ -182,85 +249,15 @@ const ShareBlock: React.FC<{ text: string; mobile: boolean }> = ({ text, mobile 
         type="button"
         className="ww-press"
         onClick={share}
+        disabled={working}
         style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
       >
-        {copied ? "COPIED" : "SHARE"}
+        {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
       </button>
     </div>
   );
 };
 
-
-/**
- * Secondary share options. All three reuse the exact string from
- * formatDailyShare — never a second, chattier variant.
- */
-const SharePills: React.FC<{ text: string }> = ({ text }) => {
-  const [copiedKey, setCopiedKey] = useState<"text" | "copy" | null>(null);
-
-  const flash = (key: "text" | "copy") => {
-    setCopiedKey(key);
-    window.setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2000);
-  };
-
-  const copy = async (key: "text" | "copy") => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — nothing more we can do */
-    }
-    flash(key);
-  };
-
-  const isMobile = () =>
-    typeof navigator !== "undefined" &&
-    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-  const onText = () => {
-    hapticTap();
-    if (isMobile()) {
-      window.location.href = `sms:?body=${encodeURIComponent(text)}`;
-      return;
-    }
-    void copy("text");
-  };
-
-  const onX = () => {
-    hapticTap();
-    window.open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
-
-  const pill = (label: string, onClick: () => void, key?: string) => (
-    <button
-      key={label}
-      type="button"
-      className="ww-press daily-share-pill"
-      onClick={onClick}
-    >
-      {key && copiedKey === key ? "Copied!" : label}
-    </button>
-  );
-
-  return (
-    <div
-      style={{
-        alignSelf: "stretch",
-        display: "flex",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        gap: SPACE[2],
-      }}
-    >
-      {pill("Text a Friend", onText, "text")}
-      {pill("Share on X", onX)}
-      {pill("Copy", () => void copy("copy"), "copy")}
-    </div>
-  );
-};
 
 
 const DailyResultCard: React.FC<{
