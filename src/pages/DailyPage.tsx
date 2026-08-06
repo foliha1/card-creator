@@ -927,10 +927,16 @@ const DailyPage: React.FC = () => {
                 // First user gesture on the page: resume the AudioContext and
                 // kick off the clip decode, or nothing ever plays.
                 unlockAudio();
+                setAudioReady(true);
                 hapticTap();
                 if (playedToday) setShowResult(true);
-                else daily.start();
+                else {
+                  // 600ms cue; the deal lands at 700ms, so it clears cleanly.
+                  playStart();
+                  daily.start();
+                }
               }}
+
               onHowToPlay={() => {
                 unlockAudio();
                 hapticTap();
