@@ -977,12 +977,12 @@ const DailyPage: React.FC = () => {
                         dealIndex={idx}
                         dealKey={daily.seed}
                         onClick={() => {
-                          hapticTap();
-                          // The second, distinct tap locks the claim — call it.
-                          if (state.selected.length === 1 && !state.selected.includes(idx)) {
-                            playWhoopCall();
-                          }
+                          // Paint the selection first; haptics and sound are
+                          // best-effort and can block, so they follow.
+                          const calls = state.selected.length === 1 && !state.selected.includes(idx);
                           daily.select(idx);
+                          hapticTap();
+                          if (calls) playWhoopCall();
                         }}
                       />
                     )}
