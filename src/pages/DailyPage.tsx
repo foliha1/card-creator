@@ -873,7 +873,7 @@ const DailyPage: React.FC = () => {
                     ghostPendingRef.current = false;
                     setGhost([]);
                   }}
-                />)
+                />
               )}
 
 
