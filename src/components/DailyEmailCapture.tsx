@@ -117,7 +117,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
           minHeight: 44,
           border: BORDER.heavy,
           borderRadius: RADIUS.sm,
-          background: COLORS.red,
+          background: COLORS.blue,
           color: COLORS.surface,
           fontFamily: FONT_FAMILY,
           fontStyle: "italic",
@@ -130,7 +130,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
         Sign me up
       </button>
       {status === "error" && (
-        <p role="alert" style={{ ...bodyStyle, color: COLORS.red }}>
+        <p role="alert" style={{ ...bodyStyle, color: COLORS.ink, fontStyle: "italic" }}>
           That didn't send. Try again.
         </p>
       )}
