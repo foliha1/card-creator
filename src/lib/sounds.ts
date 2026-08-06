@@ -361,6 +361,12 @@ export function playReveal() {
   play("reveal");
 }
 
+/** Run-start cue, fired with the Play button's unlockAudio(). */
+export function playStart() {
+  play("start");
+}
+
+
 /**
  * Card-select cue. Placeholder: a detuned, quiet flip until a real
  * select.mp3 ships — swap the body, keep the name.
