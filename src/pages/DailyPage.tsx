@@ -408,23 +408,8 @@ const DailyResultCard: React.FC<{
       {!hasSubscribed() && <DailyEmailCapture />}
 
 
-      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
-        {attributes.map((attr, i) => (
-          <div
-            key={`${attr}-${i}`}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: SPACE[3],
-              ...textStyle("caption", mobile),
-              color: COLORS.ink,
-            }}
-          >
-            <span style={{ color: COLORS.inkMuted }}>Round {i + 1}</span>
-            <span>{ATTR_LABEL[attr]}</span>
-          </div>
-        ))}
-      </div>
+
+
       <button
         type="button"
         className="ww-press"
