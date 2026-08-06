@@ -719,10 +719,21 @@ const DailyPage: React.FC = () => {
 
   useEffect(() => {
     if (phase === "STUDY") playDeal(9);
-    if (phase === "ROLL") playDiceRoll();
+    if (phase === "ROLL") {
+      // Rounds 2 and 3 get a short marker as the next intro opens.
+      if (state.roundIndex > 1) playRoundAdvance();
+      playDiceRoll();
+    }
     // Cards going face down at the end of the study window.
     if (phase === "HIDE" && state.roundIndex === 1) playFlip();
   }, [phase, state.roundIndex]);
+
+  // Soft tick on each of the last three seconds of the study countdown.
+  useEffect(() => {
+    if (phase !== "STUDY") return;
+    const left = daily.studyRemaining;
+    if (left > 0 && left <= 3) playTick();
+  }, [phase, daily.studyRemaining]);
 
 
   useEffect(() => {
