@@ -116,17 +116,17 @@ const RoundMarks: React.FC<{
   return (
     <div style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}>
       {events.length === 0 ? (
-        <span
-          className={cls}
-          style={{
-            width: 20,
-            height: 20,
-            opacity: 0.3,
-            border: BORDER.heavy,
-            borderRadius: 999,
-            ...anim(0),
-          }}
-        />
+        <span className={cls} style={{ display: "inline-flex", ...anim(0) }}>
+          <span
+            style={{
+              width: 20,
+              height: 20,
+              opacity: 0.3,
+              border: BORDER.heavy,
+              borderRadius: 999,
+            }}
+          />
+        </span>
       ) : (
         events.map((m, i) => (
           <span
