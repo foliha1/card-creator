@@ -39,12 +39,15 @@ import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import {
   playCorrect,
   playDeal,
+  playDeselect,
   playDiceRoll,
   playFlip,
   playPeek,
   playReveal,
+  playRoundAdvance,
   playSelect,
   playStart,
+  playTick,
   playWhoopCall,
   playWrong,
   startTheme,
@@ -716,10 +719,21 @@ const DailyPage: React.FC = () => {
 
   useEffect(() => {
     if (phase === "STUDY") playDeal(9);
-    if (phase === "ROLL") playDiceRoll();
+    if (phase === "ROLL") {
+      // Rounds 2 and 3 get a short marker as the next intro opens.
+      if (state.roundIndex > 1) playRoundAdvance();
+      playDiceRoll();
+    }
     // Cards going face down at the end of the study window.
     if (phase === "HIDE" && state.roundIndex === 1) playFlip();
   }, [phase, state.roundIndex]);
+
+  // Soft tick on each of the last three seconds of the study countdown.
+  useEffect(() => {
+    if (phase !== "STUDY") return;
+    const left = daily.studyRemaining;
+    if (left > 0 && left <= 3) playTick();
+  }, [phase, daily.studyRemaining]);
 
 
   useEffect(() => {
@@ -1077,9 +1091,11 @@ const DailyPage: React.FC = () => {
                           // best-effort and can block, so they follow.
                           const calls = state.selected.length === 1 && !state.selected.includes(idx);
                           const selects = state.selected.length === 0;
+                          const deselects = state.selected.includes(idx);
                           daily.select(idx);
                           hapticTap();
                           if (calls) playWhoopCall();
+                          else if (deselects) playDeselect();
                           else if (selects) playSelect();
                         }}
 
