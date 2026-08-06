@@ -53,6 +53,27 @@ const ATTR_LABEL: Record<string, string> = {
   COLOR: "Match the color",
 };
 
+// Results-screen entrance motion: block stagger and the per-mark sequence.
+const BLOCK_STAGGER_MS = 40;
+const BLOCK_IN_MS = 250;
+const MARK_STAGGER_MS = 70;
+const MARK_IN_MS = 180;
+/** Delay index of each block, in the order they arrive. */
+const RESULT_BLOCK = {
+  heading: 0,
+  message: 1,
+  stats: 2,
+  rounds: 3,
+  streak: 4,
+  share: 5,
+  email: 6,
+  done: 7,
+} as const;
+const blockIn = (block: keyof typeof RESULT_BLOCK): React.CSSProperties =>
+  ({ "--ww-res-delay": `${RESULT_BLOCK[block] * BLOCK_STAGGER_MS}ms` } as React.CSSProperties);
+/** Marks start once their block has landed. */
+const MARKS_BASE_DELAY_MS = RESULT_BLOCK.rounds * BLOCK_STAGGER_MS + BLOCK_IN_MS;
+
 /** Two markers for the current round, filled as its misses are spent. */
 const MissTracker: React.FC<{ used: number }> = ({ used }) => (
   <div
