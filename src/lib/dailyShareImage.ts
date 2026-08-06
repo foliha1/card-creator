@@ -17,7 +17,7 @@ const LOGO_SRC = "/WhoopWhoop_Dark_Logo.svg";
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
   NUMBER: "Match the number",
-  COLOR: "Match the colour",
+  COLOR: "Match the color",
 };
 
 /** Streaks only make the card at 3+ days — below that it's clutter. */
