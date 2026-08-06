@@ -10,13 +10,15 @@
 //   STUDY    all nine flip face up and hold for STUDY_MS with a countdown
 //   HIDE     all nine flip back face down
 //   ROLL     the die rolls for the current round (clock paused)
-//   PLAY     player claims, then taps two cards (one peek allowed per run)
-//   WHOOPED  the round ran out of misses: the answer is shown briefly
+//   PLAY     player taps two cards; the second tap locks the claim (one peek per run)
+//   WHOOPED  the round ran out of misses: it ends with the board untouched
 //   DONE     all three rounds played out
 //
 // Misses are capped PER ROUND (MISSES_PER_ROUND). A wrong pair spends one of
 // the round's two misses and play continues in that round. The second miss
-// Whoops the round: the correct pair is revealed, removed, and play moves on.
+// Whoops the round: nothing is revealed and nothing leaves the board — the
+// round simply ends and the next one rolls. Only a solve shrinks the board, so
+// a clean run plays 9 → 7 → 5 while a failed round keeps its cards in play.
 // The run never ends early — every player plays all three rounds.
 //
 // All three die rolls are drawn from the daily seed at init time and validated
@@ -69,7 +71,6 @@ export interface DailyState {
   rolls: DailyRoll[];
   /** 1-based round, 1 → 3. */
   roundIndex: number;
-  claiming: boolean;
   selected: number[];
   /** Misses spent in the current round. Resets each round, caps at 2. */
   roundMisses: number;
@@ -93,8 +94,6 @@ export interface DailyState {
   wrongPair: number[];
   /** Indices of the pair that just matched (cleared by CLEAR_MATCH). */
   matchedPair: number[];
-  /** The answer pair shown during WHOOPED. Cleared when the round advances. */
-  revealPair: number[];
   /** Wall-clock ms when the running clock last started. Null while paused. */
   startedAt: number | null;
   /** Clock time banked from completed rounds, in ms. */
@@ -109,8 +108,6 @@ export type DailyAction =
   | { type: "HIDE" }
   | { type: "ROLL_START" }
   | { type: "PLAY_START"; at: number }
-  | { type: "CLAIM" }
-  | { type: "CANCEL_CLAIM" }
   | { type: "SELECT"; idx: number }
   | { type: "RESOLVE"; at: number }
   | { type: "PEEK" }
@@ -201,7 +198,6 @@ export function initDailyState(seed: string, rngIn?: Rng): DailyState {
     faceUp: false,
     rolls,
     roundIndex: 1,
-    claiming: false,
     selected: [],
     roundMisses: 0,
     totalMisses: 0,
@@ -214,7 +210,6 @@ export function initDailyState(seed: string, rngIn?: Rng): DailyState {
     wrongToken: 0,
     wrongPair: [],
     matchedPair: [],
-    revealPair: [],
     startedAt: null,
     accumulatedMs: 0,
     elapsedMs: null,
@@ -233,7 +228,12 @@ export function remainingCount(state: DailyState): number {
 
 /** True when the peek may be taken right now. */
 export function canPeek(state: DailyState): boolean {
-  return state.phase === "PLAY" && !state.peekUsed && !state.claiming && !state.peeking;
+  return (
+    state.phase === "PLAY" &&
+    !state.peekUsed &&
+    !state.peeking &&
+    state.selected.length === 0
+  );
 }
 
 function pushEvent(state: DailyState, mark: DailyMark): DailyMark[][] {
@@ -264,14 +264,6 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
       if (state.phase !== "ROLL") return state;
       return { ...state, phase: "PLAY", startedAt: action.at };
 
-    case "CLAIM":
-      if (state.phase !== "PLAY" || state.claiming || state.peeking) return state;
-      return { ...state, claiming: true, selected: [], wrongPair: [] };
-
-    case "CANCEL_CLAIM":
-      if (state.phase !== "PLAY" || !state.claiming) return state;
-      return { ...state, claiming: false, selected: [] };
-
     case "PEEK":
       if (!canPeek(state)) return state;
       return {
@@ -287,7 +279,7 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
       return { ...state, peeking: false, faceUp: false };
 
     case "SELECT": {
-      if (state.phase !== "PLAY" || !state.claiming) return state;
+      if (state.phase !== "PLAY" || state.peeking) return state;
       if (state.grid[action.idx] == null) return state;
       if (state.selected.length >= 2) return state;
       if (state.selected.includes(action.idx)) {
@@ -310,19 +302,15 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
       if (!correct) {
         const roundMisses = state.roundMisses + 1;
         const whooped = roundMisses >= MISSES_PER_ROUND;
-        const answer = whooped ? (pairsFor(state.grid, attr)[0] ?? []) : [];
         return {
           ...state,
           phase: whooped ? "WHOOPED" : state.phase,
-          claiming: false,
           selected: [],
           wrongPair: [i, j],
           wrongToken: state.wrongToken + 1,
           roundMisses,
           totalMisses: state.totalMisses + 1,
           roundEvents: pushEvent(state, "MISS"),
-          revealPair: [...answer],
-          faceUp: whooped ? state.faceUp : state.faceUp,
           startedAt: whooped ? null : state.startedAt,
           accumulatedMs: whooped ? banked : state.accumulatedMs,
         };
@@ -340,7 +328,6 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
         roundsSolved,
         roundEvents: pushEvent(state, "SOLVE"),
         grid,
-        claiming: false,
         selected: [],
         matchedPair: [i, j],
         wrongPair: [],
@@ -351,20 +338,15 @@ export function dailyReducer(state: DailyState, action: DailyAction): DailyState
       };
     }
 
-    // The Whooped round's answer has been shown — clear it and move on.
+    // The Whooped round ends with the board untouched: no reveal, no removal.
     case "ROUND_END": {
       if (state.phase !== "WHOOPED") return state;
-      const [i, j] = state.revealPair;
-      const grid =
-        i === undefined || j === undefined ? state.grid : without(state.grid, i, j);
       const last = state.roundIndex >= DAILY_ROUNDS;
       return {
         ...state,
         phase: last ? "DONE" : "HIDE",
         roundIndex: last ? state.roundIndex : state.roundIndex + 1,
         roundMisses: last ? state.roundMisses : 0,
-        grid,
-        revealPair: [],
         wrongPair: [],
         selected: [],
         claiming: false,
