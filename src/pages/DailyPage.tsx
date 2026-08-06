@@ -408,9 +408,11 @@ const DailyReadyScreen: React.FC<{
   today: string;
   /** Null hides the streak line — never show a zero. */
   streak: number | null;
+  /** True when today's run is already complete. */
+  played?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
-}> = ({ today, streak, onPlay, onHowToPlay }) => (
+}> = ({ today, streak, played = false, onPlay, onHowToPlay }) => (
   <DailyFrame gap={40}>
       <DailyLogoLockup />
 
