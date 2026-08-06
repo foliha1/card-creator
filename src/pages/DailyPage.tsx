@@ -368,9 +368,8 @@ const DailyResultCard: React.FC<{
         ))}
       </div>
 
-      <ShareBlock text={shareText} mobile={mobile} />
+      <ShareBlock text={shareText} result={result} streak={streak} mobile={mobile} />
 
-      <SharePills text={shareText} />
 
       {!hasSubscribed() && (
         <div
