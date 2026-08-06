@@ -240,8 +240,6 @@ const ShareBlock: React.FC<{
     flashCopied();
   };
 
-  return (
-    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
   // Reuses the multiplayer roll-button sweep, once, no loop.
   const sweep: React.CSSProperties | null =
     sweepDelayMs === undefined
