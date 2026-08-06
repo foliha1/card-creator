@@ -890,14 +890,19 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               played={playedToday}
               onPlay={() => {
+                // First user gesture on the page: resume the AudioContext and
+                // kick off the clip decode, or nothing ever plays.
+                unlockAudio();
                 hapticTap();
                 if (playedToday) setShowResult(true);
                 else daily.start();
               }}
               onHowToPlay={() => {
+                unlockAudio();
                 hapticTap();
                 setHowTo(true);
               }}
+
             />
             {howTo && <DailyHowToPlay onClose={() => setHowTo(false)} />}
           </>
