@@ -36,7 +36,17 @@ import {
 
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 
-import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@/lib/sounds";
+import {
+  playCorrect,
+  playDeal,
+  playDiceRoll,
+  playPeek,
+  playReveal,
+  playSelect,
+  playWhoopCall,
+  playWrong,
+  unlockAudio,
+} from "@/lib/sounds";
 import {
   BORDER,
   COLORS,
