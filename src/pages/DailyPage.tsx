@@ -45,6 +45,7 @@ import {
   buttonStyle,
   textStyle,
   FONT_FAMILY_UI,
+  FONT_WEIGHT_UI,
 } from "@/lib/tokens";
 
 const ATTR_LABEL: Record<string, string> = {
@@ -758,6 +759,51 @@ const DailyPage: React.FC = () => {
     ghost.length === 0;
 
 
+  // Arrow keys walk focus across the 3-column board; Enter/Space on a card
+  // selects and then claims (handled by GameCard's own key handler).
+  const boardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -BOARD_COLS,
+      ArrowDown: BOARD_COLS,
+    };
+    const delta = step[e.key];
+    if (delta === undefined) return;
+    const total = state.grid.length;
+    if (total === 0) return;
+
+    const focusable = (i: number) =>
+      slotRefs.current[i]?.querySelector<HTMLElement>('[role="button"]') ?? null;
+
+    const active = document.activeElement as HTMLElement | null;
+    const slot = active?.closest?.("[data-slot]") as HTMLElement | null;
+    const from = slot ? Number(slot.dataset.slot) : -1;
+
+    e.preventDefault();
+
+    if (from < 0) {
+      for (let i = 0; i < total; i++) {
+        const el = focusable(i);
+        if (el) { el.focus(); return; }
+      }
+      return;
+    }
+
+    // Walk in the requested direction, skipping empty slots, and stop at the edges.
+    for (let i = from + delta; i >= 0 && i < total; i += delta) {
+      // Horizontal moves must not jump rows.
+      if (Math.abs(delta) === 1 && Math.floor(i / BOARD_COLS) !== Math.floor(from / BOARD_COLS)) break;
+      const el = focusable(i);
+      if (el) { el.focus(); return; }
+    }
+  };
+
+  const playHint =
+    state.selected.length === 1
+      ? "Tap a second card to lock in the claim."
+      : "Tap the first card to select, then tap a second to lock in the claim.";
+
   const [ty, tm, td] = getLocalDateString().split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
@@ -866,6 +912,7 @@ const DailyPage: React.FC = () => {
             />
           ) : ready ? null : (
             <div
+              onKeyDown={boardKeyDown}
               style={{
                 width: "100%",
                 alignSelf: "stretch",
@@ -889,7 +936,7 @@ const DailyPage: React.FC = () => {
                 }}
               >
                 <div style={{ flex: "1 1 auto", minWidth: 0 }}>
-                  <div style={{ ...textStyle("caption", mobile), fontFamily: FONT_FAMILY_UI, color: COLORS.inkMuted }}>
+                  <div style={{ ...textStyle("caption", mobile), fontFamily: FONT_FAMILY_UI, fontWeight: FONT_WEIGHT_UI, color: COLORS.inkMuted }}>
                     Round {state.roundIndex} of {DAILY_ROUNDS} · {remainingCount(state)} cards
                   </div>
                   <div
@@ -976,6 +1023,23 @@ const DailyPage: React.FC = () => {
                   </div>
                 ))}
               </DailyBoard>
+
+              <div
+                aria-live="polite"
+                style={{
+                  flex: "0 0 auto",
+                  width: gridWidth ? gridWidth : "100%",
+                  alignSelf: "center",
+                  ...textStyle("caption", mobile),
+                  fontFamily: FONT_FAMILY_UI,
+                  fontWeight: FONT_WEIGHT_UI,
+                  color: COLORS.inkMuted,
+                  textAlign: "center",
+                  minHeight: "1.4em",
+                }}
+              >
+                {phase === "PLAY" && !introUp ? playHint : "\u00A0"}
+              </div>
 
               {ghost.length > 0 && (
                 <DailyMatchGhost
