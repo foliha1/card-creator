@@ -123,8 +123,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
         inset: 0,
         zIndex: 60,
         pointerEvents: "none",
-        opacity: fading ? 0 : 1,
-        transition: `opacity ${FADE_MS}ms ease`,
+        opacity: fading || !entered ? 0 : 1,
+        transition: `opacity ${fading ? FADE_MS : DAILY_FADE_IN_MS}ms ease`,
       }}
     >
       {/* Dim, not hide: the cards stay visible underneath as faint shapes. */}
