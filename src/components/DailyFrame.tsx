@@ -14,8 +14,11 @@ export const DAILY_CONTENT_MAX_W = 402;
 const DailyFrame: React.FC<{
   /** Gap inside the content column. */
   gap?: number;
+  /** When true the content column takes all the space between the rules and
+   *  never grows past it, so children can size themselves to fit. */
+  fill?: boolean;
   children?: React.ReactNode;
-}> = ({ gap = 24, children }) => (
+}> = ({ gap = 24, fill = false, children }) => (
   <div
     style={{
       position: "relative",
@@ -30,7 +33,7 @@ const DailyFrame: React.FC<{
       gap: 24,
       padding: 24,
       paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
-      overflowY: "auto",
+      overflowY: fill ? "hidden" : "auto",
       "--daily-content-max-width": `${DAILY_CONTENT_MAX_W}px`,
       "--daily-content-padding-x": "24px",
     } as React.CSSProperties}
@@ -45,8 +48,10 @@ const DailyFrame: React.FC<{
         flexDirection: "column",
         alignItems: "center",
         gap,
+        ...(fill ? { flex: "1 1 auto", minHeight: 0 } : {}),
       }}
     >
+
       {children}
     </div>
 
