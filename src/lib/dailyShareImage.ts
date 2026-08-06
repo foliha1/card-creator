@@ -91,6 +91,24 @@ const drawShapeRule = (
     ctx.fill();
   }
 };
+/** A drawn pair of eyes — the peek marker, in place of an emoji glyph. */
+const drawEyes = (ctx: CanvasRenderingContext2D, x: number, cy: number) => {
+  const r = 13;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = COLORS.ink;
+  for (const dx of [0, r * 2 + 8]) {
+    ctx.fillStyle = COLORS.surface;
+    ctx.beginPath();
+    ctx.arc(x + r + dx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = COLORS.ink;
+    ctx.beginPath();
+    ctx.arc(x + r + dx, cy, r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+  }
+};
+
 
 const drawMark = (
   ctx: CanvasRenderingContext2D,
