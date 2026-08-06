@@ -428,6 +428,19 @@ const DailyReadyScreen: React.FC<{
         }}
       >
         {today}
+        {played && (
+          <div
+            style={{
+              marginTop: 8,
+              fontFamily: FONT_FAMILY,
+              fontSize: 16,
+              lineHeight: 1.2,
+              color: COLORS.inkMuted,
+            }}
+          >
+            Played today
+          </div>
+        )}
         {streak !== null && streak >= 1 && (
           <div
             style={{
@@ -442,6 +455,7 @@ const DailyReadyScreen: React.FC<{
           </div>
         )}
       </div>
+
 
       <div className="daily-intro" style={{ display: "inline-block", animationDelay: "120ms" }}>
         <button
