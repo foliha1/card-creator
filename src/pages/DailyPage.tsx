@@ -440,6 +440,7 @@ const DailyResultCard: React.FC<{
             alignSelf: "stretch",
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
+            background: COLORS.orange,
             padding: SPACE[6],
             display: "flex",
             flexDirection: "column",
