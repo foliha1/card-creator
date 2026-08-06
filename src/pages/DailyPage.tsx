@@ -349,21 +349,23 @@ const DailyResultCard: React.FC<{
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
         {roundEvents.map((events, i) => (
           <div
-            key={`events-${i}`}
+            key={`round-${i}`}
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
               gap: SPACE[3],
               ...textStyle("caption", mobile),
-              color: COLORS.inkMuted,
+              color: COLORS.ink,
             }}
           >
+            <span style={{ color: COLORS.inkMuted }}>Round {i + 1}</span>
             <span>
-              Round {i + 1}
+              {attributes[i] ? ATTR_LABEL[attributes[i]] : ""}
               {peekUsed && peekRound === i + 1 ? " 👀" : ""}
             </span>
-            <RoundMarks events={events} />
+            <span style={{ marginLeft: "auto" }}>
+              <RoundMarks events={events} />
+            </span>
           </div>
         ))}
       </div>
