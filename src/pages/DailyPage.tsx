@@ -641,7 +641,7 @@ const DailyPage: React.FC = () => {
       </Helmet>
 
 
-      <div style={{ minHeight: "100dvh", background: PAGE_BG }}>
+      <div style={{ minHeight: "100dvh", background: COLORS.surface }}>
         {daily.debugBypass && (
           <div
             role="status"
