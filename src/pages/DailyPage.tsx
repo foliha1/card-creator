@@ -843,8 +843,21 @@ const DailyPage: React.FC = () => {
                   )
                 )}
               </DailyBoard>
+
+              {/* Fixed overlay: never affects the board's measured size. */}
+              <DailyRoundIntro
+                active={phase === "ROLL"}
+                roundIndex={state.roundIndex}
+                attribute={daily.roll.attribute}
+                faceIndex={daily.roll.faceIndex}
+                tumbleSeed={daily.tumbleSeed}
+                anchorRef={dieSlotRef}
+                smallSize={DIE_SIZE}
+                onVisibleChange={setIntroUp}
+              />
             </div>
           )}
+
 
         </DailyFrame>
         )}
