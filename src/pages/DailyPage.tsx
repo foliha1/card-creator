@@ -852,7 +852,7 @@ const DailyPage: React.FC = () => {
               </p>
             </div>
           )}
-        </PreGameShell>
+        </DailyFrame>
         )}
       </div>
     </>
