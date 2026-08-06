@@ -544,6 +544,76 @@ const DailyReadyScreen: React.FC<{
 );
 
 
+/**
+ * Card area that scales its cards to the space it is given instead of pushing
+ * the page taller. Same approach as the multiplayer board: measure the content
+ * box with a ResizeObserver, then take Math.min(byWidth, byHeight) so the real
+ * 5:7 card proportions are always preserved.
+ */
+const BOARD_COLS = 3;
+const BOARD_GAP = 8;
+const BOARD_RATIO = 7 / 5; // card height / card width
+const BOARD_MIN_CARD_W = 44;
+
+const DailyBoard: React.FC<{
+  rows: number;
+  children: React.ReactNode;
+}> = ({ rows, children }) => {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = (w: number, h: number) =>
+      setBox((prev) =>
+        Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5 ? prev : { w, h }
+      );
+    const rect = el.getBoundingClientRect();
+    apply(rect.width, rect.height);
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) apply(entry.contentRect.width, entry.contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const byWidth = (box.w - (BOARD_COLS - 1) * BOARD_GAP) / BOARD_COLS;
+  const byHeight = (box.h - (rows - 1) * BOARD_GAP) / rows / BOARD_RATIO;
+  const raw = Math.min(byWidth, byHeight);
+  const cardW = Math.floor(
+    Math.max(BOARD_MIN_CARD_W, Number.isFinite(raw) && raw > 0 ? raw : BOARD_MIN_CARD_W)
+  );
+  const cardH = Math.round(cardW * BOARD_RATIO);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        flex: "1 1 auto",
+        minHeight: 0,
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${BOARD_COLS}, ${cardW}px)`,
+          gridAutoRows: `${cardH}px`,
+          gap: BOARD_GAP,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
@@ -679,7 +749,7 @@ const DailyPage: React.FC = () => {
           </>
         )}
         {!ready && (
-        <DailyFrame gap={SPACE[5]}>
+        <DailyFrame gap={SPACE[4]} fill={!finished}>
 
 
           {finished ? (
@@ -703,18 +773,21 @@ const DailyPage: React.FC = () => {
               style={{
                 width: "100%",
                 alignSelf: "stretch",
+                flex: "1 1 auto",
+                minHeight: 0,
                 display: "flex",
                 flexDirection: "column",
-                gap: SPACE[5],
+                gap: SPACE[4],
               }}
             >
 
               <div
                 style={{
+                  flex: "0 0 auto",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: SPACE[4],
+                  gap: SPACE[3],
                 }}
               >
                 <div>
@@ -731,30 +804,52 @@ const DailyPage: React.FC = () => {
                     <MissTracker used={state.roundMisses} />
                   </div>
                 </div>
-                <DailyDie
-                  phase={phase}
-                  roundIndex={state.roundIndex}
-                  attribute={daily.roll.attribute}
-                  faceIndex={daily.roll.faceIndex}
-                  tumbleSeed={daily.tumbleSeed}
-                  size={56}
-                />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: SPACE[2],
+                    flex: "0 0 auto",
+                  }}
+                >
+                  <DailyDie
+                    phase={phase}
+                    roundIndex={state.roundIndex}
+                    attribute={daily.roll.attribute}
+                    faceIndex={daily.roll.faceIndex}
+                    tumbleSeed={daily.tumbleSeed}
+                    size={56}
+                  />
+                  <button
+                    type="button"
+                    className="ww-press"
+                    disabled={!daily.canPeek}
+                    onClick={() => {
+                      hapticTap();
+                      daily.peek();
+                    }}
+                    style={{
+                      ...buttonStyle("ink", "sm", {
+                        mobile,
+                        disabled: !daily.canPeek,
+                      }),
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
+                  </button>
+                </div>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: SPACE[3],
-                }}
-              >
+              <DailyBoard rows={Math.max(1, Math.ceil(state.grid.length / 3))}>
                 {state.grid.map((card, idx) =>
                   card === null ? (
                     <div
                       key={`empty-${idx}`}
                       aria-hidden="true"
                       style={{
-                        aspectRatio: "2 / 3",
+                        height: "100%",
                         borderRadius: RADIUS.sm,
                         border: `2px dashed ${COLORS.inkMuted}`,
                         opacity: 0.25,
@@ -764,6 +859,7 @@ const DailyPage: React.FC = () => {
                     <GameCard
                       key={card.id}
                       card={card}
+                      fill
                       faceUp={state.faceUp || state.revealPair.includes(idx)}
                       highlighted={state.selected.includes(idx)}
                       matched={state.matchedPair.includes(idx)}
@@ -778,8 +874,9 @@ const DailyPage: React.FC = () => {
                     />
                   )
                 )}
-              </div>
+              </DailyBoard>
 
+              <div style={{ flex: "0 0 auto" }}>
               {state.claiming ? (
                 <button
                   type="button"
@@ -817,40 +914,10 @@ const DailyPage: React.FC = () => {
                   WHOOP! WHOOP!
                 </button>
               )}
-
-              <button
-                type="button"
-                className="ww-press"
-                disabled={!daily.canPeek}
-                onClick={() => {
-                  hapticTap();
-                  daily.peek();
-                }}
-                style={{
-                  ...buttonStyle("ink", "md", {
-                    mobile,
-                    fullWidth: true,
-                    disabled: !daily.canPeek,
-                  }),
-                }}
-              >
-                {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
-              </button>
-
-              <p
-                style={{
-                  ...textStyle("caption", mobile),
-                  color: COLORS.inkMuted,
-                  margin: 0,
-                  textAlign: "center",
-                }}
-              >
-                {phase === "PLAY"
-                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MISSES_PER_ROUND - state.roundMisses} misses left this round.`
-                  : "Nine cards, ten seconds. Then the die decides each round's rule."}
-              </p>
+              </div>
             </div>
           )}
+
         </DailyFrame>
         )}
       </div>
