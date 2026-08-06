@@ -105,14 +105,21 @@ export function useDailyGame(): UseDailyGameResult {
   }, [state.phase]);
 
   // HIDE is entered both after the study window and after each round ends.
+  // A solved round holds for the whole match sequence (reveal → hold → ghost)
+  // so the next round intro only opens once the pair has left the board.
   useEffect(() => {
     if (state.phase !== "HIDE") return;
-    const t = setTimeout(
-      () => dispatch({ type: "ROLL_START" }),
-      state.roundIndex === 1 ? FLIP_MS : MATCH_ANIM_MS
-    );
+    const delay =
+      state.roundIndex === 1
+        ? FLIP_MS
+        : state.matchedPair.length > 0
+        ? MATCH_ANIM_MS
+        : WHOOPED_PAUSE_MS / 2;
+    const t = setTimeout(() => dispatch({ type: "ROLL_START" }), delay);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.roundIndex]);
+
 
   useEffect(() => {
     if (state.phase !== "ROLL") return;
