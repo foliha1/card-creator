@@ -695,10 +695,25 @@ const DailyPage: React.FC = () => {
   }, [state.grid]);
 
   // --- sound + haptic cues, driven off phase / counters ---
+  // Safety net: any first gesture anywhere on the page unlocks audio, in case
+  // the run was started from something other than the Play button.
+  useEffect(() => {
+    const on = () => unlockAudio();
+    window.addEventListener("pointerdown", on, { once: true });
+    window.addEventListener("keydown", on, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", on);
+      window.removeEventListener("keydown", on);
+    };
+  }, []);
+
   useEffect(() => {
     if (phase === "STUDY") playDeal(9);
     if (phase === "ROLL") playDiceRoll();
+    // Cards going face down at the end of the study window.
+    if (phase === "HIDE" && state.roundIndex === 1) playFlip();
   }, [phase, state.roundIndex]);
+
 
   useEffect(() => {
     if (state.wrongToken === 0) return;
