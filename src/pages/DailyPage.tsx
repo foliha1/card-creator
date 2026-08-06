@@ -1031,10 +1031,13 @@ const DailyPage: React.FC = () => {
                           // Paint the selection first; haptics and sound are
                           // best-effort and can block, so they follow.
                           const calls = state.selected.length === 1 && !state.selected.includes(idx);
+                          const selects = state.selected.length === 0;
                           daily.select(idx);
                           hapticTap();
                           if (calls) playWhoopCall();
+                          else if (selects) playSelect();
                         }}
+
                       />
                     )}
                   </div>
