@@ -845,7 +845,7 @@ const DailyPage: React.FC = () => {
                       <GameCard
                         card={card}
                         fill
-                        faceUp={state.faceUp}
+                        faceUp={state.faceUp || finalReveal}
                         highlighted={state.selected.includes(idx)}
                         matched={state.matchedPair.includes(idx)}
                         wrong={state.wrongPair.includes(idx)}
@@ -867,7 +867,13 @@ const DailyPage: React.FC = () => {
               </DailyBoard>
 
               {ghost.length > 0 && (
-                <DailyMatchGhost pair={ghost} onDone={() => setGhost([])} />
+                <DailyMatchGhost
+                  pair={ghost}
+                  onDone={() => {
+                    ghostPendingRef.current = false;
+                    setGhost([]);
+                  }}
+                />)
               )}
 
 
