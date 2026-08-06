@@ -705,9 +705,11 @@ const DailyPage: React.FC = () => {
             <DailyReadyScreen
               today={today}
               streak={streak?.current ?? null}
+              played={playedToday}
               onPlay={() => {
                 hapticTap();
-                daily.start();
+                if (playedToday) setShowResult(true);
+                else daily.start();
               }}
               onHowToPlay={() => {
                 hapticTap();
