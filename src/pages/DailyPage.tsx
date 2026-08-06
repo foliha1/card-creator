@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router-dom";
 import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
@@ -374,43 +373,20 @@ const DailyResultCard: React.FC<{
 
       <SharePills text={shareText} />
 
-      <div
-        style={{
-          alignSelf: "stretch",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: SPACE[2],
-        }}
-      >
-        <p
+      {!hasSubscribed() && (
+        <div
           style={{
-            ...textStyle("subhead", mobile),
-            color: COLORS.ink,
-            textAlign: "center",
-            margin: 0,
+            alignSelf: "stretch",
+            border: BORDER.heavy,
+            borderRadius: RADIUS.sm,
+            padding: SPACE[6],
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          Liked that? The full game has a table, an opponent, and a lot more shouting.
-        </p>
-        <Link
-          to="/play"
-          style={{
-            ...textStyle("body", mobile),
-            color: COLORS.blue,
-            textAlign: "center",
-            textDecoration: "underline",
-            textUnderlineOffset: 3,
-          }}
-        >
-          Play the full game
-        </Link>
-      </div>
-
-      {!hasSubscribed() && <DailyEmailCapture />}
-
-
-
+          <DailyEmailCapture />
+        </div>
+      )}
 
       <button
         type="button"
@@ -418,7 +394,7 @@ const DailyResultCard: React.FC<{
         onClick={onLeave}
         style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch" }}
       >
-        BACK TO GAMES
+        DONE
       </button>
     </div>
   );
@@ -431,9 +407,11 @@ const DailyReadyScreen: React.FC<{
   today: string;
   /** Null hides the streak line — never show a zero. */
   streak: number | null;
+  /** True when today's run is already complete. */
+  played?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
-}> = ({ today, streak, onPlay, onHowToPlay }) => (
+}> = ({ today, streak, played = false, onPlay, onHowToPlay }) => (
   <DailyFrame gap={40}>
       <DailyLogoLockup />
 
@@ -449,6 +427,19 @@ const DailyReadyScreen: React.FC<{
         }}
       >
         {today}
+        {played && (
+          <div
+            style={{
+              marginTop: 8,
+              fontFamily: FONT_FAMILY,
+              fontSize: 16,
+              lineHeight: 1.2,
+              color: COLORS.inkMuted,
+            }}
+          >
+            Played today
+          </div>
+        )}
         {streak !== null && streak >= 1 && (
           <div
             style={{
@@ -463,6 +454,7 @@ const DailyReadyScreen: React.FC<{
           </div>
         )}
       </div>
+
 
       <div className="daily-intro" style={{ display: "inline-block", animationDelay: "120ms" }}>
         <button
@@ -509,7 +501,7 @@ const DailyReadyScreen: React.FC<{
           }}
 
         >
-          Play Today's Daily
+          {played ? "See Today's Result" : "Play Today's Daily"}
         </button>
       </div>
   </DailyFrame>
@@ -590,11 +582,10 @@ const DailyBoard: React.FC<{
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
-  const navigate = useNavigate();
   const daily = useDailyGame();
   const { state, phase } = daily;
-  const leave = () => navigate("/");
   const [howTo, setHowTo] = useState(false);
+  const [showResult, setShowResult] = useState(false);
   // Read after the run is persisted so today counts toward the streak.
   const streak = useDailyStreak(
     daily.puzzleNumber,
@@ -622,10 +613,12 @@ const DailyPage: React.FC = () => {
   useEffect(() => {
     if (phase !== "DONE") return;
     hapticSuccess();
+    setShowResult(true);
   }, [phase]);
 
-  const finished = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
-  const ready = !finished && phase === "READY";
+  const playedToday = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
+  const finished = playedToday && showResult;
+  const ready = !finished && (phase === "READY" || playedToday);
 
   const readout = (() => {
     switch (phase) {
@@ -709,9 +702,11 @@ const DailyPage: React.FC = () => {
             <DailyReadyScreen
               today={today}
               streak={streak?.current ?? null}
+              played={playedToday}
               onPlay={() => {
                 hapticTap();
-                daily.start();
+                if (playedToday) setShowResult(true);
+                else daily.start();
               }}
               onHowToPlay={() => {
                 hapticTap();
@@ -739,7 +734,10 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               mobile={mobile}
               revisit={daily.alreadyPlayed}
-              onLeave={leave}
+              onLeave={() => {
+                hapticTap();
+                setShowResult(false);
+              }}
             />
           ) : ready ? null : (
             <div
