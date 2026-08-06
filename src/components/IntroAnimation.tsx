@@ -2,8 +2,11 @@ import React, { Suspense, useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 import { COLORS } from "@/lib/tokens";
 
+// Never let a failed chunk fetch throw inside Suspense and blank the screen.
 const Lottie = React.lazy(() =>
-  import("lottie-react").then((m) => ({ default: m.default })),
+  import("lottie-react")
+    .then((m) => ({ default: m.default }))
+    .catch(() => ({ default: (() => null) as unknown as typeof import("lottie-react").default })),
 );
 
 const STORAGE_KEY = "ww_intro_seen";
