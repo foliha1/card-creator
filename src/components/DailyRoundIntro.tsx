@@ -17,12 +17,14 @@ import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import type { RollAttribute } from "@/lib/multiplayer";
 import { COLORS, FONT_SIZE, textStyle } from "@/lib/tokens";
 
+/** Fade-up of the scrim, round title and die before the tumble starts. */
+export const DAILY_FADE_IN_MS = 200;
 /** Tumble duration of the daily die. The single source of truth. */
 export const DAILY_TUMBLE_MS = 800;
 /** Pause on the landed face before the overlay fades out. */
 export const DAILY_HOLD_MS = 2000;
 /** Total ROLL phase duration used by the daily engine. */
-export const DAILY_ROLL_HERO_MS = DAILY_TUMBLE_MS + DAILY_HOLD_MS;
+export const DAILY_ROLL_HERO_MS = DAILY_FADE_IN_MS + DAILY_TUMBLE_MS + DAILY_HOLD_MS;
 /** Fade-out duration once the hold ends. */
 const FADE_MS = 320;
 
