@@ -144,12 +144,12 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
         pointerEvents: "none",
       }}
     >
-      {/* Dim, not hide: the cards stay readable underneath. */}
+      {/* Dim, not hide: the cards stay visible underneath as faint shapes. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(35, 31, 32, 0.30)",
+          background: "rgba(35, 31, 32, 0.75)",
           opacity: flying ? 0 : 1,
           transition: `opacity ${DAILY_FLY_MS}ms ease`,
         }}
@@ -186,6 +186,7 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
             transform: "translateX(-50%)",
             whiteSpace: "nowrap",
             ...textStyle("display"),
+            fontSize: FONT_SIZE["5xl"],
             color: COLORS.surface,
             opacity: flying ? 0 : 1,
             transition: `opacity 200ms ease`,
