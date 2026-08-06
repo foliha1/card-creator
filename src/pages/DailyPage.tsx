@@ -737,18 +737,37 @@ const DailyPage: React.FC = () => {
                 style={{
                   flex: "0 0 auto",
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   justifyContent: "space-between",
                   gap: SPACE[3],
                 }}
               >
-                <div>
+                {/* The die's resting slot: top left, and the fly-to target. */}
+                <div
+                  ref={dieSlotRef}
+                  style={{ width: DIE_SIZE, height: DIE_SIZE, flex: "0 0 auto" }}
+                >
+                  <DailyDie
+                    phase={phase}
+                    roundIndex={state.roundIndex}
+                    attribute={daily.roll.attribute}
+                    faceIndex={daily.roll.faceIndex}
+                    size={DIE_SIZE}
+                    hidden={introUp}
+                  />
+                </div>
+                <div style={{ flex: "1 1 auto", minWidth: 0 }}>
                   <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>
                     Round {state.roundIndex} of {DAILY_ROUNDS} · {remainingCount(state)} cards
                   </div>
                   <div
                     aria-live="polite"
-                    style={{ ...textStyle("title", mobile), color: COLORS.ink, fontVariantNumeric: "tabular-nums" }}
+                    style={{
+                      ...textStyle("title", mobile),
+                      color: COLORS.ink,
+                      fontVariantNumeric: "tabular-nums",
+                      minHeight: "1.2em",
+                    }}
                   >
                     {readout}
                   </div>
@@ -756,43 +775,27 @@ const DailyPage: React.FC = () => {
                     <MissTracker used={state.roundMisses} />
                   </div>
                 </div>
-                <div
+                <button
+                  type="button"
+                  className="ww-press"
+                  disabled={!daily.canPeek}
+                  onClick={() => {
+                    hapticTap();
+                    daily.peek();
+                  }}
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: SPACE[2],
+                    ...buttonStyle("ink", "sm", {
+                      mobile,
+                      disabled: !daily.canPeek,
+                    }),
+                    whiteSpace: "nowrap",
                     flex: "0 0 auto",
                   }}
                 >
-                  <DailyDie
-                    phase={phase}
-                    roundIndex={state.roundIndex}
-                    attribute={daily.roll.attribute}
-                    faceIndex={daily.roll.faceIndex}
-                    tumbleSeed={daily.tumbleSeed}
-                    size={56}
-                  />
-                  <button
-                    type="button"
-                    className="ww-press"
-                    disabled={!daily.canPeek}
-                    onClick={() => {
-                      hapticTap();
-                      daily.peek();
-                    }}
-                    style={{
-                      ...buttonStyle("ink", "sm", {
-                        mobile,
-                        disabled: !daily.canPeek,
-                      }),
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
-                  </button>
-                </div>
+                  {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
+                </button>
               </div>
+
 
               <DailyBoard rows={Math.max(1, Math.ceil(state.grid.length / 3))}>
                 {state.grid.map((card, idx) =>
