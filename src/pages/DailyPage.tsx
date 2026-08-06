@@ -853,8 +853,6 @@ const DailyPage: React.FC = () => {
                 attribute={daily.roll.attribute}
                 faceIndex={daily.roll.faceIndex}
                 tumbleSeed={daily.tumbleSeed}
-                anchorRef={dieSlotRef}
-                smallSize={DIE_SIZE}
                 onVisibleChange={setIntroUp}
               />
             </div>
