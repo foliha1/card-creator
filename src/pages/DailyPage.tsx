@@ -6,6 +6,7 @@ import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import DailyRoundIntro from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
+import DailyScreenFade from "@/components/DailyScreenFade";
 
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
