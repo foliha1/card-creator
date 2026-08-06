@@ -66,6 +66,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
     const v = Math.min(window.innerWidth, window.innerHeight);
     return Math.round(Math.max(120, Math.min(200, v * 0.34)) * 1.2);
   });
+  const titleGap = big >= 170 ? 64 : 44;
+
 
   // The landed face is always the seeded value for the round — the tumble only
   // decorates the approach to it, it never decides it.
@@ -132,9 +134,10 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(35, 31, 32, 0.75)",
+          background: "rgba(35, 31, 32, 0.80)",
         }}
       />
+
 
       <div
         style={{
@@ -152,8 +155,9 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
             position: "absolute",
             left: "50%",
             bottom: "100%",
-            marginBottom: 44,
+            marginBottom: titleGap,
             zIndex: 2,
+
 
             transform: "translateX(-50%)",
             whiteSpace: "nowrap",

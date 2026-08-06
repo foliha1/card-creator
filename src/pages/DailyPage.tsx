@@ -799,10 +799,6 @@ const DailyPage: React.FC = () => {
     }
   };
 
-  const playHint =
-    state.selected.length === 1
-      ? "Tap a second card to lock in the claim."
-      : "Tap the first card to select, then tap a second to lock in the claim.";
 
   const [ty, tm, td] = getLocalDateString().split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
@@ -1024,22 +1020,6 @@ const DailyPage: React.FC = () => {
                 ))}
               </DailyBoard>
 
-              <div
-                aria-live="polite"
-                style={{
-                  flex: "0 0 auto",
-                  width: gridWidth ? gridWidth : "100%",
-                  alignSelf: "center",
-                  ...textStyle("caption", mobile),
-                  fontFamily: FONT_FAMILY_UI,
-                  fontWeight: FONT_WEIGHT_UI,
-                  color: COLORS.inkMuted,
-                  textAlign: "center",
-                  minHeight: "1.4em",
-                }}
-              >
-                {phase === "PLAY" && !introUp ? playHint : "\u00A0"}
-              </div>
 
               {ghost.length > 0 && (
                 <DailyMatchGhost
