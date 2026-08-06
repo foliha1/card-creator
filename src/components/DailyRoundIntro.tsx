@@ -83,6 +83,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   }, [active, roundIndex, spun, landed, reduced]);
 
   // Enter on ROLL; on leave either cut (reduced motion) or fly to the header.
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
   useEffect(() => {
     if (active) {
       setVisible(true);
@@ -90,28 +92,27 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
       setFly(null);
       return;
     }
-    let cancelled = false;
-    setVisible((wasVisible) => {
-      if (!wasVisible) return false;
-      if (reduced) return false;
-      const el = dieRef.current;
-      const target = anchorRef.current;
-      if (!el || !target) return false;
-      const a = el.getBoundingClientRect();
-      const b = target.getBoundingClientRect();
-      if (a.width === 0) return false;
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-        setFly({ dx: b.left - a.left, dy: b.top - a.top, scale: smallSize / a.width });
-        setFlying(true);
-      });
-      return true;
+    if (!visibleRef.current) return;
+    const el = dieRef.current;
+    const target = anchorRef.current;
+    if (reduced || !el || !target) {
+      setVisible(false);
+      return;
+    }
+    const a = el.getBoundingClientRect();
+    const b = target.getBoundingClientRect();
+    if (a.width === 0) {
+      setVisible(false);
+      return;
+    }
+    let raf = requestAnimationFrame(() => {
+      setFly({ dx: b.left - a.left, dy: b.top - a.top, scale: smallSize / a.width });
+      setFlying(true);
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
+
 
   useEffect(() => {
     if (!flying) return;
