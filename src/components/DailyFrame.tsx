@@ -17,15 +17,17 @@ const DailyFrame: React.FC<{
   /** When true the content column takes all the space between the rules and
    *  never grows past it, so children can size themselves to fit. */
   fill?: boolean;
+  /** Page background tone. Gameplay uses `panel`; every other screen stays cream. */
+  tone?: "surface" | "panel";
   children?: React.ReactNode;
-}> = ({ gap = 24, fill = false, children }) => (
+}> = ({ gap = 24, fill = false, tone = "surface", children }) => (
   <div
     style={{
       position: "relative",
       minHeight: "100dvh",
       height: "100dvh",
       boxSizing: "border-box",
-      background: COLORS.surface,
+      background: tone === "panel" ? COLORS.panel : COLORS.surface,
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
