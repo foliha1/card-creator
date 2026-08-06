@@ -544,6 +544,76 @@ const DailyReadyScreen: React.FC<{
 );
 
 
+/**
+ * Card area that scales its cards to the space it is given instead of pushing
+ * the page taller. Same approach as the multiplayer board: measure the content
+ * box with a ResizeObserver, then take Math.min(byWidth, byHeight) so the real
+ * 5:7 card proportions are always preserved.
+ */
+const BOARD_COLS = 3;
+const BOARD_GAP = 8;
+const BOARD_RATIO = 7 / 5; // card height / card width
+const BOARD_MIN_CARD_W = 44;
+
+const DailyBoard: React.FC<{
+  rows: number;
+  children: React.ReactNode;
+}> = ({ rows, children }) => {
+  const ref = React.useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = (w: number, h: number) =>
+      setBox((prev) =>
+        Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5 ? prev : { w, h }
+      );
+    const rect = el.getBoundingClientRect();
+    apply(rect.width, rect.height);
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) apply(entry.contentRect.width, entry.contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const byWidth = (box.w - (BOARD_COLS - 1) * BOARD_GAP) / BOARD_COLS;
+  const byHeight = (box.h - (rows - 1) * BOARD_GAP) / rows / BOARD_RATIO;
+  const raw = Math.min(byWidth, byHeight);
+  const cardW = Math.floor(
+    Math.max(BOARD_MIN_CARD_W, Number.isFinite(raw) && raw > 0 ? raw : BOARD_MIN_CARD_W)
+  );
+  const cardH = Math.round(cardW * BOARD_RATIO);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        flex: "1 1 auto",
+        minHeight: 0,
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${BOARD_COLS}, ${cardW}px)`,
+          gridAutoRows: `${cardH}px`,
+          gap: BOARD_GAP,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
