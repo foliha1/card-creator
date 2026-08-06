@@ -4,7 +4,6 @@ import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
-import { MatchDie } from "@/components/MatchDie";
 import DailyRoundIntro from "@/components/DailyRoundIntro";
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
@@ -19,7 +18,6 @@ import {
   MISSES_PER_ROUND,
   remainingCount,
   type DailyMark,
-  type DailyPhase,
 } from "@/lib/dailyEngine";
 import { formatDailyShare, getLocalDateString, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
