@@ -242,14 +242,41 @@ const ShareBlock: React.FC<{
 
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
+  // Reuses the multiplayer roll-button sweep, once, no loop.
+  const sweep: React.CSSProperties | null =
+    sweepDelayMs === undefined
+      ? null
+      : {
+          pointerEvents: "none",
+          background: "#F8F2E9",
+          transformOrigin: "0 0",
+          animationIterationCount: 1,
+          animationDelay: `${sweepDelayMs}ms`,
+          animationFillMode: "both",
+          opacity: 0.5,
+        };
+
+  return (
+    <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
       <button
         type="button"
         className="ww-press"
         onClick={share}
         disabled={working}
-        style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
+        style={{
+          ...buttonStyle("primary", "lg", { mobile }),
+          alignSelf: "stretch",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
+        {sweep && (
+          <>
+            <span aria-hidden="true" className="ww-shine-thin" style={sweep} />
+            <span aria-hidden="true" className="ww-shine-wide" style={sweep} />
+          </>
+        )}
       </button>
     </div>
   );
