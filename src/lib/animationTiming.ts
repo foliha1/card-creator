@@ -29,7 +29,7 @@ export const DAILY_MATCH_SETTLE_MS =
   DAILY_MATCH_REVEAL_MS + DAILY_MATCH_HOLD_MS + DAILY_MATCH_GREAT_MS;
 
 /** Final beat after round 3: the remaining board is shown before the result. */
-export const DAILY_FINAL_REVEAL_MS = 800;
+export const DAILY_FINAL_REVEAL_MS = 1500;
 
 /** Cross-fade between daily screens (ready, gameplay, reveal, result). */
 export const DAILY_SCREEN_FADE_MS = 250;

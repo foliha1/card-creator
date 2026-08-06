@@ -53,6 +53,27 @@ const ATTR_LABEL: Record<string, string> = {
   COLOR: "Match the color",
 };
 
+// Results-screen entrance motion: block stagger and the per-mark sequence.
+const BLOCK_STAGGER_MS = 40;
+const BLOCK_IN_MS = 250;
+const MARK_STAGGER_MS = 70;
+const MARK_IN_MS = 180;
+/** Delay index of each block, in the order they arrive. */
+const RESULT_BLOCK = {
+  heading: 0,
+  message: 1,
+  stats: 2,
+  rounds: 3,
+  streak: 4,
+  share: 5,
+  email: 6,
+  done: 7,
+} as const;
+const blockIn = (block: keyof typeof RESULT_BLOCK): React.CSSProperties =>
+  ({ "--ww-res-delay": `${RESULT_BLOCK[block] * BLOCK_STAGGER_MS}ms` } as React.CSSProperties);
+/** Marks start once their block has landed. */
+const MARKS_BASE_DELAY_MS = RESULT_BLOCK.rounds * BLOCK_STAGGER_MS + BLOCK_IN_MS;
+
 /** Two markers for the current round, filled as its misses are spent. */
 const MissTracker: React.FC<{ used: number }> = ({ used }) => (
   <div
@@ -78,27 +99,54 @@ const MissTracker: React.FC<{ used: number }> = ({ used }) => (
 );
 
 /** One marker per resolved call in a round, in the order they happened. */
-const RoundMarks: React.FC<{ events: DailyMark[] }> = ({ events }) => (
-  <div style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}>
-    {events.length === 0 ? (
-      <span style={{ width: 20, height: 20, opacity: 0.3, border: BORDER.heavy, borderRadius: 999 }} />
-    ) : (
-      events.map((m, i) => (
-        <span
-          key={i}
-          title={m === "SOLVE" ? "Solved" : "Miss"}
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: m === "SOLVE" ? RADIUS.sm : 999,
-            border: BORDER.heavy,
-            background: m === "SOLVE" ? COLORS.ink : COLORS.red,
-          }}
-        />
-      ))
-    )}
-  </div>
-);
+const RoundMarks: React.FC<{
+  events: DailyMark[];
+  /** When set, each mark animates in with this running index as its offset. */
+  animateFrom?: number;
+  /** Delay of the first mark in the whole sequence. */
+  baseDelayMs?: number;
+}> = ({ events, animateFrom, baseDelayMs = 0 }) => {
+  const anim = (i: number): React.CSSProperties =>
+    animateFrom === undefined
+      ? {}
+      : ({
+          "--ww-mark-delay": `${baseDelayMs + (animateFrom + i) * MARK_STAGGER_MS}ms`,
+        } as React.CSSProperties);
+  const cls = animateFrom === undefined ? undefined : "ww-mark-in";
+  return (
+    <div style={{ display: "flex", gap: SPACE[2], alignItems: "center" }}>
+      {events.length === 0 ? (
+        <span className={cls} style={{ display: "inline-flex", ...anim(0) }}>
+          <span
+            style={{
+              width: 20,
+              height: 20,
+              opacity: 0.3,
+              border: BORDER.heavy,
+              borderRadius: 999,
+            }}
+          />
+        </span>
+      ) : (
+        events.map((m, i) => (
+          <span
+            key={i}
+            className={cls}
+            title={m === "SOLVE" ? "Solved" : "Miss"}
+            style={{
+              width: 20,
+              height: 20,
+              borderRadius: m === "SOLVE" ? RADIUS.sm : 999,
+              border: BORDER.heavy,
+              background: m === "SOLVE" ? COLORS.ink : COLORS.red,
+              ...anim(i),
+            }}
+          />
+        ))
+      )}
+    </div>
+  );
+};
 
 /**
  * Share block — renders the day's result as a PNG and shares it alongside the
@@ -109,7 +157,9 @@ const ShareBlock: React.FC<{
   result: DailyResult;
   streak: number | null;
   mobile: boolean;
-}> = ({ text, result, streak, mobile }) => {
+  /** When set, the multiplayer shine sweep runs once after this delay. */
+  sweepDelayMs?: number;
+}> = ({ text, result, streak, mobile, sweepDelayMs }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
 
@@ -190,6 +240,21 @@ const ShareBlock: React.FC<{
     flashCopied();
   };
 
+  // Reuses the multiplayer roll-button sweep, once, no loop.
+  const sweep: React.CSSProperties | null =
+    sweepDelayMs === undefined
+      ? null
+      : {
+          pointerEvents: "none",
+          background: "#F8F2E9",
+          transformOrigin: "0 0",
+          animationIterationCount: 1,
+          animationDuration: "1s",
+          animationDelay: `${sweepDelayMs}ms`,
+          animationFillMode: "both",
+          opacity: 0.5,
+        };
+
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
       <button
@@ -197,9 +262,20 @@ const ShareBlock: React.FC<{
         className="ww-press"
         onClick={share}
         disabled={working}
-        style={{ ...buttonStyle("primary", "lg", { mobile }), alignSelf: "stretch" }}
+        style={{
+          ...buttonStyle("primary", "lg", { mobile }),
+          alignSelf: "stretch",
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
+        {sweep && (
+          <>
+            <span aria-hidden="true" className="ww-shine-thin" style={sweep} />
+            <span aria-hidden="true" className="ww-shine-wide" style={sweep} />
+          </>
+        )}
       </button>
     </div>
   );
@@ -259,6 +335,16 @@ const DailyResultCard: React.FC<{
     </div>
   );
 
+  // Running index of each round's first mark, so the marks read as one
+  // left-to-right sequence across all three rounds.
+  const markOffsets: number[] = [];
+  let markCount = 0;
+  for (const events of roundEvents) {
+    markOffsets.push(markCount);
+    markCount += Math.max(1, events.length);
+  }
+  const sweepDelayMs = MARKS_BASE_DELAY_MS + markCount * MARK_STAGGER_MS + MARK_IN_MS;
+
   return (
     <div
       style={{
@@ -271,29 +357,44 @@ const DailyResultCard: React.FC<{
       }}
     >
 
-      <h1 style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
+      <h1
+        className="ww-res-in"
+        style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("heading") }}
+      >
         Daily Puzzle #{puzzleNumber}
       </h1>
-      <p style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}>
+      <p
+        className="ww-res-in"
+        style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, ...blockIn("message") }}
+      >
         {failed
           ? "Whooped! Better luck tomorrow."
           : revisit
             ? "Already played today. One puzzle a day — come back tomorrow."
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
-      <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+      <div
+        className="ww-res-in"
+        style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", ...blockIn("stats") }}
+      >
         {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
         {stat("Misses", `${totalMisses}`)}
       </div>
 
 
       {streak !== null && streak >= 1 && (
-        <p style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
+        <p
+          className="ww-res-in"
+          style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("streak") }}
+        >
           {formatStreakLine(streak)}
         </p>
       )}
 
-      <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2] }}>
+      <div
+        className="ww-res-in"
+        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[2], ...blockIn("rounds") }}
+      >
         {roundEvents.map((events, i) => (
           <div
             key={`round-${i}`}
@@ -311,17 +412,30 @@ const DailyResultCard: React.FC<{
               {peekUsed && peekRound === i + 1 ? " 👀" : ""}
             </span>
             <span style={{ marginLeft: "auto" }}>
-              <RoundMarks events={events} />
+              <RoundMarks
+                events={events}
+                animateFrom={markOffsets[i]}
+                baseDelayMs={MARKS_BASE_DELAY_MS}
+              />
             </span>
           </div>
         ))}
       </div>
 
-      <ShareBlock text={shareText} result={result} streak={streak} mobile={mobile} />
+      <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
+        <ShareBlock
+          text={shareText}
+          result={result}
+          streak={streak}
+          mobile={mobile}
+          sweepDelayMs={sweepDelayMs}
+        />
+      </div>
 
 
       {!hasSubscribed() && (
         <div
+          className="ww-res-in"
           style={{
             alignSelf: "stretch",
             border: BORDER.heavy,
@@ -329,6 +443,7 @@ const DailyResultCard: React.FC<{
             padding: SPACE[6],
             display: "flex",
             flexDirection: "column",
+            ...blockIn("email"),
           }}
         >
           <DailyEmailCapture />
@@ -337,9 +452,9 @@ const DailyResultCard: React.FC<{
 
       <button
         type="button"
-        className="ww-press"
+        className="ww-press ww-res-in"
         onClick={onLeave}
-        style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch" }}
+        style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch", ...blockIn("done") }}
       >
         DONE
       </button>
