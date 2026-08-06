@@ -240,20 +240,11 @@ const ShareBlock: React.FC<{
     flashCopied();
   };
 
-  // Reuses the multiplayer roll-button sweep, once, no loop.
+  // One-shot sweep: travels the full width and exits off the far edge.
   const sweep: React.CSSProperties | null =
     sweepDelayMs === undefined
       ? null
-      : {
-          pointerEvents: "none",
-          background: "#F8F2E9",
-          transformOrigin: "0 0",
-          animationIterationCount: 1,
-          animationDuration: "1s",
-          animationDelay: `${sweepDelayMs}ms`,
-          animationFillMode: "both",
-          opacity: 0.5,
-        };
+      : ({ "--ww-sweep-delay": `${sweepDelayMs}ms` } as React.CSSProperties);
 
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
@@ -270,12 +261,7 @@ const ShareBlock: React.FC<{
         }}
       >
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
-        {sweep && (
-          <>
-            <span aria-hidden="true" className="ww-shine-thin" style={sweep} />
-            <span aria-hidden="true" className="ww-shine-wide" style={sweep} />
-          </>
-        )}
+        {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
       </button>
     </div>
   );
@@ -361,7 +347,7 @@ const DailyResultCard: React.FC<{
         className="ww-res-in"
         style={{ ...textStyle("title", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("heading") }}
       >
-        Daily Puzzle #{puzzleNumber}
+        WHOOP! WHOOP! Daily #{puzzleNumber}
       </h1>
       <p
         className="ww-res-in"
@@ -440,6 +426,7 @@ const DailyResultCard: React.FC<{
             alignSelf: "stretch",
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
+            background: COLORS.orange,
             padding: SPACE[6],
             display: "flex",
             flexDirection: "column",
@@ -977,12 +964,12 @@ const DailyPage: React.FC = () => {
                         dealIndex={idx}
                         dealKey={daily.seed}
                         onClick={() => {
-                          hapticTap();
-                          // The second, distinct tap locks the claim — call it.
-                          if (state.selected.length === 1 && !state.selected.includes(idx)) {
-                            playWhoopCall();
-                          }
+                          // Paint the selection first; haptics and sound are
+                          // best-effort and can block, so they follow.
+                          const calls = state.selected.length === 1 && !state.selected.includes(idx);
                           daily.select(idx);
+                          hapticTap();
+                          if (calls) playWhoopCall();
                         }}
                       />
                     )}

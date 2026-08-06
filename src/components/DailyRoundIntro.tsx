@@ -17,12 +17,14 @@ import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import type { RollAttribute } from "@/lib/multiplayer";
 import { COLORS, FONT_SIZE, textStyle } from "@/lib/tokens";
 
+/** Fade-up of the scrim, round title and die before the tumble starts. */
+export const DAILY_FADE_IN_MS = 200;
 /** Tumble duration of the daily die. The single source of truth. */
 export const DAILY_TUMBLE_MS = 800;
 /** Pause on the landed face before the overlay fades out. */
 export const DAILY_HOLD_MS = 2000;
 /** Total ROLL phase duration used by the daily engine. */
-export const DAILY_ROLL_HERO_MS = DAILY_TUMBLE_MS + DAILY_HOLD_MS;
+export const DAILY_ROLL_HERO_MS = DAILY_FADE_IN_MS + DAILY_TUMBLE_MS + DAILY_HOLD_MS;
 /** Fade-out duration once the hold ends. */
 const FADE_MS = 320;
 
@@ -56,6 +58,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   const [reduced] = useState(prefersReducedMotion);
   const [visible, setVisible] = useState(active);
   const [fading, setFading] = useState(false);
+  /** False for the first frames: everything fades up before the tumble. */
+  const [entered, setEntered] = useState(false);
 
   const [big] = useState(() => {
     if (typeof window === "undefined") return 202;
@@ -71,11 +75,12 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   const spun = `rotateX(${dir * (spins * 360 + 140)}deg) rotateY(${-dir * (spins * 360 + 55)}deg)`;
   const [rotation, setRotation] = useState(reduced ? landed : spun);
 
+  // The tumble only begins once the fade-in has finished.
   useEffect(() => {
     if (!active || reduced) return;
     setRotation(spun);
-    const id = requestAnimationFrame(() => setRotation(landed));
-    return () => cancelAnimationFrame(id);
+    const t = window.setTimeout(() => setRotation(landed), DAILY_FADE_IN_MS);
+    return () => window.clearTimeout(t);
   }, [active, roundIndex, spun, landed, reduced]);
 
   // Enter on ROLL; on leave fade the whole overlay out.
@@ -85,13 +90,15 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
     if (active) {
       setVisible(true);
       setFading(false);
-      return;
+      setEntered(false);
+      const raf = requestAnimationFrame(() => setEntered(true));
+      return () => cancelAnimationFrame(raf);
     }
     if (!visibleRef.current) return;
     const raf = requestAnimationFrame(() => setFading(true));
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, roundIndex]);
 
   useEffect(() => {
     if (!fading) return;
@@ -116,8 +123,8 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
         inset: 0,
         zIndex: 60,
         pointerEvents: "none",
-        opacity: fading ? 0 : 1,
-        transition: `opacity ${FADE_MS}ms ease`,
+        opacity: fading || !entered ? 0 : 1,
+        transition: `opacity ${fading ? FADE_MS : DAILY_FADE_IN_MS}ms ease`,
       }}
     >
       {/* Dim, not hide: the cards stay visible underneath as faint shapes. */}
