@@ -765,7 +765,7 @@ const DailyPage: React.FC = () => {
                   </div>
                   <div
                     aria-live="polite"
-                    style={{ ...textStyle("display", mobile), color: COLORS.ink, fontVariantNumeric: "tabular-nums" }}
+                    style={{ ...textStyle("title", mobile), color: COLORS.ink, fontVariantNumeric: "tabular-nums" }}
                   >
                     {readout}
                   </div>
