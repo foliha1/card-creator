@@ -115,7 +115,7 @@ export function useDailyGame(): UseDailyGameResult {
     if (state.phase !== "ROLL") return;
     const t = setTimeout(
       () => dispatch({ type: "PLAY_START", at: Date.now() }),
-      ROLL_HERO_MS
+      DAILY_ROLL_HERO_MS
     );
     return () => clearTimeout(t);
   }, [state.phase]);
