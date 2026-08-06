@@ -571,10 +571,8 @@ const DailyReadyScreen: React.FC<{
           Play Today's Daily
         </button>
       </div>
-    </div>
+  </DailyFrame>
 
-    <DailyShapeRule />
-  </div>
 );
 
 
