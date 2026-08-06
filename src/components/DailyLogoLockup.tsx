@@ -3,7 +3,13 @@ import type { LottieRefCurrentProps } from "lottie-react";
 import lockupAsset from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
 import animationAsset from "@/assets/whoop-daily-logo.json.asset.json";
 
-const Lottie = React.lazy(() => import("lottie-react").then((m) => ({ default: m.default })));
+// A failed chunk fetch (stale build, flaky network) must never blank the page:
+// resolve to a no-op so the static lockup stays on screen.
+const Lottie = React.lazy(() =>
+  import("lottie-react")
+    .then((m) => ({ default: m.default }))
+    .catch(() => ({ default: (() => null) as unknown as typeof import("lottie-react").default })),
+);
 
 // Preload both the player chunk and the animation JSON as soon as this module is
 // imported, so the swap from static to animated happens as early as possible.
