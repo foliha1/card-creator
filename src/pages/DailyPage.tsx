@@ -36,7 +36,6 @@ import {
   textStyle,
 } from "@/lib/tokens";
 
-const TUMBLE_MS = 800;
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
   NUMBER: "Match the number",
@@ -44,33 +43,22 @@ const ATTR_LABEL: Record<string, string> = {
 };
 
 /**
- * The die. Hidden behind a blank until the first roll, so the round's rule can
- * never leak while the board is still face up — the whole point of the mode.
+ * The resting die in the header. Hidden behind a blank until the first roll, so
+ * the round's rule can never leak while the board is still face up — the whole
+ * point of the mode. The roll itself belongs to DailyRoundIntro; here the die is
+ * inert and only reminds the player of the rule.
  */
 const DailyDie: React.FC<{
   phase: DailyPhase;
   roundIndex: number;
   attribute: "SHAPE" | "NUMBER" | "COLOR";
   faceIndex: 0 | 1;
-  tumbleSeed: number;
   size: number;
-}> = ({ phase, roundIndex, attribute, faceIndex, tumbleSeed, size }) => {
-  const landed = landedRotationFor(attribute, faceIndex);
-  const spins = 2 + (tumbleSeed & 1);
-  const dir = (tumbleSeed >> 2) & 1 ? 1 : -1;
-  const spun = `rotateX(${dir * (spins * 360 + 140)}deg) rotateY(${-dir * (spins * 360 + 55)}deg)`;
-  const [rotation, setRotation] = useState(spun);
-
-  useEffect(() => {
-    if (phase !== "ROLL") return;
-    setRotation(spun);
-    const id = requestAnimationFrame(() => setRotation(landed));
-    return () => cancelAnimationFrame(id);
-  }, [phase, roundIndex, spun, landed]);
-
+  /** True while the round intro overlay owns the die. */
+  hidden: boolean;
+}> = ({ phase, roundIndex, attribute, faceIndex, size, hidden }) => {
   const preRoll =
     roundIndex === 1 && (phase === "DEAL" || phase === "STUDY" || phase === "HIDE");
-  const rolling = phase === "ROLL";
 
   if (preRoll) {
     return (
@@ -95,17 +83,12 @@ const DailyDie: React.FC<{
   }
 
   return (
-    <div style={{ transform: rolling ? "scale(1.6)" : "scale(1)", transition: `transform 300ms ease` }}>
-      <MatchDie
-        size={size}
-        attribute={attribute}
-        faceIndex={faceIndex}
-        rotation={rotation}
-        transition={rolling ? `transform ${TUMBLE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)` : undefined}
-      />
+    <div style={{ visibility: hidden ? "hidden" : "visible" }}>
+      <MatchDie size={size} attribute={attribute} faceIndex={faceIndex} />
     </div>
   );
 };
+
 
 /** Two markers for the current round, filled as its misses are spent. */
 const MissTracker: React.FC<{ used: number }> = ({ used }) => (
