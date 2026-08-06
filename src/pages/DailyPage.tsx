@@ -692,7 +692,7 @@ const DailyPage: React.FC = () => {
 
 
       <DailyScreenFade
-        screenKey={finished ? "result" : ready ? "ready" : finalReveal ? "reveal" : "play"}
+        screenKey={finished ? "result" : ready ? "ready" : "play"}
         background={finished || ready ? COLORS.surface : COLORS.panel}
       >
         {daily.debugBypass && (
