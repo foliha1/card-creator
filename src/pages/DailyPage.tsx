@@ -632,8 +632,8 @@ const DailyPage: React.FC = () => {
     }
   })();
 
-  const canClaim = phase === "PLAY" && !state.claiming && !state.peeking;
-  const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
+  // During PLAY a card tap *is* the claim: no button, no intermediate states.
+  const cardsTappable = phase === "PLAY" && !state.peeking && state.selected.length < 2;
   const [ty, tm, td] = getLocalDateString().split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
