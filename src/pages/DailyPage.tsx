@@ -1091,9 +1091,11 @@ const DailyPage: React.FC = () => {
                           // best-effort and can block, so they follow.
                           const calls = state.selected.length === 1 && !state.selected.includes(idx);
                           const selects = state.selected.length === 0;
+                          const deselects = state.selected.includes(idx);
                           daily.select(idx);
                           hapticTap();
                           if (calls) playWhoopCall();
+                          else if (deselects) playDeselect();
                           else if (selects) playSelect();
                         }}
 
