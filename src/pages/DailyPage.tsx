@@ -374,43 +374,20 @@ const DailyResultCard: React.FC<{
 
       <SharePills text={shareText} />
 
-      <div
-        style={{
-          alignSelf: "stretch",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: SPACE[2],
-        }}
-      >
-        <p
+      {!hasSubscribed() && (
+        <div
           style={{
-            ...textStyle("subhead", mobile),
-            color: COLORS.ink,
-            textAlign: "center",
-            margin: 0,
+            alignSelf: "stretch",
+            border: BORDER.heavy,
+            borderRadius: RADIUS.sm,
+            padding: SPACE[6],
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          Liked that? The full game has a table, an opponent, and a lot more shouting.
-        </p>
-        <Link
-          to="/play"
-          style={{
-            ...textStyle("body", mobile),
-            color: COLORS.blue,
-            textAlign: "center",
-            textDecoration: "underline",
-            textUnderlineOffset: 3,
-          }}
-        >
-          Play the full game
-        </Link>
-      </div>
-
-      {!hasSubscribed() && <DailyEmailCapture />}
-
-
-
+          <DailyEmailCapture />
+        </div>
+      )}
 
       <button
         type="button"
@@ -418,7 +395,7 @@ const DailyResultCard: React.FC<{
         onClick={onLeave}
         style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch" }}
       >
-        BACK TO GAMES
+        DONE
       </button>
     </div>
   );
