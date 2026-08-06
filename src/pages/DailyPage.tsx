@@ -632,8 +632,8 @@ const DailyPage: React.FC = () => {
     }
   })();
 
-  const canClaim = phase === "PLAY" && !state.claiming && !state.peeking;
-  const cardsTappable = phase === "PLAY" && state.claiming && state.selected.length < 2;
+  // During PLAY a card tap *is* the claim: no button, no intermediate states.
+  const cardsTappable = phase === "PLAY" && !state.peeking && state.selected.length < 2;
   const [ty, tm, td] = getLocalDateString().split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
@@ -829,7 +829,7 @@ const DailyPage: React.FC = () => {
                       key={card.id}
                       card={card}
                       fill
-                      faceUp={state.faceUp || state.revealPair.includes(idx)}
+                      faceUp={state.faceUp}
                       highlighted={state.selected.includes(idx)}
                       matched={state.matchedPair.includes(idx)}
                       wrong={state.wrongPair.includes(idx)}
@@ -838,52 +838,16 @@ const DailyPage: React.FC = () => {
                       dealKey={daily.seed}
                       onClick={() => {
                         hapticTap();
+                        // The second, distinct tap locks the claim — call it.
+                        if (state.selected.length === 1 && !state.selected.includes(idx)) {
+                          playWhoopCall();
+                        }
                         daily.select(idx);
                       }}
                     />
                   )
                 )}
               </DailyBoard>
-
-              <div style={{ flex: "0 0 auto" }}>
-              {state.claiming ? (
-                <button
-                  type="button"
-                  className="ww-press"
-                  onClick={daily.cancelClaim}
-                  disabled={state.selected.length > 0}
-                  style={{
-                    ...buttonStyle("ink", "lg", {
-                      mobile,
-                      fullWidth: true,
-                      disabled: state.selected.length > 0,
-                    }),
-                  }}
-                >
-                  {state.selected.length > 0 ? "PICK YOUR PAIR" : "CANCEL MATCH"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="ww-press"
-                  disabled={!canClaim}
-                  onClick={() => {
-                    hapticTap();
-                    playWhoopCall();
-                    daily.claim();
-                  }}
-                  style={{
-                    ...buttonStyle("primary", "lg", {
-                      mobile,
-                      fullWidth: true,
-                      disabled: !canClaim,
-                    }),
-                  }}
-                >
-                  WHOOP! WHOOP!
-                </button>
-              )}
-              </div>
             </div>
           )}
 
