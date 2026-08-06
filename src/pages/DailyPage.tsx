@@ -4,7 +4,9 @@ import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
-import { MatchDie, landedRotationFor } from "@/components/MatchDie";
+import { MatchDie } from "@/components/MatchDie";
+import DailyRoundIntro from "@/components/DailyRoundIntro";
+
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
 import { hasSubscribed } from "@/lib/dailySubscribe";
