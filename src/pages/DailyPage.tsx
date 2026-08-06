@@ -30,7 +30,6 @@ import { playCorrect, playDeal, playDiceRoll, playWhoopCall, playWrong } from "@
 import {
   BORDER,
   COLORS,
-  FONT_FAMILY,
   RADIUS,
   SPACE,
   buttonStyle,
@@ -696,6 +695,7 @@ const DailyPage: React.FC = () => {
         {ready && (
           <>
             <DailyReadyScreen
+              mobile={mobile}
               today={today}
               streak={streak?.current ?? null}
               played={playedToday}
