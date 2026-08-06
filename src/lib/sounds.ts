@@ -70,7 +70,8 @@ type ClipName =
   | "wrong"
   | "whoop"
   | "peek"
-  | "reveal";
+  | "reveal"
+  | "start";
 
 const CLIP_FILES: Record<ClipName, string> = {
   flip: "/sounds/flip.mp3",
@@ -82,6 +83,7 @@ const CLIP_FILES: Record<ClipName, string> = {
   // NOTE: the shipped file is spelled peak.mp3.
   peek: "/sounds/peak.mp3",
   reveal: "/sounds/reveal.mp3",
+  start: "/sounds/start.mp3",
 };
 
 /** Single place to tune the mix. `correct` is the loudest thing in the app. */
@@ -94,7 +96,9 @@ export const CLIP_GAIN: Record<ClipName, number> = {
   correct: 1.0,
   peek: 0.45,
   reveal: 0.55,
+  start: 0.7,
 };
+
 
 /** Gain for the placeholder select cue (a detuned flip). */
 const SELECT_GAIN = 0.3;
