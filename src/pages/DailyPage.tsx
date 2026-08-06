@@ -773,18 +773,21 @@ const DailyPage: React.FC = () => {
               style={{
                 width: "100%",
                 alignSelf: "stretch",
+                flex: "1 1 auto",
+                minHeight: 0,
                 display: "flex",
                 flexDirection: "column",
-                gap: SPACE[5],
+                gap: SPACE[4],
               }}
             >
 
               <div
                 style={{
+                  flex: "0 0 auto",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: SPACE[4],
+                  gap: SPACE[3],
                 }}
               >
                 <div>
@@ -801,30 +804,52 @@ const DailyPage: React.FC = () => {
                     <MissTracker used={state.roundMisses} />
                   </div>
                 </div>
-                <DailyDie
-                  phase={phase}
-                  roundIndex={state.roundIndex}
-                  attribute={daily.roll.attribute}
-                  faceIndex={daily.roll.faceIndex}
-                  tumbleSeed={daily.tumbleSeed}
-                  size={56}
-                />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: SPACE[2],
+                    flex: "0 0 auto",
+                  }}
+                >
+                  <DailyDie
+                    phase={phase}
+                    roundIndex={state.roundIndex}
+                    attribute={daily.roll.attribute}
+                    faceIndex={daily.roll.faceIndex}
+                    tumbleSeed={daily.tumbleSeed}
+                    size={56}
+                  />
+                  <button
+                    type="button"
+                    className="ww-press"
+                    disabled={!daily.canPeek}
+                    onClick={() => {
+                      hapticTap();
+                      daily.peek();
+                    }}
+                    style={{
+                      ...buttonStyle("ink", "sm", {
+                        mobile,
+                        disabled: !daily.canPeek,
+                      }),
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
+                  </button>
+                </div>
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: SPACE[3],
-                }}
-              >
+              <DailyBoard rows={Math.max(1, Math.ceil(state.grid.length / 3))}>
                 {state.grid.map((card, idx) =>
                   card === null ? (
                     <div
                       key={`empty-${idx}`}
                       aria-hidden="true"
                       style={{
-                        aspectRatio: "2 / 3",
+                        height: "100%",
                         borderRadius: RADIUS.sm,
                         border: `2px dashed ${COLORS.inkMuted}`,
                         opacity: 0.25,
@@ -834,6 +859,7 @@ const DailyPage: React.FC = () => {
                     <GameCard
                       key={card.id}
                       card={card}
+                      fill
                       faceUp={state.faceUp || state.revealPair.includes(idx)}
                       highlighted={state.selected.includes(idx)}
                       matched={state.matchedPair.includes(idx)}
@@ -848,8 +874,9 @@ const DailyPage: React.FC = () => {
                     />
                   )
                 )}
-              </div>
+              </DailyBoard>
 
+              <div style={{ flex: "0 0 auto" }}>
               {state.claiming ? (
                 <button
                   type="button"
@@ -887,40 +914,10 @@ const DailyPage: React.FC = () => {
                   WHOOP! WHOOP!
                 </button>
               )}
-
-              <button
-                type="button"
-                className="ww-press"
-                disabled={!daily.canPeek}
-                onClick={() => {
-                  hapticTap();
-                  daily.peek();
-                }}
-                style={{
-                  ...buttonStyle("ink", "md", {
-                    mobile,
-                    fullWidth: true,
-                    disabled: !daily.canPeek,
-                  }),
-                }}
-              >
-                {state.peekUsed ? "PEEK USED" : "PEEK (5s)"}
-              </button>
-
-              <p
-                style={{
-                  ...textStyle("caption", mobile),
-                  color: COLORS.inkMuted,
-                  margin: 0,
-                  textAlign: "center",
-                }}
-              >
-                {phase === "PLAY"
-                  ? `${ATTR_LABEL[daily.roll.attribute]} — ${MISSES_PER_ROUND - state.roundMisses} misses left this round.`
-                  : "Nine cards, ten seconds. Then the die decides each round's rule."}
-              </p>
+              </div>
             </div>
           )}
+
         </DailyFrame>
         )}
       </div>
