@@ -5,6 +5,8 @@ import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import DailyRoundIntro from "@/components/DailyRoundIntro";
+import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
+
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
