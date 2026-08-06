@@ -307,6 +307,16 @@ const DailyResultCard: React.FC<{
     </div>
   );
 
+  // Running index of each round's first mark, so the marks read as one
+  // left-to-right sequence across all three rounds.
+  const markOffsets: number[] = [];
+  let markCount = 0;
+  for (const events of roundEvents) {
+    markOffsets.push(markCount);
+    markCount += Math.max(1, events.length);
+  }
+  const sweepDelayMs = MARKS_BASE_DELAY_MS + markCount * MARK_STAGGER_MS + MARK_IN_MS;
+
   return (
     <div
       style={{
