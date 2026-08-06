@@ -1070,3 +1070,25 @@ All colors MUST be HSL.
   @keyframes ww-mark-in { from { opacity: 0; } to { opacity: 1; } }
   .ww-res-in, .ww-mark-in { animation-delay: 0ms; }
 }
+
+/* ── One-shot sweep across a button: enters fully off the left edge and exits
+      fully off the right, so no gradient edge is ever parked visible. ── */
+.ww-sweep-once {
+  position: absolute;
+  top: -50%;
+  left: 0;
+  width: 40%;
+  height: 200%;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(248,242,233,0) 0%, rgba(248,242,233,0.55) 50%, rgba(248,242,233,0) 100%);
+  transform: translateX(-160%) skewX(-20deg);
+  animation: ww-sweep-once 900ms cubic-bezier(0.4, 0, 0.2, 1) var(--ww-sweep-delay, 0ms) 1 both;
+}
+@keyframes ww-sweep-once {
+  from { transform: translateX(-160%) skewX(-20deg); opacity: 1; }
+  99%  { opacity: 1; }
+  to   { transform: translateX(310%) skewX(-20deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ww-sweep-once { animation: none; opacity: 0; }
+}
