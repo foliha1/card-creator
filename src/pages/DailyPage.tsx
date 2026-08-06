@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
-import DailyShapeRule from "@/components/DailyShapeRule";
+import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import PreGameShell from "@/components/PreGameShell";
