@@ -337,8 +337,8 @@ const DailyResultCard: React.FC<{
       <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
         {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
         {stat("Misses", `${totalMisses}`)}
-        {stat("Peek", peekUsed ? `R${peekRound ?? "?"}` : "Unused")}
       </div>
+
 
       {streak !== null && streak >= 1 && (
         <p style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0 }}>
