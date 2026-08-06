@@ -588,6 +588,7 @@ const DailyPage: React.FC = () => {
   const { state, phase } = daily;
   const leave = () => navigate("/");
   const [howTo, setHowTo] = useState(false);
+  const [showResult, setShowResult] = useState(false);
   // Read after the run is persisted so today counts toward the streak.
   const streak = useDailyStreak(
     daily.puzzleNumber,
