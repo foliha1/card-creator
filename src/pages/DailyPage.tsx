@@ -157,7 +157,9 @@ const ShareBlock: React.FC<{
   result: DailyResult;
   streak: number | null;
   mobile: boolean;
-}> = ({ text, result, streak, mobile }) => {
+  /** When set, the multiplayer shine sweep runs once after this delay. */
+  sweepDelayMs?: number;
+}> = ({ text, result, streak, mobile, sweepDelayMs }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
 
