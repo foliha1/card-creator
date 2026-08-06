@@ -844,46 +844,6 @@ const DailyPage: React.FC = () => {
                   )
                 )}
               </DailyBoard>
-
-              <div style={{ flex: "0 0 auto" }}>
-              {state.claiming ? (
-                <button
-                  type="button"
-                  className="ww-press"
-                  onClick={daily.cancelClaim}
-                  disabled={state.selected.length > 0}
-                  style={{
-                    ...buttonStyle("ink", "lg", {
-                      mobile,
-                      fullWidth: true,
-                      disabled: state.selected.length > 0,
-                    }),
-                  }}
-                >
-                  {state.selected.length > 0 ? "PICK YOUR PAIR" : "CANCEL MATCH"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="ww-press"
-                  disabled={!canClaim}
-                  onClick={() => {
-                    hapticTap();
-                    playWhoopCall();
-                    daily.claim();
-                  }}
-                  style={{
-                    ...buttonStyle("primary", "lg", {
-                      mobile,
-                      fullWidth: true,
-                      disabled: !canClaim,
-                    }),
-                  }}
-                >
-                  WHOOP! WHOOP!
-                </button>
-              )}
-              </div>
             </div>
           )}
 
