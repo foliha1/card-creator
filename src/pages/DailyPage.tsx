@@ -44,10 +44,14 @@ import {
   playPeek,
   playReveal,
   playSelect,
+  playStart,
   playWhoopCall,
   playWrong,
+  startTheme,
+  stopTheme,
   unlockAudio,
 } from "@/lib/sounds";
+
 import {
   BORDER,
   COLORS,
