@@ -20,7 +20,7 @@ import {
   type DailyRoll,
   type DailyState,
 } from "@/lib/dailyEngine";
-import { ROLL_HERO_MS } from "@/lib/multiplayer";
+import { DAILY_ROLL_HERO_MS } from "@/components/DailyRoundIntro";
 import { pickTumbleSeed } from "@/lib/rolls";
 import {
   getDailyNumber,
