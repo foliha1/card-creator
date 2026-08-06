@@ -536,6 +536,35 @@ const DailyPage: React.FC = () => {
     daily.resultSaved || daily.result === null
   );
 
+  // --- correct-match ghost layer ---------------------------------------
+  // The engine empties the solved slots the instant the claim resolves, so the
+  // reward is played by copies pinned over the slots the pair just left. The
+  // capture effect is declared BEFORE the board bookkeeping effect below so it
+  // still sees the pre-removal board and the slots' live rects.
+  const [ghost, setGhost] = useState<GhostCard[]>([]);
+  const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+  const boardRef = React.useRef(state.grid);
+
+  useEffect(() => {
+    if (state.matchedPair.length !== 2) return;
+    const copies = state.matchedPair.flatMap<GhostCard>((i) => {
+      const el = slotRefs.current[i];
+      const card = boardRef.current[i];
+      if (!el || !card) return [];
+      const r = el.getBoundingClientRect();
+      return [{
+        key: `${state.roundIndex}-${i}`,
+        card,
+        rect: { top: r.top, left: r.left, width: r.width, height: r.height },
+      }];
+    });
+    if (copies.length) setGhost(copies);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.matchedPair.length, state.roundIndex]);
+
+  useEffect(() => {
+    boardRef.current = state.grid;
+  }, [state.grid]);
 
   // --- sound + haptic cues, driven off phase / counters ---
   useEffect(() => {
@@ -551,15 +580,21 @@ const DailyPage: React.FC = () => {
 
   useEffect(() => {
     if (state.matchedPair.length === 0) return;
-    playCorrect();
-    hapticSuccess();
+    // Land the chime with the ghost treatment, not with the reveal.
+    const t = setTimeout(() => {
+      playCorrect();
+      hapticSuccess();
+    }, DAILY_MATCH_REVEAL_MS + DAILY_MATCH_HOLD_MS + GREAT_MATCH_DELAY_MS);
+    return () => clearTimeout(t);
   }, [state.matchedPair.length, state.roundIndex]);
 
+  // The result screen waits for the final pair to finish leaving the board.
   useEffect(() => {
-    if (phase !== "DONE") return;
+    if (phase !== "DONE" || ghost.length > 0) return;
     hapticSuccess();
     setShowResult(true);
-  }, [phase]);
+  }, [phase, ghost.length]);
+
 
   const playedToday = daily.result !== null && (daily.alreadyPlayed || phase === "DONE");
   const finished = playedToday && showResult;
