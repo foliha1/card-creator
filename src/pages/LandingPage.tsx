@@ -25,6 +25,7 @@ const subheadStyle: React.CSSProperties = {
 const bodyStyle: React.CSSProperties = {
   margin: 0,
   fontFamily: GEIST,
+  fontWeight: 500,
   lineHeight: 1.45,
   color: COLORS.ink,
 };

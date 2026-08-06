@@ -7,6 +7,7 @@ const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans
 
 const bodyStyle: React.CSSProperties = {
   fontFamily: GEIST,
+  fontWeight: 500,
   fontSize: 14,
   lineHeight: 1.45,
   color: COLORS.ink,

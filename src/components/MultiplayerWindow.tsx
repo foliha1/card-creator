@@ -1051,6 +1051,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
           style={{
             margin: 0,
             fontFamily: '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif',
+            fontWeight: 500,
             fontSize: 14,
             lineHeight: 1.45,
             color: COLORS.inkMuted,
