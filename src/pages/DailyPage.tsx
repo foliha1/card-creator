@@ -34,6 +34,7 @@ import {
   SPACE,
   buttonStyle,
   textStyle,
+  FONT_FAMILY_UI,
 } from "@/lib/tokens";
 
 const ATTR_LABEL: Record<string, string> = {
