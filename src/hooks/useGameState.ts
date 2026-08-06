@@ -124,7 +124,7 @@ export type Phase =
 //   great match = 300ms delay + 1000ms duration = 1300ms
 //   wrong       =   0ms delay +  900ms duration =  900ms
 export const SETTLE_MATCH_MS = 1300;
-export const SETTLE_WRONG_MS = 900;
+export const SETTLE_WRONG_MS = 1000;
 
 
 type InFlight =
