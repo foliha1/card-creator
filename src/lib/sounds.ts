@@ -443,16 +443,20 @@ export function playFlip(): void {
   run((b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
 }
 
-export function playDeal(count: number = 1): void {
-  const n = Math.max(1, Math.floor(count));
-  const step = SFX_DEAL_STEP_MS / 1000;
+/**
+ * One cue for a whole batch of cards arriving, however many there are. `count`
+ * is kept for call-site compatibility but no longer multiplies the sound, and
+ * repeat calls inside DEAL_DEDUPE_MS collapse into the first one.
+ */
+const DEAL_DEDUPE_MS = 250;
+let lastDealAt = 0;
+export function playDeal(_count: number = 1): void {
+  const now = Date.now();
+  if (now - lastDealAt < DEAL_DEDUPE_MS) return;
+  lastDealAt = now;
   run((b) => {
-    for (let i = 0; i < n; i++) {
-      // One click per card, on the same cadence the cards land with.
-      const at = i * step * jitter(0.06);
-      flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, rand(0.8, 1.1));
-      thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, rand(0.3, 0.45));
-    }
+    flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, 0, 1);
+    thump(b.ctx, b.t0, CLIP_GAIN.deal, 0.012, 320, 0.07, 0.4);
   });
 }
 
