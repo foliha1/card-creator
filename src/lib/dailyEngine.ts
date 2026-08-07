@@ -177,13 +177,22 @@ export function initDailyState(seed: string, rngIn?: Rng): DailyState {
   for (let attempt = 0; attempt < 500; attempt++) {
     const candidate: DailyRoll[] = [];
     for (let r = 0; r < DAILY_ROUNDS; r++) {
-      candidate.push(pickRoll(DAILY_ROLL_ATTRS, rng));
+      // Draw from the one continuous seeded stream, re-rolling until the
+      // attribute differs from the previous round's. Without this a day can
+      // land the same rule three times running, which reads as a broken die.
+      let roll = pickRoll(DAILY_ROLL_ATTRS, rng);
+      for (let guard = 0; guard < 50; guard++) {
+        if (r === 0 || roll.attribute !== candidate[r - 1].attribute) break;
+        roll = pickRoll(DAILY_ROLL_ATTRS, rng);
+      }
+      candidate.push(roll);
     }
     if (rollsAreSolvable(grid, candidate)) {
       rolls = candidate;
       break;
     }
   }
+
   if (rolls.length === 0) {
     // Fallback: with 9 of 48 distinct cards this is unreachable in practice.
     rolls = Array.from({ length: DAILY_ROUNDS }, () => ({

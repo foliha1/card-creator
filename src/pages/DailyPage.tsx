@@ -30,6 +30,8 @@ import { formatStreakLine } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
 import {
   DAILY_MATCH_HOLD_MS,
+  DAILY_MATCH_SETTLE_MS,
+
   DAILY_MATCH_REVEAL_MS,
   DAILY_FINAL_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
@@ -682,7 +684,12 @@ const DailyPage: React.FC = () => {
   const [ghost, setGhost] = useState<GhostCard[]>([]);
   // Set synchronously with the capture so the DONE gate below never sees a
   // stale empty `ghost` on the round-3 solve and skips the success sequence.
+  // Mirrored into state so clearing it re-runs the DONE effect: a ref alone
+  // could leave the run stuck if the ghost's callback landed on a commit where
+  // `ghost.length` was already 0.
   const ghostPendingRef = React.useRef(false);
+  const [ghostPending, setGhostPending] = useState(false);
+
   const [finalReveal, setFinalReveal] = useState(false);
   const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const boardRef = React.useRef(state.grid);
@@ -702,8 +709,10 @@ const DailyPage: React.FC = () => {
     });
     if (copies.length) {
       ghostPendingRef.current = true;
+      setGhostPending(true);
       setGhost(copies);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
 
@@ -779,7 +788,7 @@ const DailyPage: React.FC = () => {
   // whole sequence instead of cutting to the ready/result screens.
   const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
-    if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
+    if (phase !== "DONE" || ghost.length > 0 || ghostPending) return;
     setFinalReveal(true);
     playReveal();
 
@@ -789,7 +798,24 @@ const DailyPage: React.FC = () => {
       setShowResult(true);
     }, DAILY_FINAL_REVEAL_MS);
     return () => clearTimeout(t);
-  }, [phase, ghost.length]);
+  }, [phase, ghost.length, ghostPending]);
+
+  // Safety net: whatever happens to the ghost layer (an unmount mid-flight, a
+  // dropped callback, a cancelled timer), a finished run always reaches the
+  // result screen. Runs on a single hard clock from DONE.
+  useEffect(() => {
+    if (phase !== "DONE") return;
+    const t = setTimeout(() => {
+      ghostPendingRef.current = false;
+      setGhostPending(false);
+      setGhost([]);
+      setFinalReveal(true);
+      setRunSettled(true);
+      setShowResult(true);
+    }, DAILY_MATCH_SETTLE_MS + DAILY_FINAL_REVEAL_MS + 1000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
 
 
   const playedToday =
@@ -1135,8 +1161,10 @@ const DailyPage: React.FC = () => {
                   pair={ghost}
                   onDone={() => {
                     ghostPendingRef.current = false;
+                    setGhostPending(false);
                     setGhost([]);
                   }}
+
                 />
               )}
 
