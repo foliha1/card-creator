@@ -131,11 +131,11 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <X size={24} strokeWidth={2.5} />
         </button>
 
-        <h2 style={friend(36, true)}>How to Play</h2>
+        <h2 style={friend(36, true, scale)}>How to Play</h2>
 
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <h3 style={friend(24)}>Find 3 matching pairs from memory.</h3>
-          <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
+          <h3 style={friend(24, false, scale)}>Find 3 matching pairs from memory.</h3>
+          <ul style={{ ...geist(scale), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
             <li>All cards show for 10 seconds. Study them.</li>
             <li>The cards flip over. Then the die decides what a match means.</li>
             <li>Tap WHOOP! WHOOP!, then tap two cards.</li>
@@ -143,7 +143,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </section>
 
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <h3 style={friend(24)}>The Die:</h3>
+          <h3 style={friend(24, false, scale)}>The Die:</h3>
           <div
             style={{
               display: "flex",
@@ -176,14 +176,14 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </div>
             ))}
           </div>
-          <p style={geist()}>
+          <p style={geist(scale)}>
             The die rolls again after every round. The cards do not move. What matters about them does.
           </p>
         </section>
 
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <h3 style={friend(24)}>Three Rounds:</h3>
-          <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
+          <h3 style={friend(24, false, scale)}>Three Rounds:</h3>
+          <ul style={{ ...geist(scale), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
             <li>Each round takes one pair off the board. Nine cards, then seven, then five.</li>
             <li>Two misses ends a round.</li>
             <li>One Peek per game shows the board for 5 seconds. It shows up in your score.</li>
