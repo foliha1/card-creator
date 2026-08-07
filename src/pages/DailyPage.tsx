@@ -817,39 +817,31 @@ const DailyPage: React.FC = () => {
     playPeek();
   }, [state.peeking]);
 
-  // Round 3 runs the identical success sequence: the pair flips up, holds, the
-  // ghost treatment plays and the cards exit. Only then does the board reveal
-  // and the result screen open. `runSettled` keeps the board on screen for the
-  // whole sequence instead of cutting to the ready/result screens.
+  // End of run: one ordered chain, one cancel token (src/lib/dailyEndSequence).
+  // A solved round 3 settles first (flip → hold → success → exit); only then do
+  // the remaining cards flip up, hold, and hand over to the result screen.
+  // `runSettled` keeps the board on screen for the whole chain.
   const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
-    if (phase !== "DONE" || ghost.length > 0 || ghostPending) return;
-    setFinalReveal(true);
-    playReveal();
-
-    const t = setTimeout(() => {
-      hapticSuccess();
-      setRunSettled(true);
-      setShowResult(true);
-    }, DAILY_FINAL_REVEAL_MS);
-    return () => clearTimeout(t);
-  }, [phase, ghost.length, ghostPending]);
-
-  // Safety net: whatever happens to the ghost layer (an unmount mid-flight, a
-  // dropped callback, a cancelled timer), a finished run always reaches the
-  // result screen. Runs on a single hard clock from DONE.
-  useEffect(() => {
     if (phase !== "DONE") return;
-    const t = setTimeout(() => {
-      ghostPendingRef.current = false;
-      setGhostPending(false);
-      setGhost([]);
-      setFinalReveal(true);
-      setRunSettled(true);
-      setShowResult(true);
-    }, DAILY_MATCH_SETTLE_MS + DAILY_FINAL_REVEAL_MS + 1000);
-    return () => clearTimeout(t);
+    const solved = state.matchedPair.length === 2;
+    return runDailyEndSequence({
+      solved,
+      awaitSettle,
+      onReveal: () => {
+        setGhost([]);
+        setFinalReveal(true);
+        playReveal();
+      },
+      onResults: () => {
+        hapticSuccess();
+        setRunSettled(true);
+        setShowResult(true);
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
 
 
 
