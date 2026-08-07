@@ -33,7 +33,7 @@ import type { PublicState } from "@/lib/publicState";
 import type { IntentAction, RollAttribute, RollCommitPayload, TransientEvent } from "@/lib/multiplayer";
 import { ROLL_HERO_MS } from "@/lib/multiplayer";
 import {
-  GREAT_MATCH_DELAY_MS, DEAL_STAGGER_MS, DEAL_MOVE_MS, SFX_DEAL_STEP_MS,
+  GREAT_MATCH_DELAY_MS, DEAL_STAGGER_MS, DEAL_MOVE_MS,
   applyAnimationTimingVars,
 } from "@/lib/animationTiming";
 import { serverNow } from "@/hooks/useServerClock";
