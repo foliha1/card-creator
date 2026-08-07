@@ -159,9 +159,8 @@ const RoundMarks: React.FC<{
             style={{
               width: 20,
               height: 20,
-              borderRadius: m === "SOLVE" ? RADIUS.sm : 999,
-              border: BORDER.heavy,
-              background: m === "SOLVE" ? COLORS.ink : COLORS.red,
+              borderRadius: 999,
+              background: m === "SOLVE" ? COLORS.blue : COLORS.red,
               ...anim(i),
             }}
           />
@@ -170,6 +169,7 @@ const RoundMarks: React.FC<{
     </div>
   );
 };
+
 
 /**
  * Share block — renders the day's result as a PNG and shares it alongside the
