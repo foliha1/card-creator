@@ -82,6 +82,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
   return (
     <form
       onSubmit={submit}
+      noValidate
       style={{
         alignSelf: "stretch",
         display: "flex",
