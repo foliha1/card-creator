@@ -26,7 +26,11 @@ const geist = (scale = 1): React.CSSProperties => ({
   margin: 0,
 });
 
-const DIE_CARDS = ["Match the NUMBER", "Match the SHAPE", "Match the COLOR"];
+const DIE_CARDS = [
+  { label: "Match the NUMBER", src: "/dice/match-number.svg" },
+  { label: "Match the SHAPE", src: "/dice/match-shape.svg" },
+  { label: "Match the COLOR", src: "/dice/match-color.svg" },
+];
 
 /** Type scale steps up once past tablet so the card doesn't read as a phone. */
 const useTypeScale = () => {
