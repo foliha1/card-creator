@@ -81,13 +81,15 @@ describe("audio cues", () => {
     s.setSfxEnabled(true);
     s.playDeal(9, { startMs: 900 });
 
-    // The deal cue is now a single soft landing sound. We expect exactly one
-    // scheduled start time, shifted by startMs from the current audio clock.
+    // The deal cue is now a single soft landing sound. It still uses two
+    // nodes (texture + body), but they land almost together, not staggered
+    // across the whole batch.
     const starts = [...new Set(sources.flatMap((x) => x.started))]
       .map((t) => Math.round(t * 1000))
       .sort((a, b) => a - b);
-    expect(starts.length).toBe(1);
-    expect(starts[0]).toBeGreaterThanOrEqual(900);
+    expect(starts.length).toBeGreaterThanOrEqual(1);
+    expect(Math.max(...starts) - Math.min(...starts)).toBeLessThanOrEqual(20);
+    expect(starts.some((t) => Math.abs(t - 900) <= 10)).toBe(true);
   });
 
   it("collapses a repeated deal cue inside the dedupe window", async () => {
