@@ -170,7 +170,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   boxSizing: "border-box",
                 }}
               >
-                <span style={{ ...friend(24), fontSize: "clamp(15px, 5vw, 24px)", textAlign: "center" }}>
+                <span style={{ ...friend(24, false, scale), fontSize: `clamp(15px, ${scale > 1 ? "2.4vw" : "5vw"}, ${Math.round(24 * scale)}px)`, textAlign: "center" }}>
                   {label}
                 </span>
               </div>
