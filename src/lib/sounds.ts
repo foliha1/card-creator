@@ -16,7 +16,7 @@
 // unlockAudio() must be called from a user gesture — it resumes the context and
 // starts the theme if a screen has asked for it.
 
-import { SFX_DEAL_STEP_MS } from "@/lib/animationTiming";
+
 
 let audioCtx: AudioContext | null = null;
 
@@ -443,16 +443,20 @@ export function playFlip(): void {
   run((b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
 }
 
-export function playDeal(count: number = 1): void {
-  const n = Math.max(1, Math.floor(count));
-  const step = SFX_DEAL_STEP_MS / 1000;
+/**
+ * One cue for a whole batch of cards arriving, however many there are. `count`
+ * is kept for call-site compatibility but no longer multiplies the sound, and
+ * repeat calls inside DEAL_DEDUPE_MS collapse into the first one.
+ */
+const DEAL_DEDUPE_MS = 250;
+let lastDealAt = 0;
+export function playDeal(_count: number = 1): void {
+  const now = Date.now();
+  if (now - lastDealAt < DEAL_DEDUPE_MS) return;
+  lastDealAt = now;
   run((b) => {
-    for (let i = 0; i < n; i++) {
-      // One click per card, on the same cadence the cards land with.
-      const at = i * step * jitter(0.06);
-      flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, rand(0.8, 1.1));
-      thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, rand(0.3, 0.45));
-    }
+    flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, 0, 1);
+    thump(b.ctx, b.t0, CLIP_GAIN.deal, 0.012, 320, 0.07, 0.4);
   });
 }
 
@@ -533,33 +537,28 @@ export function playWrong(): void {
   });
 }
 
-/** Five or six soft clicks decelerating over ~900ms, then a settling click. */
+/** Two soft tumbles into a settle — the simplest read of a die rolling. */
 export function playDiceRoll(): void {
   run((b) => {
-    const n = 5 + Math.floor(Math.random() * 2);
-    let at = 0.02;
-    let gap = 0.075 * jitter(0.15);
-    for (let i = 0; i < n; i++) {
+    const click = (at: number, level: number) =>
       noise(b.ctx, b.t0, CLIP_GAIN.dice, {
         at,
-        dur: 0.03 * jitter(0.2),
-        level: rand(0.45, 0.65),
+        dur: 0.03,
+        level,
         filter: "bandpass",
-        // Lower and narrower than before: less clack, more tumble.
-        freq: 1500 * jitter(0.25),
-        q: 1.6 * jitter(0.25),
+        freq: 1500 * jitter(0.15),
+        q: 1.6,
         attack: 0.0015,
       });
-      at += gap;
-      gap *= rand(1.35, 1.6); // decelerate
-    }
-    const settle = Math.min(at, 0.86);
+    click(0.02, 0.55);
+    click(0.14 * jitter(0.1), 0.5);
+    // The settle, on the beat the tumble ends.
     noise(b.ctx, b.t0, CLIP_GAIN.dice, {
-      at: settle,
+      at: 0.32 * jitter(0.08),
       dur: 0.055,
       level: 0.5,
       filter: "lowpass",
-      freq: 1000 * jitter(0.15),
+      freq: 1000 * jitter(0.12),
       q: 2,
       attack: 0.0015,
     });
@@ -597,7 +596,11 @@ export function playPeek(): void {
 }
 
 /** One flip texture with a little body — a single cue for the whole board. */
+let lastRevealAt = 0;
 export function playReveal(): void {
+  const now = Date.now();
+  if (now - lastRevealAt < DEAL_DEDUPE_MS) return;
+  lastRevealAt = now;
   run((b) => {
     flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, 0, 1);
     thump(b.ctx, b.t0, CLIP_GAIN.reveal, 0.012, 320, 0.08, 0.4);
