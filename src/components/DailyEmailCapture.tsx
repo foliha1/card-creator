@@ -85,7 +85,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       >
         Get tomorrow's grid.
       </h2>
-      <p style={bodyStyle}>A new puzzle every morning. Nothing else.</p>
+      <p style={bodyStyle}>A new game every morning. Nothing else.</p>
       <input
         type="email"
         inputMode="email"
