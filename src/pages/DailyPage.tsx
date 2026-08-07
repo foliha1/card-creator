@@ -377,7 +377,7 @@ const DailyResultCard: React.FC<{
         {failed
           ? "Whooped! Better luck tomorrow."
           : revisit
-            ? "Already played today. One puzzle a day — come back tomorrow."
+            ? "You already tested your memory today. Come back tomorrow!"
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
       <div
