@@ -97,7 +97,7 @@ type ClipName =
 export const CLIP_GAIN: Record<ClipName, number> = {
   flip: 0.95,
   deal: 1.0,
-  dice: 0.95,
+  dice: 0.55,
   wrong: 1.8,
   whoop: 0.72,
   correct: 1.7,
