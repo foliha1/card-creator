@@ -533,7 +533,7 @@ export function playWrong(): void {
   });
 }
 
-/** Five or six clicks decelerating over ~900ms, then a settling click. */
+/** Five or six soft clicks decelerating over ~900ms, then a settling click. */
 export function playDiceRoll(): void {
   run((b) => {
     const n = 5 + Math.floor(Math.random() * 2);
@@ -542,12 +542,13 @@ export function playDiceRoll(): void {
     for (let i = 0; i < n; i++) {
       noise(b.ctx, b.t0, CLIP_GAIN.dice, {
         at,
-        dur: 0.04 * jitter(0.2),
-        level: rand(0.7, 1),
+        dur: 0.03 * jitter(0.2),
+        level: rand(0.45, 0.65),
         filter: "bandpass",
-        freq: 2400 * jitter(0.3),
-        q: 2.4 * jitter(0.25),
-        attack: 0.0008,
+        // Lower and narrower than before: less clack, more tumble.
+        freq: 1500 * jitter(0.25),
+        q: 1.6 * jitter(0.25),
+        attack: 0.0015,
       });
       at += gap;
       gap *= rand(1.35, 1.6); // decelerate
@@ -555,12 +556,12 @@ export function playDiceRoll(): void {
     const settle = Math.min(at, 0.86);
     noise(b.ctx, b.t0, CLIP_GAIN.dice, {
       at: settle,
-      dur: 0.06,
-      level: 0.9,
+      dur: 0.055,
+      level: 0.5,
       filter: "lowpass",
-      freq: 1400 * jitter(0.15),
-      q: 3,
-      attack: 0.001,
+      freq: 1000 * jitter(0.15),
+      q: 2,
+      attack: 0.0015,
     });
   });
 }
