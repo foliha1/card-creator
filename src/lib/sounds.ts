@@ -18,6 +18,8 @@
 
 
 
+import { SFX_DEAL_STEP_MS } from "@/lib/animationTiming";
+
 let audioCtx: AudioContext | null = null;
 
 const SFX_KEY = "ww_sfx_enabled";
@@ -500,7 +502,7 @@ function woodKnock(
 // ---------------------------------------------------------------------------
 
 export function playFlip(): void {
-  run((b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
+  run("flip", (b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
 }
 
 /**
@@ -510,13 +512,36 @@ export function playFlip(): void {
  */
 const DEAL_DEDUPE_MS = 250;
 let lastDealAt = 0;
-export function playDeal(_count: number = 1): void {
+
+/**
+ * The deal cue: one card-landing click per card, staggered so each click lands
+ * with its own card rather than firing as a single burst for the whole batch.
+ *
+ * `startMs` is the delay from now to the FIRST card landing — the daily passes
+ * DEAL_MOVE_MS, because a card's deal-in animation ends (the card "lands") at
+ * the end of its move, not at its start. Cards after the first land
+ * SFX_DEAL_STEP_MS apart, matching the CSS `--ww-deal-stagger`.
+ *
+ * The whole batch is scheduled inside a single Web Audio call, so no click can
+ * drift against the visual and a repeat call inside DEAL_DEDUPE_MS (a
+ * re-render firing the same effect twice) collapses into the first one.
+ */
+export function playDeal(
+  count: number = 1,
+  opts: { startMs?: number; stepMs?: number } = {}
+): void {
   const now = Date.now();
   if (now - lastDealAt < DEAL_DEDUPE_MS) return;
   lastDealAt = now;
-  run((b) => {
-    flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, 0, 1);
-    thump(b.ctx, b.t0, CLIP_GAIN.deal, 0.012, 320, 0.07, 0.4);
+  const n = Math.max(1, Math.min(24, Math.round(count)));
+  const start = Math.max(0, opts.startMs ?? 0) / 1000;
+  const step = (opts.stepMs ?? SFX_DEAL_STEP_MS) / 1000;
+  run("deal", (b) => {
+    for (let i = 0; i < n; i++) {
+      const at = start + i * step;
+      flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, 1);
+      thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, 0.4);
+    }
   });
 }
 
@@ -524,7 +549,7 @@ export function playDeal(_count: number = 1): void {
  * Card-select cue: a very short, bright tick — quieter than flip.
  */
 export function playSelect(): void {
-  run((b) => {
+  run("select", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.select, {
       dur: 0.03 * jitter(0.15),
       level: 0.9,
@@ -538,7 +563,7 @@ export function playSelect(): void {
 
 /** Deselect: the same tick, lower and softer. */
 export function playDeselect(): void {
-  run((b) => {
+  run("deselect", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.deselect, {
       dur: 0.045 * jitter(0.15),
       level: 0.85,
@@ -552,7 +577,7 @@ export function playDeselect(): void {
 
 /** A palm on a table: broadband slap with a short low body under it. */
 export function playWhoopCall(): void {
-  run((b) => {
+  run("whoop", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.whoop, {
       dur: 0.075 * jitter(0.12),
       level: 1,
@@ -589,7 +614,7 @@ export function playCorrect(): void {
 
 /** A dull, short lowpassed thud. No buzz. */
 export function playWrong(): void {
-  run((b) => {
+  run("wrong", (b) => {
     thump(b.ctx, b.t0, CLIP_GAIN.wrong, 0, 320, 0.16, 1);
     tone(b.ctx, b.t0, CLIP_GAIN.wrong, {
       dur: 0.14 * jitter(0.12), level: 0.3, freq: 130 * jitter(0.08), freqTo: 80,
@@ -599,7 +624,7 @@ export function playWrong(): void {
 
 /** Two soft tumbles into a settle — the simplest read of a die rolling. */
 export function playDiceRoll(): void {
-  run((b) => {
+  run("dice", (b) => {
     const click = (at: number, level: number) =>
       noise(b.ctx, b.t0, CLIP_GAIN.dice, {
         at,
@@ -627,7 +652,7 @@ export function playDiceRoll(): void {
 
 /** The die landing: one firm knock with a little body. */
 export function playDieLand(): void {
-  run((b) => {
+  run("dieLand", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.dieLand, {
       dur: 0.055 * jitter(0.15),
       level: 0.95,
@@ -642,7 +667,7 @@ export function playDieLand(): void {
 
 /** A soft rising filtered sweep — an intake of breath. */
 export function playPeek(): void {
-  run((b) => {
+  run("peek", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.peek, {
       dur: 0.34 * jitter(0.12),
       level: 0.9,
@@ -661,7 +686,7 @@ export function playReveal(): void {
   const now = Date.now();
   if (now - lastRevealAt < DEAL_DEDUPE_MS) return;
   lastRevealAt = now;
-  run((b) => {
+  run("reveal", (b) => {
     flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, 0, 1);
     thump(b.ctx, b.t0, CLIP_GAIN.reveal, 0.012, 320, 0.08, 0.4);
   });
@@ -669,7 +694,7 @@ export function playReveal(): void {
 
 /** Run-start cue: a low swell into a single wood knock. */
 export function playStart(): void {
-  run((b) => {
+  run("start", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.start, {
       dur: 0.42 * jitter(0.1),
       level: 0.5,
@@ -685,7 +710,7 @@ export function playStart(): void {
 
 /** A brief marker between rounds. */
 export function playRoundAdvance(): void {
-  run((b) => {
+  run("roundAdvance", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.roundAdvance, {
       dur: 0.12 * jitter(0.15),
       level: 0.7,
@@ -703,7 +728,7 @@ export function playRoundAdvance(): void {
 
 /** A soft tick for the closing seconds of the study countdown. */
 export function playTick(): void {
-  run((b) => {
+  run("tick", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.tick, {
       dur: 0.025 * jitter(0.2),
       level: 0.9,
@@ -717,7 +742,7 @@ export function playTick(): void {
 
 /** One small confirm when the email signup lands. */
 export function playSubscribed(): void {
-  run((b) => {
+  run("subscribed", (b) => {
     const base = 523 * jitter(0.02);
     tone(b.ctx, b.t0, CLIP_GAIN.subscribed, {
       dur: 0.13 * jitter(0.1), level: 0.3, freq: base, attack: 0.008,
