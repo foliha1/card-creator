@@ -25,7 +25,9 @@ function readFlag(key: string, fallback: boolean): boolean {
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) return fallback;
-    return raw === "true";
+    // Only an explicit "false" silences things — a stale or malformed value
+    // must never mute the app.
+    return raw !== "false";
   } catch { return fallback; }
 }
 function writeFlag(key: string, value: boolean) {
@@ -245,16 +247,28 @@ function rand(a: number, b: number): number { return a + Math.random() * (b - a)
 /** Multiplicative jitter around 1, e.g. jitter(0.08) → 0.92..1.08. */
 function jitter(amount: number): number { return 1 + rand(-amount, amount); }
 
-/** Prepares the context for a cue; returns null when audio is unavailable. */
-function begin(): { ctx: AudioContext; t0: number } | null {
-  if (!sfxEnabled) return null;
+/**
+ * Small forward offset for every scheduled cue. `AudioContext.resume()` is
+ * asynchronous: right after a gesture the clock has not advanced yet, so events
+ * scheduled at raw `currentTime` land in the past and are silently dropped.
+ * Scheduling a hair into the future is inaudible and always lands.
+ */
+const LEAD = 0.03;
+
+/**
+ * Runs a cue against a live context. If the context is still resuming, the cue
+ * waits for the resume to land and is then scheduled against the fresh clock.
+ */
+function run(fn: (b: { ctx: AudioContext; t0: number }) => void): void {
+  if (!sfxEnabled) return;
   try {
     const ctx = getCtx();
-    // Browsers can suspend the context at any time (tab switch, autoplay
-    // policy), so resume on every cue, not just on unlock.
-    if (ctx.state === "suspended") void ctx.resume();
-    return { ctx, t0: ctx.currentTime };
-  } catch { return null; }
+    const fire = () => {
+      try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
+    };
+    if (ctx.state === "running") fire();
+    else void ctx.resume().then(fire, fire);
+  } catch { /* ignore — no AudioContext available */ }
 }
 
 interface NoiseOpts {
@@ -424,10 +438,8 @@ export function playFlip(): void {
 }
 
 export function playDeal(count: number = 1): void {
-  const b = begin();
-  if (!b) return;
   const n = Math.max(1, Math.floor(count));
-  safe(() => {
+  run((b) => {
     for (let i = 0; i < n; i++) {
       // ~70ms stagger with per-card jitter, so repeated cards never sound like
       // the same sample twice.
