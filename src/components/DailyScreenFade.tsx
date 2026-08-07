@@ -4,13 +4,16 @@ import { DAILY_SCREEN_FADE_MS } from "@/lib/animationTiming";
 /**
  * True cross-fade between the daily screens (ready → gameplay → results).
  *
+ * The current tree is rendered live as a pass-through — it is never held in
+ * state, so the screen is never a commit behind. The outgoing tree is captured
+ * into state exactly once, during the render in which `screenKey` changes, and
+ * is never updated afterwards. The transition effect depends on `screenKey`
+ * alone so a re-render caused by this component's own state cannot cancel the
+ * frame/timer that finish the fade.
+ *
  * An opaque wrapper holds the page background and never animates its opacity,
- * so there is always a solid colour behind everything — no flash of the body.
- * Outgoing and incoming content are stacked as two absolutely positioned
- * layers and fade in opposite directions over the same window, overlapping.
- * The wrapper's background-color transitions on the same clock so khaki →
- * cream reads as one blend. Opacity only — no slide, no scale — so it is kept
- * under `prefers-reduced-motion: reduce`.
+ * so there is always a solid colour behind everything. Opacity only — no
+ * slide, no scale — so it is kept under `prefers-reduced-motion: reduce`.
  */
 const MS = DAILY_SCREEN_FADE_MS;
 
@@ -26,30 +29,34 @@ const DailyScreenFade: React.FC<{
   background: string;
   children: React.ReactNode;
 }> = ({ screenKey, background, children }) => {
-  const [current, setCurrent] = useState<Layer>({ key: screenKey, children });
   const [outgoing, setOutgoing] = useState<Layer | null>(null);
-  // Drives the incoming layer from 0 → 1 on the frame after the swap.
+  /** True from the render in which the key changes until the next frame. */
   const [entering, setEntering] = useState(false);
   const prevKey = useRef(screenKey);
+  /** The tree rendered on the previous commit — the outgoing candidate. */
+  const prevChildren = useRef<React.ReactNode>(children);
+
+  // Derive the outgoing layer during render, exactly once per key change.
+  if (screenKey !== prevKey.current) {
+    const from = prevKey.current;
+    prevKey.current = screenKey;
+    setOutgoing({ key: from, children: prevChildren.current });
+    setEntering(true);
+  }
+
+  // Track the latest tree without putting `children` in a dependency array.
+  useEffect(() => {
+    prevChildren.current = children;
+  });
 
   useEffect(() => {
-    if (screenKey === prevKey.current) {
-      // Same screen, fresh children (a tick of the clock, a card tap).
-      setCurrent((c) => ({ ...c, children }));
-      return;
-    }
-    prevKey.current = screenKey;
-    setOutgoing(current);
-    setCurrent({ key: screenKey, children });
-    setEntering(true);
     const raf = requestAnimationFrame(() => setEntering(false));
     const t = window.setTimeout(() => setOutgoing(null), MS);
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(t);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenKey, children]);
+  }, [screenKey]);
 
   const layerStyle: React.CSSProperties = {
     position: "absolute",
@@ -67,18 +74,24 @@ const DailyScreenFade: React.FC<{
       }}
     >
       {outgoing && (
-        <div style={{ ...layerStyle, opacity: entering ? 1 : 0, pointerEvents: "none" }}>
+        <div
+          key="daily-fade-outgoing"
+          data-testid="daily-fade-outgoing"
+          style={{ ...layerStyle, opacity: entering ? 1 : 0, pointerEvents: "none" }}
+        >
           {outgoing.children}
         </div>
       )}
       <div
+        key="daily-fade-current"
+        data-testid="daily-fade-current"
         style={
           outgoing
             ? { ...layerStyle, opacity: entering ? 0 : 1 }
-            : { position: "relative" }
+            : { position: "relative", opacity: 1 }
         }
       >
-        {current.children}
+        {children}
       </div>
     </div>
   );
