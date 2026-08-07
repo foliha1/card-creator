@@ -1187,8 +1187,9 @@ const DailyPage: React.FC = () => {
                 <DailyMatchGhost
                   pair={ghost}
                   onDone={() => {
-                    ghostPendingRef.current = false;
-                    setGhostPending(false);
+                    settleDoneRef.current = true;
+                    settleResolveRef.current?.();
+                    settleResolveRef.current = null;
                     setGhost([]);
                   }}
 
