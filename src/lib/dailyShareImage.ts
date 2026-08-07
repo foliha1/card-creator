@@ -117,19 +117,12 @@ const drawMark = (
   size: number,
   solved: boolean
 ) => {
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = COLORS.ink;
-  if (solved) {
-    ctx.fillStyle = COLORS.ink;
-    roundRect(ctx, x, y, size, size, 6);
-  } else {
-    ctx.fillStyle = COLORS.red;
-    ctx.beginPath();
-    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-  }
+  ctx.fillStyle = solved ? COLORS.blue : COLORS.red;
+  ctx.beginPath();
+  ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
 };
+
 
 /** The score line, matching the wording used in the share text. */
 export function scoreLine(result: DailyResult, streak?: number | null): string {
