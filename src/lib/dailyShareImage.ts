@@ -13,7 +13,6 @@ export const SHARE_IMAGE_W = 1080;
 export const SHARE_IMAGE_H = 1350;
 
 const PAD = 80;
-const CONTENT_W = SHARE_IMAGE_W - PAD * 2; // 920
 
 const LOGO_SRC = "/WhoopWhoop_Dark_Logo.svg";
 
