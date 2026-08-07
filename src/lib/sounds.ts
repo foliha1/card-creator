@@ -363,11 +363,6 @@ function tone(ctx: AudioContext, t0: number, master: number, o: ToneOpts): void 
   osc.stop(start + o.dur + 0.02);
 }
 
-/** Never let an audio failure reach gameplay. */
-function safe(fn: () => void): void {
-  try { fn(); } catch { /* ignore */ }
-}
-
 // ---------------------------------------------------------------------------
 // The card textures, shared by flip / deal / select / reveal
 // ---------------------------------------------------------------------------
