@@ -162,11 +162,12 @@ function silenceSfxNow(): void {
  * appends `{ name, t }` (t = performance.now() at the moment the cue fires).
  * Costs nothing in production: the array only exists if a harness made it.
  */
-function logCue(name: ClipName): void {
+function logCue(name: ClipName, detail?: number[]): void {
   try {
-    const log = (window as unknown as { __WW_SFX_LOG?: { name: string; t: number }[] })
-      .__WW_SFX_LOG;
-    if (Array.isArray(log)) log.push({ name, t: performance.now() });
+    const log = (window as unknown as {
+      __WW_SFX_LOG?: { name: string; t: number; detail?: number[] }[];
+    }).__WW_SFX_LOG;
+    if (Array.isArray(log)) log.push({ name, t: performance.now(), detail });
   } catch { /* ignore */ }
 }
 
@@ -327,9 +328,13 @@ const LEAD = 0.03;
  * Runs a cue against a live context. If the context is still resuming, the cue
  * waits for the resume to land and is then scheduled against the fresh clock.
  */
-function run(name: ClipName, fn: (b: { ctx: AudioContext; t0: number }) => void): void {
+function run(
+  name: ClipName,
+  fn: (b: { ctx: AudioContext; t0: number }) => void,
+  detail?: number[]
+): void {
   if (!sfxEnabled) return;
-  logCue(name);
+  logCue(name, detail);
   try {
     const ctx = getCtx();
     if (sfxBus) sfxBus.gain.value = 1;
@@ -536,13 +541,14 @@ export function playDeal(
   const n = Math.max(1, Math.min(24, Math.round(count)));
   const start = Math.max(0, opts.startMs ?? 0) / 1000;
   const step = (opts.stepMs ?? SFX_DEAL_STEP_MS) / 1000;
+  const offsets = Array.from({ length: n }, (_, i) => Math.round((start + i * step) * 1000));
   run("deal", (b) => {
     for (let i = 0; i < n; i++) {
       const at = start + i * step;
       flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, 1);
       thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, 0.4);
     }
-  });
+  }, offsets);
 }
 
 /**
