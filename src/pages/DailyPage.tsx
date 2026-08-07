@@ -707,8 +707,10 @@ const DailyPage: React.FC = () => {
     });
     if (copies.length) {
       ghostPendingRef.current = true;
+      setGhostPending(true);
       setGhost(copies);
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
 
