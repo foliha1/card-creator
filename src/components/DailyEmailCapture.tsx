@@ -103,18 +103,23 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       </h2>
       <p style={bodyStyle}>A new game every morning. Nothing else.</p>
       <input
+        ref={inputRef}
         type="email"
         inputMode="email"
         autoComplete="email"
-        required
         maxLength={255}
         aria-label="Email address"
+        aria-invalid={status === "error" ? true : undefined}
         placeholder="you@example.com"
         value={email}
         onChange={(e) => {
           setEmail(e.target.value);
-          if (status === "error") setStatus("idle");
+          if (status === "error") {
+            setStatus("idle");
+            setErrorMessage(null);
+          }
         }}
+
         style={{
           ...bodyStyle,
           fontSize: 16,
