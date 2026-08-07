@@ -793,15 +793,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   // when the 1100ms window expires (or is skipped if we arrived too late).
   // Preload every card face once on mount. Uncached SVGs otherwise decode
   // after the flip starts, briefly showing an empty/backed front face.
-  // References are parked in a module-level array so nothing gets evicted.
   React.useEffect(() => {
-    if (preloadedArt.length > 0) return;
-    for (const src of [CARD_BACK_PATH, ...Object.values(MATCH_ART_SRC), ...ALL_CARDS.map((c) => c.svgPath)]) {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = src;
-      preloadedArt.push(img);
-    }
+    preloadGameArt();
   }, []);
 
   // Pending sound timers, cleared on unmount so no chime outlives the board.
