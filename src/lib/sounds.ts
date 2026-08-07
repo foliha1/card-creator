@@ -81,24 +81,33 @@ type ClipName =
   | "roundAdvance"
   | "subscribed";
 
-/** Single place to tune the mix. `correct` is the loudest thing in the app. */
+/**
+ * Single place to tune the mix. `correct` is the loudest thing in the app.
+ *
+ * These numbers were set by measuring each cue's real output peak (filtered
+ * noise loses a lot of energy in the bandpass, so the raw levels inside the
+ * effects are not comparable). Each gain is scaled so the cue hits its
+ * intended peak, keeping the old hierarchy: correct loudest, flip and deal
+ * near-subliminal.
+ */
 export const CLIP_GAIN: Record<ClipName, number> = {
-  flip: 0.25,
-  deal: 0.9,
-  dice: 0.50,
-  wrong: 0.50,
-  whoop: 0.60,
-  correct: 1.0,
-  peek: 0.45,
-  reveal: 0.55,
-  start: 0.7,
-  select: 0.3,
-  dieLand: 0.55,
-  tick: 0.22,
-  deselect: 0.2,
-  roundAdvance: 0.4,
-  subscribed: 0.5,
+  flip: 0.95,
+  deal: 1.55,
+  dice: 0.95,
+  wrong: 1.8,
+  whoop: 0.72,
+  correct: 1.7,
+  peek: 1.5,
+  reveal: 0.9,
+  start: 0.95,
+  select: 0.85,
+  dieLand: 3.2,
+  tick: 0.4,
+  deselect: 0.66,
+  roundAdvance: 1.2,
+  subscribed: 1.1,
 };
+
 
 /** True once a user gesture has run through unlockAudio(). */
 let audioUnlocked = false;
