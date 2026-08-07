@@ -786,7 +786,7 @@ const DailyPage: React.FC = () => {
   // whole sequence instead of cutting to the ready/result screens.
   const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
-    if (phase !== "DONE" || ghost.length > 0 || ghostPendingRef.current) return;
+    if (phase !== "DONE" || ghost.length > 0 || ghostPending) return;
     setFinalReveal(true);
     playReveal();
 
@@ -796,7 +796,24 @@ const DailyPage: React.FC = () => {
       setShowResult(true);
     }, DAILY_FINAL_REVEAL_MS);
     return () => clearTimeout(t);
-  }, [phase, ghost.length]);
+  }, [phase, ghost.length, ghostPending]);
+
+  // Safety net: whatever happens to the ghost layer (an unmount mid-flight, a
+  // dropped callback, a cancelled timer), a finished run always reaches the
+  // result screen. Runs on a single hard clock from DONE.
+  useEffect(() => {
+    if (phase !== "DONE") return;
+    const t = setTimeout(() => {
+      ghostPendingRef.current = false;
+      setGhostPending(false);
+      setGhost([]);
+      setFinalReveal(true);
+      setRunSettled(true);
+      setShowResult(true);
+    }, DAILY_MATCH_SETTLE_MS + DAILY_FINAL_REVEAL_MS + 1000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
 
 
   const playedToday =
