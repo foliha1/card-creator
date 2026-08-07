@@ -596,12 +596,11 @@ export function playPeek(): void {
   });
 }
 
-/** Nine overlapping flip textures scattered across ~400ms. */
+/** One flip texture with a little body — a single cue for the whole board. */
 export function playReveal(): void {
   run((b) => {
-    for (let i = 0; i < 9; i++) {
-      flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, rand(0, 0.4), rand(0.7, 1.05));
-    }
+    flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, 0, 1);
+    thump(b.ctx, b.t0, CLIP_GAIN.reveal, 0.012, 320, 0.08, 0.4);
   });
 }
 

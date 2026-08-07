@@ -719,10 +719,9 @@ const DailyPage: React.FC = () => {
 
 
   useEffect(() => {
-    // The clicks land with the cards: each card arrives DEAL_MOVE_MS after its
-    // own staggered start, and playDeal() steps on the same stagger.
+    // One cue for the whole deal, fired as the cards land.
     let dealTimer: ReturnType<typeof setTimeout> | undefined;
-    if (phase === "STUDY") dealTimer = setTimeout(() => playDeal(9), DEAL_MOVE_MS);
+    if (phase === "STUDY") dealTimer = setTimeout(() => playDeal(1), DEAL_MOVE_MS);
     if (phase === "ROLL") {
       // Rounds 2 and 3 get a short marker as the next intro opens.
       if (state.roundIndex > 1) playRoundAdvance();
