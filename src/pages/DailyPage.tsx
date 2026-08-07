@@ -22,7 +22,7 @@ import {
   remainingCount,
   type DailyMark,
 } from "@/lib/dailyEngine";
-import { formatDailyShare, getLocalDateString, type DailyResult } from "@/lib/daily";
+import { formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 
@@ -945,7 +945,7 @@ const DailyPage: React.FC = () => {
               daily.debugOverride === "seed"
                 ? "SEED OVERRIDE"
                 : daily.debugOverride === "day"
-                  ? `DAY OFFSET ${daily.state ? "" : ""}${daily.dateKey}`
+                  ? `DAY OFFSET → ${daily.dateKey}`
                   : "LOCK BYPASSED"
             } · SEED ${daily.seed} · #${daily.puzzleNumber} · NOT A REAL RUN`}
           </div>
