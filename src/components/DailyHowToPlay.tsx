@@ -79,18 +79,16 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <DailyShapeRule />
 
       <div
+        className="daily-howto-card"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: 354,
           margin: "0 auto",
           boxSizing: "border-box",
           background: COLORS.panel,
           borderRadius: RADIUS.sm,
-          padding: "24px 32px 32px",
           display: "flex",
           flexDirection: "column",
-          gap: 24,
           textAlign: "left",
           flex: "0 1 auto",
         }}
