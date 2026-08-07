@@ -175,32 +175,41 @@ function ramp(node: GainNode, to: number, ms: number) {
  */
 export function startTheme(): void {
   themeDesired = true;
-  if (!musicEnabled || !audioUnlocked) return;
+  if (!musicEnabled) return;
   try {
     const ctx = getCtx();
-    if (ctx.state === "suspended") void ctx.resume();
-    if (themeStopTimer) { clearTimeout(themeStopTimer); themeStopTimer = null; }
-
-    if (themeSource && themeGainNode) {
-      ramp(themeGainNode, THEME_GAIN, THEME_FADE_IN_MS);
-      return;
-    }
-    if (!themeBuffer) {
-      void loadTheme().then(() => { if (themeDesired) startTheme(); });
-      return;
-    }
-    const g = ctx.createGain();
-    g.gain.value = 0;
-    g.connect(ctx.destination);
-    const src = ctx.createBufferSource();
-    src.buffer = themeBuffer;
-    src.loop = true;
-    src.connect(g);
-    src.start();
-    themeSource = src;
-    themeGainNode = g;
-    ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
+    const go = () => { try { startThemeNow(ctx); } catch { /* ignore */ } };
+    // resume() is async: without waiting, the first attempt schedules against a
+    // clock that has not started yet. Attempted even before a gesture —
+    // browsers that block it simply reject, which is fine.
+    if (ctx.state === "running") go();
+    else void ctx.resume().then(go, go);
   } catch { /* never throw from audio */ }
+}
+
+function startThemeNow(ctx: AudioContext): void {
+  if (!themeDesired || !musicEnabled) return;
+  if (themeStopTimer) { clearTimeout(themeStopTimer); themeStopTimer = null; }
+
+  if (themeSource && themeGainNode) {
+    ramp(themeGainNode, THEME_GAIN, THEME_FADE_IN_MS);
+    return;
+  }
+  if (!themeBuffer) {
+    void loadTheme().then(() => { if (themeDesired) startTheme(); });
+    return;
+  }
+  const g = ctx.createGain();
+  g.gain.value = 0;
+  g.connect(ctx.destination);
+  const src = ctx.createBufferSource();
+  src.buffer = themeBuffer;
+  src.loop = true;
+  src.connect(g);
+  src.start();
+  themeSource = src;
+  themeGainNode = g;
+  ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
 }
 
 function fadeOutTheme(hard: boolean): void {
