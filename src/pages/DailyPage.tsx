@@ -954,7 +954,11 @@ const DailyPage: React.FC = () => {
               }}
 
               onHowToPlay={() => {
+                // Any tap on the ready screen also opens the audio path, so the
+                // theme has a window in which to start.
                 unlockAudio();
+                setAudioReady(true);
+                startTheme();
                 hapticTap();
                 setHowTo(true);
               }}

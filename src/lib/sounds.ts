@@ -25,7 +25,9 @@ function readFlag(key: string, fallback: boolean): boolean {
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) return fallback;
-    return raw === "true";
+    // Only an explicit "false" silences things — a stale or malformed value
+    // must never mute the app.
+    return raw !== "false";
   } catch { return fallback; }
 }
 function writeFlag(key: string, value: boolean) {
@@ -173,32 +175,41 @@ function ramp(node: GainNode, to: number, ms: number) {
  */
 export function startTheme(): void {
   themeDesired = true;
-  if (!musicEnabled || !audioUnlocked) return;
+  if (!musicEnabled) return;
   try {
     const ctx = getCtx();
-    if (ctx.state === "suspended") void ctx.resume();
-    if (themeStopTimer) { clearTimeout(themeStopTimer); themeStopTimer = null; }
-
-    if (themeSource && themeGainNode) {
-      ramp(themeGainNode, THEME_GAIN, THEME_FADE_IN_MS);
-      return;
-    }
-    if (!themeBuffer) {
-      void loadTheme().then(() => { if (themeDesired) startTheme(); });
-      return;
-    }
-    const g = ctx.createGain();
-    g.gain.value = 0;
-    g.connect(ctx.destination);
-    const src = ctx.createBufferSource();
-    src.buffer = themeBuffer;
-    src.loop = true;
-    src.connect(g);
-    src.start();
-    themeSource = src;
-    themeGainNode = g;
-    ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
+    const go = () => { try { startThemeNow(ctx); } catch { /* ignore */ } };
+    // resume() is async: without waiting, the first attempt schedules against a
+    // clock that has not started yet. Attempted even before a gesture —
+    // browsers that block it simply reject, which is fine.
+    if (ctx.state === "running") go();
+    else void ctx.resume().then(go, go);
   } catch { /* never throw from audio */ }
+}
+
+function startThemeNow(ctx: AudioContext): void {
+  if (!themeDesired || !musicEnabled) return;
+  if (themeStopTimer) { clearTimeout(themeStopTimer); themeStopTimer = null; }
+
+  if (themeSource && themeGainNode) {
+    ramp(themeGainNode, THEME_GAIN, THEME_FADE_IN_MS);
+    return;
+  }
+  if (!themeBuffer) {
+    void loadTheme().then(() => { if (themeDesired) startTheme(); });
+    return;
+  }
+  const g = ctx.createGain();
+  g.gain.value = 0;
+  g.connect(ctx.destination);
+  const src = ctx.createBufferSource();
+  src.buffer = themeBuffer;
+  src.loop = true;
+  src.connect(g);
+  src.start();
+  themeSource = src;
+  themeGainNode = g;
+  ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
 }
 
 function fadeOutTheme(hard: boolean): void {
@@ -245,16 +256,28 @@ function rand(a: number, b: number): number { return a + Math.random() * (b - a)
 /** Multiplicative jitter around 1, e.g. jitter(0.08) → 0.92..1.08. */
 function jitter(amount: number): number { return 1 + rand(-amount, amount); }
 
-/** Prepares the context for a cue; returns null when audio is unavailable. */
-function begin(): { ctx: AudioContext; t0: number } | null {
-  if (!sfxEnabled) return null;
+/**
+ * Small forward offset for every scheduled cue. `AudioContext.resume()` is
+ * asynchronous: right after a gesture the clock has not advanced yet, so events
+ * scheduled at raw `currentTime` land in the past and are silently dropped.
+ * Scheduling a hair into the future is inaudible and always lands.
+ */
+const LEAD = 0.03;
+
+/**
+ * Runs a cue against a live context. If the context is still resuming, the cue
+ * waits for the resume to land and is then scheduled against the fresh clock.
+ */
+function run(fn: (b: { ctx: AudioContext; t0: number }) => void): void {
+  if (!sfxEnabled) return;
   try {
     const ctx = getCtx();
-    // Browsers can suspend the context at any time (tab switch, autoplay
-    // policy), so resume on every cue, not just on unlock.
-    if (ctx.state === "suspended") void ctx.resume();
-    return { ctx, t0: ctx.currentTime };
-  } catch { return null; }
+    const fire = () => {
+      try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
+    };
+    if (ctx.state === "running") fire();
+    else void ctx.resume().then(fire, fire);
+  } catch { /* ignore — no AudioContext available */ }
 }
 
 interface NoiseOpts {
@@ -340,11 +363,6 @@ function tone(ctx: AudioContext, t0: number, master: number, o: ToneOpts): void 
   osc.stop(start + o.dur + 0.02);
 }
 
-/** Never let an audio failure reach gameplay. */
-function safe(fn: () => void): void {
-  try { fn(); } catch { /* ignore */ }
-}
-
 // ---------------------------------------------------------------------------
 // The card textures, shared by flip / deal / select / reveal
 // ---------------------------------------------------------------------------
@@ -420,16 +438,12 @@ function woodKnock(
 // ---------------------------------------------------------------------------
 
 export function playFlip(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
+  run((b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
 }
 
 export function playDeal(count: number = 1): void {
-  const b = begin();
-  if (!b) return;
   const n = Math.max(1, Math.floor(count));
-  safe(() => {
+  run((b) => {
     for (let i = 0; i < n; i++) {
       // ~70ms stagger with per-card jitter, so repeated cards never sound like
       // the same sample twice.
@@ -444,9 +458,7 @@ export function playDeal(count: number = 1): void {
  * Card-select cue: a very short, bright tick — quieter than flip.
  */
 export function playSelect(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.select, {
       dur: 0.03 * jitter(0.15),
       level: 0.9,
@@ -460,9 +472,7 @@ export function playSelect(): void {
 
 /** Deselect: the same tick, lower and softer. */
 export function playDeselect(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.deselect, {
       dur: 0.045 * jitter(0.15),
       level: 0.85,
@@ -476,9 +486,7 @@ export function playDeselect(): void {
 
 /** A palm on a table: broadband slap with a short low body under it. */
 export function playWhoopCall(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.whoop, {
       dur: 0.075 * jitter(0.12),
       level: 1,
@@ -493,9 +501,7 @@ export function playWhoopCall(): void {
 
 /** Wood knock, then two soft filtered tones. Warm, not a chime. */
 export function playCorrect(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     woodKnock(b.ctx, b.t0, CLIP_GAIN.correct, 0);
     const base = 392 * jitter(0.02);
     noise(b.ctx, b.t0, CLIP_GAIN.correct, {
@@ -518,9 +524,7 @@ export function playCorrect(): void {
 
 /** A dull, short lowpassed thud. No buzz. */
 export function playWrong(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     thump(b.ctx, b.t0, CLIP_GAIN.wrong, 0, 320, 0.16, 1);
     tone(b.ctx, b.t0, CLIP_GAIN.wrong, {
       dur: 0.14 * jitter(0.12), level: 0.3, freq: 130 * jitter(0.08), freqTo: 80,
@@ -530,9 +534,7 @@ export function playWrong(): void {
 
 /** Five or six clicks decelerating over ~900ms, then a settling click. */
 export function playDiceRoll(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     const n = 5 + Math.floor(Math.random() * 2);
     let at = 0.02;
     let gap = 0.075 * jitter(0.15);
@@ -564,9 +566,7 @@ export function playDiceRoll(): void {
 
 /** The die landing: one firm knock with a little body. */
 export function playDieLand(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.dieLand, {
       dur: 0.055 * jitter(0.15),
       level: 0.95,
@@ -581,9 +581,7 @@ export function playDieLand(): void {
 
 /** A soft rising filtered sweep — an intake of breath. */
 export function playPeek(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.peek, {
       dur: 0.34 * jitter(0.12),
       level: 0.9,
@@ -598,9 +596,7 @@ export function playPeek(): void {
 
 /** Nine overlapping flip textures scattered across ~400ms. */
 export function playReveal(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     for (let i = 0; i < 9; i++) {
       flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, rand(0, 0.4), rand(0.7, 1.05));
     }
@@ -609,9 +605,7 @@ export function playReveal(): void {
 
 /** Run-start cue: a low swell into a single wood knock. */
 export function playStart(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.start, {
       dur: 0.42 * jitter(0.1),
       level: 0.5,
@@ -627,9 +621,7 @@ export function playStart(): void {
 
 /** A brief marker between rounds. */
 export function playRoundAdvance(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.roundAdvance, {
       dur: 0.12 * jitter(0.15),
       level: 0.7,
@@ -647,9 +639,7 @@ export function playRoundAdvance(): void {
 
 /** A soft tick for the closing seconds of the study countdown. */
 export function playTick(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.tick, {
       dur: 0.025 * jitter(0.2),
       level: 0.9,
@@ -663,9 +653,7 @@ export function playTick(): void {
 
 /** One small confirm when the email signup lands. */
 export function playSubscribed(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     const base = 523 * jitter(0.02);
     tone(b.ctx, b.t0, CLIP_GAIN.subscribed, {
       dur: 0.13 * jitter(0.1), level: 0.3, freq: base, attack: 0.008,
