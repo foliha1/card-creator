@@ -420,9 +420,7 @@ function woodKnock(
 // ---------------------------------------------------------------------------
 
 export function playFlip(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
+  run((b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
 }
 
 export function playDeal(count: number = 1): void {
@@ -444,9 +442,7 @@ export function playDeal(count: number = 1): void {
  * Card-select cue: a very short, bright tick — quieter than flip.
  */
 export function playSelect(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.select, {
       dur: 0.03 * jitter(0.15),
       level: 0.9,
@@ -460,9 +456,7 @@ export function playSelect(): void {
 
 /** Deselect: the same tick, lower and softer. */
 export function playDeselect(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.deselect, {
       dur: 0.045 * jitter(0.15),
       level: 0.85,
@@ -476,9 +470,7 @@ export function playDeselect(): void {
 
 /** A palm on a table: broadband slap with a short low body under it. */
 export function playWhoopCall(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.whoop, {
       dur: 0.075 * jitter(0.12),
       level: 1,
@@ -493,9 +485,7 @@ export function playWhoopCall(): void {
 
 /** Wood knock, then two soft filtered tones. Warm, not a chime. */
 export function playCorrect(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     woodKnock(b.ctx, b.t0, CLIP_GAIN.correct, 0);
     const base = 392 * jitter(0.02);
     noise(b.ctx, b.t0, CLIP_GAIN.correct, {
@@ -518,9 +508,7 @@ export function playCorrect(): void {
 
 /** A dull, short lowpassed thud. No buzz. */
 export function playWrong(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     thump(b.ctx, b.t0, CLIP_GAIN.wrong, 0, 320, 0.16, 1);
     tone(b.ctx, b.t0, CLIP_GAIN.wrong, {
       dur: 0.14 * jitter(0.12), level: 0.3, freq: 130 * jitter(0.08), freqTo: 80,
@@ -530,9 +518,7 @@ export function playWrong(): void {
 
 /** Five or six clicks decelerating over ~900ms, then a settling click. */
 export function playDiceRoll(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     const n = 5 + Math.floor(Math.random() * 2);
     let at = 0.02;
     let gap = 0.075 * jitter(0.15);
@@ -564,9 +550,7 @@ export function playDiceRoll(): void {
 
 /** The die landing: one firm knock with a little body. */
 export function playDieLand(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.dieLand, {
       dur: 0.055 * jitter(0.15),
       level: 0.95,
@@ -581,9 +565,7 @@ export function playDieLand(): void {
 
 /** A soft rising filtered sweep — an intake of breath. */
 export function playPeek(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.peek, {
       dur: 0.34 * jitter(0.12),
       level: 0.9,
@@ -598,9 +580,7 @@ export function playPeek(): void {
 
 /** Nine overlapping flip textures scattered across ~400ms. */
 export function playReveal(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     for (let i = 0; i < 9; i++) {
       flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, rand(0, 0.4), rand(0.7, 1.05));
     }
@@ -609,9 +589,7 @@ export function playReveal(): void {
 
 /** Run-start cue: a low swell into a single wood knock. */
 export function playStart(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.start, {
       dur: 0.42 * jitter(0.1),
       level: 0.5,
@@ -627,9 +605,7 @@ export function playStart(): void {
 
 /** A brief marker between rounds. */
 export function playRoundAdvance(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.roundAdvance, {
       dur: 0.12 * jitter(0.15),
       level: 0.7,
@@ -647,9 +623,7 @@ export function playRoundAdvance(): void {
 
 /** A soft tick for the closing seconds of the study countdown. */
 export function playTick(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.tick, {
       dur: 0.025 * jitter(0.2),
       level: 0.9,
@@ -663,9 +637,7 @@ export function playTick(): void {
 
 /** One small confirm when the email signup lands. */
 export function playSubscribed(): void {
-  const b = begin();
-  if (!b) return;
-  safe(() => {
+  run((b) => {
     const base = 523 * jitter(0.02);
     tone(b.ctx, b.t0, CLIP_GAIN.subscribed, {
       dur: 0.13 * jitter(0.1), level: 0.3, freq: base, attack: 0.008,
