@@ -16,7 +16,7 @@
 // unlockAudio() must be called from a user gesture — it resumes the context and
 // starts the theme if a screen has asked for it.
 
-import { SFX_DEAL_STEP_MS } from "@/lib/animationTiming";
+
 
 let audioCtx: AudioContext | null = null;
 
