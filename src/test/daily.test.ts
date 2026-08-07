@@ -458,7 +458,7 @@ describe("formatDailyShare", () => {
         failed: false,
       })
     ).toBe(
-      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔵 · R3 🔵\n3 of 3 · Clean\n\nwhoop-whoop.lovable.app/today"
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔵 · R3 🔵\n3 of 3 · Clean\n\nhttps://whoop-whoop.com"
     );
   });
 
@@ -472,7 +472,7 @@ describe("formatDailyShare", () => {
         failed: false,
       })
     ).toBe(
-      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴🔵 · R3 🔴🔵\n3 of 3 · 2 misses\n\nwhoop-whoop.lovable.app/today"
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴🔵 · R3 🔴🔵\n3 of 3 · 2 misses\n\nhttps://whoop-whoop.com"
     );
   });
 
@@ -488,7 +488,7 @@ describe("formatDailyShare", () => {
         failed: false,
       })
     ).toBe(
-      "WHOOP! WHOOP! #14\nR1 🔵 · R2 👀🔴🔵 · R3 🔴🔴\n3 of 3 · 3 misses\n\nwhoop-whoop.lovable.app/today"
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 👀🔴🔵 · R3 🔴🔴\n3 of 3 · 3 misses\n\nhttps://whoop-whoop.com"
     );
   });
 
@@ -502,7 +502,7 @@ describe("formatDailyShare", () => {
         failed: false,
       })
     ).toBe(
-      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴🔴 · R3 🔵\n2 of 3 · 2 misses\n\nwhoop-whoop.lovable.app/today"
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴🔴 · R3 🔵\n2 of 3 · 2 misses\n\nhttps://whoop-whoop.com"
     );
   });
 
@@ -520,7 +520,7 @@ describe("formatDailyShare", () => {
         failed: true,
       })
     ).toBe(
-      "WHOOP! WHOOP! #14\nR1 🔴🔴 · R2 🔴🔴 · R3 🔴🔴\nWhooped! Better luck tomorrow.\n\nwhoop-whoop.lovable.app/today"
+      "WHOOP! WHOOP! #14\nR1 🔴🔴 · R2 🔴🔴 · R3 🔴🔴\nWhooped! Better luck tomorrow.\n\nhttps://whoop-whoop.com"
     );
   });
 });
