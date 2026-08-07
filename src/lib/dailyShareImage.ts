@@ -162,16 +162,32 @@ export async function renderDailyShareImage(
   // --- 1. Top shape rule ----------------------------------------------------
   ctx.drawImage(pattern, PAD, advance(RULE_H), RULE_W, RULE_H);
 
-  // --- 2. Header: the Daily lockup ------------------------------------------
+  // --- 2. Header: the Daily lockup + puzzle-number badge --------------------
   const headerTop = advance(HEADER_H);
   const LOCKUP_W = 394.22;
-  ctx.drawImage(
-    lockup,
-    (SHARE_IMAGE_W - LOCKUP_W) / 2,
-    headerTop,
-    LOCKUP_W,
-    HEADER_H
-  );
+  const BADGE_D = 204.56;
+  const HEADER_GAP = 25.1;
+  const rowW = LOCKUP_W + HEADER_GAP + BADGE_D;
+  const rowX = (SHARE_IMAGE_W - rowW) / 2;
+
+  ctx.drawImage(lockup, rowX, headerTop, LOCKUP_W, HEADER_H);
+
+  const badgeCx = rowX + LOCKUP_W + HEADER_GAP + BADGE_D / 2;
+  const badgeCy = headerTop + HEADER_H / 2;
+  ctx.save();
+  ctx.translate(badgeCx, badgeCy);
+  ctx.rotate((15.06 * Math.PI) / 180);
+  ctx.fillStyle = COLORS.accent ?? "#E79024";
+  ctx.beginPath();
+  ctx.arc(0, 0, BADGE_D / 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = COLORS.ink;
+  ctx.font = `100px ${FONT_FAMILY}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`#${result.puzzleNumber}`, 0, 0);
+  ctx.restore();
+
 
   // --- 3. Rounds panel ------------------------------------------------------
   const panelTop = advance(PANEL_H);
