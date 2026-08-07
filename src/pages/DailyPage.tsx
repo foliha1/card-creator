@@ -4,7 +4,7 @@ import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
-import DailyRoundIntro from "@/components/DailyRoundIntro";
+import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
 import DailyScreenFade from "@/components/DailyScreenFade";
 
@@ -34,6 +34,7 @@ import {
   DAILY_MATCH_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
   DEAL_MOVE_MS,
+  DEAL_STAGGER_MS,
 } from "@/lib/animationTiming";
 
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
@@ -769,18 +770,28 @@ const DailyPage: React.FC = () => {
 
 
   useEffect(() => {
-    // One cue for the whole deal, fired as the cards land.
-    let dealTimer: ReturnType<typeof setTimeout> | undefined;
-    if (phase === "STUDY") dealTimer = setTimeout(() => playDeal(1), DEAL_MOVE_MS);
-    if (phase === "ROLL") {
-      // Rounds 2 and 3 get a short marker as the next intro opens.
-      if (state.roundIndex > 1) playRoundAdvance();
-      playDiceRoll();
+    let diceTimer: ReturnType<typeof setTimeout> | undefined;
+    // The deal-in animation mounts with the board on DEAL. Each card lands at
+    // the END of its move, so the cue is scheduled from here with the same
+    // offset and stagger the CSS uses — one click per card, in step with it.
+    if (phase === "DEAL") {
+      playDeal(state.grid.length, { startMs: DEAL_MOVE_MS, stepMs: DEAL_STAGGER_MS });
     }
-    // Cards going face down at the end of the study window.
-    if (phase === "HIDE" && state.roundIndex === 1) playFlip();
-    return () => { if (dealTimer) clearTimeout(dealTimer); };
-  }, [phase, state.roundIndex]);
+    if (phase === "ROLL") {
+      // The intro fades up first and only then starts the tumble, so the dice
+      // cue waits for the tumble's first frame instead of the phase edge.
+      diceTimer = setTimeout(() => playDiceRoll(), DAILY_FADE_IN_MS);
+    }
+    // HIDE is the end of a round (roundIndex has already advanced) except the
+    // first time, where it is the cards going face down after the study window.
+    if (phase === "HIDE") {
+      if (state.roundIndex === 1) playFlip();
+      // Round-end marker. It lives here, not on ROLL, so it never collides
+      // with the dice roll of the next intro.
+      else playRoundAdvance();
+    }
+    return () => { if (diceTimer) clearTimeout(diceTimer); };
+  }, [phase, state.roundIndex, state.grid.length]);
 
   // Soft tick on each of the last three seconds of the study countdown.
   useEffect(() => {
@@ -793,11 +804,12 @@ const DailyPage: React.FC = () => {
   useEffect(() => {
     if (state.wrongToken === 0) return;
     hapticError();
-    // The whoop plays on the second tap; hold the outcome cue back until the
-    // wrong-match animation starts so the two never overlap.
-    const t = setTimeout(() => playWrong(), GREAT_MATCH_DELAY_MS);
-    return () => clearTimeout(t);
+    // The wrong-match animation starts on this same commit (no CSS delay), so
+    // the cue fires with its first frame. The whoop landed on the second tap,
+    // 450ms of claim resolution earlier, so the two never overlap.
+    playWrong();
   }, [state.wrongToken]);
+
 
   useEffect(() => {
     if (state.matchedPair.length === 0) return;

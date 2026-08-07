@@ -18,6 +18,8 @@
 
 
 
+import { SFX_DEAL_STEP_MS } from "@/lib/animationTiming";
+
 let audioCtx: AudioContext | null = null;
 
 const SFX_KEY = "ww_sfx_enabled";
@@ -43,6 +45,12 @@ export function getSfxEnabled(): boolean { return sfxEnabled; }
 export function setSfxEnabled(value: boolean): void {
   sfxEnabled = value;
   writeFlag(SFX_KEY, value);
+  // Effects are scheduled ahead of time (a cue can carry offsets of a second
+  // or more), so flipping the flag off must also silence what is already on
+  // the graph. The master bus is cut to zero immediately and every scheduled
+  // source is stopped; turning it back on restores unity gain.
+  if (!value) silenceSfxNow();
+  else if (sfxBus) sfxBus.gain.value = 1;
 }
 export function getMusicEnabled(): boolean { return musicEnabled; }
 export function setMusicEnabled(value: boolean): void {
@@ -112,6 +120,56 @@ export const CLIP_GAIN: Record<ClipName, number> = {
   subscribed: 1.1,
 };
 
+
+
+// ---------------------------------------------------------------------------
+// Master effect bus
+//
+// Every cue connects here instead of straight to the destination, so a mid-run
+// `sfxEnabled = false` can cut all sound on the spot — including the tails of
+// cues whose envelopes were already scheduled. Nodes register themselves so
+// they can be stopped as well as muted (a stopped source frees itself).
+// ---------------------------------------------------------------------------
+
+let sfxBus: GainNode | null = null;
+const liveSources = new Set<AudioScheduledSourceNode>();
+
+function getBus(ctx: AudioContext): GainNode {
+  if (!sfxBus) {
+    sfxBus = ctx.createGain();
+    sfxBus.gain.value = sfxEnabled ? 1 : 0;
+    sfxBus.connect(ctx.destination);
+  }
+  return sfxBus;
+}
+
+/** Registers a scheduled source so it can be killed when SFX are disabled. */
+function track(src: AudioScheduledSourceNode): void {
+  liveSources.add(src);
+  src.onended = () => { liveSources.delete(src); };
+}
+
+function silenceSfxNow(): void {
+  try {
+    if (sfxBus) sfxBus.gain.value = 0;
+    liveSources.forEach((src) => { try { src.stop(); } catch { /* ignore */ } });
+    liveSources.clear();
+  } catch { /* never throw from audio */ }
+}
+
+/**
+ * Test/instrumentation hook. When `window.__WW_SFX_LOG` is an array, every cue
+ * appends `{ name, t }` (t = performance.now() at the moment the cue fires).
+ * Costs nothing in production: the array only exists if a harness made it.
+ */
+function logCue(name: ClipName, detail?: number[]): void {
+  try {
+    const log = (window as unknown as {
+      __WW_SFX_LOG?: { name: string; t: number; detail?: number[] }[];
+    }).__WW_SFX_LOG;
+    if (Array.isArray(log)) log.push({ name, t: performance.now(), detail });
+  } catch { /* ignore */ }
+}
 
 /** True once a user gesture has run through unlockAudio(). */
 let audioUnlocked = false;
@@ -270,11 +328,18 @@ const LEAD = 0.03;
  * Runs a cue against a live context. If the context is still resuming, the cue
  * waits for the resume to land and is then scheduled against the fresh clock.
  */
-function run(fn: (b: { ctx: AudioContext; t0: number }) => void): void {
+function run(
+  name: ClipName,
+  fn: (b: { ctx: AudioContext; t0: number }) => void,
+  detail?: number[]
+): void {
   if (!sfxEnabled) return;
+  logCue(name, detail);
   try {
     const ctx = getCtx();
+    if (sfxBus) sfxBus.gain.value = 1;
     const fire = () => {
+      if (!sfxEnabled) return;
       try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
     };
     if (ctx.state === "running") fire();
@@ -328,7 +393,8 @@ function noise(ctx: AudioContext, t0: number, master: number, o: NoiseOpts): voi
 
   src.connect(biquad);
   biquad.connect(g);
-  g.connect(ctx.destination);
+  g.connect(getBus(ctx));
+  track(src);
   src.start(start, readAt);
   src.stop(start + o.dur + 0.02);
 }
@@ -360,7 +426,8 @@ function tone(ctx: AudioContext, t0: number, master: number, o: ToneOpts): void 
   g.gain.linearRampToValueAtTime(peak, start + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, start + o.dur);
   osc.connect(g);
-  g.connect(ctx.destination);
+  g.connect(getBus(ctx));
+  track(osc);
   osc.start(start);
   osc.stop(start + o.dur + 0.02);
 }
@@ -440,7 +507,7 @@ function woodKnock(
 // ---------------------------------------------------------------------------
 
 export function playFlip(): void {
-  run((b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
+  run("flip", (b) => flipTexture(b.ctx, b.t0, CLIP_GAIN.flip));
 }
 
 /**
@@ -450,21 +517,45 @@ export function playFlip(): void {
  */
 const DEAL_DEDUPE_MS = 250;
 let lastDealAt = 0;
-export function playDeal(_count: number = 1): void {
+
+/**
+ * The deal cue: one card-landing click per card, staggered so each click lands
+ * with its own card rather than firing as a single burst for the whole batch.
+ *
+ * `startMs` is the delay from now to the FIRST card landing — the daily passes
+ * DEAL_MOVE_MS, because a card's deal-in animation ends (the card "lands") at
+ * the end of its move, not at its start. Cards after the first land
+ * SFX_DEAL_STEP_MS apart, matching the CSS `--ww-deal-stagger`.
+ *
+ * The whole batch is scheduled inside a single Web Audio call, so no click can
+ * drift against the visual and a repeat call inside DEAL_DEDUPE_MS (a
+ * re-render firing the same effect twice) collapses into the first one.
+ */
+export function playDeal(
+  count: number = 1,
+  opts: { startMs?: number; stepMs?: number } = {}
+): void {
   const now = Date.now();
   if (now - lastDealAt < DEAL_DEDUPE_MS) return;
   lastDealAt = now;
-  run((b) => {
-    flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, 0, 1);
-    thump(b.ctx, b.t0, CLIP_GAIN.deal, 0.012, 320, 0.07, 0.4);
-  });
+  const n = Math.max(1, Math.min(24, Math.round(count)));
+  const start = Math.max(0, opts.startMs ?? 0) / 1000;
+  const step = (opts.stepMs ?? SFX_DEAL_STEP_MS) / 1000;
+  const offsets = Array.from({ length: n }, (_, i) => Math.round((start + i * step) * 1000));
+  run("deal", (b) => {
+    for (let i = 0; i < n; i++) {
+      const at = start + i * step;
+      flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, 1);
+      thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, 0.4);
+    }
+  }, offsets);
 }
 
 /**
  * Card-select cue: a very short, bright tick — quieter than flip.
  */
 export function playSelect(): void {
-  run((b) => {
+  run("select", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.select, {
       dur: 0.03 * jitter(0.15),
       level: 0.9,
@@ -478,7 +569,7 @@ export function playSelect(): void {
 
 /** Deselect: the same tick, lower and softer. */
 export function playDeselect(): void {
-  run((b) => {
+  run("deselect", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.deselect, {
       dur: 0.045 * jitter(0.15),
       level: 0.85,
@@ -492,7 +583,7 @@ export function playDeselect(): void {
 
 /** A palm on a table: broadband slap with a short low body under it. */
 export function playWhoopCall(): void {
-  run((b) => {
+  run("whoop", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.whoop, {
       dur: 0.075 * jitter(0.12),
       level: 1,
@@ -507,7 +598,7 @@ export function playWhoopCall(): void {
 
 /** Wood knock, then two soft filtered tones. Warm, not a chime. */
 export function playCorrect(): void {
-  run((b) => {
+  run("correct", (b) => {
     // No knock in front: the thud read as a mis-hit just before the payoff.
     const base = 392 * jitter(0.02);
     noise(b.ctx, b.t0, CLIP_GAIN.correct, {
@@ -529,7 +620,7 @@ export function playCorrect(): void {
 
 /** A dull, short lowpassed thud. No buzz. */
 export function playWrong(): void {
-  run((b) => {
+  run("wrong", (b) => {
     thump(b.ctx, b.t0, CLIP_GAIN.wrong, 0, 320, 0.16, 1);
     tone(b.ctx, b.t0, CLIP_GAIN.wrong, {
       dur: 0.14 * jitter(0.12), level: 0.3, freq: 130 * jitter(0.08), freqTo: 80,
@@ -539,7 +630,7 @@ export function playWrong(): void {
 
 /** Two soft tumbles into a settle — the simplest read of a die rolling. */
 export function playDiceRoll(): void {
-  run((b) => {
+  run("dice", (b) => {
     const click = (at: number, level: number) =>
       noise(b.ctx, b.t0, CLIP_GAIN.dice, {
         at,
@@ -567,7 +658,7 @@ export function playDiceRoll(): void {
 
 /** The die landing: one firm knock with a little body. */
 export function playDieLand(): void {
-  run((b) => {
+  run("dieLand", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.dieLand, {
       dur: 0.055 * jitter(0.15),
       level: 0.95,
@@ -582,7 +673,7 @@ export function playDieLand(): void {
 
 /** A soft rising filtered sweep — an intake of breath. */
 export function playPeek(): void {
-  run((b) => {
+  run("peek", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.peek, {
       dur: 0.34 * jitter(0.12),
       level: 0.9,
@@ -601,7 +692,7 @@ export function playReveal(): void {
   const now = Date.now();
   if (now - lastRevealAt < DEAL_DEDUPE_MS) return;
   lastRevealAt = now;
-  run((b) => {
+  run("reveal", (b) => {
     flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, 0, 1);
     thump(b.ctx, b.t0, CLIP_GAIN.reveal, 0.012, 320, 0.08, 0.4);
   });
@@ -609,7 +700,7 @@ export function playReveal(): void {
 
 /** Run-start cue: a low swell into a single wood knock. */
 export function playStart(): void {
-  run((b) => {
+  run("start", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.start, {
       dur: 0.42 * jitter(0.1),
       level: 0.5,
@@ -625,7 +716,7 @@ export function playStart(): void {
 
 /** A brief marker between rounds. */
 export function playRoundAdvance(): void {
-  run((b) => {
+  run("roundAdvance", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.roundAdvance, {
       dur: 0.12 * jitter(0.15),
       level: 0.7,
@@ -643,7 +734,7 @@ export function playRoundAdvance(): void {
 
 /** A soft tick for the closing seconds of the study countdown. */
 export function playTick(): void {
-  run((b) => {
+  run("tick", (b) => {
     noise(b.ctx, b.t0, CLIP_GAIN.tick, {
       dur: 0.025 * jitter(0.2),
       level: 0.9,
@@ -657,7 +748,7 @@ export function playTick(): void {
 
 /** One small confirm when the email signup lands. */
 export function playSubscribed(): void {
-  run((b) => {
+  run("subscribed", (b) => {
     const base = 523 * jitter(0.02);
     tone(b.ctx, b.t0, CLIP_GAIN.subscribed, {
       dur: 0.13 * jitter(0.1), level: 0.3, freq: base, attack: 0.008,
