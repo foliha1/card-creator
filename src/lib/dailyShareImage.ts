@@ -8,46 +8,21 @@
 import { DAILY_ROUNDS } from "@/lib/dailyEngine";
 import type { DailyResult } from "@/lib/daily";
 import { COLORS, FONT_FAMILY } from "@/lib/tokens";
+import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern_Seamless.svg.asset.json";
+import lockupAsset from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
 
 export const SHARE_IMAGE_W = 1080;
 export const SHARE_IMAGE_H = 1350;
 
 const PAD = 80;
 
-const LOGO_SRC = "/WhoopWhoop_Dark_Logo.svg";
-
 /** Streaks only make the card at 3+ days — below that it's clutter. */
 const SHARE_STREAK_MIN = 3;
 
 // --- Shape rule geometry ----------------------------------------------------
-// The on-screen rule (`DailyShapeRule`) paints a pre-baked seamless SVG tile,
-// so there is no shared JS sequence to import; this is the canvas-side
-// expression of the same brand rhythm.
+// The same seamless brand tile `DailyShapeRule` paints on screen.
+const RULE_W = 920;
 const RULE_H = 49.24;
-const RULE_ITEM_W = 42.67;
-const RULE_GAP = 20;
-const RULE_COUNT = 15;
-const SQUARE_H = 42.65;
-/** Indices that break the 4-step cycle with a warm-black inverted triangle. */
-const RULE_INK_DOWN = new Set([10, 14]);
-
-type RuleItem =
-  | { kind: "tri"; color: string; down: boolean }
-  | { kind: "square"; color: string };
-
-const ruleItem = (i: number): RuleItem => {
-  if (RULE_INK_DOWN.has(i)) return { kind: "tri", color: COLORS.ink, down: true };
-  switch (i % 4) {
-    case 0:
-      return { kind: "tri", color: COLORS.ink, down: false };
-    case 1:
-      return { kind: "square", color: COLORS.orange };
-    case 2:
-      return { kind: "tri", color: COLORS.blue, down: true };
-    default:
-      return { kind: "square", color: COLORS.red };
-  }
-};
 
 const loadImage = (src: string) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -75,51 +50,72 @@ const roundRect = (
   ctx.fill();
 };
 
-/** The brand shape rule: 15 items on a 42.67 + 20 pitch, 920 wide. */
-const drawShapeRule = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-  for (let i = 0; i < RULE_COUNT; i++) {
-    const ix = x + i * (RULE_ITEM_W + RULE_GAP);
-    const item = ruleItem(i);
-    ctx.fillStyle = item.color;
-
-    if (item.kind === "square") {
-      ctx.fillRect(ix, y + (RULE_H - SQUARE_H) / 2, RULE_ITEM_W, SQUARE_H);
-      continue;
-    }
-
-    ctx.beginPath();
-    if (item.down) {
-      ctx.moveTo(ix, y);
-      ctx.lineTo(ix + RULE_ITEM_W, y);
-      ctx.lineTo(ix + RULE_ITEM_W / 2, y + RULE_H);
-    } else {
-      ctx.moveTo(ix + RULE_ITEM_W / 2, y);
-      ctx.lineTo(ix + RULE_ITEM_W, y + RULE_H);
-      ctx.lineTo(ix, y + RULE_H);
-    }
-    ctx.closePath();
-    ctx.fill();
-  }
-};
-
 /** The score line, matching the wording used in the share text. */
 export function scoreLine(result: DailyResult, streak?: number | null): string {
+  return scoreSegments(result, streak)
+    .map((s) => s.text)
+    .join("");
+}
+
+type Segment = { text: string; color: string };
+
+/**
+ * The score line split into coloured runs. Concatenated, this is exactly the
+ * string `scoreLine` returns.
+ */
+function scoreSegments(result: DailyResult, streak?: number | null): Segment[] {
   const solved = result.roundsSolved ?? 0;
   const misses = result.totalMisses ?? 0;
-  const base =
-    solved === 0
-      ? "Whooped! Better luck tomorrow"
-      : `${solved} of ${DAILY_ROUNDS} · ${
-          misses === 0 ? "Clean" : `${misses} ${misses === 1 ? "miss" : "misses"}`
-        }`;
-  return typeof streak === "number" && streak >= SHARE_STREAK_MIN
-    ? `${base} · ${streak} day streak`
-    : base;
+  const dot: Segment = { text: " · ", color: COLORS.ink };
+  const segs: Segment[] = [];
+
+  if (solved === 0) {
+    segs.push({ text: "Whooped! Better luck tomorrow", color: COLORS.red });
+  } else {
+    segs.push({ text: `${solved} of ${DAILY_ROUNDS}`, color: COLORS.blue });
+    segs.push(dot);
+    segs.push(
+      misses === 0
+        ? { text: "Clean", color: COLORS.blue }
+        : {
+            text: `${misses} ${misses === 1 ? "miss" : "misses"}`,
+            color: COLORS.red,
+          }
+    );
+  }
+
+  if (typeof streak === "number" && streak >= SHARE_STREAK_MIN) {
+    segs.push(dot);
+    segs.push({ text: `${streak} day streak`, color: COLORS.ink });
+  }
+
+  return segs;
+}
+
+/** Draw the score line as one centred string with per-segment colours. */
+function drawScoreLine(
+  ctx: CanvasRenderingContext2D,
+  result: DailyResult,
+  streak: number | null | undefined,
+  cy: number
+) {
+  const segs = scoreSegments(result, streak);
+  ctx.font = `72px ${FONT_FAMILY}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  const widths = segs.map((s) => ctx.measureText(s.text).width);
+  const total = widths.reduce((a, b) => a + b, 0);
+  let x = (SHARE_IMAGE_W - total) / 2;
+  segs.forEach((s, i) => {
+    ctx.fillStyle = s.color;
+    ctx.fillText(s.text, x, cy);
+    x += widths[i];
+  });
 }
 
 /**
  * Render the day's result as a shareable PNG. Rejects if the canvas or the
- * logo is unavailable — callers fall back to the text-only share path.
+ * artwork is unavailable — callers fall back to the text-only share path.
  */
 export async function renderDailyShareImage(
   result: DailyResult,
@@ -139,7 +135,10 @@ export async function renderDailyShareImage(
     }
   }
 
-  const logo = await loadImage(LOGO_SRC);
+  const [lockup, pattern] = await Promise.all([
+    loadImage(lockupAsset.url),
+    loadImage(patternAsset.url),
+  ]);
 
   ctx.fillStyle = COLORS.surface;
   ctx.fillRect(0, 0, SHARE_IMAGE_W, SHARE_IMAGE_H);
@@ -148,10 +147,9 @@ export async function renderDailyShareImage(
   const HEADER_H = 331.4;
   const PANEL_W = 484;
   const PANEL_H = 446;
-  const SCORE_H = 90;
+  const SCORE_H = 50;
   const blocks = [RULE_H, HEADER_H, PANEL_H, SCORE_H, RULE_H];
-  const free =
-    SHARE_IMAGE_H - PAD * 2 - blocks.reduce((a, b) => a + b, 0);
+  const free = SHARE_IMAGE_H - PAD * 2 - blocks.reduce((a, b) => a + b, 0);
   const gap = free / (blocks.length - 1);
 
   let y = PAD;
@@ -162,48 +160,18 @@ export async function renderDailyShareImage(
   };
 
   // --- 1. Top shape rule ----------------------------------------------------
-  drawShapeRule(ctx, PAD, advance(RULE_H));
+  ctx.drawImage(pattern, PAD, advance(RULE_H), RULE_W, RULE_H);
 
-  // --- 2. Header row: logo lockup + puzzle-number badge ---------------------
+  // --- 2. Header: the Daily lockup ------------------------------------------
   const headerTop = advance(HEADER_H);
-  const LOGO_BLOCK_W = 394.22;
-  const BADGE_D = 204.56;
-  const HEADER_GAP = 25.1;
-  const rowW = LOGO_BLOCK_W + HEADER_GAP + BADGE_D;
-  const rowX = (SHARE_IMAGE_W - rowW) / 2;
-
-  // Logo, anchored top-left of its block.
-  ctx.drawImage(logo, rowX, headerTop, LOGO_BLOCK_W, 312.55);
-
-  // "Daily" badge.
-  const badgeW = 122.51;
-  const badgeH = 67.54;
-  const badgeX = rowX + 271.71;
-  const badgeY = headerTop + 263.68;
-  ctx.fillStyle = COLORS.red;
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 6);
-  ctx.fillStyle = COLORS.surface;
-  ctx.font = `40px ${FONT_FAMILY}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Daily", badgeX + badgeW / 2, badgeY + badgeH / 2 + 2);
-
-  // Puzzle-number badge: tilted orange disc.
-  const discCx = rowX + LOGO_BLOCK_W + HEADER_GAP + BADGE_D / 2;
-  const discCy = headerTop + HEADER_H / 2;
-  ctx.save();
-  ctx.translate(discCx, discCy);
-  ctx.rotate((15.06 * Math.PI) / 180);
-  ctx.fillStyle = COLORS.orange;
-  ctx.beginPath();
-  ctx.arc(0, 0, BADGE_D / 2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = COLORS.ink;
-  ctx.font = `100px ${FONT_FAMILY}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(`#${result.puzzleNumber}`, 0, 4);
-  ctx.restore();
+  const LOCKUP_W = 394.22;
+  ctx.drawImage(
+    lockup,
+    (SHARE_IMAGE_W - LOCKUP_W) / 2,
+    headerTop,
+    LOCKUP_W,
+    HEADER_H
+  );
 
   // --- 3. Rounds panel ------------------------------------------------------
   const panelTop = advance(PANEL_H);
@@ -230,18 +198,29 @@ export async function renderDailyShareImage(
     ctx.textBaseline = "middle";
     ctx.fillText(`R${i + 1}`, rowsX, midY - 4);
 
-    // Marks: exactly two slots, right-aligned.
+    // Marks: two slots, flush right — unused slots sit on the left.
     const MARK = 64;
     const MARK_GAP = 20;
     const groupW = MARK * 2 + MARK_GAP; // 148
     const groupX = rowsX + ROW_W - groupW;
     const roundEvents = events[i] ?? [];
+    const slots: (string | undefined)[] = [undefined, undefined];
+    for (let k = 0; k < roundEvents.length && k < 2; k++) {
+      // right-align: last event lands in the right slot
+      slots[2 - Math.min(roundEvents.length, 2) + k] = roundEvents[k];
+    }
     for (let s = 0; s < 2; s++) {
-      const ev = roundEvents[s];
-      ctx.fillStyle =
-        ev === "SOLVE" ? COLORS.blue : ev ? COLORS.red : COLORS.panel;
+      const ev = slots[s];
+      if (!ev) continue;
+      ctx.fillStyle = ev === "SOLVE" ? COLORS.blue : COLORS.red;
       ctx.beginPath();
-      ctx.arc(groupX + s * (MARK + MARK_GAP) + MARK / 2, midY, MARK / 2, 0, Math.PI * 2);
+      ctx.arc(
+        groupX + s * (MARK + MARK_GAP) + MARK / 2,
+        midY,
+        MARK / 2,
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
     }
 
@@ -271,14 +250,10 @@ export async function renderDailyShareImage(
 
   // --- 4. Score line --------------------------------------------------------
   const scoreTop = advance(SCORE_H);
-  ctx.fillStyle = COLORS.blue;
-  ctx.font = `72px ${FONT_FAMILY}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(scoreLine(result, streak), SHARE_IMAGE_W / 2, scoreTop + SCORE_H / 2);
+  drawScoreLine(ctx, result, streak, scoreTop + SCORE_H / 2);
 
   // --- 5. Bottom shape rule -------------------------------------------------
-  drawShapeRule(ctx, PAD, advance(RULE_H));
+  ctx.drawImage(pattern, PAD, advance(RULE_H), RULE_W, RULE_H);
 
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
