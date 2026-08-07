@@ -4,7 +4,7 @@ import { HelpCircle } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
-import DailyRoundIntro from "@/components/DailyRoundIntro";
+import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
 import DailyScreenFade from "@/components/DailyScreenFade";
 
@@ -34,6 +34,7 @@ import {
   DAILY_MATCH_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
   DEAL_MOVE_MS,
+  DEAL_STAGGER_MS,
 } from "@/lib/animationTiming";
 
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
