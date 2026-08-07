@@ -7,9 +7,9 @@ const FADE_MS = 200;
 
 const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
 
-const friend = (size: number, italic = false): React.CSSProperties => ({
+const friend = (size: number, italic = false, scale = 1): React.CSSProperties => ({
   fontFamily: FONT_FAMILY,
-  fontSize: size,
+  fontSize: Math.round(size * scale),
   fontStyle: italic ? "italic" : "normal",
   fontWeight: 400,
   lineHeight: 1.2,
@@ -17,24 +17,44 @@ const friend = (size: number, italic = false): React.CSSProperties => ({
   margin: 0,
 });
 
-const geist = (): React.CSSProperties => ({
+const geist = (scale = 1): React.CSSProperties => ({
   fontFamily: GEIST,
-  fontSize: 14,
+  fontSize: Math.round(14 * scale),
   fontWeight: 500,
-  lineHeight: 1.2,
+  lineHeight: 1.35,
   color: COLORS.ink,
   margin: 0,
 });
 
 const DIE_CARDS = ["Match the NUMBER", "Match the SHAPE", "Match the COLOR"];
 
+/** Type scale steps up once past tablet so the card doesn't read as a phone. */
+const useTypeScale = () => {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const md = window.matchMedia("(min-width: 768px)");
+    const lg = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setScale(lg.matches ? 1.12 : md.matches ? 1.08 : 1);
+    sync();
+    md.addEventListener("change", sync);
+    lg.addEventListener("change", sync);
+    return () => {
+      md.removeEventListener("change", sync);
+      lg.removeEventListener("change", sync);
+    };
+  }, []);
+  return scale;
+};
+
 const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [visible, setVisible] = useState(false);
+  const scale = useTypeScale();
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
 
   const handleClose = () => {
     setVisible(false);
@@ -79,18 +99,16 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <DailyShapeRule />
 
       <div
+        className="daily-howto-card"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          maxWidth: 354,
           margin: "0 auto",
           boxSizing: "border-box",
           background: COLORS.panel,
           borderRadius: RADIUS.sm,
-          padding: "24px 32px 32px",
           display: "flex",
           flexDirection: "column",
-          gap: 24,
           textAlign: "left",
           flex: "0 1 auto",
         }}
@@ -113,11 +131,11 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <X size={24} strokeWidth={2.5} />
         </button>
 
-        <h2 style={friend(36, true)}>How to Play</h2>
+        <h2 style={friend(36, true, scale)}>How to Play</h2>
 
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <h3 style={friend(24)}>Find 3 matching pairs from memory.</h3>
-          <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
+          <h3 style={friend(24, false, scale)}>Find 3 matching pairs from memory.</h3>
+          <ul style={{ ...geist(scale), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
             <li>All cards show for 10 seconds. Study them.</li>
             <li>The cards flip over. Then the die decides what a match means.</li>
             <li>Tap WHOOP! WHOOP!, then tap two cards.</li>
@@ -125,7 +143,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </section>
 
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <h3 style={friend(24)}>The Die:</h3>
+          <h3 style={friend(24, false, scale)}>The Die:</h3>
           <div
             style={{
               display: "flex",
@@ -140,7 +158,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 style={{
                   flex: "1 1 0",
                   minWidth: 0,
-                  maxWidth: 100,
+                  maxWidth: "var(--howto-die-max, 100px)",
                   aspectRatio: "1 / 1",
                   background: "#FFFFFF",
                   border: BORDER.heavy,
@@ -152,27 +170,27 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   boxSizing: "border-box",
                 }}
               >
-                <span style={{ ...friend(24), fontSize: "clamp(15px, 5vw, 24px)", textAlign: "center" }}>
+                <span style={{ ...friend(24, false, scale), fontSize: `clamp(15px, ${scale > 1 ? "2.4vw" : "5vw"}, ${Math.round(24 * scale)}px)`, textAlign: "center" }}>
                   {label}
                 </span>
               </div>
             ))}
           </div>
-          <p style={geist()}>
+          <p style={geist(scale)}>
             The die rolls again after every round. The cards do not move. What matters about them does.
           </p>
         </section>
 
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <h3 style={friend(24)}>Three Rounds:</h3>
-          <ul style={{ ...geist(), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
+          <h3 style={friend(24, false, scale)}>Three Rounds:</h3>
+          <ul style={{ ...geist(scale), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
             <li>Each round takes one pair off the board. Nine cards, then seven, then five.</li>
             <li>Two misses ends a round.</li>
             <li>One Peek per game shows the board for 5 seconds. It shows up in your score.</li>
           </ul>
         </section>
 
-        <p style={{ ...friend(20), whiteSpace: "pre-line" }}>
+        <p className="daily-howto-outro" style={{ ...friend(20, false, scale), whiteSpace: "pre-line" }}>
           {"A new game drops every day at midnight.\nSign up for the daily reminder email."}
         </p>
       </div>

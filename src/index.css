@@ -334,6 +334,35 @@ All colors MUST be HSL.
   }
 }
 
+/* ── How to Play modal card ──
+   Mobile keeps the 354px column. Tablet/desktop widen the card and open up the
+   padding; the type scale steps up in DailyHowToPlay.tsx to match. */
+.daily-howto-card {
+  --howto-die-max: 100px;
+  max-width: 354px;
+  padding: 24px 32px 32px;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .daily-howto-card {
+    --howto-die-max: 130px;
+    max-width: 520px;
+    padding: 28px 40px 40px;
+    gap: 26px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .daily-howto-card {
+    --howto-die-max: 128px;
+    max-width: 540px;
+    padding: 28px 40px 36px;
+    gap: 22px;
+  }
+}
+
+
 /* ── Daily ready screen buttons ──
    Maps to COLORS tokens: panel / panelMutedHover / red / redHover / blue */
 .daily-btn-howto,
