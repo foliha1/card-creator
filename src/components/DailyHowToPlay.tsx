@@ -152,7 +152,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               width: "100%",
             }}
           >
-            {DIE_CARDS.map((label) => (
+            {DIE_CARDS.map(({ label, src }) => (
               <div
                 key={label}
                 style={{
@@ -170,9 +170,12 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   boxSizing: "border-box",
                 }}
               >
-                <span style={{ ...friend(24, false, scale), fontSize: `clamp(15px, ${scale > 1 ? "2.4vw" : "5vw"}, ${Math.round(24 * scale)}px)`, textAlign: "center" }}>
-                  {label}
-                </span>
+                <img
+                  src={src}
+                  alt={label}
+                  loading="lazy"
+                  style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                />
               </div>
             ))}
           </div>
