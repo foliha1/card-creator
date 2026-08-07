@@ -211,7 +211,7 @@ beforeEach(() => {
   let nextFrame = 1;
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
     const id = nextFrame++;
-    frames.set(id, setTimeout(() => { frames.delete(id); cb(Date.now()); }, 16));
+    frames.set(id, setTimeout(() => { frames.delete(id); cb(Date.now()); }, 250));
     return id;
   });
   vi.stubGlobal("cancelAnimationFrame", (id: number) => {
