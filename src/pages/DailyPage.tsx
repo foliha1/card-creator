@@ -883,7 +883,7 @@ const DailyPage: React.FC = () => {
   };
 
 
-  const [ty, tm, td] = getLocalDateString().split("-").map(Number);
+  const [ty, tm, td] = daily.dateKey.split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
     day: "numeric",
@@ -941,7 +941,13 @@ const DailyPage: React.FC = () => {
               pointerEvents: "none",
             }}
           >
-            DEBUG — LOCK BYPASSED, NOT A REAL RUN
+            {`DEBUG — ${
+              daily.debugOverride === "seed"
+                ? "SEED OVERRIDE"
+                : daily.debugOverride === "day"
+                  ? `DAY OFFSET ${daily.state ? "" : ""}${daily.dateKey}`
+                  : "LOCK BYPASSED"
+            } · SEED ${daily.seed} · #${daily.puzzleNumber} · NOT A REAL RUN`}
           </div>
         )}
         {ready && (
