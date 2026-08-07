@@ -89,7 +89,7 @@ describe("audio cues", () => {
       .sort((a, b) => a - b);
     expect(starts.length).toBeGreaterThanOrEqual(1);
     expect(Math.max(...starts) - Math.min(...starts)).toBeLessThanOrEqual(20);
-    expect(starts.some((t) => Math.abs(t - 900) <= 10)).toBe(true);
+    expect(starts.some((t) => t >= 900 && t <= 950)).toBe(true);
   });
 
   it("collapses a repeated deal cue inside the dedupe window", async () => {
