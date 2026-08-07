@@ -218,7 +218,7 @@ export function saveDailyResult(result: DailyResult): void {
 // Shareable result — marks and counts only. Never a card, position or rule.
 // ---------------------------------------------------------------------------
 
-export const DAILY_SHARE_URL = "whoop-whoop.lovable.app/today";
+export const DAILY_SHARE_URL = "https://whoop-whoop.com";
 
 /**
  * The share text:
@@ -226,7 +226,7 @@ export const DAILY_SHARE_URL = "whoop-whoop.lovable.app/today";
  *   R1 🔵 · R2 👀🔴🔵 · R3 🔴🔵
  *   3 of 3 · 3 misses
  *
- *   whoop-whoop.lovable.app/today
+ *   https://whoop-whoop.com
  */
 /** Streaks only make the share block at 3+ days — below that it's clutter. */
 const SHARE_STREAK_MIN = 3;
