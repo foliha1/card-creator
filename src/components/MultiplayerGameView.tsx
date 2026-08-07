@@ -40,7 +40,7 @@ import { serverNow } from "@/hooks/useServerClock";
 import RollHeroOverlay from "@/components/RollHeroOverlay";
 import { MATCH_ART_SRC } from "@/components/MatchDie";
 import type { Card } from "@/cardData";
-import { ALL_CARDS, CARD_BACK_PATH } from "@/cardData";
+import { preloadGameArt } from "@/lib/preloadArt";
 import { callClaimLock } from "@/lib/claimLock";
 import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
@@ -762,9 +762,6 @@ const DebugControls: React.FC<{
 // -------- Main component --------
 
 
-// Kept alive for the lifetime of the page so the browser cannot evict the art.
-const preloadedArt: HTMLImageElement[] = [];
-
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
   heartbeatStale, awaySkip, hostDisconnectedSeats, presenceStatus, soloMode = false,
@@ -796,15 +793,8 @@ const MultiplayerGameView: React.FC<Props> = ({
   // when the 1100ms window expires (or is skipped if we arrived too late).
   // Preload every card face once on mount. Uncached SVGs otherwise decode
   // after the flip starts, briefly showing an empty/backed front face.
-  // References are parked in a module-level array so nothing gets evicted.
   React.useEffect(() => {
-    if (preloadedArt.length > 0) return;
-    for (const src of [CARD_BACK_PATH, ...Object.values(MATCH_ART_SRC), ...ALL_CARDS.map((c) => c.svgPath)]) {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = src;
-      preloadedArt.push(img);
-    }
+    preloadGameArt();
   }, []);
 
   // Pending sound timers, cleared on unmount so no chime outlives the board.
