@@ -11,8 +11,9 @@ export const GREAT_MATCH_DELAY_MS = 300;
 export const DEAL_STAGGER_MS = 60;
 /** Duration of the deal-in move — a card "lands" at the end of it. */
 export const DEAL_MOVE_MS = 900;
-/** Internal per-card step of playDeal()'s multi-card burst (sounds.ts). */
-export const SFX_DEAL_STEP_MS = 70;
+/** Internal per-card step of playDeal()'s multi-card burst (sounds.ts).
+ *  Matched to DEAL_STAGGER_MS so each click lands with its card. */
+export const SFX_DEAL_STEP_MS = DEAL_STAGGER_MS;
 
 // ---- daily-specific match sequence ----------------------------------------
 // The daily needs two beats the multiplayer settle does not have: the pair is
