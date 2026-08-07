@@ -355,10 +355,10 @@ All colors MUST be HSL.
 
 @media (min-width: 1024px) {
   .daily-howto-card {
-    --howto-die-max: 150px;
-    max-width: 560px;
-    padding: 32px 44px 44px;
-    gap: 28px;
+    --howto-die-max: 128px;
+    max-width: 540px;
+    padding: 28px 40px 36px;
+    gap: 22px;
   }
 }
 

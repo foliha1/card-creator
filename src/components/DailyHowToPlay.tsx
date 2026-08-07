@@ -34,7 +34,7 @@ const useTypeScale = () => {
   useEffect(() => {
     const md = window.matchMedia("(min-width: 768px)");
     const lg = window.matchMedia("(min-width: 1024px)");
-    const sync = () => setScale(lg.matches ? 1.2 : md.matches ? 1.12 : 1);
+    const sync = () => setScale(lg.matches ? 1.12 : md.matches ? 1.08 : 1);
     sync();
     md.addEventListener("change", sync);
     lg.addEventListener("change", sync);
