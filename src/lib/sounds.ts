@@ -596,7 +596,11 @@ export function playPeek(): void {
 }
 
 /** One flip texture with a little body — a single cue for the whole board. */
+let lastRevealAt = 0;
 export function playReveal(): void {
+  const now = Date.now();
+  if (now - lastRevealAt < DEAL_DEDUPE_MS) return;
+  lastRevealAt = now;
   run((b) => {
     flipTexture(b.ctx, b.t0, CLIP_GAIN.reveal, 0, 1);
     thump(b.ctx, b.t0, CLIP_GAIN.reveal, 0.012, 320, 0.08, 0.4);
