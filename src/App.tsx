@@ -1,4 +1,3 @@
-import ShotEmail from "@/pages/__ShotEmail";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -45,7 +44,6 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/play/:roomCode" element={<MultiplayerPage />} />
         <Route path="/today" element={<DailyPage />} />
         <Route path="/about" element={<SupportPage />} />
-        <Route path="/__shot-email" element={<ShotEmail />} />
         <Route path="/typography" element={<TypographyPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
