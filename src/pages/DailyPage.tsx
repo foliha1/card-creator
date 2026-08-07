@@ -719,7 +719,10 @@ const DailyPage: React.FC = () => {
 
 
   useEffect(() => {
-    if (phase === "STUDY") playDeal(9);
+    // The clicks land with the cards: each card arrives DEAL_MOVE_MS after its
+    // own staggered start, and playDeal() steps on the same stagger.
+    let dealTimer: ReturnType<typeof setTimeout> | undefined;
+    if (phase === "STUDY") dealTimer = setTimeout(() => playDeal(9), DEAL_MOVE_MS);
     if (phase === "ROLL") {
       // Rounds 2 and 3 get a short marker as the next intro opens.
       if (state.roundIndex > 1) playRoundAdvance();
@@ -727,6 +730,7 @@ const DailyPage: React.FC = () => {
     }
     // Cards going face down at the end of the study window.
     if (phase === "HIDE" && state.roundIndex === 1) playFlip();
+    return () => { if (dealTimer) clearTimeout(dealTimer); };
   }, [phase, state.roundIndex]);
 
   // Soft tick on each of the last three seconds of the study countdown.
