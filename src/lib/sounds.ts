@@ -16,6 +16,8 @@
 // unlockAudio() must be called from a user gesture — it resumes the context and
 // starts the theme if a screen has asked for it.
 
+import { SFX_DEAL_STEP_MS } from "@/lib/animationTiming";
+
 let audioCtx: AudioContext | null = null;
 
 const SFX_KEY = "ww_sfx_enabled";
@@ -95,7 +97,7 @@ type ClipName =
 export const CLIP_GAIN: Record<ClipName, number> = {
   flip: 0.95,
   deal: 1.0,
-  dice: 0.95,
+  dice: 0.55,
   wrong: 1.8,
   whoop: 0.72,
   correct: 1.7,
@@ -443,11 +445,11 @@ export function playFlip(): void {
 
 export function playDeal(count: number = 1): void {
   const n = Math.max(1, Math.floor(count));
+  const step = SFX_DEAL_STEP_MS / 1000;
   run((b) => {
     for (let i = 0; i < n; i++) {
-      // ~70ms stagger with per-card jitter, so repeated cards never sound like
-      // the same sample twice.
-      const at = i * 0.07 * jitter(0.12);
+      // One click per card, on the same cadence the cards land with.
+      const at = i * step * jitter(0.06);
       flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, rand(0.8, 1.1));
       thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, rand(0.3, 0.45));
     }
@@ -502,10 +504,9 @@ export function playWhoopCall(): void {
 /** Wood knock, then two soft filtered tones. Warm, not a chime. */
 export function playCorrect(): void {
   run((b) => {
-    woodKnock(b.ctx, b.t0, CLIP_GAIN.correct, 0);
+    // No knock in front: the thud read as a mis-hit just before the payoff.
     const base = 392 * jitter(0.02);
     noise(b.ctx, b.t0, CLIP_GAIN.correct, {
-      at: 0.1,
       dur: 0.16,
       level: 0.22,
       filter: "bandpass",
@@ -514,10 +515,10 @@ export function playCorrect(): void {
       attack: 0.01,
     });
     tone(b.ctx, b.t0, CLIP_GAIN.correct, {
-      at: 0.1, dur: 0.2 * jitter(0.1), level: 0.2, freq: base, attack: 0.012,
+      dur: 0.2 * jitter(0.1), level: 0.2, freq: base, attack: 0.012,
     });
     tone(b.ctx, b.t0, CLIP_GAIN.correct, {
-      at: 0.24, dur: 0.28 * jitter(0.1), level: 0.18, freq: base * 1.5, attack: 0.014,
+      at: 0.14, dur: 0.28 * jitter(0.1), level: 0.18, freq: base * 1.5, attack: 0.014,
     });
   });
 }
@@ -532,7 +533,7 @@ export function playWrong(): void {
   });
 }
 
-/** Five or six clicks decelerating over ~900ms, then a settling click. */
+/** Five or six soft clicks decelerating over ~900ms, then a settling click. */
 export function playDiceRoll(): void {
   run((b) => {
     const n = 5 + Math.floor(Math.random() * 2);
@@ -541,12 +542,13 @@ export function playDiceRoll(): void {
     for (let i = 0; i < n; i++) {
       noise(b.ctx, b.t0, CLIP_GAIN.dice, {
         at,
-        dur: 0.04 * jitter(0.2),
-        level: rand(0.7, 1),
+        dur: 0.03 * jitter(0.2),
+        level: rand(0.45, 0.65),
         filter: "bandpass",
-        freq: 2400 * jitter(0.3),
-        q: 2.4 * jitter(0.25),
-        attack: 0.0008,
+        // Lower and narrower than before: less clack, more tumble.
+        freq: 1500 * jitter(0.25),
+        q: 1.6 * jitter(0.25),
+        attack: 0.0015,
       });
       at += gap;
       gap *= rand(1.35, 1.6); // decelerate
@@ -554,12 +556,12 @@ export function playDiceRoll(): void {
     const settle = Math.min(at, 0.86);
     noise(b.ctx, b.t0, CLIP_GAIN.dice, {
       at: settle,
-      dur: 0.06,
-      level: 0.9,
+      dur: 0.055,
+      level: 0.5,
       filter: "lowpass",
-      freq: 1400 * jitter(0.15),
-      q: 3,
-      attack: 0.001,
+      freq: 1000 * jitter(0.15),
+      q: 2,
+      attack: 0.0015,
     });
   });
 }
