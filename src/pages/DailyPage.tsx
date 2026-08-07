@@ -886,15 +886,15 @@ const DailyPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{`Daily Puzzle #${daily.puzzleNumber} | WHOOP! WHOOP!`}</title>
+        <title>{`Daily Puzzle #${daily.puzzleNumber} | WHOOP! WHOOP! — Daily Memory Puzzle Game`}</title>
         <meta
           name="description"
-          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same WHOOP! WHOOP! daily recall puzzle."
+          content="Play the free WHOOP! WHOOP! daily puzzle. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
         />
-        <meta property="og:title" content={`WHOOP! WHOOP! Daily Puzzle #${daily.puzzleNumber}`} />
+        <meta property="og:title" content={`WHOOP! WHOOP! — Daily Memory Puzzle Game | Daily Puzzle #${daily.puzzleNumber}`} />
         <meta
           property="og:description"
-          content="Nine cards, ten seconds, three rules and five misses. Everyone plays the same WHOOP! WHOOP! daily recall puzzle."
+          content="Play the free WHOOP! WHOOP! daily puzzle. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
         />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://whoop-whoop.lovable.app/today" />

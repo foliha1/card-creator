@@ -195,18 +195,18 @@ const LandingPage: React.FC = () => {
   return (
   <>
     <Helmet>
-      <title>WHOOP! WHOOP! — Nine cards. Ten seconds. Then the rules change.</title>
+      <title>WHOOP! WHOOP! — Daily Memory Puzzle Game</title>
       <meta
         name="description"
-        content="A memory game that moves the target on you. Nine cards, ten seconds, three rounds. Play the free daily puzzle, solo, or with friends."
+        content="Play the free WHOOP! WHOOP! daily puzzle. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
       />
       <meta
         property="og:title"
-        content="WHOOP! WHOOP! — Nine cards. Ten seconds. Then the rules change."
+        content="WHOOP! WHOOP! — Daily Memory Puzzle Game"
       />
       <meta
         property="og:description"
-        content="A memory game that moves the target on you. New puzzle every day. Free, no signup."
+        content="Play the free WHOOP! WHOOP! daily puzzle. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
       />
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://whoop-whoop.lovable.app/" />
