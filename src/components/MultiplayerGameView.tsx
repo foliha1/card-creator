@@ -1030,12 +1030,9 @@ const MultiplayerGameView: React.FC<Props> = ({
     prevOccupiedRef.current = occupiedCount;
     const count = occupiedCount - prev;
     if (count <= 0) return;
-    // playDeal() already plays a multi-card burst (SFX_DEAL_STEP_MS apart), so
-    // keep that for the batch and align its midpoint with the midpoint of the
-    // cards landing: card i lands at i*DEAL_STAGGER_MS + DEAL_MOVE_MS.
-    const landMid = DEAL_MOVE_MS + ((count - 1) * DEAL_STAGGER_MS) / 2;
-    const soundMid = ((count - 1) * SFX_DEAL_STEP_MS) / 2;
-    const delay = Math.max(0, Math.round(landMid - soundMid));
+    // playDeal() is now a single soft landing sound for the whole batch;
+    // fire it once as the first new card lands.
+    const delay = Math.max(0, Math.round(DEAL_MOVE_MS));
     const t = setTimeout(() => playDeal(count), delay);
     soundTimersRef.current.push(t);
     return () => { clearTimeout(t); };
