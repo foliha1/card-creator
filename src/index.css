@@ -335,9 +335,8 @@ All colors MUST be HSL.
 }
 
 /* ── How to Play modal card ──
-   Mobile keeps the 354px column. Tablet/desktop widen the card, open up the
-   padding and scale the type so the copy doesn't read as a phone screen
-   stranded in the middle of a large viewport. */
+   Mobile keeps the 354px column. Tablet/desktop widen the card and open up the
+   padding; the type scale steps up in DailyHowToPlay.tsx to match. */
 .daily-howto-card {
   --howto-die-max: 100px;
   max-width: 354px;
@@ -347,30 +346,20 @@ All colors MUST be HSL.
 
 @media (min-width: 768px) {
   .daily-howto-card {
-    --howto-die-max: 150px;
-    max-width: 560px;
+    --howto-die-max: 130px;
+    max-width: 520px;
     padding: 28px 40px 40px;
-    gap: 28px;
+    gap: 26px;
   }
-  .daily-howto-card h2 { font-size: 44px; }
-  .daily-howto-card h3 { font-size: 28px; }
-  .daily-howto-card li,
-  .daily-howto-card p { font-size: 16px; }
-  .daily-howto-card p.daily-howto-outro { font-size: 22px; }
 }
 
 @media (min-width: 1024px) {
   .daily-howto-card {
-    --howto-die-max: 170px;
-    max-width: 640px;
-    padding: 32px 48px 48px;
-    gap: 32px;
+    --howto-die-max: 150px;
+    max-width: 560px;
+    padding: 32px 44px 44px;
+    gap: 28px;
   }
-  .daily-howto-card h2 { font-size: 52px; }
-  .daily-howto-card h3 { font-size: 30px; }
-  .daily-howto-card li,
-  .daily-howto-card p { font-size: 17px; }
-  .daily-howto-card p.daily-howto-outro { font-size: 24px; }
 }
 
 
