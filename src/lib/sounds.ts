@@ -43,6 +43,12 @@ export function getSfxEnabled(): boolean { return sfxEnabled; }
 export function setSfxEnabled(value: boolean): void {
   sfxEnabled = value;
   writeFlag(SFX_KEY, value);
+  // Effects are scheduled ahead of time (a cue can carry offsets of a second
+  // or more), so flipping the flag off must also silence what is already on
+  // the graph. The master bus is cut to zero immediately and every scheduled
+  // source is stopped; turning it back on restores unity gain.
+  if (!value) silenceSfxNow();
+  else if (sfxBus) sfxBus.gain.value = 1;
 }
 export function getMusicEnabled(): boolean { return musicEnabled; }
 export function setMusicEnabled(value: boolean): void {
@@ -112,6 +118,55 @@ export const CLIP_GAIN: Record<ClipName, number> = {
   subscribed: 1.1,
 };
 
+
+
+// ---------------------------------------------------------------------------
+// Master effect bus
+//
+// Every cue connects here instead of straight to the destination, so a mid-run
+// `sfxEnabled = false` can cut all sound on the spot — including the tails of
+// cues whose envelopes were already scheduled. Nodes register themselves so
+// they can be stopped as well as muted (a stopped source frees itself).
+// ---------------------------------------------------------------------------
+
+let sfxBus: GainNode | null = null;
+const liveSources = new Set<AudioScheduledSourceNode>();
+
+function getBus(ctx: AudioContext): GainNode {
+  if (!sfxBus) {
+    sfxBus = ctx.createGain();
+    sfxBus.gain.value = sfxEnabled ? 1 : 0;
+    sfxBus.connect(ctx.destination);
+  }
+  return sfxBus;
+}
+
+/** Registers a scheduled source so it can be killed when SFX are disabled. */
+function track(src: AudioScheduledSourceNode): void {
+  liveSources.add(src);
+  src.onended = () => { liveSources.delete(src); };
+}
+
+function silenceSfxNow(): void {
+  try {
+    if (sfxBus) sfxBus.gain.value = 0;
+    liveSources.forEach((src) => { try { src.stop(); } catch { /* ignore */ } });
+    liveSources.clear();
+  } catch { /* never throw from audio */ }
+}
+
+/**
+ * Test/instrumentation hook. When `window.__WW_SFX_LOG` is an array, every cue
+ * appends `{ name, t }` (t = performance.now() at the moment the cue fires).
+ * Costs nothing in production: the array only exists if a harness made it.
+ */
+function logCue(name: ClipName): void {
+  try {
+    const log = (window as unknown as { __WW_SFX_LOG?: { name: string; t: number }[] })
+      .__WW_SFX_LOG;
+    if (Array.isArray(log)) log.push({ name, t: performance.now() });
+  } catch { /* ignore */ }
+}
 
 /** True once a user gesture has run through unlockAudio(). */
 let audioUnlocked = false;
@@ -270,11 +325,14 @@ const LEAD = 0.03;
  * Runs a cue against a live context. If the context is still resuming, the cue
  * waits for the resume to land and is then scheduled against the fresh clock.
  */
-function run(fn: (b: { ctx: AudioContext; t0: number }) => void): void {
+function run(name: ClipName, fn: (b: { ctx: AudioContext; t0: number }) => void): void {
   if (!sfxEnabled) return;
+  logCue(name);
   try {
     const ctx = getCtx();
+    if (sfxBus) sfxBus.gain.value = 1;
     const fire = () => {
+      if (!sfxEnabled) return;
       try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
     };
     if (ctx.state === "running") fire();
@@ -328,7 +386,8 @@ function noise(ctx: AudioContext, t0: number, master: number, o: NoiseOpts): voi
 
   src.connect(biquad);
   biquad.connect(g);
-  g.connect(ctx.destination);
+  g.connect(getBus(ctx));
+  track(src);
   src.start(start, readAt);
   src.stop(start + o.dur + 0.02);
 }
@@ -360,7 +419,8 @@ function tone(ctx: AudioContext, t0: number, master: number, o: ToneOpts): void 
   g.gain.linearRampToValueAtTime(peak, start + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, start + o.dur);
   osc.connect(g);
-  g.connect(ctx.destination);
+  g.connect(getBus(ctx));
+  track(osc);
   osc.start(start);
   osc.stop(start + o.dur + 0.02);
 }
@@ -507,7 +567,7 @@ export function playWhoopCall(): void {
 
 /** Wood knock, then two soft filtered tones. Warm, not a chime. */
 export function playCorrect(): void {
-  run((b) => {
+  run("correct", (b) => {
     // No knock in front: the thud read as a mis-hit just before the payoff.
     const base = 392 * jitter(0.02);
     noise(b.ctx, b.t0, CLIP_GAIN.correct, {
