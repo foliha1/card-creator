@@ -32,6 +32,7 @@ import {
   DAILY_MATCH_REVEAL_MS,
   DAILY_FINAL_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
+  DEAL_MOVE_MS,
 } from "@/lib/animationTiming";
 
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
