@@ -23,11 +23,11 @@ import {
 import { DAILY_ROLL_HERO_MS } from "@/components/DailyRoundIntro";
 import { pickTumbleSeed } from "@/lib/rolls";
 import {
-  getDailyNumber,
-  getDailySeed,
+  resolveDailyContext,
   loadDailyResult,
   saveDailyResult,
   type DailyResult,
+  type DailyOverride,
 } from "@/lib/daily";
 import { saveDailyResultRemote } from "@/lib/dailyResults";
 import { DAILY_MATCH_SETTLE_MS } from "@/lib/animationTiming";
@@ -58,6 +58,10 @@ export interface UseDailyGameResult {
   alreadyPlayed: boolean;
   /** True when ?debug=1 disables the one-attempt-per-day lock. */
   debugBypass: boolean;
+  /** Which debug override (if any) produced the seed/date in play. */
+  debugOverride: DailyOverride;
+  /** `YYYY-MM-DD` of the effective (possibly shifted) date. */
+  dateKey: string;
   /** True when the single peek can be taken right now. */
   canPeek: boolean;
 
@@ -67,13 +71,11 @@ export interface UseDailyGameResult {
 }
 
 export function useDailyGame(): UseDailyGameResult {
-  const seed = useMemo(() => getDailySeed(), []);
-  const puzzleNumber = useMemo(() => getDailyNumber(), []);
-  // Testing-only bypass: ?debug=1 ignores (and never writes) the daily lock.
-  const debugBypass = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("debug") === "1";
-  }, []);
+  // Single source of truth for the date, seed and puzzle number in play.
+  // Testing-only: ?debug=1 ignores (and never writes) the daily lock.
+  const ctx = useMemo(() => resolveDailyContext(), []);
+  const { seed, puzzleNumber, dateKey } = ctx;
+  const debugBypass = ctx.debug;
   const stored = useMemo(
     () => (debugBypass ? null : loadDailyResult(seed)),
     [seed, debugBypass]
@@ -266,6 +268,8 @@ export function useDailyGame(): UseDailyGameResult {
     resultSaved,
     alreadyPlayed,
     debugBypass,
+    debugOverride: ctx.override,
+    dateKey,
     canPeek: canPeekNow(state),
 
     start,

@@ -45,6 +45,91 @@ export function getDailyNumber(date: Date = new Date()): number {
 
 
 // ---------------------------------------------------------------------------
+// Beta-testing overrides — the ONE place query-string overrides are resolved.
+// Both are gated behind ?debug=1 and have no effect without it.
+//
+//   ?debug=1&day=N          shift the effective date by N whole days
+//   ?debug=1&seed=whatever  replace the seed outright (wins over `day`)
+// ---------------------------------------------------------------------------
+
+export type DailyOverride = "none" | "day" | "seed";
+
+export interface DailyContext {
+  /** True when ?debug=1 is present. */
+  debug: boolean;
+  /** Which override is in play. */
+  override: DailyOverride;
+  /** Whole-day shift applied to the effective date (0 unless override is "day"). */
+  dayOffset: number;
+  /** The raw seed supplied via ?seed=, else null. */
+  rawSeed: string | null;
+  /** The seed actually in play. */
+  seed: string;
+  /** The puzzle number in play — today's unless a day offset shifted it. */
+  puzzleNumber: number;
+  /** `YYYY-MM-DD` of the effective (possibly shifted) date. */
+  dateKey: string;
+}
+
+/** Shift a local calendar date by whole days, DST-safe. */
+function shiftLocalDays(date: Date, days: number): Date {
+  const [y, m, d] = getLocalDateString(date).split("-").map(Number);
+  return new Date(y, m - 1, d + days, 12);
+}
+
+/**
+ * Single source of truth for the date, seed and puzzle number in play.
+ * Components must read from here rather than parsing the query string.
+ */
+export function resolveDailyContext(
+  search?: string,
+  now: Date = new Date()
+): DailyContext {
+  const raw =
+    search ?? (typeof window === "undefined" ? "" : window.location.search);
+  const params = new URLSearchParams(raw);
+  const debug = params.get("debug") === "1";
+
+  const base: DailyContext = {
+    debug,
+    override: "none",
+    dayOffset: 0,
+    rawSeed: null,
+    seed: getDailySeed(now),
+    puzzleNumber: getDailyNumber(now),
+    dateKey: getLocalDateString(now),
+  };
+  if (!debug) return base;
+
+  // `seed` wins when both are present.
+  const seedParam = params.get("seed");
+  if (seedParam) {
+    return { ...base, override: "seed", rawSeed: seedParam, seed: seedParam };
+  }
+
+  const dayParam = params.get("day");
+  if (dayParam !== null && /^-?\d+$/.test(dayParam.trim())) {
+    const dayOffset = Number(dayParam.trim());
+    if (dayOffset !== 0) {
+      const shifted = shiftLocalDays(now, dayOffset);
+      return {
+        ...base,
+        override: "day",
+        dayOffset,
+        seed: getDailySeed(shifted),
+        puzzleNumber: getDailyNumber(shifted),
+        dateKey: getLocalDateString(shifted),
+      };
+    }
+  }
+
+  return base;
+}
+
+
+
+
+// ---------------------------------------------------------------------------
 // One attempt per day — completion record in localStorage.
 // ---------------------------------------------------------------------------
 
