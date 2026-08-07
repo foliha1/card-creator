@@ -28,12 +28,10 @@ import { preloadGameArt } from "@/lib/preloadArt";
 
 import { formatStreakLine } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
+import { runDailyEndSequence } from "@/lib/dailyEndSequence";
 import {
   DAILY_MATCH_HOLD_MS,
-  DAILY_MATCH_SETTLE_MS,
-
   DAILY_MATCH_REVEAL_MS,
-  DAILY_FINAL_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
   DEAL_MOVE_MS,
 } from "@/lib/animationTiming";
@@ -710,13 +708,20 @@ const DailyPage: React.FC = () => {
   // capture effect is declared BEFORE the board bookkeeping effect below so it
   // still sees the pre-removal board and the slots' live rects.
   const [ghost, setGhost] = useState<GhostCard[]>([]);
-  // Set synchronously with the capture so the DONE gate below never sees a
-  // stale empty `ghost` on the round-3 solve and skips the success sequence.
-  // Mirrored into state so clearing it re-runs the DONE effect: a ref alone
-  // could leave the run stuck if the ghost's callback landed on a commit where
-  // `ghost.length` was already 0.
-  const ghostPendingRef = React.useRef(false);
-  const [ghostPending, setGhostPending] = useState(false);
+  // The end-of-run chain awaits the ghost layer instead of guessing at timers:
+  // `awaitSettle` resolves the moment the success sequence has finished, so the
+  // final reveal can never start while the pair is still celebrating.
+  const settleResolveRef = React.useRef<(() => void) | null>(null);
+  const settleDoneRef = React.useRef(false);
+  const awaitSettle = React.useCallback(
+    () =>
+      settleDoneRef.current
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            settleResolveRef.current = resolve;
+          }),
+    []
+  );
 
   const [finalReveal, setFinalReveal] = useState(false);
   const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
@@ -736,13 +741,13 @@ const DailyPage: React.FC = () => {
       }];
     });
     if (copies.length) {
-      ghostPendingRef.current = true;
-      setGhostPending(true);
+      settleDoneRef.current = false;
       setGhost(copies);
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
+
 
   useEffect(() => {
     boardRef.current = state.grid;
@@ -810,39 +815,34 @@ const DailyPage: React.FC = () => {
     playPeek();
   }, [state.peeking]);
 
-  // Round 3 runs the identical success sequence: the pair flips up, holds, the
-  // ghost treatment plays and the cards exit. Only then does the board reveal
-  // and the result screen open. `runSettled` keeps the board on screen for the
-  // whole sequence instead of cutting to the ready/result screens.
+  // End of run: one ordered chain, one cancel token (src/lib/dailyEndSequence).
+  // A solved round 3 settles first (flip → hold → success → exit); only then do
+  // the remaining cards flip up, hold, and hand over to the result screen.
+  // `runSettled` keeps the board on screen for the whole chain.
   const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
-    if (phase !== "DONE" || ghost.length > 0 || ghostPending) return;
-    setFinalReveal(true);
-    playReveal();
-
-    const t = setTimeout(() => {
-      hapticSuccess();
-      setRunSettled(true);
-      setShowResult(true);
-    }, DAILY_FINAL_REVEAL_MS);
-    return () => clearTimeout(t);
-  }, [phase, ghost.length, ghostPending]);
-
-  // Safety net: whatever happens to the ghost layer (an unmount mid-flight, a
-  // dropped callback, a cancelled timer), a finished run always reaches the
-  // result screen. Runs on a single hard clock from DONE.
-  useEffect(() => {
     if (phase !== "DONE") return;
-    const t = setTimeout(() => {
-      ghostPendingRef.current = false;
-      setGhostPending(false);
-      setGhost([]);
-      setFinalReveal(true);
-      setRunSettled(true);
-      setShowResult(true);
-    }, DAILY_MATCH_SETTLE_MS + DAILY_FINAL_REVEAL_MS + 1000);
-    return () => clearTimeout(t);
+    // Round 3's own last event, not `matchedPair` — that still holds an earlier
+    // round's solved pair when round 3 ends on two misses.
+    const lastRound = state.roundEvents[state.roundEvents.length - 1] ?? [];
+    const solved = lastRound[lastRound.length - 1] === "SOLVE";
+    return runDailyEndSequence({
+      solved,
+      awaitSettle,
+      onReveal: () => {
+        setGhost([]);
+        setFinalReveal(true);
+        playReveal();
+      },
+      onResults: () => {
+        hapticSuccess();
+        setRunSettled(true);
+        setShowResult(true);
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
 
 
 
@@ -1188,8 +1188,9 @@ const DailyPage: React.FC = () => {
                 <DailyMatchGhost
                   pair={ghost}
                   onDone={() => {
-                    ghostPendingRef.current = false;
-                    setGhostPending(false);
+                    settleDoneRef.current = true;
+                    settleResolveRef.current?.();
+                    settleResolveRef.current = null;
                     setGhost([]);
                   }}
 
