@@ -537,33 +537,28 @@ export function playWrong(): void {
   });
 }
 
-/** Five or six soft clicks decelerating over ~900ms, then a settling click. */
+/** Two soft tumbles into a settle — the simplest read of a die rolling. */
 export function playDiceRoll(): void {
   run((b) => {
-    const n = 5 + Math.floor(Math.random() * 2);
-    let at = 0.02;
-    let gap = 0.075 * jitter(0.15);
-    for (let i = 0; i < n; i++) {
+    const click = (at: number, level: number) =>
       noise(b.ctx, b.t0, CLIP_GAIN.dice, {
         at,
-        dur: 0.03 * jitter(0.2),
-        level: rand(0.45, 0.65),
+        dur: 0.03,
+        level,
         filter: "bandpass",
-        // Lower and narrower than before: less clack, more tumble.
-        freq: 1500 * jitter(0.25),
-        q: 1.6 * jitter(0.25),
+        freq: 1500 * jitter(0.15),
+        q: 1.6,
         attack: 0.0015,
       });
-      at += gap;
-      gap *= rand(1.35, 1.6); // decelerate
-    }
-    const settle = Math.min(at, 0.86);
+    click(0.02, 0.55);
+    click(0.14 * jitter(0.1), 0.5);
+    // The settle, on the beat the tumble ends.
     noise(b.ctx, b.t0, CLIP_GAIN.dice, {
-      at: settle,
+      at: 0.32 * jitter(0.08),
       dur: 0.055,
       level: 0.5,
       filter: "lowpass",
-      freq: 1000 * jitter(0.15),
+      freq: 1000 * jitter(0.12),
       q: 2,
       attack: 0.0015,
     });
