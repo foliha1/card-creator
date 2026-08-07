@@ -275,9 +275,8 @@ function run(fn: (b: { ctx: AudioContext; t0: number }) => void): void {
     const fire = () => {
       try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
     };
-    console.log('[sfx] run', ctx.state, ctx.currentTime, sfxEnabled);
     if (ctx.state === "running") fire();
-    else void ctx.resume().then(() => { console.log('[sfx] resumed', ctx.state, ctx.currentTime); fire(); }, fire);
+    else void ctx.resume().then(fire, fire);
   } catch { /* ignore — no AudioContext available */ }
 }
 
