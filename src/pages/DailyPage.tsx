@@ -710,13 +710,20 @@ const DailyPage: React.FC = () => {
   // capture effect is declared BEFORE the board bookkeeping effect below so it
   // still sees the pre-removal board and the slots' live rects.
   const [ghost, setGhost] = useState<GhostCard[]>([]);
-  // Set synchronously with the capture so the DONE gate below never sees a
-  // stale empty `ghost` on the round-3 solve and skips the success sequence.
-  // Mirrored into state so clearing it re-runs the DONE effect: a ref alone
-  // could leave the run stuck if the ghost's callback landed on a commit where
-  // `ghost.length` was already 0.
-  const ghostPendingRef = React.useRef(false);
-  const [ghostPending, setGhostPending] = useState(false);
+  // The end-of-run chain awaits the ghost layer instead of guessing at timers:
+  // `awaitSettle` resolves the moment the success sequence has finished, so the
+  // final reveal can never start while the pair is still celebrating.
+  const settleResolveRef = React.useRef<(() => void) | null>(null);
+  const settleDoneRef = React.useRef(false);
+  const awaitSettle = React.useCallback(
+    () =>
+      settleDoneRef.current
+        ? Promise.resolve()
+        : new Promise<void>((resolve) => {
+            settleResolveRef.current = resolve;
+          }),
+    []
+  );
 
   const [finalReveal, setFinalReveal] = useState(false);
   const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
@@ -736,13 +743,13 @@ const DailyPage: React.FC = () => {
       }];
     });
     if (copies.length) {
-      ghostPendingRef.current = true;
-      setGhostPending(true);
+      settleDoneRef.current = false;
       setGhost(copies);
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
+
 
   useEffect(() => {
     boardRef.current = state.grid;
