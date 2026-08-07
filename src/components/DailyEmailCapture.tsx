@@ -153,9 +153,9 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       >
         Sign me up
       </button>
-      {status === "error" && (
+      {status === "error" && errorMessage && (
         <p role="alert" style={{ ...bodyStyle, color: COLORS.ink, fontStyle: "italic" }}>
-          That didn't send. Try again.
+          {errorMessage}
         </p>
       )}
     </form>
