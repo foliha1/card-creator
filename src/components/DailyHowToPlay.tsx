@@ -138,7 +138,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 style={{
                   flex: "1 1 0",
                   minWidth: 0,
-                  maxWidth: 100,
+                  maxWidth: "var(--howto-die-max, 100px)",
                   aspectRatio: "1 / 1",
                   background: "#FFFFFF",
                   border: BORDER.heavy,
