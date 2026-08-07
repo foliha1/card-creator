@@ -24,17 +24,30 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const fail = (message: string) => {
+    setStatus("error");
+    setErrorMessage(message);
+    hapticError();
+    inputRef.current?.focus();
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === "sending") return;
     hapticTap();
+    if (email.trim().length === 0) {
+      fail("Add your email first.");
+      return;
+    }
     if (!isValidEmail(email)) {
-      setStatus("error");
-      hapticError();
+      fail("That doesn't look like an email.");
       return;
     }
     setStatus("sending");
+    setErrorMessage(null);
     const ok = await subscribeDaily(email, undefined, source);
     if (ok) {
       setStatus("done");
@@ -42,9 +55,11 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       playSubscribed();
     } else {
       setStatus("error");
+      setErrorMessage("That didn't send. Try again.");
       hapticError();
     }
   };
+
 
   if (status === "done") {
     return (
@@ -67,6 +82,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
   return (
     <form
       onSubmit={submit}
+      noValidate
       style={{
         alignSelf: "stretch",
         display: "flex",
@@ -87,18 +103,23 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       </h2>
       <p style={bodyStyle}>A new game every morning. Nothing else.</p>
       <input
+        ref={inputRef}
         type="email"
         inputMode="email"
         autoComplete="email"
-        required
         maxLength={255}
         aria-label="Email address"
+        aria-invalid={status === "error" ? true : undefined}
         placeholder="you@example.com"
         value={email}
         onChange={(e) => {
           setEmail(e.target.value);
-          if (status === "error") setStatus("idle");
+          if (status === "error") {
+            setStatus("idle");
+            setErrorMessage(null);
+          }
         }}
+
         style={{
           ...bodyStyle,
           fontSize: 16,
@@ -132,9 +153,9 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       >
         Sign me up
       </button>
-      {status === "error" && (
+      {status === "error" && errorMessage && (
         <p role="alert" style={{ ...bodyStyle, color: COLORS.ink, fontStyle: "italic" }}>
-          That didn't send. Try again.
+          {errorMessage}
         </p>
       )}
     </form>
