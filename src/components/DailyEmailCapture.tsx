@@ -24,17 +24,30 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
 }) => {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const fail = (message: string) => {
+    setStatus("error");
+    setErrorMessage(message);
+    hapticError();
+    inputRef.current?.focus();
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === "sending") return;
     hapticTap();
+    if (email.trim().length === 0) {
+      fail("Add your email first.");
+      return;
+    }
     if (!isValidEmail(email)) {
-      setStatus("error");
-      hapticError();
+      fail("That doesn't look like an email.");
       return;
     }
     setStatus("sending");
+    setErrorMessage(null);
     const ok = await subscribeDaily(email, undefined, source);
     if (ok) {
       setStatus("done");
@@ -42,9 +55,11 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
       playSubscribed();
     } else {
       setStatus("error");
+      setErrorMessage("That didn't send. Try again.");
       hapticError();
     }
   };
+
 
   if (status === "done") {
     return (
