@@ -34,7 +34,6 @@ import {
   DAILY_MATCH_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
   DEAL_MOVE_MS,
-  DEAL_STAGGER_MS,
 } from "@/lib/animationTiming";
 
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
@@ -771,11 +770,11 @@ const DailyPage: React.FC = () => {
 
   useEffect(() => {
     let diceTimer: ReturnType<typeof setTimeout> | undefined;
-    // The deal-in animation mounts with the board on DEAL. Each card lands at
-    // the END of its move, so the cue is scheduled from here with the same
-    // offset and stagger the CSS uses — one click per card, in step with it.
+    // The deal-in animation mounts with the board on DEAL. The cards land at
+    // the END of the move, so the single batch cue is scheduled to land with
+    // the first card.
     if (phase === "DEAL") {
-      playDeal(state.grid.length, { startMs: DEAL_MOVE_MS, stepMs: DEAL_STAGGER_MS });
+      playDeal(state.grid.length, { startMs: DEAL_MOVE_MS });
     }
     if (phase === "ROLL") {
       // The intro fades up first and only then starts the tumble, so the dice

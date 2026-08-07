@@ -76,21 +76,20 @@ describe("audio cues", () => {
     localStorage.clear();
   });
 
-  it("schedules one deal click per card, staggered with the deal-in visual", async () => {
+  it("schedules a single deal cue for the whole batch, not one per card", async () => {
     const s = await loadSounds();
     s.setSfxEnabled(true);
-    s.playDeal(9, { startMs: 900, stepMs: 60 });
+    s.playDeal(9, { startMs: 900 });
 
-    // Two nodes per card (the flip texture and its body), so nine cards give
-    // nine distinct start times, 60ms apart, from the 900ms landing point.
+    // The deal cue is now a single soft landing sound. It still uses two
+    // nodes (texture + body), but they land almost together, not staggered
+    // across the whole batch.
     const starts = [...new Set(sources.flatMap((x) => x.started))]
       .map((t) => Math.round(t * 1000))
       .sort((a, b) => a - b);
-    const clicks = starts.filter((t) => (t - 30 - 900) % 60 === 0);
-    expect(clicks.length).toBe(9);
-    expect(clicks[0] - clicks[0]).toBe(0);
-    expect(clicks[1] - clicks[0]).toBe(60);
-    expect(clicks[8] - clicks[0]).toBe(480);
+    expect(starts.length).toBeGreaterThanOrEqual(1);
+    expect(Math.max(...starts) - Math.min(...starts)).toBeLessThanOrEqual(20);
+    expect(starts.some((t) => t >= 900 && t <= 950)).toBe(true);
   });
 
   it("collapses a repeated deal cue inside the dedupe window", async () => {

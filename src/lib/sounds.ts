@@ -18,7 +18,7 @@
 
 
 
-import { SFX_DEAL_STEP_MS } from "@/lib/animationTiming";
+
 
 let audioCtx: AudioContext | null = null;
 
@@ -511,44 +511,37 @@ export function playFlip(): void {
 }
 
 /**
- * One cue for a whole batch of cards arriving, however many there are. `count`
- * is kept for call-site compatibility but no longer multiplies the sound, and
- * repeat calls inside DEAL_DEDUPE_MS collapse into the first one.
+ * One cue for a whole batch of cards arriving. `count` and `stepMs` are kept
+ * for call-site compatibility but ignored — the deal is now a single soft
+ * landing sound rather than a click per card. Repeat calls inside
+ * DEAL_DEDUPE_MS collapse into the first one.
  */
 const DEAL_DEDUPE_MS = 250;
 let lastDealAt = 0;
 
 /**
- * The deal cue: one card-landing click per card, staggered so each click lands
- * with its own card rather than firing as a single burst for the whole batch.
+ * The deal cue: a single card-landing click for the whole batch.
  *
- * `startMs` is the delay from now to the FIRST card landing — the daily passes
- * DEAL_MOVE_MS, because a card's deal-in animation ends (the card "lands") at
- * the end of its move, not at its start. Cards after the first land
- * SFX_DEAL_STEP_MS apart, matching the CSS `--ww-deal-stagger`.
+ * `startMs` is the delay from now to when the batch lands — the daily passes
+ * DEAL_MOVE_MS, because the deal-in animation ends (the cards "land") at the
+ * end of the move, not at its start.
  *
- * The whole batch is scheduled inside a single Web Audio call, so no click can
- * drift against the visual and a repeat call inside DEAL_DEDUPE_MS (a
- * re-render firing the same effect twice) collapses into the first one.
+ * The cue is scheduled inside a single Web Audio call, and a repeat call
+ * inside DEAL_DEDUPE_MS (a re-render firing the same effect twice) collapses
+ * into the first one.
  */
 export function playDeal(
-  count: number = 1,
+  _count: number = 1,
   opts: { startMs?: number; stepMs?: number } = {}
 ): void {
   const now = Date.now();
   if (now - lastDealAt < DEAL_DEDUPE_MS) return;
   lastDealAt = now;
-  const n = Math.max(1, Math.min(24, Math.round(count)));
   const start = Math.max(0, opts.startMs ?? 0) / 1000;
-  const step = (opts.stepMs ?? SFX_DEAL_STEP_MS) / 1000;
-  const offsets = Array.from({ length: n }, (_, i) => Math.round((start + i * step) * 1000));
   run("deal", (b) => {
-    for (let i = 0; i < n; i++) {
-      const at = start + i * step;
-      flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, 1);
-      thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, 0.4);
-    }
-  }, offsets);
+    flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, start, 1);
+    thump(b.ctx, b.t0, CLIP_GAIN.deal, start + 0.012, 320, 0.07, 0.4);
+  });
 }
 
 /**
