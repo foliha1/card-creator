@@ -504,10 +504,9 @@ export function playWhoopCall(): void {
 /** Wood knock, then two soft filtered tones. Warm, not a chime. */
 export function playCorrect(): void {
   run((b) => {
-    woodKnock(b.ctx, b.t0, CLIP_GAIN.correct, 0);
+    // No knock in front: the thud read as a mis-hit just before the payoff.
     const base = 392 * jitter(0.02);
     noise(b.ctx, b.t0, CLIP_GAIN.correct, {
-      at: 0.1,
       dur: 0.16,
       level: 0.22,
       filter: "bandpass",
@@ -516,10 +515,10 @@ export function playCorrect(): void {
       attack: 0.01,
     });
     tone(b.ctx, b.t0, CLIP_GAIN.correct, {
-      at: 0.1, dur: 0.2 * jitter(0.1), level: 0.2, freq: base, attack: 0.012,
+      dur: 0.2 * jitter(0.1), level: 0.2, freq: base, attack: 0.012,
     });
     tone(b.ctx, b.t0, CLIP_GAIN.correct, {
-      at: 0.24, dur: 0.28 * jitter(0.1), level: 0.18, freq: base * 1.5, attack: 0.014,
+      at: 0.14, dur: 0.28 * jitter(0.1), level: 0.18, freq: base * 1.5, attack: 0.014,
     });
   });
 }
