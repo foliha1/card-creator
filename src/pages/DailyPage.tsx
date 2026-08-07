@@ -682,7 +682,12 @@ const DailyPage: React.FC = () => {
   const [ghost, setGhost] = useState<GhostCard[]>([]);
   // Set synchronously with the capture so the DONE gate below never sees a
   // stale empty `ghost` on the round-3 solve and skips the success sequence.
+  // Mirrored into state so clearing it re-runs the DONE effect: a ref alone
+  // could leave the run stuck if the ghost's callback landed on a commit where
+  // `ghost.length` was already 0.
   const ghostPendingRef = React.useRef(false);
+  const [ghostPending, setGhostPending] = useState(false);
+
   const [finalReveal, setFinalReveal] = useState(false);
   const slotRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const boardRef = React.useRef(state.grid);
