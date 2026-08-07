@@ -1161,8 +1161,10 @@ const DailyPage: React.FC = () => {
                   pair={ghost}
                   onDone={() => {
                     ghostPendingRef.current = false;
+                    setGhostPending(false);
                     setGhost([]);
                   }}
+
                 />
               )}
 
