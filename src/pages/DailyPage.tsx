@@ -28,12 +28,10 @@ import { preloadGameArt } from "@/lib/preloadArt";
 
 import { formatStreakLine } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
+import { runDailyEndSequence } from "@/lib/dailyEndSequence";
 import {
   DAILY_MATCH_HOLD_MS,
-  DAILY_MATCH_SETTLE_MS,
-
   DAILY_MATCH_REVEAL_MS,
-  DAILY_FINAL_REVEAL_MS,
   GREAT_MATCH_DELAY_MS,
   DEAL_MOVE_MS,
 } from "@/lib/animationTiming";
