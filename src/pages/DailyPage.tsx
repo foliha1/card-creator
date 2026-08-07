@@ -423,29 +423,24 @@ const DailyResultCard: React.FC<{
               lineHeight: 1.35,
               paddingTop: i === 0 ? 0 : SPACE[3],
               paddingBottom: i === roundEvents.length - 1 ? 0 : SPACE[3],
-              ...(i === 0
-                ? {}
-                : { borderTop: `1px solid ${COLORS.ink}`, borderTopColor: COLORS.ink }),
-              ...(i === 0 ? {} : { borderTopWidth: 1 }),
+              ...(i === 0 ? {} : { borderTop: "1px solid rgba(35, 31, 32, 0.18)" }),
             };
             return (
               <React.Fragment key={`round-${i}`}>
-                <div style={{ ...cell, color: COLORS.inkMuted, ...(i === 0 ? {} : { borderTopColor: "rgba(35,31,32,0.18)" }) }}>
-                  R{i + 1}
-                </div>
-                <div style={{ ...cell, color: COLORS.ink, ...(i === 0 ? {} : { borderTopColor: "rgba(35,31,32,0.18)" }) }}>
+                <div style={{ ...cell, color: COLORS.inkMuted }}>R{i + 1}</div>
+                <div style={{ ...cell, color: COLORS.ink }}>
                   {attributes[i] ? ATTR_LABEL[attributes[i]] : ""}
                 </div>
                 <div
                   style={{
                     ...cell,
-                    ...(i === 0 ? {} : { borderTopColor: "rgba(35,31,32,0.18)" }),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "flex-end",
                     gap: SPACE[2],
                   }}
                 >
+
                   {peekUsed && peekRound === i + 1 && (
                     <span aria-label="Peek used this round" title="Peek used">
                       👀
