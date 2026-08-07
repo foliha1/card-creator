@@ -142,7 +142,7 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <ul style={{ ...geist(scale), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
             <li>All cards show for 10 seconds. Study them.</li>
             <li>The cards flip over. Then the die decides what a match means.</li>
-            <li>Tap WHOOP! WHOOP!, then tap two cards.</li>
+            <li>Tap two cards to call a match. Tap the same card again to change your mind.</li>
           </ul>
         </section>
 
@@ -191,9 +191,10 @@ const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <h3 style={friend(24, false, scale)}>Three Rounds:</h3>
           <ul style={{ ...geist(scale), margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 8, listStyleType: "disc", color: COLORS.ink }}>
-            <li>Each round takes one pair off the board. Nine cards, then seven, then five.</li>
-            <li>Two misses ends a round.</li>
+            <li>Solve a round and that pair leaves the board. Nine cards, then seven, then five.</li>
+            <li>Two misses ends a round. Those cards stay where they are.</li>
             <li>One Peek per game shows the board for 5 seconds. It shows up in your score.</li>
+            <li>After round three, everything left flips face up.</li>
           </ul>
         </section>
 
