@@ -24,6 +24,7 @@ import {
 } from "@/lib/dailyEngine";
 import { formatDailyShare, getLocalDateString, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
+import { preloadGameArt } from "@/lib/preloadArt";
 
 import { formatStreakLine } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
@@ -652,6 +653,13 @@ const DailyBoard: React.FC<{
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
   const mobile = useIsMobile();
+
+  // Preload all card / die artwork on first mount so the first flip and the
+  // round-intro die never flicker while SVGs decode.
+  useEffect(() => {
+    preloadGameArt();
+  }, []);
+
   const daily = useDailyGame();
   const { state, phase } = daily;
   const [howTo, setHowTo] = useState(false);
