@@ -40,7 +40,7 @@ import { serverNow } from "@/hooks/useServerClock";
 import RollHeroOverlay from "@/components/RollHeroOverlay";
 import { MATCH_ART_SRC } from "@/components/MatchDie";
 import type { Card } from "@/cardData";
-import { ALL_CARDS, CARD_BACK_PATH } from "@/cardData";
+import { preloadGameArt } from "@/lib/preloadArt";
 import { callClaimLock } from "@/lib/claimLock";
 import {
   playFlip, playDiceRoll, playWhoopCall, playCorrect, playWrong, playDeal,
@@ -761,9 +761,6 @@ const DebugControls: React.FC<{
 
 // -------- Main component --------
 
-
-// Kept alive for the lifetime of the page so the browser cannot evict the art.
-const preloadedArt: HTMLImageElement[] = [];
 
 const MultiplayerGameView: React.FC<Props> = ({
   publicState: s, mySeat, events = [], rollCommit = null, lastClaimReject = null, onIntent, onLeave, mobile = false, roomId, visitorId, isHost, presenceVisitorIds,
