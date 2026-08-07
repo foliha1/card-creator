@@ -822,7 +822,10 @@ const DailyPage: React.FC = () => {
   const [runSettled, setRunSettled] = useState(false);
   useEffect(() => {
     if (phase !== "DONE") return;
-    const solved = state.matchedPair.length === 2;
+    // Round 3's own last event, not `matchedPair` — that still holds an earlier
+    // round's solved pair when round 3 ends on two misses.
+    const lastRound = state.roundEvents[state.roundEvents.length - 1] ?? [];
+    const solved = lastRound[lastRound.length - 1] === "SOLVE";
     return runDailyEndSequence({
       solved,
       awaitSettle,

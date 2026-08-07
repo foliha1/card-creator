@@ -65,12 +65,17 @@ function whoopRound(s: DailyState): DailyState {
 const SEED = "whoop-2026-08-07";
 
 /** Runs the chain for a finished state, recording the order of its steps. */
+function endedOnSolve(s: DailyState): boolean {
+  const last = s.roundEvents[s.roundEvents.length - 1] ?? [];
+  return last[last.length - 1] === "SOLVE";
+}
+
 async function playOutEnding(final: DailyState) {
   const steps: string[] = [];
   let releaseSettle: (() => void) | null = null;
 
   const cancel = runDailyEndSequence({
-    solved: final.matchedPair.length === 2,
+    solved: endedOnSolve(final),
     awaitSettle: () =>
       new Promise<void>((resolve) => {
         releaseSettle = resolve;
@@ -80,7 +85,7 @@ async function playOutEnding(final: DailyState) {
     onResults: () => steps.push("results"),
   });
 
-  if (final.matchedPair.length === 2) {
+  if (endedOnSolve(final)) {
     // Mid-settle: the reveal must not have started yet.
     await vi.advanceTimersByTimeAsync(DAILY_MATCH_SETTLE_MS - 1);
     expect(steps).toEqual(["settle"]);
