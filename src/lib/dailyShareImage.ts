@@ -177,7 +177,7 @@ export async function renderDailyShareImage(
   ctx.save();
   ctx.translate(badgeCx, badgeCy);
   ctx.rotate((15.06 * Math.PI) / 180);
-  ctx.fillStyle = COLORS.accent ?? "#E79024";
+  ctx.fillStyle = COLORS.orange;
   ctx.beginPath();
   ctx.arc(0, 0, BADGE_D / 2, 0, Math.PI * 2);
   ctx.fill();
