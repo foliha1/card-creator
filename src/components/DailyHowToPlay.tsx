@@ -7,9 +7,9 @@ const FADE_MS = 200;
 
 const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
 
-const friend = (size: number, italic = false): React.CSSProperties => ({
+const friend = (size: number, italic = false, scale = 1): React.CSSProperties => ({
   fontFamily: FONT_FAMILY,
-  fontSize: size,
+  fontSize: Math.round(size * scale),
   fontStyle: italic ? "italic" : "normal",
   fontWeight: 400,
   lineHeight: 1.2,
@@ -17,24 +17,44 @@ const friend = (size: number, italic = false): React.CSSProperties => ({
   margin: 0,
 });
 
-const geist = (): React.CSSProperties => ({
+const geist = (scale = 1): React.CSSProperties => ({
   fontFamily: GEIST,
-  fontSize: 14,
+  fontSize: Math.round(14 * scale),
   fontWeight: 500,
-  lineHeight: 1.2,
+  lineHeight: 1.35,
   color: COLORS.ink,
   margin: 0,
 });
 
 const DIE_CARDS = ["Match the NUMBER", "Match the SHAPE", "Match the COLOR"];
 
+/** Type scale steps up once past tablet so the card doesn't read as a phone. */
+const useTypeScale = () => {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const md = window.matchMedia("(min-width: 768px)");
+    const lg = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setScale(lg.matches ? 1.2 : md.matches ? 1.12 : 1);
+    sync();
+    md.addEventListener("change", sync);
+    lg.addEventListener("change", sync);
+    return () => {
+      md.removeEventListener("change", sync);
+      lg.removeEventListener("change", sync);
+    };
+  }, []);
+  return scale;
+};
+
 const DailyHowToPlay: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [visible, setVisible] = useState(false);
+  const scale = useTypeScale();
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
 
   const handleClose = () => {
     setVisible(false);
