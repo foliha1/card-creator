@@ -443,11 +443,11 @@ export function playFlip(): void {
 
 export function playDeal(count: number = 1): void {
   const n = Math.max(1, Math.floor(count));
+  const step = SFX_DEAL_STEP_MS / 1000;
   run((b) => {
     for (let i = 0; i < n; i++) {
-      // ~70ms stagger with per-card jitter, so repeated cards never sound like
-      // the same sample twice.
-      const at = i * 0.07 * jitter(0.12);
+      // One click per card, on the same cadence the cards land with.
+      const at = i * step * jitter(0.06);
       flipTexture(b.ctx, b.t0, CLIP_GAIN.deal, at, rand(0.8, 1.1));
       thump(b.ctx, b.t0, CLIP_GAIN.deal, at + 0.012, 320, 0.07, rand(0.3, 0.45));
     }
