@@ -138,9 +138,37 @@ All colors MUST be HSL.
     overscroll-behavior: none;
   }
 
+  /* ── Themed brand palette ──
+     `COLORS` in src/lib/tokens.ts points at these, so inline styles follow
+     the theme with no component changes. Brand red/blue/orange are identical
+     in both themes and stay literal in tokens.ts. Cards, dice faces, result
+     marks and every animation colour use the frozen RAW palette instead and
+     are unaffected by the theme. */
   html {
     color-scheme: light;
+    --ww-surface: #F8F2E9;
+    --ww-surface-hover: #e8e0d4;
+    --ww-panel: #D0C3AF;
+    --ww-panel-muted: #ADA290;
+    --ww-panel-muted-hover: #bdb5a4;
+    --ww-ink: #231f20;
+    /* Meets WCAG AA (4.5:1) on every light surface — including panel. */
+    --ww-ink-muted: #544c4a;
   }
+
+  html[data-theme="night"] {
+    color-scheme: dark;
+    --ww-surface: #231F20;
+    --ww-surface-hover: #2E2829;
+    /* Lifted warm charcoal so cards still separate from the gameplay bg. */
+    --ww-panel: #3A3335;
+    --ww-panel-muted: #4A4243;
+    --ww-panel-muted-hover: #564D4E;
+    --ww-ink: #F8F2E9;
+    /* Warm grey: 7.66:1 on surface, 5.79:1 on panel. */
+    --ww-ink-muted: #BAB0A9;
+  }
+
 
   body.ww-locked,
   html:has(body.ww-locked) {
