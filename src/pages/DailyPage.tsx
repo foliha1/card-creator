@@ -186,13 +186,49 @@ const ShareBlock: React.FC<{
 }> = ({ text, result, streak, mobile, sweepDelayMs }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
+  /** Set when the clipboard write was refused: we show the text to copy by hand. */
+  const [manual, setManual] = useState(false);
+  const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   const flashCopied = () => {
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareTextOnly = async () => {
+  /**
+   * Clipboard write, started while the user's tap is still an active gesture.
+   * Firefox (and Safari) revoke gesture status across an await, so this must be
+   * kicked off before the share image renders — never after.
+   */
+  const beginClipboardWrite = (): Promise<boolean> => {
+    try {
+      const write = navigator?.clipboard?.writeText?.(text);
+      if (!write) return Promise.resolve(false);
+      return write.then(
+        () => true,
+        () => false
+      );
+    } catch {
+      return Promise.resolve(false);
+    }
+  };
+
+  /** Honest ending for the clipboard path: only claim "COPIED" if it copied. */
+  const settleClipboard = async (copyPromise: Promise<boolean>) => {
+    const ok = await copyPromise;
+    if (ok) {
+      setManual(false);
+      flashCopied();
+    } else {
+      setManual(true);
+      window.setTimeout(() => {
+        manualRef.current?.focus();
+        manualRef.current?.select();
+      }, 0);
+    }
+  };
+
+  const shareTextOnly = async (copyPromise: Promise<boolean>) => {
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({ text });
@@ -201,16 +237,15 @@ const ShareBlock: React.FC<{
     } catch {
       /* dismissed or unsupported — fall through to clipboard */
     }
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked — nothing more we can do */
-    }
-    flashCopied();
+    await settleClipboard(copyPromise);
   };
 
   const share = async () => {
     hapticTap();
+    // Started first, inside the live gesture. If a native share succeeds we
+    // simply never surface the result.
+    const copyPromise = beginClipboardWrite();
+    setManual(false);
     setWorking(true);
     let blob: Blob | null = null;
     try {
@@ -221,10 +256,13 @@ const ShareBlock: React.FC<{
     setWorking(false);
 
     if (blob) {
-      const file = new File([blob], `whoop-whoop-${result.puzzleNumber}.png`, {
-        type: "image/png",
-      });
       try {
+        // The File constructor is unavailable/throwing on some older Safari
+        // builds — constructing it here means that failure falls through to
+        // the text share instead of aborting the whole thing.
+        const file = new File([blob], `whoop-whoop-${result.puzzleNumber}.png`, {
+          type: "image/png",
+        });
         if (
           typeof navigator !== "undefined" &&
           typeof navigator.share === "function" &&
@@ -234,12 +272,12 @@ const ShareBlock: React.FC<{
           return;
         }
       } catch {
-        /* dismissed or file share refused — fall back below */
+        /* no File support, dismissed, or file share refused — fall back below */
       }
     }
 
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      await shareTextOnly();
+      await shareTextOnly(copyPromise);
       return;
     }
 
@@ -256,12 +294,7 @@ const ShareBlock: React.FC<{
         /* download blocked — the text copy below is still useful */
       }
     }
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      /* clipboard blocked */
-    }
-    flashCopied();
+    await settleClipboard(copyPromise);
   };
 
   // One-shot sweep: travels the full width and exits off the far edge.
@@ -287,9 +320,39 @@ const ShareBlock: React.FC<{
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
         {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
       </button>
+
+      {manual && (
+        <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
+          <label
+            htmlFor="ww-share-manual"
+            style={{ ...TEXT.caption, color: COLORS.inkMuted }}
+          >
+            Your browser blocked the copy — select and copy this:
+          </label>
+          <textarea
+            id="ww-share-manual"
+            ref={manualRef}
+            readOnly
+            rows={4}
+            value={text}
+            onFocus={(e) => e.currentTarget.select()}
+            style={{
+              ...TEXT.body,
+              width: "100%",
+              resize: "none",
+              padding: SPACE[3],
+              borderRadius: RADIUS.sm,
+              border: `1px solid ${COLORS.ink}`,
+              background: COLORS.panel,
+              color: COLORS.ink,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
+
 
 
 
