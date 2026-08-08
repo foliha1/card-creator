@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
+import { emailHasHistory, isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import { playSubscribed } from "@/lib/sounds";
 import { BORDER, COLORS, RAW, FONT_FAMILY, RADIUS, SPACE } from "@/lib/tokens";
@@ -22,11 +22,12 @@ const bodyStyle: React.CSSProperties = {
 const DailyEmailCapture: React.FC<{
   source?: "daily_result" | "landing";
   /** Fired after a successful signup so the caller can re-read streak/stats. */
-  onSubscribed?: () => void;
+  onSubscribed?: (email: string, restored: boolean) => void;
 }> = ({ source, onSubscribed }) => {
 
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [restored, setRestored] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -51,12 +52,16 @@ const DailyEmailCapture: React.FC<{
     }
     setStatus("sending");
     setErrorMessage(null);
+    // Asked before the write: afterwards this address owns today's row too, so
+    // "has history" would always be true.
+    const returning = await emailHasHistory(email);
     const ok = await subscribeDaily(email, undefined, source);
     if (ok) {
+      setRestored(returning);
       setStatus("done");
       hapticSuccess();
       playSubscribed();
-      onSubscribed?.();
+      onSubscribed?.(email.trim().toLowerCase(), returning);
     } else {
 
       setStatus("error");
@@ -79,10 +84,11 @@ const DailyEmailCapture: React.FC<{
           textAlign: "center",
         }}
       >
-        You're in. See you tomorrow.
+        {restored ? "Welcome back." : "You're in. See you tomorrow."}
       </p>
     );
   }
+
 
   return (
     <form
@@ -107,6 +113,10 @@ const DailyEmailCapture: React.FC<{
         Get tomorrow's grid.
       </h2>
       <p style={bodyStyle}>A new game every morning. Nothing else.</p>
+      <p style={{ ...bodyStyle, fontStyle: "italic" }}>
+        New here, or coming back? Same field either way.
+      </p>
+
       <input
         ref={inputRef}
         type="email"

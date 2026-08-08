@@ -11,7 +11,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
-import { hasSubscribed } from "@/lib/dailySubscribe";
+import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
 
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -382,7 +382,9 @@ const DailyResultCard: React.FC<{
   /** Null hides the percentile line (withheld below 20 players). */
   percentile: number | null;
   /** Called after an email signup so the parent can re-read streak/stats. */
-  onSubscribed?: () => void;
+  onSubscribed?: (email: string, restored: boolean) => void;
+  /** Hides the signup form: an address is already on file (locally or server). */
+  subscribed: boolean;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
@@ -401,6 +403,7 @@ const DailyResultCard: React.FC<{
   stats,
   percentile,
   onSubscribed,
+  subscribed,
   mobile,
   revisit,
   onLeave,
@@ -592,7 +595,7 @@ const DailyResultCard: React.FC<{
       </div>
 
 
-      {!hasSubscribed() && (
+      {!subscribed && (
         <div
           className="ww-res-in"
           style={{
@@ -879,6 +882,10 @@ const DailyPage: React.FC = () => {
   // Bumped after an email signup: the server can now fold in rows linked to
   // that address, so the streak and stats are re-read.
   const [profileKey, setProfileKey] = useState(0);
+  const bumpProfile = React.useCallback(() => setProfileKey((k) => k + 1), []);
+  // Local flag first, then a server check by visitor id: a cleared browser is
+  // still recognised, and the local flag/email are repopulated for next time.
+  const { subscribed, markLocal } = useSubscriberStatus(bumpProfile);
   // Read after the run is persisted so today counts toward the streak.
   const dataReady = daily.resultSaved || daily.result === null;
   const streak = useDailyStreak(daily.puzzleNumber, dataReady, profileKey);
@@ -1260,7 +1267,13 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               stats={stats}
               percentile={percentile}
-              onSubscribed={() => setProfileKey((k) => k + 1)}
+              subscribed={subscribed}
+              onSubscribed={(email) => {
+                // Restore or fresh signup, either way: the address is now on
+                // file, so the lifetime block and streak re-read immediately.
+                markLocal(email);
+                bumpProfile();
+              }}
 
               mobile={mobile}
               revisit={daily.alreadyPlayed}
