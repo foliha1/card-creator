@@ -13,6 +13,7 @@ import {
   fetchDailyStats,
   type DailyStats,
 } from "@/lib/dailyResults";
+import { getSubscribedEmail } from "@/lib/dailySubscribe";
 
 /**
  * @param puzzleNumber today's puzzle number
@@ -30,9 +31,15 @@ export function useDailyProfile(
   useEffect(() => {
     if (!ready) return;
     let live = true;
-    void fetchDailyStats().then((s) => {
-      if (live) setStats(s);
-    });
+    // Lifetime stats are a subscriber perk: only read them when an address is
+    // on file for this browser. The percentile stays open to everyone.
+    if (getSubscribedEmail() !== null) {
+      void fetchDailyStats().then((s) => {
+        if (live) setStats(s);
+      });
+    } else {
+      setStats(null);
+    }
     void fetchDailyPercentile(puzzleNumber).then((p) => {
       if (live) setPercentile(p);
     });
