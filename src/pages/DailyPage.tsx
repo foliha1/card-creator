@@ -462,36 +462,54 @@ const DailyResultCard: React.FC<{
             ? "You already tested your memory today. Come back tomorrow!"
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
+      {/* Today: this run's numbers plus the comparison line. */}
       <div
         className="ww-res-in"
-        style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", ...blockIn("stats") }}
+        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("stats") }}
       >
-        {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
-        {stat("Misses", `${totalMisses}`)}
+        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+          Today
+        </h2>
+        <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+          {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
+          {stat("Misses", `${totalMisses}`)}
+        </div>
+        {percentile !== null && (
+          <p
+            style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
+          >
+            {formatPercentileLine(percentile)}
+          </p>
+        )}
       </div>
 
-      {/* Lifetime totals. Same tile language as above — no new panel style.
-          Hidden entirely when the read failed, never shown as zeroes. */}
+      {/* All time. Subscribers only, and hidden entirely when the read failed —
+          never shown as zeroes, never as an empty placeholder. */}
       {stats !== null && (
         <div
           className="ww-res-in"
-          style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", ...blockIn("stats") }}
+          style={{
+            alignSelf: "stretch",
+            display: "flex",
+            flexDirection: "column",
+            gap: SPACE[3],
+            paddingTop: SPACE[4],
+            borderTop: BORDER.heavy,
+            ...blockIn("stats"),
+          }}
         >
-          {stat("Played", `${stats.totalPlayed}`)}
-          {stat("Clean", `${stats.cleanRuns}`)}
-          {stat("Best", `${stats.bestStreak}`)}
-          {stat("Avg miss", formatAvgMisses(stats.avgMisses))}
+          <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+            All time
+          </h2>
+          <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+            {stat("Days played", `${stats.totalPlayed}`)}
+            {stat("Clean runs", `${stats.cleanRuns}`)}
+            {stat("Longest streak", `${stats.bestStreak}`)}
+            {stat("Average misses", formatAvgMisses(stats.avgMisses))}
+          </div>
         </div>
       )}
 
-      {percentile !== null && (
-        <p
-          className="ww-res-in"
-          style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, ...blockIn("streak") }}
-        >
-          {formatPercentileLine(percentile)}
-        </p>
-      )}
 
       {streak !== null && streak >= 1 && (
         <p
