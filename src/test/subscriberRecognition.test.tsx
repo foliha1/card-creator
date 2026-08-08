@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const rpc = vi.fn();
 const invoke = vi.fn();
@@ -74,10 +73,11 @@ describe("email_has_history", () => {
   });
 });
 
-async function submit(email: string) {
-  const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Email address"), email);
-  await user.click(screen.getByRole("button", { name: "Sign me up" }));
+function submit(email: string) {
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: email },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Sign me up" }));
 }
 
 describe("the form doubles as a restore path", () => {
@@ -90,7 +90,7 @@ describe("the form doubles as a restore path", () => {
       screen.getByText("New here, or coming back? Same field either way.")
     ).toBeTruthy();
 
-    await submit("player@example.com");
+    submit("player@example.com");
 
     await waitFor(() => expect(screen.getByText("Welcome back.")).toBeTruthy());
     expect(onSubscribed).toHaveBeenCalledWith("player@example.com", true);
@@ -104,7 +104,7 @@ describe("the form doubles as a restore path", () => {
     const onSubscribed = vi.fn();
     render(<DailyEmailCapture onSubscribed={onSubscribed} />);
 
-    await submit("brand-new@example.com");
+    submit("brand-new@example.com");
 
     await waitFor(() =>
       expect(screen.getByText("You're in. See you tomorrow.")).toBeTruthy()
