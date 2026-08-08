@@ -11,7 +11,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
-import { hasSubscribed } from "@/lib/dailySubscribe";
+import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
 
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -382,7 +382,9 @@ const DailyResultCard: React.FC<{
   /** Null hides the percentile line (withheld below 20 players). */
   percentile: number | null;
   /** Called after an email signup so the parent can re-read streak/stats. */
-  onSubscribed?: () => void;
+  onSubscribed?: (email: string, restored: boolean) => void;
+  /** Hides the signup form: an address is already on file (locally or server). */
+  subscribed: boolean;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
@@ -401,6 +403,7 @@ const DailyResultCard: React.FC<{
   stats,
   percentile,
   onSubscribed,
+  subscribed,
   mobile,
   revisit,
   onLeave,
@@ -592,7 +595,7 @@ const DailyResultCard: React.FC<{
       </div>
 
 
-      {!hasSubscribed() && (
+      {!subscribed && (
         <div
           className="ww-res-in"
           style={{
