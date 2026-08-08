@@ -114,7 +114,7 @@ const DailyEmailCapture: React.FC<{
       </h2>
       <p style={bodyStyle}>A new game every morning. Nothing else.</p>
       <p style={{ ...bodyStyle, fontStyle: "italic" }}>
-        New here, or coming back? Same field either way.
+        New here, or coming back? Drop in your email.
       </p>
 
       <input
