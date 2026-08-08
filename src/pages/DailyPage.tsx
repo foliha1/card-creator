@@ -470,6 +470,28 @@ const DailyResultCard: React.FC<{
         {stat("Misses", `${totalMisses}`)}
       </div>
 
+      {/* Lifetime totals. Same tile language as above — no new panel style.
+          Hidden entirely when the read failed, never shown as zeroes. */}
+      {stats !== null && (
+        <div
+          className="ww-res-in"
+          style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", ...blockIn("stats") }}
+        >
+          {stat("Played", `${stats.totalPlayed}`)}
+          {stat("Clean", `${stats.cleanRuns}`)}
+          {stat("Best", `${stats.bestStreak}`)}
+          {stat("Avg miss", formatAvgMisses(stats.avgMisses))}
+        </div>
+      )}
+
+      {percentile !== null && (
+        <p
+          className="ww-res-in"
+          style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, ...blockIn("streak") }}
+        >
+          {formatPercentileLine(percentile)}
+        </p>
+      )}
 
       {streak !== null && streak >= 1 && (
         <p
@@ -478,7 +500,7 @@ const DailyResultCard: React.FC<{
         >
           {formatStreakLine(streak)}
         </p>
-      )}
+
 
       <div
         className="ww-res-in"
