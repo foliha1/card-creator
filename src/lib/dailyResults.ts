@@ -75,16 +75,20 @@ export interface DailyStreak {
 
 /**
  * Streak = consecutive puzzle numbers played (playing counts, solving does not).
- * Computed in SQL. Returns null when the fetch fails so callers can hide the line.
+ * Computed in SQL over the union of this visitor's rows and any rows linked to
+ * `email`, so a cleared browser or a new phone restores the streak on signup.
+ * Returns null when the fetch fails so callers can hide the line.
  */
 export async function fetchStreak(
   currentPuzzleNumber: number,
-  visitorId: string = getVisitorId()
+  visitorId: string = getVisitorId(),
+  email: string | null = getSubscribedEmail()
 ): Promise<DailyStreak | null> {
   try {
     const { data, error } = await supabase.rpc("get_streak", {
       p_visitor_id: visitorId,
       p_current_puzzle_number: currentPuzzleNumber,
+      ...(email ? { p_email: email } : {}),
     });
     if (error) return null;
     const row = Array.isArray(data) ? data[0] : data;
@@ -102,3 +106,74 @@ export async function fetchStreak(
 export function formatStreakLine(days: number): string {
   return `Streak: ${days} ${days === 1 ? "day" : "days"}`;
 }
+
+export interface DailyStats {
+  totalPlayed: number;
+  cleanRuns: number;
+  bestStreak: number;
+  avgMisses: number;
+}
+
+/**
+ * Lifetime totals for a player, aggregated in SQL over the visitor/email union.
+ * Returns null on failure (or with nothing played) so the block can be hidden.
+ */
+export async function fetchDailyStats(
+  visitorId: string = getVisitorId(),
+  email: string | null = getSubscribedEmail()
+): Promise<DailyStats | null> {
+  try {
+    const { data, error } = await supabase.rpc("get_daily_stats", {
+      p_visitor_id: visitorId,
+      ...(email ? { p_email: email } : {}),
+    });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    const totalPlayed = Number(row.total_played ?? 0);
+    if (!Number.isFinite(totalPlayed) || totalPlayed < 1) return null;
+    return {
+      totalPlayed,
+      cleanRuns: Number(row.clean_runs ?? 0),
+      bestStreak: Number(row.best_streak ?? 0),
+      avgMisses: Number(row.avg_misses ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Percent of that day's players this run beat or matched. Null when the server
+ * withholds it (fewer than 20 players on the puzzle) or the fetch fails.
+ */
+export async function fetchDailyPercentile(
+  puzzleNumber: number,
+  visitorId: string = getVisitorId(),
+  email: string | null = getSubscribedEmail()
+): Promise<number | null> {
+  try {
+    const { data, error } = await supabase.rpc("get_daily_percentile", {
+      p_visitor_id: visitorId,
+      p_puzzle_number: puzzleNumber,
+      ...(email ? { p_email: email } : {}),
+    });
+    if (error || data === null || data === undefined) return null;
+    const pct = Number(data);
+    return Number.isFinite(pct) ? pct : null;
+  } catch {
+    return null;
+  }
+}
+
+/** "Better than 78% of today's players". */
+export function formatPercentileLine(pct: number): string {
+  return `Better than ${pct}% of today's players`;
+}
+
+/** "1.4 misses" / "1 miss" — average misses, trimmed of trailing zeroes. */
+export function formatAvgMisses(avg: number): string {
+  const rounded = Math.round(avg * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(1);
+}
+
