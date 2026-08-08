@@ -5,6 +5,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor";
+import { getSubscribedEmail } from "@/lib/dailySubscribe";
+
 import { getLocalDateString, type DailyResult } from "@/lib/daily";
 import type { DailyMark } from "@/lib/dailyEngine";
 
