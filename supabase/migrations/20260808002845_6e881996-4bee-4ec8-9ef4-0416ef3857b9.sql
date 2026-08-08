@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_subscribers ADD COLUMN IF NOT EXISTS synced_to_ac boolean NOT NULL DEFAULT false;
