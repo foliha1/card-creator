@@ -882,6 +882,10 @@ const DailyPage: React.FC = () => {
   // Bumped after an email signup: the server can now fold in rows linked to
   // that address, so the streak and stats are re-read.
   const [profileKey, setProfileKey] = useState(0);
+  const bumpProfile = React.useCallback(() => setProfileKey((k) => k + 1), []);
+  // Local flag first, then a server check by visitor id: a cleared browser is
+  // still recognised, and the local flag/email are repopulated for next time.
+  const { subscribed, markLocal } = useSubscriberStatus(bumpProfile);
   // Read after the run is persisted so today counts toward the streak.
   const dataReady = daily.resultSaved || daily.result === null;
   const streak = useDailyStreak(daily.puzzleNumber, dataReady, profileKey);
@@ -1263,7 +1267,13 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               stats={stats}
               percentile={percentile}
-              onSubscribed={() => setProfileKey((k) => k + 1)}
+              subscribed={subscribed}
+              onSubscribed={(email) => {
+                // Restore or fresh signup, either way: the address is now on
+                // file, so the lifetime block and streak re-read immediately.
+                markLocal(email);
+                bumpProfile();
+              }}
 
               mobile={mobile}
               revisit={daily.alreadyPlayed}
