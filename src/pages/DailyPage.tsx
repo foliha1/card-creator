@@ -26,8 +26,15 @@ import { formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 
-import { formatStreakLine } from "@/lib/dailyResults";
+import {
+  formatAvgMisses,
+  formatPercentileLine,
+  formatStreakLine,
+  type DailyStats,
+} from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
+import { useDailyProfile } from "@/hooks/useDailyProfile";
+
 import { runDailyEndSequence } from "@/lib/dailyEndSequence";
 import {
   DAILY_MATCH_HOLD_MS,
