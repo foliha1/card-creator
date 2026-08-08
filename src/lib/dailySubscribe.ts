@@ -83,7 +83,7 @@ export async function subscribeDaily(
       },
     });
     if (error || (data as { ok?: boolean } | null)?.ok !== true) return false;
-    markSubscribed();
+    markSubscribed(email);
     return true;
   } catch {
     return false;
