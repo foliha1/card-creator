@@ -33,6 +33,43 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+// The Lottie paints the wordmark in warm black (#231F20). In night mode that
+// disappears against the dark surface, so swap just that colour for cream —
+// brand red / blue / orange are left untouched.
+const DARK_RGB = [0.137, 0.122, 0.125];
+const CREAM_RGB = [0.9725, 0.9490, 0.9137];
+const near = (a: number, b: number) => Math.abs(a - b) < 0.01;
+
+const recolorToCream = (input: unknown): unknown => {
+  const clone = JSON.parse(JSON.stringify(input));
+  const walk = (node: unknown) => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const obj = node as Record<string, unknown>;
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === "c" && value && typeof value === "object") {
+        const k = (value as { k?: unknown }).k;
+        if (
+          Array.isArray(k) &&
+          k.length >= 3 &&
+          k.every((v) => typeof v === "number") &&
+          DARK_RGB.every((v, i) => near(v, k[i] as number))
+        ) {
+          (value as { k: number[] }).k = [...CREAM_RGB, ...(k.slice(3) as number[])];
+          continue;
+        }
+      }
+      walk(value);
+    }
+  };
+  walk(clone);
+  return clone;
+};
+
+
 /**
  * The daily logo lockup. The static SVG is painted first and stays visible
  * until the Lottie has mounted and rendered its first frame, then the two
@@ -62,6 +99,11 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
     };
   }, []);
 
+  const animationData = React.useMemo(
+    () => (json && theme === "night" ? recolorToCream(json) : json),
+    [json, theme],
+  );
+
   const layer: React.CSSProperties = {
     position: "absolute",
     inset: 0,
@@ -79,12 +121,14 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
         alt="WHOOP! WHOOP! Daily"
         style={{ ...layer, objectFit: "contain", opacity: ready ? 0 : 1 }}
       />
-      {json && (
+      {animationData && (
         <React.Suspense fallback={null}>
           <div style={{ ...layer, opacity: ready ? 1 : 0 }}>
             <Lottie
+              key={theme}
               lottieRef={lottieRef}
-              animationData={json}
+              animationData={animationData}
+
               loop={false}
               autoplay
               aria-hidden="true"
