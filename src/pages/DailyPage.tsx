@@ -556,7 +556,15 @@ const DailyReadyScreen: React.FC<{
       </div>
 
 
-      <div className="daily-intro" style={{ display: "inline-block", animationDelay: "120ms" }}>
+      <div
+        className="daily-intro"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: SPACE[3],
+          animationDelay: "120ms",
+        }}
+      >
         <button
           type="button"
           className="ww-press daily-btn-howto"
@@ -576,7 +584,9 @@ const DailyReadyScreen: React.FC<{
           <HelpCircle size={16} aria-hidden="true" />
           How to Play
         </button>
+        <DailyThemeToggle mobile={mobile} />
       </div>
+
 
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
