@@ -113,6 +113,10 @@ const DailyEmailCapture: React.FC<{
         Get tomorrow's grid.
       </h2>
       <p style={bodyStyle}>A new game every morning. Nothing else.</p>
+      <p style={{ ...bodyStyle, fontStyle: "italic" }}>
+        New here, or coming back? Same field either way.
+      </p>
+
       <input
         ref={inputRef}
         type="email"
