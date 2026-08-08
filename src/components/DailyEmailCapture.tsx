@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import { playSubscribed } from "@/lib/sounds";
-import { BORDER, COLORS, FONT_FAMILY, RADIUS, SPACE } from "@/lib/tokens";
+import { BORDER, COLORS, RAW, FONT_FAMILY, RADIUS, SPACE } from "@/lib/tokens";
 
 const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -11,7 +11,7 @@ const bodyStyle: React.CSSProperties = {
   fontWeight: 500,
   fontSize: 14,
   lineHeight: 1.45,
-  color: COLORS.ink,
+  color: RAW.warmBlack,
   margin: 0,
 };
 
@@ -70,7 +70,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
           fontFamily: FONT_FAMILY,
           fontSize: 20,
           lineHeight: 1.2,
-          color: COLORS.ink,
+          color: RAW.warmBlack,
           textAlign: "center",
         }}
       >
@@ -96,7 +96,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
           fontFamily: FONT_FAMILY,
           fontSize: 20,
           lineHeight: 1.2,
-          color: COLORS.ink,
+          color: RAW.warmBlack,
         }}
       >
         Get tomorrow's grid.
@@ -129,7 +129,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
           padding: `0 ${SPACE[8]}px`,
           border: BORDER.heavy,
           borderRadius: RADIUS.sm,
-          background: COLORS.surface,
+          background: RAW.cream,
         }}
       />
       <button
@@ -142,7 +142,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
           border: BORDER.heavy,
           borderRadius: RADIUS.sm,
           background: COLORS.blue,
-          color: COLORS.surface,
+          color: RAW.cream,
           fontFamily: FONT_FAMILY,
           fontStyle: "italic",
           fontSize: 20,
@@ -154,7 +154,7 @@ const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
         Sign me up
       </button>
       {status === "error" && errorMessage && (
-        <p role="alert" style={{ ...bodyStyle, color: COLORS.ink, fontStyle: "italic" }}>
+        <p role="alert" style={{ ...bodyStyle, color: RAW.warmBlack, fontStyle: "italic" }}>
           {errorMessage}
         </p>
       )}

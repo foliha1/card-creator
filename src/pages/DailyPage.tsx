@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Moon, Sun } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
@@ -67,6 +67,7 @@ import {
   FONT_FAMILY_UI,
   FONT_WEIGHT_UI,
 } from "@/lib/tokens";
+import { useThemeMode } from "@/lib/nightMode";
 
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
