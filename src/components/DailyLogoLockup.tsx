@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 import lockupAsset from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
+import lockupCreamAsset from "@/assets/WhoopWhoop_Daily_Lockup_Cream.svg.asset.json";
 import animationAsset from "@/assets/whoop-daily-logo.json.asset.json";
+import { useThemeMode } from "@/lib/nightMode";
 
 // A failed chunk fetch (stale build, flaky network) must never blank the page:
 // resolve to a no-op so the static lockup stays on screen.
