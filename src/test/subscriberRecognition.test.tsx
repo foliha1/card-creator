@@ -87,7 +87,7 @@ describe("the form doubles as a restore path", () => {
     const onSubscribed = vi.fn();
     render(<DailyEmailCapture onSubscribed={onSubscribed} />);
     expect(
-      screen.getByText("New here, or coming back? Same field either way.")
+      screen.getByText("New here, or coming back? Drop in your email.")
     ).toBeTruthy();
 
     submit("player@example.com");
