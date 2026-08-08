@@ -24,8 +24,8 @@ const DailyFrame: React.FC<{
   <div
     style={{
       position: "relative",
-      minHeight: "100dvh",
-      height: "100dvh",
+      minHeight: "var(--ww-vh)",
+      height: "var(--ww-vh)",
       boxSizing: "border-box",
       background: tone === "panel" ? COLORS.panel : COLORS.surface,
       display: "flex",

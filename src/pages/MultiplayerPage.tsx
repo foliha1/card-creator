@@ -116,7 +116,7 @@ const MultiplayerPage: React.FC = () => {
         role="main"
         aria-label="WHOOP! WHOOP! multiplayer"
         style={{
-          height: "100dvh",
+          height: "var(--ww-vh)",
           width: "100%",
           overflow: "hidden",
           position: "relative",

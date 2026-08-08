@@ -227,7 +227,7 @@ const LandingPage: React.FC = () => {
       className="ww-landing-shell"
       style={
         {
-          minHeight: "100dvh",
+          minHeight: "var(--ww-vh)",
           background: COLORS.surface,
           display: "flex",
           flexDirection: "column",

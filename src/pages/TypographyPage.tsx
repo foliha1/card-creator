@@ -33,7 +33,7 @@ const TypographyPage: React.FC = () => {
       </Helmet>
       <div
         style={{
-          minHeight: "100dvh",
+          minHeight: "var(--ww-vh)",
           background: COLORS.ink,
           color: COLORS.surface,
           paddingTop: SITE_HEADER_OFFSET,

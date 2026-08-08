@@ -295,6 +295,26 @@ export function stopTheme(): void {
   fadeOutTheme(false);
 }
 
+// iOS suspends the AudioContext when the page is backgrounded and never resumes
+// it on return, so the theme stays silent until some unrelated cue happens to
+// wake the graph. Resume explicitly on the way back, and restart the loop when
+// the current screen still wants music.
+if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    try {
+      const ctx = audioCtx;
+      if (!ctx) return;
+      const resumeThen = () => {
+        if (themeDesired && musicEnabled) startTheme();
+      };
+      if (ctx.state === "suspended") void ctx.resume().then(resumeThen, resumeThen);
+      else resumeThen();
+    } catch { /* never throw from audio */ }
+  });
+}
+
+
 // ---------------------------------------------------------------------------
 // Synthesis primitives
 // ---------------------------------------------------------------------------
