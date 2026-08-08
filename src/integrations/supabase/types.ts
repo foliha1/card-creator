@@ -186,6 +186,23 @@ export type Database = {
           status: string
         }[]
       }
+      daily_rows_for: {
+        Args: { p_email: string; p_visitor_id: string }
+        Returns: {
+          elapsed_ms: number
+          puzzle_number: number
+          rounds_solved: number
+          total_misses: number
+        }[]
+      }
+      get_daily_percentile: {
+        Args: {
+          p_email?: string
+          p_puzzle_number: number
+          p_visitor_id: string
+        }
+        Returns: number
+      }
       get_daily_results: {
         Args: { p_visitor_id: string }
         Returns: {
@@ -199,6 +216,15 @@ export type Database = {
           total_misses: number
         }[]
       }
+      get_daily_stats: {
+        Args: { p_email?: string; p_visitor_id: string }
+        Returns: {
+          avg_misses: number
+          best_streak: number
+          clean_runs: number
+          total_played: number
+        }[]
+      }
       get_room_by_code: {
         Args: { p_code: string; p_visitor_id: string }
         Returns: {
@@ -209,7 +235,11 @@ export type Database = {
         }[]
       }
       get_streak: {
-        Args: { p_current_puzzle_number: number; p_visitor_id: string }
+        Args: {
+          p_current_puzzle_number: number
+          p_email?: string
+          p_visitor_id: string
+        }
         Returns: {
           current_streak: number
           longest_streak: number
