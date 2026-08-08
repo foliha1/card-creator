@@ -12,8 +12,13 @@ import { fetchStreak, type DailyStreak } from "@/lib/dailyResults";
 /**
  * @param puzzleNumber today's puzzle number
  * @param ready        gate — only fetch once true (e.g. after the run is saved)
+ * @param refreshKey   bump to re-read (e.g. after an email signup restores rows)
  */
-export function useDailyStreak(puzzleNumber: number, ready = true): DailyStreak | null {
+export function useDailyStreak(
+  puzzleNumber: number,
+  ready = true,
+  refreshKey = 0
+): DailyStreak | null {
   const [streak, setStreak] = useState<DailyStreak | null>(null);
 
   useEffect(() => {
@@ -25,7 +30,8 @@ export function useDailyStreak(puzzleNumber: number, ready = true): DailyStreak 
     return () => {
       live = false;
     };
-  }, [puzzleNumber, ready]);
+  }, [puzzleNumber, ready, refreshKey]);
 
   return streak;
 }
+

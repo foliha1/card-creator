@@ -26,8 +26,15 @@ import { formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 
-import { formatStreakLine } from "@/lib/dailyResults";
+import {
+  formatAvgMisses,
+  formatPercentileLine,
+  formatStreakLine,
+  type DailyStats,
+} from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
+import { useDailyProfile } from "@/hooks/useDailyProfile";
+
 import { runDailyEndSequence } from "@/lib/dailyEndSequence";
 import {
   DAILY_MATCH_HOLD_MS,
@@ -370,6 +377,12 @@ const DailyResultCard: React.FC<{
   result: DailyResult;
   /** Null hides the streak line entirely — never show a zero. */
   streak: number | null;
+  /** Null hides the personal stats block entirely. */
+  stats: DailyStats | null;
+  /** Null hides the percentile line (withheld below 20 players). */
+  percentile: number | null;
+  /** Called after an email signup so the parent can re-read streak/stats. */
+  onSubscribed?: () => void;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
@@ -385,11 +398,14 @@ const DailyResultCard: React.FC<{
   shareText,
   result,
   streak,
-
+  stats,
+  percentile,
+  onSubscribed,
   mobile,
   revisit,
   onLeave,
 }) => {
+
   const stat = (label: string, value: string) => (
     <div
       key={label}
@@ -454,6 +470,28 @@ const DailyResultCard: React.FC<{
         {stat("Misses", `${totalMisses}`)}
       </div>
 
+      {/* Lifetime totals. Same tile language as above — no new panel style.
+          Hidden entirely when the read failed, never shown as zeroes. */}
+      {stats !== null && (
+        <div
+          className="ww-res-in"
+          style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", ...blockIn("stats") }}
+        >
+          {stat("Played", `${stats.totalPlayed}`)}
+          {stat("Clean", `${stats.cleanRuns}`)}
+          {stat("Best", `${stats.bestStreak}`)}
+          {stat("Avg miss", formatAvgMisses(stats.avgMisses))}
+        </div>
+      )}
+
+      {percentile !== null && (
+        <p
+          className="ww-res-in"
+          style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, ...blockIn("streak") }}
+        >
+          {formatPercentileLine(percentile)}
+        </p>
+      )}
 
       {streak !== null && streak >= 1 && (
         <p
@@ -463,6 +501,8 @@ const DailyResultCard: React.FC<{
           {formatStreakLine(streak)}
         </p>
       )}
+
+
 
       <div
         className="ww-res-in"
@@ -548,7 +588,7 @@ const DailyResultCard: React.FC<{
             ...blockIn("email"),
           }}
         >
-          <DailyEmailCapture />
+          <DailyEmailCapture onSubscribed={onSubscribed} />
         </div>
       )}
 
@@ -818,11 +858,18 @@ const DailyPage: React.FC = () => {
   const [introUp, setIntroUp] = useState(false);
   // Measured card-grid width: the single alignment line for the gameplay screen.
   const [gridWidth, setGridWidth] = useState(0);
+  // Bumped after an email signup: the server can now fold in rows linked to
+  // that address, so the streak and stats are re-read.
+  const [profileKey, setProfileKey] = useState(0);
   // Read after the run is persisted so today counts toward the streak.
-  const streak = useDailyStreak(
+  const dataReady = daily.resultSaved || daily.result === null;
+  const streak = useDailyStreak(daily.puzzleNumber, dataReady, profileKey);
+  const { stats, percentile } = useDailyProfile(
     daily.puzzleNumber,
-    daily.resultSaved || daily.result === null
+    dataReady,
+    profileKey
   );
+
 
   // --- correct-match ghost layer ---------------------------------------
   // The engine empties the solved slots the instant the claim resolves, so the
@@ -1186,10 +1233,17 @@ const DailyPage: React.FC = () => {
               peekUsed={daily.result!.peekUsed}
               peekRound={daily.result!.peekRound}
               failed={daily.result!.failed}
-              shareText={formatDailyShare(daily.result!, streak?.current ?? null)}
+              shareText={formatDailyShare(
+                daily.result!,
+                streak?.current ?? null,
+                percentile
+              )}
               result={daily.result!}
-
               streak={streak?.current ?? null}
+              stats={stats}
+              percentile={percentile}
+              onSubscribed={() => setProfileKey((k) => k + 1)}
+
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={() => {
