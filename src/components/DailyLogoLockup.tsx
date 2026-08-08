@@ -44,6 +44,8 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
   const [json, setJson] = useState<unknown | null>(null);
   const [ready, setReady] = useState(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
+  const { theme } = useThemeMode();
+  const lockupSrc = theme === "night" ? lockupCreamAsset.url : lockupAsset.url;
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -73,7 +75,7 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
       style={{ position: "relative", width: "100%", maxWidth: 251, aspectRatio: "251 / 211", ...style }}
     >
       <img
-        src={lockupAsset.url}
+        src={lockupSrc}
         alt="WHOOP! WHOOP! Daily"
         style={{ ...layer, objectFit: "contain", opacity: ready ? 0 : 1 }}
       />
