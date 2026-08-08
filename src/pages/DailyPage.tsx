@@ -588,7 +588,7 @@ const DailyResultCard: React.FC<{
             ...blockIn("email"),
           }}
         >
-          <DailyEmailCapture />
+          <DailyEmailCapture onSubscribed={onSubscribed} />
         </div>
       )}
 
