@@ -10,7 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor";
 
 const SUBSCRIBED_KEY = "ww_daily_subscribed";
+const EMAIL_KEY = "ww_daily_email";
 let inMemorySubscribed = false;
+let inMemoryEmail: string | null = null;
 
 /** Mirrors the server-side check so we never send obvious junk. */
 export function isValidEmail(value: string): boolean {
@@ -30,16 +32,36 @@ export function hasSubscribed(): boolean {
   return inMemorySubscribed;
 }
 
-export function markSubscribed(): void {
+/**
+ * The address this browser subscribed with, if any. Passed to the streak and
+ * stats reads so history from a previous device is folded back in.
+ */
+export function getSubscribedEmail(): string | null {
+  try {
+    if (typeof localStorage !== "undefined") {
+      const v = localStorage.getItem(EMAIL_KEY);
+      if (v && isValidEmail(v)) return v;
+    }
+  } catch {
+    // fall through
+  }
+  return inMemoryEmail;
+}
+
+export function markSubscribed(email?: string): void {
   inMemorySubscribed = true;
+  const clean = email ? email.trim().toLowerCase() : null;
+  if (clean && isValidEmail(clean)) inMemoryEmail = clean;
   try {
     if (typeof localStorage !== "undefined") {
       localStorage.setItem(SUBSCRIBED_KEY, "1");
+      if (inMemoryEmail) localStorage.setItem(EMAIL_KEY, inMemoryEmail);
     }
   } catch {
     // fall through
   }
 }
+
 
 /**
  * Subscribes an address. Duplicates resolve `true` — a repeat signup is quiet,
