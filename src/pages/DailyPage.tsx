@@ -325,7 +325,7 @@ const ShareBlock: React.FC<{
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
           <label
             htmlFor="ww-share-manual"
-            style={{ ...TEXT.caption, color: COLORS.inkMuted }}
+            style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}
           >
             Your browser blocked the copy — select and copy this:
           </label>
@@ -337,7 +337,7 @@ const ShareBlock: React.FC<{
             value={text}
             onFocus={(e) => e.currentTarget.select()}
             style={{
-              ...TEXT.body,
+              ...textStyle("body", mobile),
               width: "100%",
               resize: "none",
               padding: SPACE[3],
