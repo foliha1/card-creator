@@ -1,17 +1,26 @@
 import type { CSSProperties } from "react";
 
-export const COLORS = {
-  // UI surface (window/content backgrounds)
-  surface: "#F8F2E9",
-  surfaceHover: "#e8e0d4",
-  panel: "#D0C3AF",
-  panelMuted: "#ADA290",
-  panelMutedHover: "#bdb5a4",
-  // Ink ramp: ink (strong text), inkMuted (secondary/subtle text)
-  ink: "#231f20",
-  // Darkened from #706662 so it meets WCAG AA (4.5:1) on every surface — including panel (#D0C3AF).
-  inkMuted: "#544c4a",
-  // Brand tones + their hover states
+/* ------------------------------------------------------------------ *
+ * RAW — the frozen literal palette.
+ *
+ * These hexes NEVER follow the theme. Use them for anything that must
+ * keep its literal colour in both light and night mode:
+ *   • the playing cards (faces + backs) and the dice faces
+ *   • the match / miss marks on the results screen
+ *   • every animation colour (wrong-match wash + ring, success ghost,
+ *     shine sweeps)
+ *   • the canvas share image, which is a light brand artifact
+ *   • anything doing colour maths (canvas, contrast) — `var(...)`
+ *     strings can't be parsed.
+ * ------------------------------------------------------------------ */
+export const RAW = {
+  cream: "#F8F2E9",
+  creamHover: "#e8e0d4",
+  khaki: "#D0C3AF",
+  khakiMuted: "#ADA290",
+  khakiMutedHover: "#bdb5a4",
+  warmBlack: "#231f20",
+  warmGrey: "#544c4a",
   red: "#d72229",
   redHover: "#b81b20",
   blue: "#0072B2",
@@ -20,12 +29,47 @@ export const COLORS = {
   orangeHover: "#c47618",
   success: "#59cd90",
   successHover: "#4ab87d",
-  // Theme background (backs the "Off-White" theme swatch — distinct from `surface`, the UI background)
   offWhite: "#fef9f0",
-  // Play-mode accent tints used on the "How do you want to play?" screen.
   soloTint: "#97DAFF",
   peepsTint: "#FFC1C3",
 } as const;
+
+/* ------------------------------------------------------------------ *
+ * COLORS — the themed palette.
+ *
+ * Inline styles are used throughout, so themeable entries point at CSS
+ * custom properties rather than hexes: the actual values live in
+ * `index.css` under `:root` (light) and `html[data-theme="night"]`
+ * (night), which means inline styles follow the theme with no component
+ * changes. Brand tones are identical in both themes, so they stay
+ * literal.
+ * ------------------------------------------------------------------ */
+export const COLORS = {
+  // UI surface (window/content backgrounds) — themed
+  surface: "var(--ww-surface)",
+  surfaceHover: "var(--ww-surface-hover)",
+  panel: "var(--ww-panel)",
+  panelMuted: "var(--ww-panel-muted)",
+  panelMutedHover: "var(--ww-panel-muted-hover)",
+  // Ink ramp: ink (strong text), inkMuted (secondary/subtle text) — themed
+  ink: "var(--ww-ink)",
+  inkMuted: "var(--ww-ink-muted)",
+  // Brand tones + their hover states — identical in both themes
+  red: RAW.red,
+  redHover: RAW.redHover,
+  blue: RAW.blue,
+  blueHover: RAW.blueHover,
+  orange: RAW.orange,
+  orangeHover: RAW.orangeHover,
+  success: RAW.success,
+  successHover: RAW.successHover,
+  // Theme background (backs the "Off-White" theme swatch — distinct from `surface`, the UI background)
+  offWhite: RAW.offWhite,
+  // Play-mode accent tints used on the "How do you want to play?" screen.
+  soloTint: RAW.soloTint,
+  peepsTint: RAW.peepsTint,
+} as const;
+
 
 export const BORDER = {
   standard: `1.5px solid ${COLORS.ink}`,
@@ -245,15 +289,18 @@ export type ButtonVariant =
   | "danger";     // destructive (leave / quit)
 
 const BUTTON_PALETTE: Record<ButtonVariant, { bg: string; bgHover: string; fg: string; border: string }> = {
-  primary:   { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface,   border: BORDER.heavy },
-  secondary: { bg: COLORS.blue,       bgHover: COLORS.blueHover,       fg: COLORS.surface,   border: BORDER.heavy },
-  accent:    { bg: COLORS.orange,     bgHover: COLORS.orangeHover,     fg: COLORS.ink,       border: BORDER.heavy },
+  // Foreground on a fixed brand background stays literal: `surface` flips dark
+  // in night mode, which would leave cream-on-blue reading as black-on-blue.
+  primary:   { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: RAW.cream,        border: BORDER.heavy },
+  secondary: { bg: COLORS.blue,       bgHover: COLORS.blueHover,       fg: RAW.cream,        border: BORDER.heavy },
+  accent:    { bg: COLORS.orange,     bgHover: COLORS.orangeHover,     fg: RAW.warmBlack,    border: BORDER.heavy },
   neutral:   { bg: COLORS.panel,      bgHover: COLORS.panelMutedHover, fg: COLORS.ink,       border: BORDER.heavy },
   ink:       { bg: COLORS.ink,        bgHover: COLORS.inkMuted,        fg: COLORS.surface,   border: BORDER.heavy },
   play:      { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.peepsTint, border: BORDER.heavy },
   quiet:     { bg: COLORS.surface,    bgHover: COLORS.surfaceHover,    fg: COLORS.ink,       border: BORDER.heavy },
   ghost:     { bg: "transparent",     bgHover: COLORS.surfaceHover,    fg: COLORS.ink,       border: "none" },
-  danger:    { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface,   border: BORDER.heavy },
+  danger:    { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: RAW.cream,        border: BORDER.heavy },
+
 };
 
 /** Hover background for a variant — pair with `buttonStyle` on pointer events. */

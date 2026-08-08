@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Moon, Sun } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToPlay from "@/components/DailyHowToPlay";
@@ -60,6 +60,8 @@ import {
 import {
   BORDER,
   COLORS,
+  RAW,
+
   RADIUS,
   SPACE,
   buttonStyle,
@@ -67,6 +69,7 @@ import {
   FONT_FAMILY_UI,
   FONT_WEIGHT_UI,
 } from "@/lib/tokens";
+import { useThemeMode } from "@/lib/nightMode";
 
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
@@ -500,6 +503,42 @@ const DailyResultCard: React.FC<{
 
 
 
+/**
+ * Manual light/night switch. Theming only — it writes `data-theme` on <html>,
+ * which flips the CSS custom properties the COLORS tokens point at. Until it is
+ * touched the theme follows `prefers-color-scheme`.
+ */
+const DailyThemeToggle: React.FC<{ mobile?: boolean }> = ({ mobile = false }) => {
+  const { theme, toggle } = useThemeMode();
+  const night = theme === "night";
+  return (
+    <button
+      type="button"
+      className="ww-press daily-btn-howto"
+      onClick={() => {
+        hapticTap();
+        toggle();
+      }}
+      aria-label={night ? "Switch to light mode" : "Switch to night mode"}
+      title={night ? "Switch to light mode" : "Switch to night mode"}
+      style={{
+        ...textStyle("chip", mobile),
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 32,
+        minWidth: 32,
+        padding: "8px 12px",
+        border: "none",
+        borderRadius: RADIUS.sm,
+      }}
+    >
+      {night ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+    </button>
+  );
+};
+
+
 /** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
 const DailyReadyScreen: React.FC<{
   today: string;
@@ -534,7 +573,8 @@ const DailyReadyScreen: React.FC<{
                 borderRadius: 999,
                 background: COLORS.orange,
                 border: BORDER.heavy,
-                color: COLORS.ink,
+                // Fixed orange fill: the ink token flips cream in night mode.
+                color: RAW.warmBlack,
               }}
             >
               Played today
@@ -556,7 +596,15 @@ const DailyReadyScreen: React.FC<{
       </div>
 
 
-      <div className="daily-intro" style={{ display: "inline-block", animationDelay: "120ms" }}>
+      <div
+        className="daily-intro"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: SPACE[3],
+          animationDelay: "120ms",
+        }}
+      >
         <button
           type="button"
           className="ww-press daily-btn-howto"
@@ -576,7 +624,9 @@ const DailyReadyScreen: React.FC<{
           <HelpCircle size={16} aria-hidden="true" />
           How to Play
         </button>
+        <DailyThemeToggle mobile={mobile} />
       </div>
+
 
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
@@ -999,7 +1049,7 @@ const DailyPage: React.FC = () => {
               padding: "2px 8px",
               borderRadius: 999,
               background: COLORS.red,
-              color: COLORS.surface,
+              color: RAW.cream,
               fontSize: 10,
               fontWeight: 700,
               letterSpacing: "0.08em",

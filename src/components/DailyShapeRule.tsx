@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern_Seamless.svg.asset.json";
+import { getLocalDateString } from "@/lib/daily";
+import { useThemeMode } from "@/lib/nightMode";
 
 /** Natural tile geometry — 15 shapes on a 24px pitch, 19px tall. */
 const TILE_W = 360;
@@ -7,12 +9,18 @@ const TILE_H = 19;
 const PITCH = 24;
 const SHAPES_PER_TILE = TILE_W / PITCH; // 15
 
+/** Night tile: identical geometry, warm-black triangles swapped to cream. */
+const NIGHT_PATTERN_URL = "/WhoopWhoop_Daily_Pattern_Seamless_Night.svg";
+
 /**
- * Deterministic per-day shift, in shape cells. Same for everyone on a given
- * UTC date, and always a whole cell so the seamless loop is never broken.
+ * Deterministic per-day shift, in shape cells. Keyed off the same LOCAL
+ * calendar date the puzzle uses, so the pattern and the puzzle roll over
+ * together at the player's own midnight. Always a whole cell, so the seamless
+ * loop is never broken.
  */
 const dayCellOffset = (now = new Date()) => {
-  const days = Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 86400000);
+  const [y, m, d] = getLocalDateString(now).split("-").map(Number);
+  const days = Math.floor(Date.UTC(y, m - 1, d) / 86400000);
   return ((days % SHAPES_PER_TILE) + SHAPES_PER_TILE) % SHAPES_PER_TILE;
 };
 
@@ -26,6 +34,8 @@ const dayCellOffset = (now = new Date()) => {
 const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
+  const { theme } = useThemeMode();
+  const patternUrl = theme === "night" ? NIGHT_PATTERN_URL : patternAsset.url;
 
   useEffect(() => {
     const el = hostRef.current;
@@ -49,7 +59,7 @@ const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) =>
       bandStyle = {
         width: "100%",
         height: "100%",
-        backgroundImage: `url(${patternAsset.url})`,
+        backgroundImage: `url(${patternUrl})`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
         backgroundSize: "contain",
@@ -60,7 +70,7 @@ const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) =>
       bandStyle = {
         width: cells * pitch,
         height: "100%",
-        backgroundImage: `url(${patternAsset.url})`,
+        backgroundImage: `url(${patternUrl})`,
         backgroundRepeat: "repeat-x",
         backgroundSize: `auto 100%`,
         backgroundPosition: `calc(50% + ${dayCellOffset() * pitch}px) center`,
