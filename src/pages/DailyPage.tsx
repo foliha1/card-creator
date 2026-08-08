@@ -500,6 +500,8 @@ const DailyResultCard: React.FC<{
         >
           {formatStreakLine(streak)}
         </p>
+      )}
+
 
 
       <div
