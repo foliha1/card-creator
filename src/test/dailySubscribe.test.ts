@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const rpc = vi.fn();
+const invoke = vi.fn();
 
 vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { rpc: (...args: unknown[]) => rpc(...args) },
+  supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } },
 }));
 
 vi.mock("@/lib/visitor", () => ({ getVisitorId: () => "visitor-1" }));
+
 
 import {
   hasSubscribed,
