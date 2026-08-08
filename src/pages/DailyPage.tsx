@@ -751,8 +751,17 @@ const DailyBoard: React.FC<{
   }, []);
 
   const byWidth = (box.w - (BOARD_COLS - 1) * BOARD_GAP) / BOARD_COLS;
-  const byHeight = (box.h - (rows - 1) * BOARD_GAP) / rows / BOARD_RATIO;
-  const raw = Math.min(byWidth, byHeight);
+  // A measured height of zero (a browser that dropped a dvh declaration, or a
+  // measurement taken before layout) must never collapse the board to minimum
+  // cards: fall back to the viewport height instead.
+  const availH =
+    box.h > 0
+      ? box.h
+      : typeof window !== "undefined" && window.innerHeight > 0
+      ? window.innerHeight
+      : 0;
+  const byHeight = (availH - (rows - 1) * BOARD_GAP) / rows / BOARD_RATIO;
+  const raw = availH > 0 ? Math.min(byWidth, byHeight) : byWidth;
   const cardW = Math.floor(
     Math.max(BOARD_MIN_CARD_W, Number.isFinite(raw) && raw > 0 ? raw : BOARD_MIN_CARD_W)
   );
