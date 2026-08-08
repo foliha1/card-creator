@@ -1,8 +1,10 @@
 // ============================================================================
-// Daily email capture — one address per person, written through a
-// security-definer RPC. Never blocks the UI: every failure is surfaced as a
-// simple boolean and swallowed otherwise.
+// Daily email capture — one address per person, written through the
+// `ac-subscribe` edge function, which owns the database write and then forwards
+// the address to the email sender. Never blocks the UI: every failure is
+// surfaced as a simple boolean and swallowed otherwise.
 // ============================================================================
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor";
