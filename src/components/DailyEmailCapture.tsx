@@ -56,7 +56,9 @@ const DailyEmailCapture: React.FC<{
       setStatus("done");
       hapticSuccess();
       playSubscribed();
+      onSubscribed?.();
     } else {
+
       setStatus("error");
       setErrorMessage("That didn't send. Try again.");
       hapticError();
