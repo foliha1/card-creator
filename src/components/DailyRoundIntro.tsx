@@ -16,7 +16,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { MatchDie, landedRotationFor } from "@/components/MatchDie";
 import type { RollAttribute } from "@/lib/multiplayer";
 import { playDieLand } from "@/lib/sounds";
-import { COLORS, FONT_SIZE, textStyle } from "@/lib/tokens";
+import { COLORS, RAW, FONT_SIZE, textStyle } from "@/lib/tokens";
 
 /** Fade-up of the scrim, round title and die before the tumble starts. */
 export const DAILY_FADE_IN_MS = 200;
@@ -172,7 +172,7 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
             whiteSpace: "nowrap",
             ...textStyle("display"),
             fontSize: FONT_SIZE["6xl"],
-            color: COLORS.surface,
+            color: RAW.cream,
           }}
         >
           Round {roundIndex}

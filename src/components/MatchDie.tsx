@@ -13,7 +13,7 @@
 // ============================================================================
 
 import { CSSProperties } from "react";
-import { COLORS } from "@/lib/tokens";
+import { RAW } from "@/lib/tokens";
 import type { RollAttribute } from "@/lib/multiplayer";
 
 export interface MatchDieProps {
@@ -99,8 +99,8 @@ export function MatchDie({ size, attribute, faceIndex, rotation, transition }: M
     inset: 0,
     width: size,
     height: size,
-    backgroundColor: COLORS.surface,   // #F8F2E9
-    border: `2px solid ${COLORS.ink}`, // #231F20
+    backgroundColor: RAW.cream,   // #F8F2E9
+    border: `2px solid ${RAW.warmBlack}`, // #231F20
     borderRadius: 8,
     backfaceVisibility: "hidden",
     WebkitBackfaceVisibility: "hidden",

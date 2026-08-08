@@ -7,7 +7,7 @@
 
 import { DAILY_ROUNDS } from "@/lib/dailyEngine";
 import type { DailyResult } from "@/lib/daily";
-import { COLORS, FONT_FAMILY } from "@/lib/tokens";
+import { RAW, FONT_FAMILY } from "@/lib/tokens";
 import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern_Seamless.svg.asset.json";
 import lockupAsset from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
 
@@ -66,27 +66,27 @@ type Segment = { text: string; color: string };
 function scoreSegments(result: DailyResult, streak?: number | null): Segment[] {
   const solved = result.roundsSolved ?? 0;
   const misses = result.totalMisses ?? 0;
-  const dot: Segment = { text: " · ", color: COLORS.ink };
+  const dot: Segment = { text: " · ", color: RAW.warmBlack };
   const segs: Segment[] = [];
 
   if (solved === 0) {
-    segs.push({ text: "Whooped! Better luck tomorrow", color: COLORS.red });
+    segs.push({ text: "Whooped! Better luck tomorrow", color: RAW.red });
   } else {
-    segs.push({ text: `${solved} of ${DAILY_ROUNDS}`, color: COLORS.blue });
+    segs.push({ text: `${solved} of ${DAILY_ROUNDS}`, color: RAW.blue });
     segs.push(dot);
     segs.push(
       misses === 0
-        ? { text: "Clean", color: COLORS.blue }
+        ? { text: "Clean", color: RAW.blue }
         : {
             text: `${misses} ${misses === 1 ? "miss" : "misses"}`,
-            color: COLORS.red,
+            color: RAW.red,
           }
     );
   }
 
   if (typeof streak === "number" && streak >= SHARE_STREAK_MIN) {
     segs.push(dot);
-    segs.push({ text: `${streak} day streak`, color: COLORS.ink });
+    segs.push({ text: `${streak} day streak`, color: RAW.warmBlack });
   }
 
   return segs;
@@ -140,7 +140,7 @@ export async function renderDailyShareImage(
     loadImage(patternAsset.url),
   ]);
 
-  ctx.fillStyle = COLORS.surface;
+  ctx.fillStyle = RAW.cream;
   ctx.fillRect(0, 0, SHARE_IMAGE_W, SHARE_IMAGE_H);
 
   // --- Vertical rhythm: space-between between the five stacked blocks -------
@@ -177,11 +177,11 @@ export async function renderDailyShareImage(
   ctx.save();
   ctx.translate(badgeCx, badgeCy);
   ctx.rotate((15.06 * Math.PI) / 180);
-  ctx.fillStyle = COLORS.orange;
+  ctx.fillStyle = RAW.orange;
   ctx.beginPath();
   ctx.arc(0, 0, BADGE_D / 2, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = COLORS.ink;
+  ctx.fillStyle = RAW.warmBlack;
   ctx.font = `100px ${FONT_FAMILY}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -192,7 +192,7 @@ export async function renderDailyShareImage(
   // --- 3. Rounds panel ------------------------------------------------------
   const panelTop = advance(PANEL_H);
   const panelX = (SHARE_IMAGE_W - PANEL_W) / 2;
-  ctx.fillStyle = COLORS.panel;
+  ctx.fillStyle = RAW.khaki;
   roundRect(ctx, panelX, panelTop, PANEL_W, PANEL_H, 16);
 
   const P_PAD = 48;
@@ -208,7 +208,7 @@ export async function renderDailyShareImage(
     const midY = rowY + ROW_H / 2;
 
     // Label.
-    ctx.fillStyle = COLORS.ink;
+    ctx.fillStyle = RAW.warmBlack;
     ctx.font = `72px ${FONT_FAMILY}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
@@ -228,7 +228,7 @@ export async function renderDailyShareImage(
     for (let s = 0; s < 2; s++) {
       const ev = slots[s];
       if (!ev) continue;
-      ctx.fillStyle = ev === "SOLVE" ? COLORS.blue : COLORS.red;
+      ctx.fillStyle = ev === "SOLVE" ? RAW.blue : RAW.red;
       ctx.beginPath();
       ctx.arc(
         groupX + s * (MARK + MARK_GAP) + MARK / 2,
@@ -246,9 +246,9 @@ export async function renderDailyShareImage(
       const pillH = 44;
       const pillX = groupX - 24 - pillW;
       const pillY = midY - pillH / 2;
-      ctx.fillStyle = COLORS.ink;
+      ctx.fillStyle = RAW.warmBlack;
       roundRect(ctx, pillX, pillY, pillW, pillH, 4);
-      ctx.fillStyle = COLORS.surface;
+      ctx.fillStyle = RAW.cream;
       ctx.font = `40px ${FONT_FAMILY}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -256,7 +256,7 @@ export async function renderDailyShareImage(
     }
 
     // Bottom border.
-    ctx.strokeStyle = COLORS.ink;
+    ctx.strokeStyle = RAW.warmBlack;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(rowsX, rowY + ROW_H);
