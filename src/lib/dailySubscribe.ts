@@ -48,20 +48,23 @@ export function markSubscribed(): void {
 export async function subscribeDaily(
   email: string,
   visitorId: string = getVisitorId(),
-  /** Where the signup came from. Omitted keeps the RPC's own default. */
+  /** Where the signup came from. Omitted keeps the server's own default. */
   source?: "daily_result" | "landing"
 ): Promise<boolean> {
   if (!isValidEmail(email)) return false;
   try {
-    const { data, error } = await supabase.rpc("subscribe_daily", {
-      p_email: email.trim().toLowerCase(),
-      p_visitor_id: visitorId,
-      ...(source ? { p_source: source } : {}),
+    const { data, error } = await supabase.functions.invoke("ac-subscribe", {
+      body: {
+        email: email.trim().toLowerCase(),
+        visitorId,
+        ...(source ? { source } : {}),
+      },
     });
-    if (error || data !== true) return false;
+    if (error || (data as { ok?: boolean } | null)?.ok !== true) return false;
     markSubscribed();
     return true;
   } catch {
     return false;
   }
 }
+
