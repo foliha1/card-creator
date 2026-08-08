@@ -19,9 +19,12 @@ const bodyStyle: React.CSSProperties = {
  * Email capture on the daily result screen. Additive by design — it never
  * blocks or gates the result, and a duplicate signup reads as a success.
  */
-const DailyEmailCapture: React.FC<{ source?: "daily_result" | "landing" }> = ({
-  source,
-}) => {
+const DailyEmailCapture: React.FC<{
+  source?: "daily_result" | "landing";
+  /** Fired after a successful signup so the caller can re-read streak/stats. */
+  onSubscribed?: () => void;
+}> = ({ source, onSubscribed }) => {
+
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
