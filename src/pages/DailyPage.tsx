@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { HelpCircle, Moon, Sun } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
-import DailyHowToPlay from "@/components/DailyHowToPlay";
+import DailyHowToSteps, { hasSeenHowTo } from "@/components/DailyHowToSteps";
 import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
 import DailyScreenFade from "@/components/DailyScreenFade";
@@ -870,8 +870,17 @@ const DailyPage: React.FC = () => {
 
   const daily = useDailyGame();
   const { state, phase } = daily;
-  const [howTo, setHowTo] = useState(false);
+  // Which How to Play mode is open: the first-run gate, or the reference chip.
+  const [howTo, setHowTo] = useState<"gate" | "reference" | null>(null);
   const [showResult, setShowResult] = useState(false);
+  // Single entry point for beginning a run: the play CTA and the stepper's
+  // Start / Skip / Play controls all route through here.
+  const startRun = React.useCallback(() => {
+    // 600ms cue; the deal lands at 700ms, so it clears cleanly.
+    playStart();
+    daily.start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daily.start]);
   // True while the round intro overlay is up: taps stay locked.
   const [introUp, setIntroUp] = useState(false);
   // Measured card-grid width: the single alignment line for the gameplay screen.
@@ -1220,11 +1229,10 @@ const DailyPage: React.FC = () => {
                 setAudioReady(true);
                 hapticTap();
                 if (playedToday) setShowResult(true);
-                else {
-                  // 600ms cue; the deal lands at 700ms, so it clears cleanly.
-                  playStart();
-                  daily.start();
-                }
+                // First ever run: the stepper gates the start. Skip / Start
+                // both begin the run, so nobody is trapped.
+                else if (!hasSeenHowTo()) setHowTo("gate");
+                else startRun();
               }}
 
               onHowToPlay={() => {
@@ -1234,11 +1242,21 @@ const DailyPage: React.FC = () => {
                 setAudioReady(true);
                 startTheme();
                 hapticTap();
-                setHowTo(true);
+                setHowTo("reference");
               }}
 
             />
-            {howTo && <DailyHowToPlay onClose={() => setHowTo(false)} />}
+            {howTo && (
+              <DailyHowToSteps
+                mode={howTo}
+                mobile={mobile}
+                onStart={() => {
+                  setHowTo(null);
+                  startRun();
+                }}
+                onClose={() => setHowTo(null)}
+              />
+            )}
           </>
         )}
         {!ready && (
