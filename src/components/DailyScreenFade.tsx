@@ -68,7 +68,7 @@ const DailyScreenFade: React.FC<{
     <div
       style={{
         position: "relative",
-        minHeight: "100dvh",
+        minHeight: "var(--ww-vh)",
         background,
         transition: `background-color ${MS}ms ease`,
       }}

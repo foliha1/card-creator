@@ -104,7 +104,7 @@ const SupportPage: React.FC = () => {
       <SiteHeader />
       <div
         style={{
-          minHeight: "100dvh",
+          minHeight: "var(--ww-vh)",
           background: COLORS.surface,
           color: COLORS.ink,
           fontFamily: FONT_FAMILY,

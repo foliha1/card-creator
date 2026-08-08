@@ -21,8 +21,8 @@ export const shellPadding = (mobile: boolean): React.CSSProperties => {
 
 export const shellStyleFor = (mobile: boolean): React.CSSProperties => ({
   position: "relative",
-  minHeight: mobile ? "100dvh" : "100%",
-  height: mobile ? "100dvh" : "100%",
+  minHeight: mobile ? "var(--ww-vh)" : "100%",
+  height: mobile ? "var(--ww-vh)" : "100%",
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",

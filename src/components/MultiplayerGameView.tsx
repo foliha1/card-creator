@@ -1430,7 +1430,7 @@ const MultiplayerGameView: React.FC<Props> = ({
       marginTop: SITE_HEADER_H,
 
       height: "100%",
-      minHeight: mobile ? `calc(100dvh - ${SITE_HEADER_H}px)` : undefined,
+      minHeight: mobile ? `calc(var(--ww-vh) - ${SITE_HEADER_H}px)` : undefined,
       maxHeight: mobile ? undefined : "100%",
       width: "100%",
       boxSizing: "border-box",

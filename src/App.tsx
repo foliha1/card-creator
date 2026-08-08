@@ -35,7 +35,7 @@ const AnimatedRoutes: React.FC = () => {
       style={{
         opacity: stage === "fadeIn" ? 1 : 0,
         transition: `opacity ${FADE_MS}ms ease`,
-        minHeight: "100dvh",
+        minHeight: "var(--ww-vh)",
       }}
     >
       <Routes location={displayLocation}>

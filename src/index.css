@@ -34,6 +34,18 @@
 All colors MUST be HSL.
 */
 
+/* Viewport height with a graceful fallback: browsers without dvh support keep a
+   usable 100vh instead of dropping the declaration and collapsing to content
+   height (which made the card scaler measure zero). */
+:root {
+  --ww-vh: 100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --ww-vh: 100dvh;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
