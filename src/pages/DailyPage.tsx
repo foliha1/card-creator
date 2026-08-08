@@ -858,11 +858,18 @@ const DailyPage: React.FC = () => {
   const [introUp, setIntroUp] = useState(false);
   // Measured card-grid width: the single alignment line for the gameplay screen.
   const [gridWidth, setGridWidth] = useState(0);
+  // Bumped after an email signup: the server can now fold in rows linked to
+  // that address, so the streak and stats are re-read.
+  const [profileKey, setProfileKey] = useState(0);
   // Read after the run is persisted so today counts toward the streak.
-  const streak = useDailyStreak(
+  const dataReady = daily.resultSaved || daily.result === null;
+  const streak = useDailyStreak(daily.puzzleNumber, dataReady, profileKey);
+  const { stats, percentile } = useDailyProfile(
     daily.puzzleNumber,
-    daily.resultSaved || daily.result === null
+    dataReady,
+    profileKey
   );
+
 
   // --- correct-match ghost layer ---------------------------------------
   // The engine empties the solved slots the instant the claim resolves, so the
