@@ -82,7 +82,8 @@ describe("fetchDailyStats", () => {
       error: null,
     });
 
-    await expect(fetchDailyStats()).resolves.toEqual({
+    // Explicit null email: this browser never subscribed.
+    await expect(fetchDailyStats("visitor-new", null)).resolves.toEqual({
       totalPlayed: 12,
       cleanRuns: 3,
       bestStreak: 6,
@@ -126,7 +127,7 @@ describe("fetchDailyStats", () => {
 describe("percentile", () => {
   it("returns the server's percentage", async () => {
     rpc.mockResolvedValue({ data: 78, error: null });
-    await expect(fetchDailyPercentile(8)).resolves.toBe(78);
+    await expect(fetchDailyPercentile(8, "visitor-new", null)).resolves.toBe(78);
     expect(rpc).toHaveBeenCalledWith("get_daily_percentile", {
       p_visitor_id: "visitor-new",
       p_puzzle_number: 8,
