@@ -195,6 +195,7 @@ export type Database = {
           total_misses: number
         }[]
       }
+      email_has_history: { Args: { p_email: string }; Returns: boolean }
       get_daily_percentile: {
         Args: {
           p_email?: string
@@ -245,6 +246,7 @@ export type Database = {
           longest_streak: number
         }[]
       }
+      get_subscriber_email: { Args: { p_visitor_id: string }; Returns: string }
       save_daily_result: {
         Args: {
           p_elapsed_ms: number
