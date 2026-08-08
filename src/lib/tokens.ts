@@ -289,15 +289,18 @@ export type ButtonVariant =
   | "danger";     // destructive (leave / quit)
 
 const BUTTON_PALETTE: Record<ButtonVariant, { bg: string; bgHover: string; fg: string; border: string }> = {
-  primary:   { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface,   border: BORDER.heavy },
-  secondary: { bg: COLORS.blue,       bgHover: COLORS.blueHover,       fg: COLORS.surface,   border: BORDER.heavy },
-  accent:    { bg: COLORS.orange,     bgHover: COLORS.orangeHover,     fg: COLORS.ink,       border: BORDER.heavy },
+  // Foreground on a fixed brand background stays literal: `surface` flips dark
+  // in night mode, which would leave cream-on-blue reading as black-on-blue.
+  primary:   { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: RAW.cream,        border: BORDER.heavy },
+  secondary: { bg: COLORS.blue,       bgHover: COLORS.blueHover,       fg: RAW.cream,        border: BORDER.heavy },
+  accent:    { bg: COLORS.orange,     bgHover: COLORS.orangeHover,     fg: RAW.warmBlack,    border: BORDER.heavy },
   neutral:   { bg: COLORS.panel,      bgHover: COLORS.panelMutedHover, fg: COLORS.ink,       border: BORDER.heavy },
   ink:       { bg: COLORS.ink,        bgHover: COLORS.inkMuted,        fg: COLORS.surface,   border: BORDER.heavy },
   play:      { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.peepsTint, border: BORDER.heavy },
   quiet:     { bg: COLORS.surface,    bgHover: COLORS.surfaceHover,    fg: COLORS.ink,       border: BORDER.heavy },
   ghost:     { bg: "transparent",     bgHover: COLORS.surfaceHover,    fg: COLORS.ink,       border: "none" },
-  danger:    { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: COLORS.surface,   border: BORDER.heavy },
+  danger:    { bg: COLORS.red,        bgHover: COLORS.redHover,        fg: RAW.cream,        border: BORDER.heavy },
+
 };
 
 /** Hover background for a variant — pair with `buttonStyle` on pointer events. */
