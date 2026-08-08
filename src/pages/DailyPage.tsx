@@ -519,14 +519,6 @@ const DailyResultCard: React.FC<{
       )}
 
 
-      {streak !== null && streak >= 1 && (
-        <p
-          className="ww-res-in"
-          style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("streak") }}
-        >
-          {formatStreakLine(streak)}
-        </p>
-      )}
 
 
 
