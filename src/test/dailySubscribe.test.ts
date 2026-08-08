@@ -17,7 +17,7 @@ import {
 } from "@/lib/dailySubscribe";
 
 beforeEach(() => {
-  rpc.mockReset();
+  invoke.mockReset();
   localStorage.clear();
 });
 
@@ -37,32 +37,47 @@ describe("isValidEmail", () => {
 
 describe("subscribeDaily", () => {
   it("sends a trimmed, lowercased address with the visitor id", async () => {
-    rpc.mockResolvedValue({ data: true, error: null });
+    invoke.mockResolvedValue({ data: { ok: true }, error: null });
     await expect(subscribeDaily(" Player@Example.COM ")).resolves.toBe(true);
-    expect(rpc).toHaveBeenCalledWith("subscribe_daily", {
-      p_email: "player@example.com",
-      p_visitor_id: "visitor-1",
+    expect(invoke).toHaveBeenCalledWith("ac-subscribe", {
+      body: { email: "player@example.com", visitorId: "visitor-1" },
     });
   });
 
-  it("treats a duplicate signup as a success (RPC stays quiet)", async () => {
-    // ON CONFLICT DO NOTHING still returns true — the player sees no difference.
-    rpc.mockResolvedValue({ data: true, error: null });
+  it("passes the signup source through when given", async () => {
+    invoke.mockResolvedValue({ data: { ok: true }, error: null });
+    await subscribeDaily("player@example.com", "visitor-1", "landing");
+    expect(invoke).toHaveBeenCalledWith("ac-subscribe", {
+      body: { email: "player@example.com", visitorId: "visitor-1", source: "landing" },
+    });
+  });
+
+  it("treats a duplicate signup as a success (the server stays quiet)", async () => {
+    // ON CONFLICT DO NOTHING still returns ok — the player sees no difference.
+    invoke.mockResolvedValue({ data: { ok: true }, error: null });
     await expect(subscribeDaily("player@example.com")).resolves.toBe(true);
     await expect(subscribeDaily("player@example.com")).resolves.toBe(true);
-    expect(rpc).toHaveBeenCalledTimes(2);
+    expect(invoke).toHaveBeenCalledTimes(2);
     expect(hasSubscribed()).toBe(true);
   });
 
-  it("never calls the RPC for an invalid address", async () => {
-    await expect(subscribeDaily("nope")).resolves.toBe(false);
-    expect(rpc).not.toHaveBeenCalled();
+  it("succeeds even when the email sender sync failed", async () => {
+    invoke.mockResolvedValue({ data: { ok: true, syncedToAc: false }, error: null });
+    await expect(subscribeDaily("player@example.com")).resolves.toBe(true);
+    expect(hasSubscribed()).toBe(true);
   });
 
-  it("returns false on an RPC error or a throw", async () => {
-    rpc.mockResolvedValue({ data: null, error: { message: "boom" } });
+  it("never calls the function for an invalid address", async () => {
+    await expect(subscribeDaily("nope")).resolves.toBe(false);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("returns false on a function error or a throw", async () => {
+    invoke.mockResolvedValue({ data: null, error: { message: "boom" } });
     await expect(subscribeDaily("player@example.com")).resolves.toBe(false);
-    rpc.mockRejectedValue(new Error("offline"));
+    invoke.mockResolvedValue({ data: { ok: false }, error: null });
+    await expect(subscribeDaily("player@example.com")).resolves.toBe(false);
+    invoke.mockRejectedValue(new Error("offline"));
     await expect(subscribeDaily("player@example.com")).resolves.toBe(false);
     expect(hasSubscribed()).toBe(false);
   });
@@ -77,8 +92,9 @@ describe("localStorage hide", () => {
   });
 
   it("marks the visitor on a successful subscribe", async () => {
-    rpc.mockResolvedValue({ data: true, error: null });
+    invoke.mockResolvedValue({ data: { ok: true }, error: null });
     await subscribeDaily("player@example.com");
     expect(hasSubscribed()).toBe(true);
   });
+
 });
