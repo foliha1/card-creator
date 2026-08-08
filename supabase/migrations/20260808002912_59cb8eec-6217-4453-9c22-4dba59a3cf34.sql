@@ -1,0 +1,1 @@
+GRANT ALL ON public.daily_subscribers TO service_role;
