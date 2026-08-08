@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
+import { emailHasHistory, isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import { playSubscribed } from "@/lib/sounds";
 import { BORDER, COLORS, RAW, FONT_FAMILY, RADIUS, SPACE } from "@/lib/tokens";
