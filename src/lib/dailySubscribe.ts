@@ -62,6 +62,45 @@ export function markSubscribed(email?: string): void {
   }
 }
 
+/**
+ * Server-side recognition. Given this browser's visitor id, returns the address
+ * already on file for it (a previous signup on this device, or a run that was
+ * linked to an address) — so clearing local storage no longer makes the app
+ * forget a subscriber. Null on anything unexpected.
+ */
+export async function fetchServerSubscriberEmail(
+  visitorId: string = getVisitorId()
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.rpc("get_subscriber_email", {
+      p_visitor_id: visitorId,
+    });
+    if (error) return null;
+    const email = typeof data === "string" ? data.trim().toLowerCase() : "";
+    return isValidEmail(email) ? email : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether this address already has daily history. Tells a genuine new signup
+ * ("You're in.") from a returning player on a fresh browser ("Welcome back.").
+ * Failures read as "new" — never block the signup.
+ */
+export async function emailHasHistory(email: string): Promise<boolean> {
+  if (!isValidEmail(email)) return false;
+  try {
+    const { data, error } = await supabase.rpc("email_has_history", {
+      p_email: email.trim().toLowerCase(),
+    });
+    if (error) return false;
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
 
 /**
  * Subscribes an address. Duplicates resolve `true` — a repeat signup is quiet,
