@@ -370,6 +370,12 @@ const DailyResultCard: React.FC<{
   result: DailyResult;
   /** Null hides the streak line entirely — never show a zero. */
   streak: number | null;
+  /** Null hides the personal stats block entirely. */
+  stats: DailyStats | null;
+  /** Null hides the percentile line (withheld below 20 players). */
+  percentile: number | null;
+  /** Called after an email signup so the parent can re-read streak/stats. */
+  onSubscribed?: () => void;
   mobile: boolean;
   revisit: boolean;
   onLeave: () => void;
@@ -385,11 +391,14 @@ const DailyResultCard: React.FC<{
   shareText,
   result,
   streak,
-
+  stats,
+  percentile,
+  onSubscribed,
   mobile,
   revisit,
   onLeave,
 }) => {
+
   const stat = (label: string, value: string) => (
     <div
       key={label}
