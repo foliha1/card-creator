@@ -476,6 +476,11 @@ const DailyResultCard: React.FC<{
         <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
           {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
           {stat("Misses", `${totalMisses}`)}
+          {/* Current streak, folded in beside today's numbers. The record lives
+              in the All time block as "Longest streak", so nothing reads doubled.
+              Omitted (never zero) when the streak read failed. */}
+          {streak !== null && streak >= 1 &&
+            stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
         </div>
         {percentile !== null && (
           <p
@@ -514,14 +519,6 @@ const DailyResultCard: React.FC<{
       )}
 
 
-      {streak !== null && streak >= 1 && (
-        <p
-          className="ww-res-in"
-          style={{ ...textStyle("body", mobile), color: COLORS.ink, textAlign: "center", margin: 0, ...blockIn("streak") }}
-        >
-          {formatStreakLine(streak)}
-        </p>
-      )}
 
 
 
