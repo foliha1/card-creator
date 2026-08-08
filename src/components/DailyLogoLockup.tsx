@@ -99,6 +99,11 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
     };
   }, []);
 
+  const animationData = React.useMemo(
+    () => (json && theme === "night" ? recolorToCream(json) : json),
+    [json, theme],
+  );
+
   const layer: React.CSSProperties = {
     position: "absolute",
     inset: 0,
@@ -116,12 +121,14 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
         alt="WHOOP! WHOOP! Daily"
         style={{ ...layer, objectFit: "contain", opacity: ready ? 0 : 1 }}
       />
-      {json && (
+      {animationData && (
         <React.Suspense fallback={null}>
           <div style={{ ...layer, opacity: ready ? 1 : 0 }}>
             <Lottie
+              key={theme}
               lottieRef={lottieRef}
-              animationData={json}
+              animationData={animationData}
+
               loop={false}
               autoplay
               aria-hidden="true"
