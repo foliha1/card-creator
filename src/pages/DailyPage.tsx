@@ -1233,10 +1233,17 @@ const DailyPage: React.FC = () => {
               peekUsed={daily.result!.peekUsed}
               peekRound={daily.result!.peekRound}
               failed={daily.result!.failed}
-              shareText={formatDailyShare(daily.result!, streak?.current ?? null)}
+              shareText={formatDailyShare(
+                daily.result!,
+                streak?.current ?? null,
+                percentile
+              )}
               result={daily.result!}
-
               streak={streak?.current ?? null}
+              stats={stats}
+              percentile={percentile}
+              onSubscribed={() => setProfileKey((k) => k + 1)}
+
               mobile={mobile}
               revisit={daily.alreadyPlayed}
               onLeave={() => {
