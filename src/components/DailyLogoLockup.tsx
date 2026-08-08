@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 import lockupAsset from "@/assets/WhoopWhoop_Daily_Lockup.svg.asset.json";
+import lockupCreamAsset from "@/assets/WhoopWhoop_Daily_Lockup_Cream.svg.asset.json";
 import animationAsset from "@/assets/whoop-daily-logo.json.asset.json";
+import { useThemeMode } from "@/lib/nightMode";
 
 // A failed chunk fetch (stale build, flaky network) must never blank the page:
 // resolve to a no-op so the static lockup stays on screen.
@@ -42,6 +44,8 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
   const [json, setJson] = useState<unknown | null>(null);
   const [ready, setReady] = useState(false);
   const lottieRef = useRef<LottieRefCurrentProps | null>(null);
+  const { theme } = useThemeMode();
+  const lockupSrc = theme === "night" ? lockupCreamAsset.url : lockupAsset.url;
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -71,7 +75,7 @@ const DailyLogoLockup: React.FC<{ style?: React.CSSProperties }> = ({ style }) =
       style={{ position: "relative", width: "100%", maxWidth: 251, aspectRatio: "251 / 211", ...style }}
     >
       <img
-        src={lockupAsset.url}
+        src={lockupSrc}
         alt="WHOOP! WHOOP! Daily"
         style={{ ...layer, objectFit: "contain", opacity: ready ? 0 : 1 }}
       />
