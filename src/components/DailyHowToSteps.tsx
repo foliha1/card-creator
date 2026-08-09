@@ -1,6 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
+import GameCard from "@/components/GameCard";
+import { MatchGhostCard, useMatchGhostStage } from "@/components/matchGhostParts";
+import { ALL_CARDS, type Card } from "@/cardData";
+import {
+  CARD_FLIP_MS,
+  DAILY_MATCH_SETTLE_MS,
+  DEAL_MOVE_MS,
+  DEAL_STAGGER_MS,
+  PRESS_ANIM_MS,
+  SELECT_ANIM_MS,
+  WRONG_ANIM_MS,
+} from "@/lib/animationTiming";
 import {
   COLORS,
   FONT_FAMILY,
@@ -9,6 +21,7 @@ import {
   RADIUS,
   RAW,
 } from "@/lib/tokens";
+
 
 /** localStorage flag: the first-run gate fires exactly once per browser. */
 const SEEN_KEY = "ww_daily_howto_seen";
