@@ -26,7 +26,12 @@ interface GameCardProps {
   dealIndex?: number;
   /** Receives the selection wash element so callers can await its animationend. */
   washRef?: (el: HTMLDivElement | null) => void;
+  /** Corner radius in px. Defaults to the board's value; How to Play passes a
+   *  width-proportional radius (see `cardRadius`) because its cards are drawn
+   *  at several fixed sizes rather than one fluid board size. */
+  radius?: number;
 }
+
 
 
 
@@ -46,6 +51,7 @@ const GameCard = ({
   dealKey,
   dealIndex,
   washRef,
+  radius = RADIUS.md,
 }: GameCardProps) => {
 
 
@@ -115,7 +121,7 @@ const GameCard = ({
         cursor: interactive ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
-        borderRadius: RADIUS.md,
+        borderRadius: radius,
         boxShadow,
         transformOrigin: "center",
         ["--ww-k" as string]: String(k),
@@ -169,7 +175,7 @@ const GameCard = ({
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
-            borderRadius: RADIUS.md,
+            borderRadius: radius,
             overflow: "hidden",
             boxShadow,
           }}
@@ -201,7 +207,7 @@ const GameCard = ({
             position: "absolute",
             inset: 0,
             backfaceVisibility: "hidden",
-            borderRadius: RADIUS.md,
+            borderRadius: radius,
             overflow: "hidden",
             boxShadow,
             transform: "rotateY(180deg)",

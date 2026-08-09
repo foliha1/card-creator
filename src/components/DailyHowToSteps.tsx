@@ -80,6 +80,8 @@ const T = {
   /** Slide 5 — pick, change your mind, pick again, flip. Holds only; the
    *  selection, flip and fade durations come from animationTiming. */
   pair: {
+    /** Settled board before the first tap, matching slide 6's lead. */
+    lead: 400,
     selectHold: 200,
     deselectHold: 300,
     reselectHold: 100,
@@ -87,14 +89,20 @@ const T = {
     fade: 300,
   },
   /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
-   *  windows are the board's own constants. */
+   *  windows are the board's own constants. Every beat is separated by a hold
+   *  so the loop reads as a demonstration rather than a scramble. */
   match: {
-    firstHold: 220,
-    secondHold: 180,
+    /** Settled board before anything is touched. */
+    lead: 400,
+    firstHold: 350,
+    secondHold: 250,
     /** All face down again after the refill, before the miss. */
-    restHold: 200,
-    wrongHold: 300,
+    restHold: 600,
+    missFirstHold: 350,
+    missSecondHold: 250,
+    wrongHold: 700,
   },
+
   /** Slide 7 — PEEK press, reveal, hide. */
   peek: {
     lead: 100,
@@ -278,46 +286,28 @@ const body = (big: boolean, sz: Step): React.CSSProperties => ({
   margin: 0,
 });
 
+/** The card art is drawn square: every SVG paints a full-bleed cream
+ *  rectangle, and the only `rx` in the file belongs to the inner colour panel.
+ *  So the rounded edge is always a DOM clip, and the design keeps it
+ *  proportional to card width rather than a fixed px value. */
+const CARD_RADIUS_RATIO = 0.0607;
+/** Corner radius for a card rendered at `w` px wide, at any visual scale. */
+const cardRadius = (w: number) => w * CARD_RADIUS_RATIO;
+
 const img = (src: string, alt: string, w: number, h: number, style?: React.CSSProperties) => (
   <img
     src={src}
     alt={alt}
-    style={{ width: w, height: h, display: "block", objectFit: "contain", ...style }}
+    style={{
+      width: w,
+      height: h,
+      display: "block",
+      objectFit: "contain",
+      borderRadius: cardRadius(w),
+      ...style,
+    }}
   />
 );
-
-/** A grid of card backs at authored dimensions times the visual scale. */
-const backGrid = (
-  cols: number,
-  rows: number,
-  cw: number,
-  ch: number,
-  gap: number,
-  v: number,
-) => {
-  const w = cw * v;
-  const h = ch * v;
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, ${w}px)`,
-        gridAutoRows: `${h}px`,
-        gap: gap * v,
-      }}
-      aria-hidden="true"
-    >
-      {Array.from({ length: cols * rows }).map((_, i) => (
-        <img
-          key={i}
-          src={CARD_BACK}
-          alt=""
-          style={{ width: w, height: h, display: "block" }}
-        />
-      ))}
-    </div>
-  );
-};
 
 /* ------------------------------------------------------------------ *
  * Slide 2 — nine cards flipping face up, staggered like a deal, then
@@ -396,6 +386,7 @@ const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
                 width: "100%",
                 height: "100%",
                 backfaceVisibility: "hidden",
+                borderRadius: cardRadius(w),
               }}
             />
             <img
@@ -407,6 +398,7 @@ const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
                 width: "100%",
                 height: "100%",
                 backfaceVisibility: "hidden",
+                borderRadius: cardRadius(w),
                 transform: "rotateY(180deg)",
               }}
             />
@@ -683,7 +675,7 @@ const slotCard = (
   key?: React.Key,
 ) => (
   <div key={key} style={{ width: w, height: h, position: "relative" }}>
-    <GameCard {...props} fill interactive={false} />
+    <GameCard {...props} fill interactive={false} radius={cardRadius(w)} />
   </div>
 );
 
@@ -693,6 +685,7 @@ const PAIR_CARDS = PAIR_IDS.map(cardById);
 const PAIR_SRCS = [CARD_BACK, ...PAIR_CARDS.map((c) => c.svgPath)];
 
 const PAIR_STEPS = [
+  T.pair.lead,
   SELECT_ANIM_MS + T.pair.selectHold,
   T.pair.deselectHold,
   SELECT_ANIM_MS + T.pair.reselectHold,
@@ -710,9 +703,9 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
   const ready = useImagesReady(PAIR_SRCS);
   const phase = usePhase(PAIR_STEPS, active && visible && !reduce && ready);
 
-  const selLeft = reduce || phase === 0 || phase === 2 || phase === 3;
-  const selRight = phase === 3;
-  const faceUp = !reduce && phase >= 4 && phase <= 6;
+  const selLeft = reduce || phase === 1 || phase === 3 || phase === 4;
+  const selRight = phase === 4;
+  const faceUp = !reduce && phase >= 5 && phase <= 7;
   const w = 107.19 * v;
   const h = 150.06 * v;
 
@@ -722,7 +715,7 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
       style={{
         display: "flex",
         gap: 19.8 * v,
-        opacity: phase === 6 ? 0 : 1,
+        opacity: phase === 7 ? 0 : 1,
         transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
       }}
     >
@@ -764,13 +757,14 @@ const MATCH_SRCS = [
 ];
 
 const MATCH_STEPS = [
+  T.match.lead,
   SELECT_ANIM_MS + T.match.firstHold,
   SELECT_ANIM_MS + T.match.secondHold,
   DAILY_MATCH_SETTLE_MS,
   DEAL_MOVE_MS + DEAL_STAGGER_MS,
   T.match.restHold,
-  SELECT_ANIM_MS + T.match.firstHold,
-  SELECT_ANIM_MS + T.match.secondHold,
+  SELECT_ANIM_MS + T.match.missFirstHold,
+  SELECT_ANIM_MS + T.match.missSecondHold,
   WRONG_ANIM_MS,
   T.match.wrongHold,
 ] as const;
@@ -791,6 +785,7 @@ const MatchGhostPair: React.FC<{
           stage={stage}
           faceUp={faceUp}
           k={w / 104.333}
+          radius={cardRadius(w)}
           style={{
             position: "absolute",
             left: (slot % 3) * (w + gap),
@@ -817,14 +812,14 @@ const MatchVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
 
   const selected = (i: number): boolean => {
     if (reduce) return false;
-    if (phase === 0) return i === MATCH_PAIR[0];
-    if (phase === 1) return MATCH_PAIR.includes(i as 0 | 4);
-    if (phase === 5) return i === MISS_PAIR[0];
-    if (phase === 6) return MISS_PAIR.includes(i as 2 | 7);
+    if (phase === 1) return i === MATCH_PAIR[0];
+    if (phase === 2) return MATCH_PAIR.includes(i as 0 | 4);
+    if (phase === 6) return i === MISS_PAIR[0];
+    if (phase === 7) return MISS_PAIR.includes(i as 2 | 7);
     return false;
   };
-  const solvedHidden = !reduce && phase === 2;
-  const refilled = !reduce && phase >= 3;
+  const solvedHidden = !reduce && phase === 3;
+  const refilled = !reduce && phase >= 4;
 
   return (
     <div
@@ -855,7 +850,7 @@ const MatchVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
             card: shown,
             faceUp: false,
             highlighted: selected(i),
-            wrong: !reduce && phase === 7 && MISS_PAIR.includes(i as 2 | 7),
+            wrong: !reduce && phase === 8 && MISS_PAIR.includes(i as 2 | 7),
             // Mounting with a dealIndex replays the board's deal-in.
             ...(isSolvedSlot && refilled
               ? { dealIndex: MATCH_PAIR.indexOf(i as 0 | 4) }
