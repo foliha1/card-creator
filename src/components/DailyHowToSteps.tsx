@@ -377,6 +377,16 @@ const STUDY_STEPS = [
   T.study.rest,
 ] as const;
 
+/** Authored slide-3 geometry (scale 1): container, card, lines, labels. */
+const STUDY_BOX = { w: 215, h: 186 };
+const STUDY_CARD = { x: 0, y: 0.68, w: 132, h: 184.8 };
+const STUDY_ROWS = [
+  { label: "Number", lineX: 34, lineY: 28.18, lineW: 121, labelY: 22.68 },
+  { label: "Shape", lineX: 85, lineY: 61.68, lineW: 70, labelY: 56.68 },
+  { label: "Color", lineX: 110, lineY: 95.68, lineW: 45, labelY: 90.68 },
+] as const;
+const STUDY_LABEL_X = 162;
+
 const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
   const reduce = useReducedMotion();
@@ -385,46 +395,59 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
   const shown = reduce || phase === 1 || phase === 2;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-      {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132 * v, 184.8 * v)}
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 * v }}>
-        {["Number", "Shape", "Color"].map((label, i) => {
-          const delay = reduce ? 0 : i * T.study.stagger;
-          const dur = shown ? T.study.in : T.study.out;
-          const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
-          return (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
-              <span
-                style={{
-                  width: 26 * v,
-                  height: 1,
-                  background: COLORS.orange,
-                  display: "block",
-                  transformOrigin: "left center",
-                  transform: shown ? "scaleX(1)" : "scaleX(0)",
-                  transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: FONT_FAMILY_UI,
-                  fontWeight: FONT_WEIGHT_UI,
-                  fontSize: sz.body,
-                  lineHeight: 1.2,
-                  color: INK,
-                  opacity: shown ? 1 : 0,
-                  transition: reduce ? undefined : `opacity ${dur}ms ${ease} ${delay}ms`,
-                }}
-              >
-                {label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ position: "relative", width: STUDY_BOX.w * v, height: STUDY_BOX.h * v }}>
+      {img("/cards/3-star-blue.svg", "A card showing three blue stars", STUDY_CARD.w * v, STUDY_CARD.h * v, {
+        position: "absolute",
+        left: STUDY_CARD.x * v,
+        top: STUDY_CARD.y * v,
+      })}
+      {STUDY_ROWS.map((row, i) => {
+        const delay = reduce ? 0 : i * T.study.stagger;
+        const dur = shown ? T.study.in : T.study.out;
+        const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
+        return (
+          <React.Fragment key={row.label}>
+            <span
+              style={{
+                position: "absolute",
+                left: row.lineX * v,
+                top: row.lineY * v,
+                width: row.lineW * v,
+                height: 1,
+                background: COLORS.orange,
+                display: "block",
+                // above the card artwork
+                zIndex: 1,
+                transformOrigin: "left center",
+                transform: shown ? "scaleX(1)" : "scaleX(0)",
+                transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
+              }}
+            />
+            <span
+              style={{
+                position: "absolute",
+                left: STUDY_LABEL_X * v,
+                top: row.labelY * v,
+                zIndex: 1,
+                fontFamily: FONT_FAMILY_UI,
+                fontWeight: FONT_WEIGHT_UI,
+                fontSize: sz.body,
+                lineHeight: 1.2,
+                color: INK,
+                whiteSpace: "nowrap",
+                opacity: shown ? 1 : 0,
+                transition: reduce ? undefined : `opacity ${dur}ms ${ease} ${delay}ms`,
+              }}
+            >
+              {row.label}
+            </span>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };
+
 
 
 /* ------------------------------------------------------------------ *
