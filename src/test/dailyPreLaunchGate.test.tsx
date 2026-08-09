@@ -186,7 +186,7 @@ describe("gated ready screen", () => {
 
   it("disables play, keeps How to Play live, and offers the email capture", () => {
     renderPage();
-    const cta = screen.getByRole("button", { name: `Coming ${DAILY_LAUNCH_LABEL}` });
+    const cta = screen.getByRole("button", { name: `Launching ${DAILY_LAUNCH_LABEL}` });
     expect(cta).toBeDisabled();
     expect(screen.queryByText(/Play Today's Daily/i)).toBeNull();
     expect(screen.getByRole("button", { name: /How to Play/i })).toBeEnabled();
@@ -201,7 +201,7 @@ describe("gated ready screen", () => {
 
   it("writes nothing to daily_results while gated", () => {
     renderPage();
-    const cta = screen.getByRole("button", { name: `Coming ${DAILY_LAUNCH_LABEL}` });
+    const cta = screen.getByRole("button", { name: `Launching ${DAILY_LAUNCH_LABEL}` });
     cta.click();
     vi.advanceTimersByTime(20_000);
     expect(saveDailyResultRemote).not.toHaveBeenCalled();
