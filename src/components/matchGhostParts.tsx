@@ -70,12 +70,14 @@ export const MatchGhostCard: React.FC<{
   faceUp: boolean;
   /** Card width divided by the authored 104.333, as the wrong/great CSS wants. */
   k: number;
+  /** Corner radius in px; defaults to the board's value. */
+  radius?: number;
   style?: React.CSSProperties;
-}> = ({ card, stage, faceUp, k, style }) => (
+}> = ({ card, stage, faceUp, k, radius = RADIUS.md, style }) => (
   <div
     className={stage === "great" ? "ww-great" : undefined}
     style={{
-      borderRadius: RADIUS.md,
+      borderRadius: radius,
       perspective: 600,
       pointerEvents: "none",
       ["--ww-k" as string]: String(k),
@@ -96,7 +98,7 @@ export const MatchGhostCard: React.FC<{
           position: "absolute",
           inset: 0,
           backfaceVisibility: "hidden",
-          borderRadius: RADIUS.md,
+          borderRadius: radius,
           overflow: "hidden",
         }}
       >
@@ -112,7 +114,7 @@ export const MatchGhostCard: React.FC<{
           position: "absolute",
           inset: 0,
           backfaceVisibility: "hidden",
-          borderRadius: RADIUS.md,
+          borderRadius: radius,
           overflow: "hidden",
           transform: "rotateY(180deg)",
         }}
