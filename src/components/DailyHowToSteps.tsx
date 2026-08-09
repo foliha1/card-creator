@@ -631,14 +631,246 @@ const DieVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
 };
 
 /* ------------------------------------------------------------------ *
- * Slide 7 — PEEK button over a 2x3 grid of backs.
+ * Slides 5-7 reuse the real board pieces: GameCard (selection wash + ring,
+ * flip, wrong shake, deal-in) and the extracted match-ghost parts. Nothing
+ * here re-implements a treatment or re-guesses a duration.
  * ------------------------------------------------------------------ */
-const PeekVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+const cardById = (id: string): Card => ALL_CARDS.find((c) => c.id === id)!;
+
+/** A fixed-size slot holding one presentational GameCard. */
+const slotCard = (
+  w: number,
+  h: number,
+  props: React.ComponentProps<typeof GameCard>,
+  key?: React.Key,
+) => (
+  <div key={key} style={{ width: w, height: h, position: "relative" }}>
+    <GameCard {...props} fill interactive={false} />
+  </div>
+);
+
+/* ---- Slide 5 — pick, change your mind, pick again, then the pair flips ---- */
+const PAIR_IDS = ["star-3-blue", "star-1-blue"] as const;
+const PAIR_CARDS = PAIR_IDS.map(cardById);
+const PAIR_SRCS = [CARD_BACK, ...PAIR_CARDS.map((c) => c.svgPath)];
+
+const PAIR_STEPS = [
+  SELECT_ANIM_MS + T.pair.selectHold,
+  T.pair.deselectHold,
+  SELECT_ANIM_MS + T.pair.reselectHold,
+  SELECT_ANIM_MS,
+  CARD_FLIP_MS,
+  T.pair.faceUpHold,
+  T.pair.fade,
+  T.pair.fade,
+] as const;
+
+const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
+  const reduce = useReducedMotion();
+  const visible = usePageVisible();
+  const ready = useImagesReady(PAIR_SRCS);
+  const phase = usePhase(PAIR_STEPS, active && visible && !reduce && ready);
+
+  const selLeft = reduce || phase === 0 || phase === 2 || phase === 3;
+  const selRight = phase === 3;
+  const faceUp = !reduce && phase >= 4 && phase <= 6;
+  const w = 107.19 * v;
+  const h = 150.06 * v;
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        display: "flex",
+        gap: 19.8 * v,
+        opacity: phase === 6 ? 0 : 1,
+        transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
+      }}
+    >
+      {PAIR_CARDS.map((card, i) =>
+        slotCard(
+          w,
+          h,
+          { card, faceUp, highlighted: i === 0 ? selLeft : selRight },
+          card.id,
+        ),
+      )}
+    </div>
+  );
+};
+
+/* ---- Slide 6 — match, ghost, refill, then a miss ------------------------- */
+const MATCH_GRID_IDS = [
+  "circle-2-yellow",
+  "square-1-blue",
+  "star-4-red",
+  "tri-3-blue",
+  "star-4-yellow",
+  "circle-1-red",
+  "square-3-blue",
+  "tri-2-blue",
+  "star-2-red",
+] as const;
+/** Slots 0 and 4 are the matching pair (both orange); 2 and 7 are the miss. */
+const MATCH_PAIR = [0, 4] as const;
+const MISS_PAIR = [2, 7] as const;
+/** The two cards dealt into the emptied slots, exactly as the board refills. */
+const MATCH_REFILL_IDS = ["square-4-blue", "circle-3-red"] as const;
+
+const MATCH_GRID_CARDS = MATCH_GRID_IDS.map(cardById);
+const MATCH_REFILL_CARDS = MATCH_REFILL_IDS.map(cardById);
+const MATCH_SRCS = [
+  CARD_BACK,
+  ...MATCH_PAIR.map((i) => MATCH_GRID_CARDS[i].svgPath),
+];
+
+const MATCH_STEPS = [
+  SELECT_ANIM_MS + T.match.firstHold,
+  SELECT_ANIM_MS + T.match.secondHold,
+  DAILY_MATCH_SETTLE_MS,
+  DEAL_MOVE_MS + DEAL_STAGGER_MS,
+  T.match.restHold,
+  SELECT_ANIM_MS + T.match.firstHold,
+  SELECT_ANIM_MS + T.match.secondHold,
+  WRONG_ANIM_MS,
+  T.match.wrongHold,
+] as const;
+
+/** The pair copies the ghost plays, laid over the slots they left. */
+const MatchGhostPair: React.FC<{
+  w: number;
+  h: number;
+  gap: number;
+}> = ({ w, h, gap }) => {
+  const { stage, faceUp } = useMatchGhostStage();
+  return (
+    <>
+      {MATCH_PAIR.map((slot) => (
+        <MatchGhostCard
+          key={slot}
+          card={MATCH_GRID_CARDS[slot]}
+          stage={stage}
+          faceUp={faceUp}
+          k={w / 104.333}
+          style={{
+            position: "absolute",
+            left: (slot % 3) * (w + gap),
+            top: Math.floor(slot / 3) * (h + gap),
+            width: w,
+            height: h,
+          }}
+        />
+      ))}
+    </>
+  );
+};
+
+const MatchVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
+  const v = sz.vis;
+  const reduce = useReducedMotion();
+  const visible = usePageVisible();
+  const ready = useImagesReady(MATCH_SRCS);
+  const phase = usePhase(MATCH_STEPS, active && visible && !reduce && ready);
+
+  const w = 47.25 * v;
+  const h = 66.15 * v;
+  const gap = 8 * v;
+
+  const selected = (i: number): boolean => {
+    if (reduce) return false;
+    if (phase === 0) return i === MATCH_PAIR[0];
+    if (phase === 1) return MATCH_PAIR.includes(i as 0 | 4);
+    if (phase === 5) return i === MISS_PAIR[0];
+    if (phase === 6) return MISS_PAIR.includes(i as 2 | 7);
+    return false;
+  };
+  const solvedHidden = !reduce && phase === 2;
+  const refilled = !reduce && phase >= 3;
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "relative",
+        display: "grid",
+        gridTemplateColumns: `repeat(3, ${w}px)`,
+        gridAutoRows: `${h}px`,
+        gap,
+      }}
+    >
+      {MATCH_GRID_CARDS.map((card, i) => {
+        const isSolvedSlot = MATCH_PAIR.includes(i as 0 | 4);
+        if (isSolvedSlot && solvedHidden) {
+          // The board removes a solved card the instant it resolves; the ghost
+          // layer above plays the reward over the empty slot.
+          return <div key={card.id} style={{ width: w, height: h }} />;
+        }
+        const shown =
+          isSolvedSlot && refilled
+            ? MATCH_REFILL_CARDS[MATCH_PAIR.indexOf(i as 0 | 4)]
+            : card;
+        return slotCard(
+          w,
+          h,
+          {
+            card: shown,
+            faceUp: false,
+            highlighted: selected(i),
+            wrong: !reduce && phase === 7 && MISS_PAIR.includes(i as 2 | 7),
+            // Mounting with a dealIndex replays the board's deal-in.
+            ...(isSolvedSlot && refilled
+              ? { dealIndex: MATCH_PAIR.indexOf(i as 0 | 4) }
+              : {}),
+          },
+          card.id,
+        );
+      })}
+
+      {solvedHidden && <MatchGhostPair w={w} h={h} gap={gap} />}
+    </div>
+  );
+};
+
+/* ---- Slide 7 — PEEK presses, the board reveals, then hides --------------- */
+const PEEK_IDS = [
+  "circle-2-red",
+  "star-4-yellow",
+  "square-1-blue",
+  "tri-3-yellow",
+  "star-2-blue",
+  "square-4-red",
+] as const;
+const PEEK_CARDS = PEEK_IDS.map(cardById);
+const PEEK_SRCS = [CARD_BACK, ...PEEK_CARDS.map((c) => c.svgPath)];
+
+const PEEK_STEPS = [
+  T.peek.lead,
+  PRESS_ANIM_MS,
+  CARD_FLIP_MS,
+  T.peek.faceUpHold,
+  CARD_FLIP_MS,
+  T.peek.rest,
+] as const;
+
+const PeekVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
+  const v = sz.vis;
+  const reduce = useReducedMotion();
+  const visible = usePageVisible();
+  const ready = useImagesReady(PEEK_SRCS);
+  const phase = usePhase(PEEK_STEPS, active && visible && !reduce && ready);
+
+  const pressed = !reduce && phase === 1;
+  // Reduced motion rests on the representative frame: the peek showing.
+  const faceUp = reduce || phase === 2 || phase === 3;
+  const w = 47.25 * v;
+  const h = 66.15 * v;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 * v }}>
       <div
         aria-hidden="true"
+        className={pressed ? "ww-press-on" : undefined}
         style={{
           width: 158 * v,
           height: 27 * v,
@@ -654,14 +886,26 @@ const PeekVisual: React.FC<{ sz: Step }> = ({ sz }) => {
           fontSize: 16 * v,
           letterSpacing: "0.02em",
           color: RAW.cream,
+          transition: reduce ? undefined : `transform ${PRESS_ANIM_MS}ms ease, filter ${PRESS_ANIM_MS}ms ease`,
         }}
       >
         PEEK
       </div>
-      {backGrid(3, 2, 47.25, 66.15, 8, v)}
+      <div
+        aria-hidden="true"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(3, ${w}px)`,
+          gridAutoRows: `${h}px`,
+          gap: 8 * v,
+        }}
+      >
+        {PEEK_CARDS.map((card) => slotCard(w, h, { card, faceUp }, card.id))}
+      </div>
     </div>
   );
 };
+
 
 
 /* ------------------------------------------------------------------ *
