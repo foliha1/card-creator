@@ -81,9 +81,10 @@ export function dailyResultRejectReason(
   if (n !== day - launch + 1 || n < 1) return "puzzle_mismatch";
 
   // The date is the player's LOCAL date and locales span UTC-12..UTC+14, so one
-  // calendar day either side of the server's UTC date is the widest honest
-  // window — and no wider.
-  if (day < today - 1 || day > today + 1) return "date_out_of_window";
+  // calendar day either side is the widest honest window — and no wider. Before
+  // launch the window anchors on launch day so pre-launch testing can write.
+  const anchor = Math.max(today, launch);
+  if (day < anchor - 1 || day > anchor + 1) return "date_out_of_window";
 
   const solved = s.roundsSolved;
   if (solved === null || solved === undefined || solved < 0 || solved > DAILY_ROUNDS) {
