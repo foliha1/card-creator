@@ -1166,7 +1166,7 @@ const DailyHowToSteps: React.FC<{
 
   useEffect(() => {
     if (!prev) return;
-    const t = window.setTimeout(() => setPrev(null), 260);
+    const t = window.setTimeout(() => setPrev(null), 340);
     return () => window.clearTimeout(t);
   }, [prev]);
 
