@@ -67,6 +67,19 @@ interface SubscriberRow {
   total: number;
   synced: number;
 }
+interface HeadlineRow {
+  total_players: number;
+  dau_today: number;
+  dau_avg: number;
+  returning_pct: number | null;
+  returning_eligible: number;
+  d7_pct: number | null;
+  d7_eligible: number;
+  subscribers: number;
+  share_rate: number | null;
+  shares: number;
+  runs_finished: number;
+}
 
 interface DashboardData {
   funnel: FunnelRow | null;
@@ -75,6 +88,7 @@ interface DashboardData {
   attribution: AttributionRow[];
   trend: TrendRow[];
   subscribers: SubscriberRow[];
+  headline: HeadlineRow | null;
 }
 
 // ---------------------------------------------------------------------------
