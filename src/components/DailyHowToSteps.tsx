@@ -1041,24 +1041,20 @@ const SLIDES: Slide[] = [
     heading: "Find Your Match",
     body:
       "Tap a card to pick it. Tap it again to change your mind. Your second tap locks the match.",
-    visual: (sz) => (
-      <div style={{ display: "flex", gap: 19.8 * sz.vis }} aria-hidden="true">
-        {img(CARD_BACK, "", 107.19 * sz.vis, 150.06 * sz.vis)}
-        {img(CARD_BACK, "", 107.19 * sz.vis, 150.06 * sz.vis)}
-      </div>
-    ),
+    visual: (sz, active) => <PairVisual sz={sz} active={active} />,
   },
   {
     heading: "Match or Miss",
     body:
       "Find a match and that pair leaves. Two misses ends the round and all cards stay on the board.",
-    visual: (sz) => backGrid(3, 3, 47.25, 66.15, 8, sz.vis),
+    visual: (sz, active) => <MatchVisual sz={sz} active={active} />,
   },
   {
     heading: "One More Thing",
     body:
       "You have one PEEK per game that shows all remaining cards for five seconds. But know that it shows up in your final results.",
-    visual: (sz) => <PeekVisual sz={sz} />,
+    visual: (sz, active) => <PeekVisual sz={sz} active={active} />,
+
 
   },
   {
