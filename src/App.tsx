@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/lib/theme-context";
 import MultiplayerPage from "./pages/MultiplayerPage.tsx";
 import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
+import AdminPage from "./pages/AdminPage.tsx";
 import TypographyPage from "./pages/TypographyPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
