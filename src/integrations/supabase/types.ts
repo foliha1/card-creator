@@ -59,6 +59,48 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_runs: {
+        Row: {
+          bytes: number
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          object_path: string | null
+          row_count: number
+          run_date: string
+          status: string
+          table_name: string
+          updated_at: string
+        }
+        Insert: {
+          bytes?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          object_path?: string | null
+          row_count?: number
+          run_date?: string
+          status?: string
+          table_name: string
+          updated_at?: string
+        }
+        Update: {
+          bytes?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          object_path?: string | null
+          row_count?: number
+          run_date?: string
+          status?: string
+          table_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claim_locks: {
         Row: {
           claim_window: number
