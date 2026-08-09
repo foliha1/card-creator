@@ -1212,6 +1212,8 @@ const DailyHowToSteps: React.FC<{
 
   useEffect(() => {
     markHowToSeen();
+    trackDaily("howto_opened", { props: { mode } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const go = useCallback(
@@ -1233,14 +1235,17 @@ const DailyHowToSteps: React.FC<{
 
   const finish = useCallback(() => {
     markHowToSeen();
+    trackDaily("howto_finished");
     onStart();
   }, [onStart]);
 
   const dismiss = useCallback(() => {
     markHowToSeen();
+    trackDaily("howto_skipped", { props: { slide: step + 1 } });
     if (mode === "gate") onStart();
     else onClose();
-  }, [mode, onStart, onClose]);
+  }, [mode, onStart, onClose, step]);
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
