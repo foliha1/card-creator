@@ -245,6 +245,62 @@ const PeekVisual: React.FC = () => (
 );
 
 /* ------------------------------------------------------------------ *
+ * The visual is the only flexible element: it keeps its authored size
+ * when there is room and shrinks (never grows) when there is not.
+ * ------------------------------------------------------------------ */
+const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [s, setS] = useState(1);
+
+  useEffect(() => {
+    const b = box.current;
+    const i = inner.current;
+    if (!b || !i) return;
+    const measure = () => {
+      const bw = b.clientWidth;
+      const bh = b.clientHeight;
+      const iw = i.offsetWidth;
+      const ih = i.offsetHeight;
+      if (!bw || !bh || !iw || !ih) return;
+      setS(Math.min(1, bw / iw, bh / ih));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(b);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={box}
+      style={{
+        flex: "1 1 auto",
+        minHeight: 0,
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        ref={inner}
+        style={{
+          flex: "0 0 auto",
+          transform: s < 1 ? `scale(${s})` : undefined,
+          transformOrigin: "center center",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
+/* ------------------------------------------------------------------ *
  * The eight slides.
  * ------------------------------------------------------------------ */
 type Slide = {
