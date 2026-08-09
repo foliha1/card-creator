@@ -507,34 +507,32 @@ const DieVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
             boxSizing: "border-box",
           }}
         >
-          <CrossFade k={ex.label} ms={T.die.dissolve} instant={reduce}>
-            <span
-              style={{
-                display: "block",
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 28 * v,
-                lineHeight: 0.9,
-                color: INK,
-                textAlign: "center",
-              }}
-            >
-              {ex.label}
-            </span>
-          </CrossFade>
+          <span
+            key={ex.label}
+            style={{
+              display: "block",
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 28 * v,
+              lineHeight: 0.9,
+              color: INK,
+              textAlign: "center",
+              // Hard cut, with a small landing punch on the tile only.
+              animation: reduce
+                ? undefined
+                : `ww-die-punch ${T.die.punch}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+            }}
+          >
+            {ex.label}
+          </span>
         </div>
 
-        <CrossFade
-          k={ex.label}
-          ms={T.die.dissolve}
-          delay={T.die.pairDelay}
-          instant={reduce}
-        >
-          <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
-            {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-            {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
-          </div>
-        </CrossFade>
+        {/* card pair: pure cut, no fade and no delay */}
+        <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
+          {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
+          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
+        </div>
+
       </div>
 
 
