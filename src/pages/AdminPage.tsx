@@ -659,17 +659,34 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           </span>
         </Card>
 
+        {/* Collapsed to the most recent seven days by default: on a phone an
+            inner scroll area inside a page that already scrolls is a trap. */}
         <Card title="Daily trend" span>
-          <Table
-            head={["Day", "Started", "Finished", "Results saved"]}
-            rows={(data?.trend ?? []).map((r) => [
+          {(() => {
+            const all = [...(data?.trend ?? [])].reverse(); // newest first
+            const rows = (trendAll ? all : all.slice(0, 7)).map((r) => [
               r.day,
               r.runs_started,
               r.runs_finished,
               r.results_saved,
-            ])}
-          />
+            ]);
+            return (
+              <>
+                <Table head={["Day", "Started", "Finished", "Results saved"]} rows={rows} />
+                {all.length > 7 ? (
+                  <button
+                    type="button"
+                    onClick={() => setTrendAll((v) => !v)}
+                    style={buttonStyle("secondary", "sm")}
+                  >
+                    {trendAll ? "Show last 7 days" : `Show all ${all.length} days`}
+                  </button>
+                ) : null}
+              </>
+            );
+          })()}
         </Card>
+
       </div>
     </main>
   );
