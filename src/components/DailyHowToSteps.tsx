@@ -80,6 +80,8 @@ const T = {
   /** Slide 5 — pick, change your mind, pick again, flip. Holds only; the
    *  selection, flip and fade durations come from animationTiming. */
   pair: {
+    /** Settled board before the first tap, matching slide 6's lead. */
+    lead: 400,
     selectHold: 200,
     deselectHold: 300,
     reselectHold: 100,
@@ -683,6 +685,7 @@ const PAIR_CARDS = PAIR_IDS.map(cardById);
 const PAIR_SRCS = [CARD_BACK, ...PAIR_CARDS.map((c) => c.svgPath)];
 
 const PAIR_STEPS = [
+  T.pair.lead,
   SELECT_ANIM_MS + T.pair.selectHold,
   T.pair.deselectHold,
   SELECT_ANIM_MS + T.pair.reselectHold,
@@ -700,9 +703,9 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
   const ready = useImagesReady(PAIR_SRCS);
   const phase = usePhase(PAIR_STEPS, active && visible && !reduce && ready);
 
-  const selLeft = reduce || phase === 0 || phase === 2 || phase === 3;
-  const selRight = phase === 3;
-  const faceUp = !reduce && phase >= 4 && phase <= 6;
+  const selLeft = reduce || phase === 1 || phase === 3 || phase === 4;
+  const selRight = phase === 4;
+  const faceUp = !reduce && phase >= 5 && phase <= 7;
   const w = 107.19 * v;
   const h = 150.06 * v;
 
@@ -712,7 +715,7 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
       style={{
         display: "flex",
         gap: 19.8 * v,
-        opacity: phase === 6 ? 0 : 1,
+        opacity: phase === 7 ? 0 : 1,
         transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
       }}
     >
@@ -754,13 +757,14 @@ const MATCH_SRCS = [
 ];
 
 const MATCH_STEPS = [
+  T.match.lead,
   SELECT_ANIM_MS + T.match.firstHold,
   SELECT_ANIM_MS + T.match.secondHold,
   DAILY_MATCH_SETTLE_MS,
   DEAL_MOVE_MS + DEAL_STAGGER_MS,
   T.match.restHold,
-  SELECT_ANIM_MS + T.match.firstHold,
-  SELECT_ANIM_MS + T.match.secondHold,
+  SELECT_ANIM_MS + T.match.missFirstHold,
+  SELECT_ANIM_MS + T.match.missSecondHold,
   WRONG_ANIM_MS,
   T.match.wrongHold,
 ] as const;
@@ -808,14 +812,14 @@ const MatchVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
 
   const selected = (i: number): boolean => {
     if (reduce) return false;
-    if (phase === 0) return i === MATCH_PAIR[0];
-    if (phase === 1) return MATCH_PAIR.includes(i as 0 | 4);
-    if (phase === 5) return i === MISS_PAIR[0];
-    if (phase === 6) return MISS_PAIR.includes(i as 2 | 7);
+    if (phase === 1) return i === MATCH_PAIR[0];
+    if (phase === 2) return MATCH_PAIR.includes(i as 0 | 4);
+    if (phase === 6) return i === MISS_PAIR[0];
+    if (phase === 7) return MISS_PAIR.includes(i as 2 | 7);
     return false;
   };
-  const solvedHidden = !reduce && phase === 2;
-  const refilled = !reduce && phase >= 3;
+  const solvedHidden = !reduce && phase === 3;
+  const refilled = !reduce && phase >= 4;
 
   return (
     <div
@@ -846,7 +850,7 @@ const MatchVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
             card: shown,
             faceUp: false,
             highlighted: selected(i),
-            wrong: !reduce && phase === 7 && MISS_PAIR.includes(i as 2 | 7),
+            wrong: !reduce && phase === 8 && MISS_PAIR.includes(i as 2 | 7),
             // Mounting with a dealIndex replays the board's deal-in.
             ...(isSolvedSlot && refilled
               ? { dealIndex: MATCH_PAIR.indexOf(i as 0 | 4) }
