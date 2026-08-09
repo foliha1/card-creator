@@ -1322,16 +1322,32 @@ const DailyHowToSteps: React.FC<{
             onClick={dismiss}
             aria-label={mode === "gate" ? "Skip how to play and start" : "Close how to play"}
             className="ww-press"
+            data-testid="htp-skip"
             style={{
               ...buttonStyle("secondary", "sm"),
               gap: 4,
               position: "relative",
-              zIndex: 1,
+              zIndex: 3,
             }}
           >
             SKIP
             <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
+            {/* invisible 44px minimum touch target; the visible pill keeps its size */}
+            <span
+              aria-hidden="true"
+              data-testid="htp-skip-hit"
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                height: 44,
+                minWidth: 44,
+              }}
+            />
           </button>
+
         </div>
 
         {/* heading row (fixed on slides 2-7 so the heading never moves) */}
