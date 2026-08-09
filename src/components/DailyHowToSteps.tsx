@@ -116,60 +116,68 @@ const img = (src: string, alt: string, w: number, h: number, style?: React.CSSPr
   />
 );
 
-/** A grid of card backs at exact Figma dimensions. */
+/** A grid of card backs at authored dimensions times the visual scale. */
 const backGrid = (
   cols: number,
   rows: number,
   cw: number,
   ch: number,
   gap: number,
-) => (
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: `repeat(${cols}, ${cw}px)`,
-      gridAutoRows: `${ch}px`,
-      gap,
-    }}
-    aria-hidden="true"
-  >
-    {Array.from({ length: cols * rows }).map((_, i) => (
-      <img
-        key={i}
-        src={CARD_BACK}
-        alt=""
-        style={{ width: cw, height: ch, display: "block" }}
-      />
-    ))}
-  </div>
-);
+  v: number,
+) => {
+  const w = cw * v;
+  const h = ch * v;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${cols}, ${w}px)`,
+        gridAutoRows: `${h}px`,
+        gap: gap * v,
+      }}
+      aria-hidden="true"
+    >
+      {Array.from({ length: cols * rows }).map((_, i) => (
+        <img
+          key={i}
+          src={CARD_BACK}
+          alt=""
+          style={{ width: w, height: h, display: "block" }}
+        />
+      ))}
+    </div>
+  );
+};
 
 /* ------------------------------------------------------------------ *
  * Slide 3 — one card face with leader-lined attribute labels.
  * ------------------------------------------------------------------ */
-const StudyVisual: React.FC = () => (
-  <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-    {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132, 184.8)}
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {["Number", "Shape", "Color"].map((label) => (
-        <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 26, height: 1, background: COLORS.orange, display: "block" }} />
-          <span
-            style={{
-              fontFamily: FONT_FAMILY_UI,
-              fontWeight: FONT_WEIGHT_UI,
-              fontSize: 14,
-              lineHeight: 1.2,
-              color: INK,
-            }}
-          >
-            {label}
-          </span>
-        </div>
-      ))}
+const StudyVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+  const v = sz.vis;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+      {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132 * v, 184.8 * v)}
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 * v }}>
+        {["Number", "Shape", "Color"].map((label) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
+            <span style={{ width: 26 * v, height: 1, background: COLORS.orange, display: "block" }} />
+            <span
+              style={{
+                fontFamily: FONT_FAMILY_UI,
+                fontWeight: FONT_WEIGHT_UI,
+                fontSize: sz.body,
+                lineHeight: 1.2,
+                color: INK,
+              }}
+            >
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ------------------------------------------------------------------ *
  * Slide 4 — the die-decides tile + overlapping pair, cycling through
@@ -197,7 +205,8 @@ const DIE_EXAMPLES: DieExample[] = [
 
 const CYCLE_MS = 2000;
 
-const DieVisual: React.FC = () => {
+const DieVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+  const v = sz.vis;
   const [i, setI] = useState(0);
   /** Bumped on manual interaction so the auto-cycle timer restarts. */
   const [cycleKey, setCycleKey] = useState(0);
@@ -209,31 +218,34 @@ const DieVisual: React.FC = () => {
   }, [advance, cycleKey]);
 
   const ex = DIE_EXAMPLES[i];
-  const CW = 74.83;
-  const CH = 104.72;
+  const CW = 74.83 * v;
+  const CH = 104.72 * v;
+  const OX = 46.17 * v;
+  const OY = 37.76 * v;
+  const dot = 9 * v;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 * v }}>
       <div
         onClick={(e) => {
           e.stopPropagation();
           advance();
           setCycleKey((k) => k + 1);
         }}
-        style={{ display: "flex", alignItems: "center", gap: 34, cursor: "pointer" }}
+        style={{ display: "flex", alignItems: "center", gap: 34 * v, cursor: "pointer" }}
       >
         <div
           style={{
-            width: 121,
-            height: 121,
+            width: 121 * v,
+            height: 121 * v,
             flex: "0 0 auto",
             background: RAW.cream,
             border: `2px solid ${INK}`,
-            borderRadius: 9.68,
+            borderRadius: 9.68 * v,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 8,
+            padding: 8 * v,
             boxSizing: "border-box",
           }}
         >
@@ -241,7 +253,7 @@ const DieVisual: React.FC = () => {
             style={{
               fontFamily: FONT_FAMILY,
               fontWeight: 400,
-              fontSize: 28,
+              fontSize: 28 * v,
               lineHeight: 0.9,
               color: INK,
               textAlign: "center",
@@ -251,15 +263,15 @@ const DieVisual: React.FC = () => {
           </span>
         </div>
 
-        <div style={{ position: "relative", width: CW + 46.17, height: CH + 37.76 }}>
+        <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
           {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: 46.17, top: 37.76 })}
+          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
         </div>
       </div>
 
       {/* example indicators — small circles, deliberately unlike the square
           slide dots at the top of the card */}
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8 * v }}>
         {DIE_EXAMPLES.map((e, n) => (
           <button
             key={e.label}
@@ -272,8 +284,8 @@ const DieVisual: React.FC = () => {
               setCycleKey((k) => k + 1);
             }}
             style={{
-              width: 9,
-              height: 9,
+              width: dot,
+              height: dot,
               padding: 0,
               borderRadius: "50%",
               background: n === i ? INK : "transparent",
@@ -291,32 +303,36 @@ const DieVisual: React.FC = () => {
 /* ------------------------------------------------------------------ *
  * Slide 7 — PEEK button over a 2x3 grid of backs.
  * ------------------------------------------------------------------ */
-const PeekVisual: React.FC = () => (
-  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-    <div
-      aria-hidden="true"
-      style={{
-        width: 158,
-        height: 27,
-        background: COLORS.blue,
-        border: `2px solid ${INK}`,
-        borderRadius: RADIUS.sm,
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: FONT_FAMILY,
-        fontWeight: 400,
-        fontSize: 16,
-        letterSpacing: "0.02em",
-        color: RAW.cream,
-      }}
-    >
-      PEEK
+const PeekVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+  const v = sz.vis;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 * v }}>
+      <div
+        aria-hidden="true"
+        style={{
+          width: 158 * v,
+          height: 27 * v,
+          background: COLORS.blue,
+          border: `2px solid ${INK}`,
+          borderRadius: RADIUS.sm,
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: FONT_FAMILY,
+          fontWeight: 400,
+          fontSize: 16 * v,
+          letterSpacing: "0.02em",
+          color: RAW.cream,
+        }}
+      >
+        PEEK
+      </div>
+      {backGrid(3, 2, 47.25, 66.15, 8, v)}
     </div>
-    {backGrid(3, 2, 47.25, 66.15, 8)}
-  </div>
-);
+  );
+};
+
 
 /* ------------------------------------------------------------------ *
  * The visual is the only flexible element: it keeps its authored size
