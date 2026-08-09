@@ -1001,6 +1001,91 @@ const DailyPage: React.FC = () => {
     profileKey
   );
 
+  // -------------------------------------------------------------------------
+  // Instrumentation. Read-only observers of the engine: nothing here changes
+  // a phase, a timer or a render, and every write is queued and swallowed.
+  // -------------------------------------------------------------------------
+  const puzzleNumber = daily.puzzleNumber;
+  const readyLoggedRef = React.useRef(false);
+  useEffect(() => {
+    if (readyLoggedRef.current) return;
+    readyLoggedRef.current = true;
+    trackDaily("ready_viewed", { puzzleNumber });
+  }, [puzzleNumber]);
+
+  // Per-round outcome, derived from the round's mark list.
+  const roundsLoggedRef = React.useRef<Set<number>>(new Set());
+  useEffect(() => {
+    state.roundEvents.forEach((events, i) => {
+      const round = i + 1;
+      if (roundsLoggedRef.current.has(round)) return;
+      const misses = events.filter((m) => m === "MISS").length;
+      if (events.includes("SOLVE")) {
+        roundsLoggedRef.current.add(round);
+        trackDaily("round_solved", { puzzleNumber, props: { round, misses } });
+      } else if (misses >= MISSES_PER_ROUND) {
+        roundsLoggedRef.current.add(round);
+        trackDaily("round_failed", { puzzleNumber, props: { round, misses } });
+      }
+    });
+  }, [state.roundEvents, puzzleNumber]);
+
+  const peekLoggedRef = React.useRef(false);
+  useEffect(() => {
+    if (!state.peekUsed || peekLoggedRef.current) return;
+    peekLoggedRef.current = true;
+    trackDaily("peek_used", { puzzleNumber, props: { round: state.peekRound } });
+  }, [state.peekUsed, state.peekRound, puzzleNumber]);
+
+  // A run is "in progress" from the first deal until the engine reaches DONE.
+  const runOpenRef = React.useRef(false);
+  const runClosedRef = React.useRef(false);
+  useEffect(() => {
+    if (phase !== "READY" && phase !== "DONE") runOpenRef.current = true;
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "DONE" || runClosedRef.current) return;
+    if (!runOpenRef.current) return;
+    runClosedRef.current = true;
+    runOpenRef.current = false;
+    trackDaily("run_finished", {
+      puzzleNumber,
+      props: {
+        roundsSolved: state.roundsSolved,
+        totalMisses: state.totalMisses,
+      },
+    });
+  }, [phase, state.roundsSolved, state.totalMisses, puzzleNumber]);
+
+  // Left mid-run: the number that says whether the game is too hard.
+  useEffect(() => {
+    const abandon = () => {
+      if (!runOpenRef.current || runClosedRef.current) return;
+      runClosedRef.current = true;
+      trackDaily("run_abandoned", {
+        puzzleNumber,
+        props: {
+          round: state.roundIndex,
+          roundsSolved: state.roundsSolved,
+          totalMisses: state.totalMisses,
+        },
+      });
+      void flushDailyEvents();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") abandon();
+    };
+    window.addEventListener("pagehide", abandon);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", abandon);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [puzzleNumber, state.roundIndex, state.roundsSolved, state.totalMisses]);
+
+
+
 
   // --- correct-match ghost layer ---------------------------------------
   // The engine empties the solved slots the instant the claim resolves, so the
