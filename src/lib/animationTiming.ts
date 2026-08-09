@@ -12,6 +12,19 @@ export const DEAL_STAGGER_MS = 60;
 /** Duration of the deal-in move — a card "lands" at the end of it. */
 export const DEAL_MOVE_MS = 900;
 
+// ---- card treatments shared by the board and How to Play -------------------
+// These mirror the values in index.css / GameCard so a sequence can be timed
+// against them instead of re-guessing durations.
+/** Card flip (`rotateY`) in GameCard and the ghost layer. */
+export const CARD_FLIP_MS = 500;
+/** Selection wash + ring one-shot (`.ww-select-*`). */
+export const SELECT_ANIM_MS = 120;
+/** Wrong-claim shake + red wash + ring one-shot (`.ww-wrong*`). */
+export const WRONG_ANIM_MS = 1000;
+/** Programmatic press treatment (`.ww-press` / `.ww-press-on`). */
+export const PRESS_ANIM_MS = 200;
+
+
 // ---- daily-specific match sequence ----------------------------------------
 // The daily needs two beats the multiplayer settle does not have: the pair is
 // face down when it resolves, so it must flip up and then be held long enough
