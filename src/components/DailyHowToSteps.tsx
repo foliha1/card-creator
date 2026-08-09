@@ -69,9 +69,10 @@ const T = {
 
 /** Slide 2 stagger spans eight gaps after the first card. */
 const DECK_FLIP_WINDOW = T.deck.flip + T.deck.stagger * 8;
-/** Slide 3 in/out window: last label starts two staggers late. */
-const STUDY_IN_WINDOW = T.study.in + T.study.stagger * 2;
-const STUDY_OUT_WINDOW = T.study.out + T.study.stagger * 2;
+/** Slide 3 in/out window: dot lead/trail plus the stroke, last row two staggers late. */
+const STUDY_IN_WINDOW = T.study.dot + T.study.in + T.study.stagger * 2;
+const STUDY_OUT_WINDOW = T.study.out + T.study.dot + T.study.stagger * 2;
+
 
 /** `prefers-reduced-motion: reduce` — every loop stops, one static frame. */
 const useReducedMotion = (): boolean => {
