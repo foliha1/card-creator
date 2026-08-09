@@ -722,7 +722,7 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
       style={{
         display: "flex",
         gap: 19.8 * v,
-        opacity: phase === 7 ? 0 : 1,
+        opacity: phase === 7 || phase === 8 ? 0 : 1,
         transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
       }}
     >
