@@ -397,7 +397,7 @@ type Slide = {
   heading: string;
   body: string;
   big?: boolean;
-  visual?: React.ReactNode;
+  visual?: (sz: Step) => React.ReactNode;
 };
 
 const SLIDES: Slide[] = [
