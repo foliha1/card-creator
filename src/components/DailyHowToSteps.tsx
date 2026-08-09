@@ -196,57 +196,90 @@ const CYCLE_MS = 2000;
 
 const DieVisual: React.FC = () => {
   const [i, setI] = useState(0);
+  /** Bumped on manual interaction so the auto-cycle timer restarts. */
+  const [cycleKey, setCycleKey] = useState(0);
   const advance = useCallback(() => setI((n) => (n + 1) % DIE_EXAMPLES.length), []);
 
   useEffect(() => {
     const t = window.setInterval(advance, CYCLE_MS);
     return () => window.clearInterval(t);
-  }, [advance]);
+  }, [advance, cycleKey]);
 
   const ex = DIE_EXAMPLES[i];
   const CW = 74.83;
   const CH = 104.72;
 
   return (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        advance();
-      }}
-      style={{ display: "flex", alignItems: "center", gap: 34, cursor: "pointer" }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
       <div
-        style={{
-          width: 121,
-          height: 121,
-          flex: "0 0 auto",
-          background: RAW.cream,
-          border: `2px solid ${INK}`,
-          borderRadius: 9.68,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 8,
-          boxSizing: "border-box",
+        onClick={(e) => {
+          e.stopPropagation();
+          advance();
+          setCycleKey((k) => k + 1);
         }}
+        style={{ display: "flex", alignItems: "center", gap: 34, cursor: "pointer" }}
       >
-        <span
+        <div
           style={{
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 28,
-            lineHeight: 0.9,
-            color: INK,
-            textAlign: "center",
+            width: 121,
+            height: 121,
+            flex: "0 0 auto",
+            background: RAW.cream,
+            border: `2px solid ${INK}`,
+            borderRadius: 9.68,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 8,
+            boxSizing: "border-box",
           }}
         >
-          {ex.label}
-        </span>
+          <span
+            style={{
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 28,
+              lineHeight: 0.9,
+              color: INK,
+              textAlign: "center",
+            }}
+          >
+            {ex.label}
+          </span>
+        </div>
+
+        <div style={{ position: "relative", width: CW + 46.17, height: CH + 37.76 }}>
+          {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
+          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: 46.17, top: 37.76 })}
+        </div>
       </div>
 
-      <div style={{ position: "relative", width: CW + 46.17, height: CH + 37.76 }}>
-        {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-        {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: 46.17, top: 37.76 })}
+      {/* example indicators — small circles, deliberately unlike the square
+          slide dots at the top of the card */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {DIE_EXAMPLES.map((e, n) => (
+          <button
+            key={e.label}
+            type="button"
+            aria-label={e.label}
+            aria-current={n === i}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setI(n);
+              setCycleKey((k) => k + 1);
+            }}
+            style={{
+              width: 9,
+              height: 9,
+              padding: 0,
+              borderRadius: "50%",
+              background: n === i ? INK : "transparent",
+              border: n === i ? "none" : `1.5px solid ${INK}`,
+              boxSizing: "border-box",
+              cursor: "pointer",
+            }}
+          />
+        ))}
       </div>
     </div>
   );
