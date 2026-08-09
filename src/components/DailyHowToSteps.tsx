@@ -32,6 +32,172 @@ export function markHowToSeen(): void {
 const CARD_BACK = "/cards/card-back.svg";
 
 /* ------------------------------------------------------------------ *
+ * Animation timings. Every loop duration lives here so the sequences
+ * are tunable in one place. Transform and opacity only, everywhere.
+ * ------------------------------------------------------------------ */
+const T = {
+  /** Slide 2 — nine cards flipping face up and back down. */
+  deck: {
+    faceDown: 500,
+    flip: 300,
+    /** Per-card stagger: reads as a deal rather than a strobe. */
+    stagger: 40,
+    faceUp: 1000,
+    hold: 500,
+  },
+  /** Slide 3 — leader lines drawing out with their labels. */
+  study: {
+    /** One frame at the start of the loop so the in-transition has a from-state. */
+    prime: 30,
+    in: 500,
+    stagger: 100,
+    hold: 500,
+    out: 500,
+    rest: 500,
+  },
+  /** Slide 4 — cross dissolve between the three die examples. */
+  die: {
+    dwell: 2000,
+    dissolve: 250,
+    /** The card pair dissolves this far behind the tile label. */
+    pairDelay: 120,
+  },
+} as const;
+
+/** Slide 2 stagger spans eight gaps after the first card. */
+const DECK_FLIP_WINDOW = T.deck.flip + T.deck.stagger * 8;
+/** Slide 3 in/out window: last label starts two staggers late. */
+const STUDY_IN_WINDOW = T.study.in + T.study.stagger * 2;
+const STUDY_OUT_WINDOW = T.study.out + T.study.stagger * 2;
+
+/** `prefers-reduced-motion: reduce` — every loop stops, one static frame. */
+const useReducedMotion = (): boolean => {
+  const [reduce, setReduce] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const on = () => setReduce(mq.matches);
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
+  return reduce;
+};
+
+/** False while the tab is hidden, so nothing loops in the background. */
+const usePageVisible = (): boolean => {
+  const [visible, setVisible] = useState(() =>
+    typeof document === "undefined" ? true : !document.hidden,
+  );
+  useEffect(() => {
+    const on = () => setVisible(!document.hidden);
+    document.addEventListener("visibilitychange", on);
+    return () => document.removeEventListener("visibilitychange", on);
+  }, []);
+  return visible;
+};
+
+/**
+ * Steps through `steps` (durations in ms) forever while `running` is true, and
+ * resets to phase 0 the moment it goes false. One timer per visual, and only
+ * the visual on the visible slide is ever running.
+ */
+const usePhase = (steps: readonly number[], running: boolean): number => {
+  const [phase, setPhase] = useState(0);
+  const key = steps.join(",");
+  useEffect(() => {
+    setPhase(0);
+    if (!running) return;
+    const durations = key.split(",").map(Number);
+    let i = 0;
+    let t = 0;
+    const tick = () => {
+      t = window.setTimeout(() => {
+        i = (i + 1) % durations.length;
+        setPhase(i);
+        tick();
+      }, durations[i]);
+    };
+    tick();
+    return () => window.clearTimeout(t);
+  }, [running, key]);
+  return phase;
+};
+
+/**
+ * True cross dissolve: the outgoing tree is captured once per key change and
+ * fades out while the live children fade in. `instant` skips it entirely.
+ */
+const CrossFade: React.FC<{
+  k: string | number;
+  ms: number;
+  delay?: number;
+  instant?: boolean;
+  children: React.ReactNode;
+}> = ({ k, ms, delay = 0, instant = false, children }) => {
+  const [outgoing, setOutgoing] = useState<{ k: string | number; node: React.ReactNode } | null>(
+    null,
+  );
+  const [entering, setEntering] = useState(false);
+  const prevKey = useRef(k);
+  const prevNode = useRef<React.ReactNode>(children);
+
+  if (k !== prevKey.current) {
+    if (!instant) {
+      setOutgoing({ k: prevKey.current, node: prevNode.current });
+      setEntering(true);
+    }
+    prevKey.current = k;
+  }
+
+  useEffect(() => {
+    prevNode.current = children;
+  });
+
+  useEffect(() => {
+    if (instant) return;
+    const raf = requestAnimationFrame(() => setEntering(false));
+    const t = window.setTimeout(() => setOutgoing(null), ms + delay + 40);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [k, ms, delay, instant]);
+
+  if (instant) return <>{children}</>;
+
+  const layer: React.CSSProperties = {
+    transition: `opacity ${ms}ms ease`,
+    transitionDelay: `${delay}ms`,
+  };
+
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      {outgoing && (
+        <div
+          key="out"
+          style={{
+            ...layer,
+            position: "absolute",
+            inset: 0,
+            opacity: entering ? 1 : 0,
+            pointerEvents: "none",
+          }}
+        >
+          {outgoing.node}
+        </div>
+      )}
+      <div key="in" style={outgoing ? { ...layer, opacity: entering ? 0 : 1 } : undefined}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
+/* ------------------------------------------------------------------ *
  * Authored Figma geometry. The card is authored against a 390-wide
  * screen but laid out responsively: widths, padding and gaps are fluid,
  * type stays at its authored size, and only the middle visual shrinks.
@@ -150,38 +316,159 @@ const backGrid = (
 };
 
 /* ------------------------------------------------------------------ *
- * Slide 3 — one card face with leader-lined attribute labels.
+ * Slide 2 — nine cards flipping face up, staggered like a deal, then
+ * flipping back down. Loop: down → flip up → up → flip down → hold.
  * ------------------------------------------------------------------ */
-const StudyVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+const DECK_FACES = [
+  ["/cards/2-circle-red.svg", "Two red circles"],
+  ["/cards/4-star-yellow.svg", "Four orange stars"],
+  ["/cards/1-square-blue.svg", "One blue square"],
+  ["/cards/3-tri-yellow.svg", "Three orange triangles"],
+  ["/cards/2-star-blue.svg", "Two blue stars"],
+  ["/cards/4-square-red.svg", "Four red squares"],
+  ["/cards/1-circle-yellow.svg", "One orange circle"],
+  ["/cards/3-square-blue.svg", "Three blue squares"],
+  ["/cards/2-tri-red.svg", "Two red triangles"],
+] as const;
+
+const DECK_STEPS = [
+  T.deck.faceDown,
+  DECK_FLIP_WINDOW,
+  T.deck.faceUp,
+  DECK_FLIP_WINDOW,
+  T.deck.hold,
+] as const;
+
+const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
+  const reduce = useReducedMotion();
+  const visible = usePageVisible();
+  const phase = usePhase(DECK_STEPS, active && visible && !reduce);
+  // Face up across the flip-up window and the face-up hold.
+  const up = reduce || phase === 1 || phase === 2;
+
+  const w = 47.25 * v;
+  const h = 66.15 * v;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-      {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132 * v, 184.8 * v)}
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 * v }}>
-        {["Number", "Shape", "Color"].map((label) => (
-          <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
-            <span style={{ width: 26 * v, height: 1, background: COLORS.orange, display: "block" }} />
-            <span
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(3, ${w}px)`,
+        gridAutoRows: `${h}px`,
+        gap: 8 * v,
+      }}
+      aria-hidden="true"
+    >
+      {DECK_FACES.map(([src], i) => (
+        <div key={src} style={{ width: w, height: h, perspective: 600 }}>
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              height: "100%",
+              transformStyle: "preserve-3d",
+              transform: up ? "rotateY(180deg)" : "rotateY(0deg)",
+              transition: reduce ? undefined : `transform ${T.deck.flip}ms ease`,
+              transitionDelay: reduce ? undefined : `${i * T.deck.stagger}ms`,
+            }}
+          >
+            <img
+              src={CARD_BACK}
+              alt=""
               style={{
-                fontFamily: FONT_FAMILY_UI,
-                fontWeight: FONT_WEIGHT_UI,
-                fontSize: sz.body,
-                lineHeight: 1.2,
-                color: INK,
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                backfaceVisibility: "hidden",
               }}
-            >
-              {label}
-            </span>
+            />
+            <img
+              src={src}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+              }}
+            />
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 };
 
 /* ------------------------------------------------------------------ *
+ * Slide 3 — one card face; the leader lines draw out from the card and
+ * their labels fade in on the same clock, then reverse.
+ * ------------------------------------------------------------------ */
+const STUDY_STEPS = [
+  T.study.prime,
+  STUDY_IN_WINDOW,
+  T.study.hold,
+  STUDY_OUT_WINDOW,
+  T.study.rest,
+] as const;
+
+const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
+  const v = sz.vis;
+  const reduce = useReducedMotion();
+  const pageVisible = usePageVisible();
+  const phase = usePhase(STUDY_STEPS, active && pageVisible && !reduce);
+  const shown = reduce || phase === 1 || phase === 2;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+      {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132 * v, 184.8 * v)}
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 * v }}>
+        {["Number", "Shape", "Color"].map((label, i) => {
+          const delay = reduce ? 0 : i * T.study.stagger;
+          const dur = shown ? T.study.in : T.study.out;
+          const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
+          return (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
+              <span
+                style={{
+                  width: 26 * v,
+                  height: 1,
+                  background: COLORS.orange,
+                  display: "block",
+                  transformOrigin: "left center",
+                  transform: shown ? "scaleX(1)" : "scaleX(0)",
+                  transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: FONT_FAMILY_UI,
+                  fontWeight: FONT_WEIGHT_UI,
+                  fontSize: sz.body,
+                  lineHeight: 1.2,
+                  color: INK,
+                  opacity: shown ? 1 : 0,
+                  transition: reduce ? undefined : `opacity ${dur}ms ${ease} ${delay}ms`,
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
+/* ------------------------------------------------------------------ *
  * Slide 4 — the die-decides tile + overlapping pair, cycling through
- * three examples. Cycling is state-driven so it can be animated later.
+ * three examples. Each change cross dissolves: the tile label first,
+ * the card pair a beat behind it, mirroring die-lands-then-you-look.
  * ------------------------------------------------------------------ */
 type DieExample = { label: string; a: [string, string]; b: [string, string] };
 
@@ -203,19 +490,28 @@ const DIE_EXAMPLES: DieExample[] = [
   },
 ];
 
-const CYCLE_MS = 2000;
+const CYCLE_MS = T.die.dwell;
 
-const DieVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+const DieVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
+  const reduce = useReducedMotion();
+  const pageVisible = usePageVisible();
   const [i, setI] = useState(0);
   /** Bumped on manual interaction so the auto-cycle timer restarts. */
   const [cycleKey, setCycleKey] = useState(0);
   const advance = useCallback(() => setI((n) => (n + 1) % DIE_EXAMPLES.length), []);
+  const running = active && pageVisible && !reduce;
+
+  // Reset to the first example whenever the slide leaves the screen.
+  useEffect(() => {
+    if (!active) setI(0);
+  }, [active]);
 
   useEffect(() => {
+    if (!running) return;
     const t = window.setInterval(advance, CYCLE_MS);
     return () => window.clearInterval(t);
-  }, [advance, cycleKey]);
+  }, [advance, cycleKey, running]);
 
   const ex = DIE_EXAMPLES[i];
   const CW = 74.83 * v;
@@ -249,25 +545,36 @@ const DieVisual: React.FC<{ sz: Step }> = ({ sz }) => {
             boxSizing: "border-box",
           }}
         >
-          <span
-            style={{
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: 28 * v,
-              lineHeight: 0.9,
-              color: INK,
-              textAlign: "center",
-            }}
-          >
-            {ex.label}
-          </span>
+          <CrossFade k={ex.label} ms={T.die.dissolve} instant={reduce}>
+            <span
+              style={{
+                display: "block",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 28 * v,
+                lineHeight: 0.9,
+                color: INK,
+                textAlign: "center",
+              }}
+            >
+              {ex.label}
+            </span>
+          </CrossFade>
         </div>
 
-        <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
-          {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
-        </div>
+        <CrossFade
+          k={ex.label}
+          ms={T.die.dissolve}
+          delay={T.die.pairDelay}
+          instant={reduce}
+        >
+          <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
+            {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
+            {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
+          </div>
+        </CrossFade>
       </div>
+
 
       {/* example indicators — small circles, deliberately unlike the square
           slide dots at the top of the card */}
@@ -397,7 +704,7 @@ type Slide = {
   heading: string;
   body: string;
   big?: boolean;
-  visual?: (sz: Step) => React.ReactNode;
+  visual?: (sz: Step, active: boolean) => React.ReactNode;
 };
 
 const SLIDES: Slide[] = [
@@ -411,19 +718,19 @@ const SLIDES: Slide[] = [
     heading: "9 Cards on Deck",
     body:
       "The board starts with nine cards, face down. Then they all flip to reveal the face of each card.",
-    visual: (sz) => backGrid(3, 3, 47.25, 66.15, 8, sz.vis),
+    visual: (sz, active) => <DeckVisual sz={sz} active={active} />,
   },
   {
     heading: "Study, Study, Study",
     body:
       "While the cards are face up, you get 10 seconds to learn the shape, the number, and the color of every card. The die has not rolled yet, so you don't know what really matters.",
-    visual: (sz) => <StudyVisual sz={sz} />,
+    visual: (sz, active) => <StudyVisual sz={sz} active={active} />,
   },
   {
     heading: "The Die Decides",
     body:
       "Shape, number, or color. Whichever face lands is what a match means this round. The die rolls again every round. Same cards, new rule.",
-    visual: (sz) => <DieVisual sz={sz} />,
+    visual: (sz, active) => <DieVisual sz={sz} active={active} />,
   },
   {
     heading: "Find Your Match",
@@ -662,7 +969,7 @@ const DailyHowToSteps: React.FC<{
           }}
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
-          {s.visual ? <VisualFit>{s.visual(sz)}</VisualFit> : null}
+          {s.visual ? <VisualFit>{s.visual(sz, entering)}</VisualFit> : null}
           <p style={{ ...body(!!s.big, sz), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
