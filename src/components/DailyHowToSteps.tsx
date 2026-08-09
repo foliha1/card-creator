@@ -1367,19 +1367,11 @@ const DailyHowToSteps: React.FC<{
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
           {s.visual ? (
-            <div
-              style={{
-                flex: "1 1 auto",
-                minHeight: 0,
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+            <CenterVisual key={`vis-${index}`}>
               <VisualFit>{s.visual(sz, entering)}</VisualFit>
-            </div>
+            </CenterVisual>
           ) : null}
+
           <p
             style={{
               ...body(!!s.big, sz),
