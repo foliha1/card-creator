@@ -422,8 +422,30 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
         const delay = reduce ? 0 : i * T.study.stagger;
         const dur = shown ? T.study.in : T.study.out;
         const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
+        // In: dot first, stroke behind it. Out: stroke retracts, then the dot.
+        const dotDelay = reduce ? 0 : shown ? delay : delay + T.study.out;
+        const lineDelay = reduce ? 0 : shown ? delay + T.study.dot : delay;
         return (
           <React.Fragment key={row.label}>
+            <span
+              style={{
+                position: "absolute",
+                left: (row.lineX - STUDY_DOT / 2) * v,
+                top: (row.lineY - STUDY_DOT / 2) * v,
+                width: STUDY_DOT * v,
+                height: STUDY_DOT * v,
+                borderRadius: "50%",
+                background: COLORS.orange,
+                display: "block",
+                // above the card artwork, same as the stroke
+                zIndex: 1,
+                opacity: shown ? 1 : 0,
+                transform: shown ? "scale(1)" : "scale(0.4)",
+                transition: reduce
+                  ? undefined
+                  : `opacity ${T.study.dot}ms ${ease} ${dotDelay}ms, transform ${T.study.dot}ms ${ease} ${dotDelay}ms`,
+              }}
+            />
             <span
               style={{
                 position: "absolute",
@@ -437,10 +459,11 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
                 zIndex: 1,
                 transformOrigin: "left center",
                 transform: shown ? "scaleX(1)" : "scaleX(0)",
-                transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
+                transition: reduce ? undefined : `transform ${dur}ms ${ease} ${lineDelay}ms`,
               }}
             />
             <span
+
               style={{
                 position: "absolute",
                 left: STUDY_LABEL_X * v,
