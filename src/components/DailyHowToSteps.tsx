@@ -1248,6 +1248,7 @@ const DailyHowToSteps: React.FC<{
                 style={{
                   width: 12.17,
                   height: 12.17,
+                  borderRadius: "50%",
                   background: i === index ? INK : "transparent",
                   border: i === index ? "none" : `2px solid ${INK}`,
                   boxSizing: "border-box",
