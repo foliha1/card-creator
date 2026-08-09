@@ -823,7 +823,7 @@ const DailyReadyScreen: React.FC<{
 
         >
           {gated
-            ? `Coming ${DAILY_LAUNCH_LABEL}`
+            ? `Launching ${DAILY_LAUNCH_LABEL}`
             : played
               ? "See Today's Result"
               : "Play Today's Daily"}

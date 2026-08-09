@@ -50,7 +50,7 @@ export function getDailyNumber(date: Date = new Date()): number {
 }
 
 /** Human-readable launch day, used by the pre-launch gate copy. */
-export const DAILY_LAUNCH_LABEL = "11 August";
+export const DAILY_LAUNCH_LABEL = "August 11th";
 
 /** True when the given local date falls before launch day. */
 export function isPreLaunch(date: Date = new Date()): boolean {
