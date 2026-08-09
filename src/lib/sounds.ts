@@ -67,6 +67,13 @@ export function setMusicEnabled(value: boolean): void {
 export function setMuted(value: boolean): void { setSfxEnabled(!value); }
 export function isMuted(): boolean { return !sfxEnabled; }
 
+// Master sound toggle — both effects and theme music.
+export function getSoundEnabled(): boolean { return sfxEnabled && musicEnabled; }
+export function setSoundEnabled(value: boolean): void {
+  setSfxEnabled(value);
+  setMusicEnabled(value);
+}
+
 function getCtx(): AudioContext {
   if (!audioCtx) audioCtx = new AudioContext();
   return audioCtx;

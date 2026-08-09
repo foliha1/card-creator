@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { HelpCircle, Moon, Sun } from "lucide-react";
+import { HelpCircle, Moon, Sun, Volume2, VolumeOff } from "lucide-react";
 import GameCard from "@/components/GameCard";
 import DailyFrame from "@/components/DailyFrame";
 import DailyHowToSteps, { hasSeenHowTo } from "@/components/DailyHowToSteps";
@@ -62,6 +62,8 @@ import {
   startTheme,
   stopTheme,
   unlockAudio,
+  getSoundEnabled,
+  setSoundEnabled,
 } from "@/lib/sounds";
 
 import {
@@ -625,6 +627,23 @@ const DailyResultCard: React.FC<{
 
 
 /**
+ * Shared visual base for the small icon/text chips on the ready screen.
+ * `boxSizing: border-box` keeps the explicit minHeight inclusive of padding.
+ */
+const chipButtonBase = (mobile: boolean): React.CSSProperties => ({
+  ...textStyle("chip", mobile),
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+  boxSizing: "border-box",
+  minHeight: 36,
+  padding: "8px 16px",
+  border: "none",
+  borderRadius: RADIUS.sm,
+});
+
+/**
  * Manual light/night switch. Theming only — it writes `data-theme` on <html>,
  * which flips the CSS custom properties the COLORS tokens point at. Until it is
  * touched the theme follows `prefers-color-scheme`.
@@ -642,19 +661,34 @@ const DailyThemeToggle: React.FC<{ mobile?: boolean }> = ({ mobile = false }) =>
       }}
       aria-label={night ? "Switch to light mode" : "Switch to night mode"}
       title={night ? "Switch to light mode" : "Switch to night mode"}
-      style={{
-        ...textStyle("chip", mobile),
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 32,
-        minWidth: 32,
-        padding: "8px 12px",
-        border: "none",
-        borderRadius: RADIUS.sm,
-      }}
+      style={chipButtonBase(mobile)}
     >
       {night ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+    </button>
+  );
+};
+
+/**
+ * Master sound toggle — controls both SFX and the background theme.
+ */
+const DailySoundToggle: React.FC<{ mobile?: boolean }> = ({ mobile = false }) => {
+  const [on, setOn] = useState(getSoundEnabled());
+  const Icon = on ? Volume2 : VolumeOff;
+  return (
+    <button
+      type="button"
+      className="ww-press daily-btn-howto"
+      onClick={() => {
+        hapticTap();
+        const next = !on;
+        setSoundEnabled(next);
+        setOn(next);
+      }}
+      aria-label={on ? "Mute sound" : "Unmute sound"}
+      title={on ? "Mute sound" : "Unmute sound"}
+      style={chipButtonBase(mobile)}
+    >
+      <Icon size={16} aria-hidden="true" />
     </button>
   );
 };
@@ -730,22 +764,13 @@ const DailyReadyScreen: React.FC<{
           type="button"
           className="ww-press daily-btn-howto"
           onClick={onHowToPlay}
-          style={{
-            ...textStyle("chip", mobile),
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            minHeight: 32,
-            padding: "8px 16px",
-            border: "none",
-            borderRadius: RADIUS.sm,
-          }}
+          style={chipButtonBase(mobile)}
         >
           <HelpCircle size={16} aria-hidden="true" />
           How to Play
         </button>
         <DailyThemeToggle mobile={mobile} />
+        <DailySoundToggle mobile={mobile} />
       </div>
 
 
