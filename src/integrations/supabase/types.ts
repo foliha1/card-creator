@@ -211,6 +211,48 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_results_scratch: {
+        Row: {
+          created_at: string
+          elapsed_ms: number
+          email: string | null
+          id: string
+          peek_used: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events: Json
+          rounds_solved: number
+          total_misses: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          elapsed_ms?: number
+          email?: string | null
+          id?: string
+          peek_used?: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events?: Json
+          rounds_solved?: number
+          total_misses?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          elapsed_ms?: number
+          email?: string | null
+          id?: string
+          peek_used?: boolean
+          puzzle_date?: string
+          puzzle_number?: number
+          round_events?: Json
+          rounds_solved?: number
+          total_misses?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       daily_subscribers: {
         Row: {
           created_at: string
