@@ -60,19 +60,26 @@ describe("getDailySeed", () => {
 });
 
 describe("getDailyNumber", () => {
-  it("starts at 1 on launch day", () => {
-    expect(getDailyNumber(localDate(2026, 8, 1))).toBe(1);
-    expect(DAILY_LAUNCH_UTC).toBe(Date.UTC(2026, 7, 1));
+  it("starts at 1 on launch day, 11 August 2026", () => {
+    expect(getDailyNumber(localDate(2026, 8, 11))).toBe(1);
+    expect(DAILY_LAUNCH_UTC).toBe(Date.UTC(2026, 7, 11));
+  });
+
+  it("is #2 the day after launch", () => {
+    expect(getDailyNumber(localDate(2026, 8, 12))).toBe(2);
   });
 
   it("counts local calendar days elapsed since launch", () => {
-    expect(getDailyNumber(localDate(2026, 8, 4, 0))).toBe(4);
-    expect(getDailyNumber(localDate(2026, 8, 31, 18))).toBe(31);
+    expect(getDailyNumber(localDate(2026, 8, 14, 0))).toBe(4);
+    expect(getDailyNumber(localDate(2026, 9, 10, 18))).toBe(31);
   });
 
-  it("never drops below 1 before launch", () => {
+  it("clamps to 1 for any date before launch", () => {
+    expect(getDailyNumber(localDate(2026, 8, 10))).toBe(1);
+    expect(getDailyNumber(localDate(2026, 8, 9))).toBe(1);
     expect(getDailyNumber(localDate(2020, 1, 1))).toBe(1);
   });
+
 
   it("advances exactly one day across a daylight saving transition", () => {
     // US spring forward 2027-03-14, fall back 2027-11-07.
