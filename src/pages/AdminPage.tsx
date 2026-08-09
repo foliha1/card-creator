@@ -12,7 +12,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import AdminBackupBanner from "@/components/AdminBackupBanner";
 import {
+
   attributionSection,
   combinedCsv,
   difficultySection,
