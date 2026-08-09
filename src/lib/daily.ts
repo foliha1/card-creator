@@ -119,7 +119,10 @@ export function resolveDailyContext(
     seed: getDailySeed(now),
     puzzleNumber: getDailyNumber(now),
     dateKey: getLocalDateString(now),
+    // Debug bypasses the gate entirely so launch day can be tested early.
+    preLaunch: !debug && isPreLaunch(now),
   };
+
   if (!debug) return base;
 
   // `seed` wins when both are present.
