@@ -84,7 +84,13 @@ export interface DailyContext {
   puzzleNumber: number;
   /** `YYYY-MM-DD` of the effective (possibly shifted) date. */
   dateKey: string;
+  /**
+   * True when the effective date is before launch day, so the daily must not be
+   * played or persisted. Always false under ?debug=1: debug bypasses the gate.
+   */
+  preLaunch: boolean;
 }
+
 
 /** Shift a local calendar date by whole days, DST-safe. */
 function shiftLocalDays(date: Date, days: number): Date {
