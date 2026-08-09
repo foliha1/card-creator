@@ -32,12 +32,15 @@ export function markHowToSeen(): void {
 const CARD_BACK = "/cards/card-back.svg";
 
 /* ------------------------------------------------------------------ *
- * Fixed Figma geometry. The card is authored at exactly these numbers
- * and scaled as a whole to fit the viewport, so nothing ever scrolls.
+ * Authored Figma geometry. The card is authored against a 390-wide
+ * screen but laid out responsively: widths, padding and gaps are fluid,
+ * type stays at its authored size, and only the middle visual shrinks.
  * ------------------------------------------------------------------ */
-const CARD_W = 354;
-const CARD_H = 569;
-const INNER_W = 290;
+const CARD_MAX_W = 354;
+const INNER_MAX_W = 290;
+/** Fixed heading row so the heading lands at the same y on slides 2-7. */
+const HEADING_ROW_H = 84;
+
 
 /** The card art is a literal brand artifact: ink and khaki stay literal. */
 const INK = RAW.warmBlack;
