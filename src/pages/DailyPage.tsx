@@ -26,6 +26,12 @@ import {
 import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
+import {
+  flushDailyEvents,
+  setDailyTrackingEnabled,
+  trackDaily,
+} from "@/lib/dailyEvents";
+
 
 import {
   formatAvgMisses,
@@ -228,6 +234,10 @@ const ShareBlock: React.FC<{
     const ok = await copyPromise;
     if (ok) {
       setManual(false);
+      trackDaily("share_clicked", {
+        puzzleNumber: result.puzzleNumber,
+        props: { method: "clipboard" },
+      });
       flashCopied();
     } else {
       setManual(true);
@@ -242,6 +252,10 @@ const ShareBlock: React.FC<{
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({ text });
+        trackDaily("share_clicked", {
+          puzzleNumber: result.puzzleNumber,
+          props: { method: "text" },
+        });
         return;
       }
     } catch {
@@ -249,6 +263,7 @@ const ShareBlock: React.FC<{
     }
     await settleClipboard(copyPromise);
   };
+
 
   const share = async () => {
     hapticTap();
@@ -279,6 +294,10 @@ const ShareBlock: React.FC<{
           navigator.canShare?.({ files: [file] })
         ) {
           await navigator.share({ files: [file], text });
+          trackDaily("share_clicked", {
+            puzzleNumber: result.puzzleNumber,
+            props: { method: "image" },
+          });
           return;
         }
       } catch {
@@ -300,10 +319,15 @@ const ShareBlock: React.FC<{
         a.download = `whoop-whoop-${result.puzzleNumber}.png`;
         a.click();
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        trackDaily("share_clicked", {
+          puzzleNumber: result.puzzleNumber,
+          props: { method: "download" },
+        });
       } catch {
         /* download blocked — the text copy below is still useful */
       }
     }
+
     await settleClipboard(copyPromise);
   };
 
@@ -945,14 +969,18 @@ const DailyPage: React.FC = () => {
   // Pre-launch only: the signup overlay, opened from the ready-screen CTA.
   const [preLaunchSignup, setPreLaunchSignup] = useState(false);
   const notifyRef = React.useRef<HTMLButtonElement>(null);
+  // Nothing is recorded under ?debug=1, same rule as daily_results.
+  setDailyTrackingEnabled(!daily.debugBypass);
   // Single entry point for beginning a run: the play CTA and the stepper's
   // Start / Skip / Play controls all route through here.
   const startRun = React.useCallback(() => {
     // 600ms cue; the deal lands at 700ms, so it clears cleanly.
     playStart();
+    trackDaily("run_started", { puzzleNumber: daily.puzzleNumber });
     daily.start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [daily.start]);
+  }, [daily.start, daily.puzzleNumber]);
+
   // True while the round intro overlay is up: taps stay locked.
   const [introUp, setIntroUp] = useState(false);
   // Measured card-grid width: the single alignment line for the gameplay screen.
@@ -972,6 +1000,91 @@ const DailyPage: React.FC = () => {
     dataReady,
     profileKey
   );
+
+  // -------------------------------------------------------------------------
+  // Instrumentation. Read-only observers of the engine: nothing here changes
+  // a phase, a timer or a render, and every write is queued and swallowed.
+  // -------------------------------------------------------------------------
+  const puzzleNumber = daily.puzzleNumber;
+  const readyLoggedRef = React.useRef(false);
+  useEffect(() => {
+    if (readyLoggedRef.current) return;
+    readyLoggedRef.current = true;
+    trackDaily("ready_viewed", { puzzleNumber });
+  }, [puzzleNumber]);
+
+  // Per-round outcome, derived from the round's mark list.
+  const roundsLoggedRef = React.useRef<Set<number>>(new Set());
+  useEffect(() => {
+    state.roundEvents.forEach((events, i) => {
+      const round = i + 1;
+      if (roundsLoggedRef.current.has(round)) return;
+      const misses = events.filter((m) => m === "MISS").length;
+      if (events.includes("SOLVE")) {
+        roundsLoggedRef.current.add(round);
+        trackDaily("round_solved", { puzzleNumber, props: { round, misses } });
+      } else if (misses >= MISSES_PER_ROUND) {
+        roundsLoggedRef.current.add(round);
+        trackDaily("round_failed", { puzzleNumber, props: { round, misses } });
+      }
+    });
+  }, [state.roundEvents, puzzleNumber]);
+
+  const peekLoggedRef = React.useRef(false);
+  useEffect(() => {
+    if (!state.peekUsed || peekLoggedRef.current) return;
+    peekLoggedRef.current = true;
+    trackDaily("peek_used", { puzzleNumber, props: { round: state.peekRound } });
+  }, [state.peekUsed, state.peekRound, puzzleNumber]);
+
+  // A run is "in progress" from the first deal until the engine reaches DONE.
+  const runOpenRef = React.useRef(false);
+  const runClosedRef = React.useRef(false);
+  useEffect(() => {
+    if (phase !== "READY" && phase !== "DONE") runOpenRef.current = true;
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "DONE" || runClosedRef.current) return;
+    if (!runOpenRef.current) return;
+    runClosedRef.current = true;
+    runOpenRef.current = false;
+    trackDaily("run_finished", {
+      puzzleNumber,
+      props: {
+        roundsSolved: state.roundsSolved,
+        totalMisses: state.totalMisses,
+      },
+    });
+  }, [phase, state.roundsSolved, state.totalMisses, puzzleNumber]);
+
+  // Left mid-run: the number that says whether the game is too hard.
+  useEffect(() => {
+    const abandon = () => {
+      if (!runOpenRef.current || runClosedRef.current) return;
+      runClosedRef.current = true;
+      trackDaily("run_abandoned", {
+        puzzleNumber,
+        props: {
+          round: state.roundIndex,
+          roundsSolved: state.roundsSolved,
+          totalMisses: state.totalMisses,
+        },
+      });
+      void flushDailyEvents();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") abandon();
+    };
+    window.addEventListener("pagehide", abandon);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", abandon);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [puzzleNumber, state.roundIndex, state.roundsSolved, state.totalMisses]);
+
+
 
 
   // --- correct-match ghost layer ---------------------------------------

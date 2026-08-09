@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { emailHasHistory, isValidEmail, subscribeDaily } from "@/lib/dailySubscribe";
 import { hapticError, hapticSuccess, hapticTap } from "@/lib/haptics";
 import { playSubscribed } from "@/lib/sounds";
+import { trackDaily } from "@/lib/dailyEvents";
 import { BORDER, COLORS, RAW, FONT_FAMILY, RADIUS, SPACE } from "@/lib/tokens";
+
 
 const GEIST = '"Geist", "Geist Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -51,10 +53,18 @@ const DailyEmailCapture: React.FC<{
   const [restored, setRestored] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const eventSource = source ?? "daily_result";
 
   React.useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
+
+  // Instrumentation only — queued, never awaited, never surfaced.
+  React.useEffect(() => {
+    trackDaily("subscribe_shown", { props: { source: eventSource } });
+  }, [eventSource]);
+
+
 
   const fail = (message: string) => {
     setStatus("error");
@@ -86,7 +96,9 @@ const DailyEmailCapture: React.FC<{
       setStatus("done");
       hapticSuccess();
       playSubscribed();
+      trackDaily("subscribe_submitted", { props: { source: eventSource } });
       onSubscribed?.(email.trim().toLowerCase(), returning);
+
     } else {
 
       setStatus("error");

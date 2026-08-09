@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.get_daily_event_counts(integer) TO postgres;

@@ -76,6 +76,39 @@ export type Database = {
           },
         ]
       }
+      daily_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          props: Json | null
+          puzzle_number: number | null
+          referrer: string | null
+          utm_source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          props?: Json | null
+          puzzle_number?: number | null
+          referrer?: string | null
+          utm_source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          props?: Json | null
+          puzzle_number?: number | null
+          referrer?: string | null
+          utm_source?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       daily_results: {
         Row: {
           created_at: string
@@ -196,6 +229,15 @@ export type Database = {
         }[]
       }
       email_has_history: { Args: { p_email: string }; Returns: boolean }
+      get_daily_event_counts: {
+        Args: { p_days?: number }
+        Returns: {
+          day: string
+          event: string
+          events: number
+          visitors: number
+        }[]
+      }
       get_daily_percentile: {
         Args: {
           p_email?: string
@@ -247,6 +289,10 @@ export type Database = {
         }[]
       }
       get_subscriber_email: { Args: { p_visitor_id: string }; Returns: string }
+      log_daily_events: {
+        Args: { p_events: Json; p_visitor_id: string }
+        Returns: number
+      }
       save_daily_result: {
         Args: {
           p_elapsed_ms: number

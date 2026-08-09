@@ -13,6 +13,8 @@ import {
   SELECT_ANIM_MS,
   WRONG_ANIM_MS,
 } from "@/lib/animationTiming";
+import { trackDaily } from "@/lib/dailyEvents";
+
 import {
   buttonStyle,
   COLORS,
@@ -1193,6 +1195,9 @@ const buttonBase: React.CSSProperties = {
  * button both start the run. `reference` mode is the ready-screen chip: close
  * just closes, the final button starts a run.
  */
+let lastHowToOpen: { mode: string; at: number } = { mode: "", at: 0 };
+
+
 const DailyHowToSteps: React.FC<{
   mode: "gate" | "reference";
   mobile?: boolean;
@@ -1212,7 +1217,15 @@ const DailyHowToSteps: React.FC<{
 
   useEffect(() => {
     markHowToSeen();
+    // The screen cross-fade keeps a copy of the outgoing tree alive for a beat,
+    // which remounts this component; the guard keeps that from double-counting.
+    if (!(lastHowToOpen.mode === mode && Date.now() - lastHowToOpen.at < 2000)) {
+      lastHowToOpen = { mode, at: Date.now() };
+      trackDaily("howto_opened", { props: { mode } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const go = useCallback(
     (next: number) => {
@@ -1233,14 +1246,17 @@ const DailyHowToSteps: React.FC<{
 
   const finish = useCallback(() => {
     markHowToSeen();
+    trackDaily("howto_finished");
     onStart();
   }, [onStart]);
 
   const dismiss = useCallback(() => {
     markHowToSeen();
+    trackDaily("howto_skipped", { props: { slide: step + 1 } });
     if (mode === "gate") onStart();
     else onClose();
-  }, [mode, onStart, onClose]);
+  }, [mode, onStart, onClose, step]);
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
