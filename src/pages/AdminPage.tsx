@@ -652,7 +652,10 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="How to Play">
+        <Card
+          title="How to Play"
+          action={<ExportButton onClick={() => exportSection(howtoSection)} />}
+        >
           <Table
             head={["Step", "Count"]}
             rows={
