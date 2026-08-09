@@ -81,8 +81,13 @@ const saveDailyResultRemote = vi.fn(() => Promise.resolve());
 
 vi.mock("@/lib/dailyResults", () => ({
   saveDailyResultRemote: (...args: unknown[]) => saveDailyResultRemote(...(args as [])),
+  fetchDailyResults: vi.fn(() => Promise.resolve([])),
   fetchStreak: vi.fn(() => Promise.resolve(null)),
   formatStreakLine: () => null,
+  fetchDailyStats: vi.fn(() => Promise.resolve(null)),
+  fetchDailyPercentile: vi.fn(() => Promise.resolve(null)),
+  formatPercentileLine: () => "",
+  formatAvgMisses: () => "0",
 }));
 
 vi.mock("@/lib/sounds", () => {
