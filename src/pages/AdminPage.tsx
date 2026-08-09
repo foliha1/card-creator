@@ -276,16 +276,54 @@ const SignInGate: React.FC = () => {
 // dashboard
 // ---------------------------------------------------------------------------
 
-const Card: React.FC<{ title: string; children: React.ReactNode; span?: boolean }> = ({
+/** Small secondary control: never competes with the numbers next to it. */
+const exportButtonStyle: CSSProperties = {
+  ...mono,
+  fontSize: FONT_SIZE["2xs"],
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  cursor: "pointer",
+  background: "transparent",
+  color: COLORS.inkMuted,
+  border: `1px solid ${COLORS.panelMuted}`,
+  borderRadius: RADIUS.sm,
+  padding: `${SPACE[2]}px ${SPACE[5]}px`,
+  lineHeight: 1.2,
+  whiteSpace: "nowrap",
+};
+
+const ExportButton: React.FC<{ onClick: () => void; label?: string; title?: string }> = ({
+  onClick,
+  label = "CSV",
   title,
-  children,
-  span,
 }) => (
+  <button type="button" onClick={onClick} style={exportButtonStyle} title={title}>
+    ↓ {label}
+  </button>
+);
+
+const Card: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  span?: boolean;
+  action?: React.ReactNode;
+}> = ({ title, children, span, action }) => (
   <section style={{ ...cardStyle, gridColumn: span ? "1 / -1" : undefined }}>
-    <h2 style={sectionTitle}>{title}</h2>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: SPACE[5],
+      }}
+    >
+      <h2 style={sectionTitle}>{title}</h2>
+      {action}
+    </div>
     {children}
   </section>
 );
+
 
 /**
  * Headline tile. Deliberately heavier and larger than anything below it: this
