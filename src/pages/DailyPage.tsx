@@ -26,6 +26,12 @@ import {
 import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
+import {
+  flushDailyEvents,
+  setDailyTrackingEnabled,
+  trackDaily,
+} from "@/lib/dailyEvents";
+
 
 import {
   formatAvgMisses,
