@@ -1,3 +1,16 @@
-# Welcome to your Lovable project
+# WHOOP! WHOOP! Daily
 
-TODO: Document your project here
+The daily memory game at [whoop-whoop.com](https://whoop-whoop.com).
+
+- `/` — the daily puzzle
+- `/about` — support and rules
+- `/admin` — internal dashboard (magic-link auth, email allowlist)
+
+## Development
+
+```sh
+npm i
+npm run dev
+```
+
+Tests: `npm test`
