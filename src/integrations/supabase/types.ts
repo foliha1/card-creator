@@ -223,6 +223,33 @@ export type Database = {
         }
         Relationships: []
       }
+      write_limits: {
+        Row: {
+          bucket: string
+          count: number
+          created_at: string
+          day: string
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          bucket: string
+          count?: number
+          created_at?: string
+          day: string
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          bucket?: string
+          count?: number
+          created_at?: string
+          day?: string
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -318,6 +345,18 @@ export type Database = {
           status: string
         }[]
       }
+      daily_result_reject_reason: {
+        Args: {
+          p_elapsed_ms: number
+          p_puzzle_date: string
+          p_puzzle_number: number
+          p_round_events: Json
+          p_rounds_solved: number
+          p_today?: string
+          p_total_misses: number
+        }
+        Returns: string
+      }
       daily_rows_for: {
         Args: { p_email: string; p_visitor_id: string }
         Returns: {
@@ -392,6 +431,11 @@ export type Database = {
       log_daily_events: {
         Args: { p_events: Json; p_visitor_id: string }
         Returns: number
+      }
+      request_ip: { Args: never; Returns: string }
+      rl_hit: {
+        Args: { p_bucket: string; p_key: string; p_max: number }
+        Returns: boolean
       }
       save_daily_result: {
         Args: {
