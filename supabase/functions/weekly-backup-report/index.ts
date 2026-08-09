@@ -70,10 +70,21 @@ Deno.serve(async (req) => {
 
   const rows = runs ?? [];
 
+  // Nights before the job ever existed are not failures.
+  const { data: firstRun } = await supabase
+    .from("backup_runs")
+    .select("run_date")
+    .eq("kind", "nightly")
+    .order("run_date", { ascending: true })
+    .limit(1);
+  const firstDay = firstRun?.[0]?.run_date ?? dayString(0);
+
   // Did each of the last seven nights complete every table without error?
   const nightly = days.map((day) => {
     const forDay = rows.filter((r: { run_date: string }) => r.run_date === day);
-    if (forDay.length === 0) return { day, status: "missing" as const };
+    if (forDay.length === 0) {
+      return { day, status: day < firstDay ? ("not_scheduled" as const) : ("missing" as const) };
+    }
     const bad = forDay.filter((r: { status: string }) => r.status !== "ok");
     return {
       day,
@@ -81,7 +92,8 @@ Deno.serve(async (req) => {
       tables: forDay.length,
     };
   });
-  const problems = nightly.filter((n) => n.status !== "ok");
+  const problems = nightly.filter((n) => n.status !== "ok" && n.status !== "not_scheduled");
+
 
   // Counts now, versus what last week's dump recorded.
   const { data: lastWeekRuns } = await supabase
