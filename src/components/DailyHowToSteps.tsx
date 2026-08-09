@@ -1307,6 +1307,7 @@ const DailyHowToSteps: React.FC<{
             style={{
               ...body(!!s.big, sz),
               flex: "0 0 auto",
+              whiteSpace: "pre-wrap",
               marginBottom: first || last ? 0 : "clamp(16px, 5%, 32px)",
             }}
           >
