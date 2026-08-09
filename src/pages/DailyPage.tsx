@@ -228,6 +228,10 @@ const ShareBlock: React.FC<{
     const ok = await copyPromise;
     if (ok) {
       setManual(false);
+      trackDaily("share_clicked", {
+        puzzleNumber: result.puzzleNumber,
+        props: { method: "clipboard" },
+      });
       flashCopied();
     } else {
       setManual(true);
@@ -242,6 +246,10 @@ const ShareBlock: React.FC<{
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({ text });
+        trackDaily("share_clicked", {
+          puzzleNumber: result.puzzleNumber,
+          props: { method: "text" },
+        });
         return;
       }
     } catch {
@@ -249,6 +257,7 @@ const ShareBlock: React.FC<{
     }
     await settleClipboard(copyPromise);
   };
+
 
   const share = async () => {
     hapticTap();
