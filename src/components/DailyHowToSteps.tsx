@@ -352,22 +352,8 @@ const DailyHowToSteps: React.FC<{
   const [dir, setDir] = useState<1 | -1>(1);
   const drag = useRef<{ x: number; y: number } | null>(null);
 
-  /* Scale the fixed 354x569 card to whatever room the viewport gives us. */
   const hostRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  useEffect(() => {
-    const el = hostRef.current;
-    if (!el) return;
-    const measure = () => {
-      const { width, height } = el.getBoundingClientRect();
-      if (!width || !height) return;
-      setScale(Math.min(1, width / CARD_W, height / CARD_H));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+
 
   useEffect(() => {
     markHowToSeen();
