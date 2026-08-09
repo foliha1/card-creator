@@ -1,8 +1,16 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /play
+Disallow: /about
+Disallow: /typography
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /play
+Disallow: /about
+Disallow: /typography
 
 User-agent: Twitterbot
 Allow: /
@@ -12,5 +20,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /play
+Disallow: /about
+Disallow: /typography
 
-Sitemap: https://whoop-whoop.lovable.app/sitemap.xml
+Sitemap: https://whoop-whoop.com/sitemap.xml

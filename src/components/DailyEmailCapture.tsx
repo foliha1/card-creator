@@ -188,6 +188,18 @@ const DailyEmailCapture: React.FC<{
           background: RAW.cream,
         }}
       />
+      <p style={{ ...bodyStyle, fontSize: 12, color: RAW.warmGrey }}>
+        We only send the daily puzzle.{" "}
+        <a
+          href="/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: RAW.warmGrey, textDecoration: "underline" }}
+        >
+          Privacy
+        </a>
+        .
+      </p>
       <button
         type="submit"
         className="ww-press"

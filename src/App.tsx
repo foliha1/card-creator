@@ -11,6 +11,9 @@ import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import TypographyPage from "./pages/TypographyPage.tsx";
+import PrivacyPage from "./pages/PrivacyPage.tsx";
+import TermsPage from "./pages/TermsPage.tsx";
+import DebugOnlyRoute from "./components/DebugOnlyRoute.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const FADE_MS = 200;
@@ -41,13 +44,16 @@ const AnimatedRoutes: React.FC = () => {
     >
       <Routes location={displayLocation}>
         <Route path="/" element={<DailyPage />} />
-        <Route path="/play" element={<MultiplayerPage />} />
-        <Route path="/play/:roomCode" element={<MultiplayerPage />} />
         <Route path="/today" element={<DailyPage />} />
-        <Route path="/about" element={<SupportPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/admin" element={<AdminPage />} />
 
-        <Route path="/typography" element={<TypographyPage />} />
+        {/* Unfinished routes: 404 in production, live under ?debug=1. */}
+        <Route path="/play" element={<DebugOnlyRoute><MultiplayerPage /></DebugOnlyRoute>} />
+        <Route path="/play/:roomCode" element={<DebugOnlyRoute><MultiplayerPage /></DebugOnlyRoute>} />
+        <Route path="/about" element={<DebugOnlyRoute><SupportPage /></DebugOnlyRoute>} />
+        <Route path="/typography" element={<DebugOnlyRoute><TypographyPage /></DebugOnlyRoute>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

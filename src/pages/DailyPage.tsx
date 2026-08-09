@@ -10,6 +10,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
+import DailyLegalFooter from "@/components/DailyLegalFooter";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
 import DailyPreLaunchSignup from "@/components/DailyPreLaunchSignup";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
@@ -858,6 +859,10 @@ const DailyReadyScreen: React.FC<{
               ? "See Today's Result"
               : "Play Today's Daily"}
         </button>
+      </div>
+
+      <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
+        <DailyLegalFooter />
       </div>
 
   </DailyFrame>
