@@ -320,6 +320,36 @@ const ExportButton: React.FC<{ onClick: () => void; label?: string; title?: stri
   </button>
 );
 
+/**
+ * Export control. Deliberately quiet: a bordered text button that sits beside a
+ * section heading without competing with the numbers inside it.
+ */
+const exportButtonStyle: CSSProperties = {
+  ...mono,
+  fontSize: FONT_SIZE["2xs"],
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  boxSizing: "border-box",
+  height: 28,
+  padding: `0 ${SPACE[4]}px`,
+  background: "transparent",
+  color: COLORS.inkMuted,
+  border: BORDER.standard,
+  borderRadius: RADIUS.sm,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+const ExportButton: React.FC<{ onClick: () => void; label?: string; title?: string }> = ({
+  onClick,
+  label = "CSV",
+  title,
+}) => (
+  <button type="button" onClick={onClick} title={title} style={exportButtonStyle}>
+    ↓ {label}
+  </button>
+);
+
 const Card: React.FC<{
   title: string;
   children: React.ReactNode;
