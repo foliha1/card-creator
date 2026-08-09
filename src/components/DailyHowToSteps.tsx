@@ -493,10 +493,28 @@ const DailyHowToSteps: React.FC<{
           </button>
         </div>
 
-        {/* heading + visual + body */}
+        {/* heading row (fixed on slides 2-7 so the heading never moves) */}
+        {s.big ? null : (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: INNER_MAX_W,
+              height: HEADING_ROW_H,
+              flex: "0 0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <h2 style={heading(false)}>{s.heading}</h2>
+          </div>
+        )}
+
+        {/* visual + body share the flexible space */}
         <div
           style={{
-            width: INNER_W,
+            width: "100%",
+            maxWidth: INNER_MAX_W,
             flex: "1 1 auto",
             minHeight: 0,
             display: "flex",
@@ -506,17 +524,22 @@ const DailyHowToSteps: React.FC<{
             gap: 20,
           }}
         >
-          <h2 style={heading(!!s.big)}>{s.heading}</h2>
-          {s.visual ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {s.visual}
-            </div>
-          ) : null}
-          <p style={body(!!s.big)}>{s.body}</p>
+          {s.big ? <h2 style={heading(true)}>{s.heading}</h2> : null}
+          {s.visual ? <VisualFit>{s.visual}</VisualFit> : null}
+          <p style={{ ...body(!!s.big), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
         {/* buttons */}
-        <div style={{ width: INNER_W, display: "flex", gap: 48 }}>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: INNER_MAX_W,
+            flex: "0 0 auto",
+            display: "flex",
+            gap: "clamp(16px, 16.5%, 48px)",
+          }}
+        >
+
           {last ? (
             <button
               type="button"
