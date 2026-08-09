@@ -11,7 +11,7 @@ import {
 const at = (y: number, m: number, d: number) => new Date(y, m - 1, d, 12);
 
 describe("resolveDailyContext — debug overrides", () => {
-  const now = at(2026, 8, 10);
+  const now = at(2026, 8, 20); // after the 11 Aug 2026 launch, so day offsets are unclamped
 
   it("is a plain today context without ?debug=1", () => {
     for (const q of ["", "?day=5", "?seed=abc", "?day=-3&seed=abc", "?debug=0&day=5"]) {
@@ -30,18 +30,18 @@ describe("resolveDailyContext — debug overrides", () => {
     const tomorrow = resolveDailyContext("?debug=1&day=1", now);
     expect(tomorrow.override).toBe("day");
     expect(tomorrow.dayOffset).toBe(1);
-    expect(tomorrow.seed).toBe("whoop-2026-08-11");
+    expect(tomorrow.seed).toBe("whoop-2026-08-21");
     expect(tomorrow.seed).not.toBe(getDailySeed(now));
     expect(tomorrow.puzzleNumber).toBe(getDailyNumber(now) + 1);
-    expect(tomorrow.dateKey).toBe("2026-08-11");
+    expect(tomorrow.dateKey).toBe("2026-08-21");
     expect(dailyStorageKey(tomorrow.seed)).not.toBe(
       dailyStorageKey(getDailySeed(now))
     );
 
     const yesterday = resolveDailyContext("?debug=1&day=-1", now);
-    expect(yesterday.seed).toBe("whoop-2026-08-09");
+    expect(yesterday.seed).toBe("whoop-2026-08-19");
     expect(yesterday.puzzleNumber).toBe(getDailyNumber(now) - 1);
-    expect(yesterday.dateKey).toBe("2026-08-09");
+    expect(yesterday.dateKey).toBe("2026-08-19");
   });
 
   it("ignores a non-integer or zero day offset", () => {
@@ -79,9 +79,9 @@ describe("resolveDailyContext — debug overrides", () => {
 
 describe("date helpers are untouched by query strings", () => {
   it("keeps getDailySeed / getDailyNumber / getLocalDateString pure", () => {
-    const d = at(2026, 8, 4);
-    expect(getLocalDateString(d)).toBe("2026-08-04");
-    expect(getDailySeed(d)).toBe("whoop-2026-08-04");
+    const d = at(2026, 8, 14);
+    expect(getLocalDateString(d)).toBe("2026-08-14");
+    expect(getDailySeed(d)).toBe("whoop-2026-08-14");
     expect(getDailyNumber(d)).toBe(4);
   });
 });
