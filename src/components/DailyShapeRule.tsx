@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import patternAsset from "@/assets/WhoopWhoop_Daily_Pattern_Seamless.svg.asset.json";
 import { getLocalDateString } from "@/lib/daily";
 import { useThemeMode } from "@/lib/nightMode";
+import { MOTION } from "@/lib/tokens";
 
 /** Natural tile geometry — 15 shapes on a 24px pitch, 19px tall. */
 const TILE_W = 360;
@@ -30,12 +31,14 @@ const dayCellOffset = (now = new Date()) => {
  * The painted band is snapped to an odd whole number of shape cells and
  * centred, so a shape always sits dead-centre and no shape is ever clipped at
  * either edge. Each day the tile slides by a whole number of cells.
+ *
+ * Light and night patterns are rendered as two stacked layers and cross-faded
+ * so theme switches feel gentle rather than abrupt.
  */
 const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const { theme } = useThemeMode();
-  const patternUrl = theme === "night" ? NIGHT_PATTERN_URL : patternAsset.url;
 
   useEffect(() => {
     const el = hostRef.current;
@@ -52,14 +55,15 @@ const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) =>
   const scale = height > 0 ? height / TILE_H : 1;
   const pitch = PITCH * scale;
 
-  let bandStyle: React.CSSProperties = { width: 0 };
+  let baseBand: React.CSSProperties = { width: 0 };
   if (width > 0 && pitch > 0) {
     if (width < TILE_W * scale) {
       // Narrow (mobile): scale one whole tile down to fit — nothing to clip.
-      bandStyle = {
+      baseBand = {
+        position: "absolute",
+        inset: 0,
         width: "100%",
         height: "100%",
-        backgroundImage: `url(${patternUrl})`,
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
         backgroundSize: "contain",
@@ -67,10 +71,13 @@ const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) =>
     } else {
       let cells = Math.floor(width / pitch);
       if (cells % 2 === 0) cells -= 1; // odd → a shape lands dead-centre
-      bandStyle = {
+      baseBand = {
+        position: "absolute",
+        left: "50%",
+        top: 0,
+        transform: "translateX(-50%)",
         width: cells * pitch,
         height: "100%",
-        backgroundImage: `url(${patternUrl})`,
         backgroundRepeat: "repeat-x",
         backgroundSize: `auto 100%`,
         backgroundPosition: `calc(50% + ${dayCellOffset() * pitch}px) center`,
@@ -78,14 +85,22 @@ const DailyShapeRule: React.FC<{ style?: React.CSSProperties }> = ({ style }) =>
     }
   }
 
+  const layer = (url: string, active: boolean): React.CSSProperties => ({
+    ...baseBand,
+    backgroundImage: `url(${url})`,
+    opacity: active ? 1 : 0,
+    transition: `opacity ${MOTION.slow}`,
+  });
+
   return (
     <div
       ref={hostRef}
       className="daily-shape-rule"
       aria-hidden="true"
-      style={style}
+      style={{ ...style, position: "relative" }}
     >
-      <div style={bandStyle} />
+      <div style={layer(patternAsset.url, theme === "light")} />
+      <div style={layer(NIGHT_PATTERN_URL, theme === "night")} />
     </div>
   );
 };
