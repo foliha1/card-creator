@@ -432,19 +432,19 @@ const DailyHowToSteps: React.FC<{
         className={entering ? "ww-step-in" : "ww-step-out"}
         style={
           {
-            position: entering ? "relative" : "absolute",
-            inset: entering ? undefined : 0,
-            width: CARD_W,
-            height: CARD_H,
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
             background: RAW.khaki,
             borderRadius: RADIUS.sm,
-            padding: "24px 32px 32px",
+            padding: "24px clamp(16px, 9%, 32px) 32px",
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 24,
+            gap: "clamp(12px, 4%, 24px)",
             "--ww-step-dx": `${d * 24}px`,
           } as React.CSSProperties
         }
@@ -452,7 +452,10 @@ const DailyHowToSteps: React.FC<{
         {/* top row: progress dots + close */}
         <div
           style={{
-            width: INNER_W,
+            width: "100%",
+            maxWidth: INNER_MAX_W,
+            flex: "0 0 auto",
+
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
