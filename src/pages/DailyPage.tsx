@@ -707,6 +707,8 @@ const DailyReadyScreen: React.FC<{
   subscribed?: boolean;
   /** Opens the pre-launch signup overlay. */
   onNotify?: () => void;
+  /** So focus can return to the CTA when the overlay closes. */
+  notifyRef?: React.Ref<HTMLButtonElement>;
   mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
@@ -717,6 +719,7 @@ const DailyReadyScreen: React.FC<{
   gated = false,
   subscribed = false,
   onNotify,
+  notifyRef,
   mobile = false,
   onPlay,
   onHowToPlay,
