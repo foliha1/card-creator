@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CARD_BACK_PATH } from "@/cardData";
 import { COLORS, RADIUS } from "@/lib/tokens";
+import { CARD_FLIP_MS } from "@/lib/animationTiming";
+
 
 interface GameCardProps {
   card: Card;
