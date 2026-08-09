@@ -58,6 +58,8 @@ export interface UseDailyGameResult {
   alreadyPlayed: boolean;
   /** True when ?debug=1 disables the one-attempt-per-day lock. */
   debugBypass: boolean;
+  /** True before launch day: the daily is gated, unplayable and never persisted. */
+  preLaunch: boolean;
   /** Which debug override (if any) produced the seed/date in play. */
   debugOverride: DailyOverride;
   /** `YYYY-MM-DD` of the effective (possibly shifted) date. */
@@ -225,6 +227,11 @@ export function useDailyGame(): UseDailyGameResult {
       failed: state.failed,
       completedAt: new Date().toISOString(),
     };
+    if (ctx.preLaunch) {
+      // Gated: nothing is written locally or remotely before launch day.
+      setResult(finished);
+      return;
+    }
     if (!debugBypass) {
       saveDailyResult(finished);
       // Fire-and-forget: the result screen never waits on the network. The
@@ -249,9 +256,14 @@ export function useDailyGame(): UseDailyGameResult {
     seed,
     puzzleNumber,
     debugBypass,
+    ctx.preLaunch,
   ]);
 
-  const start = useCallback(() => dispatch({ type: "START" }), []);
+  // The gate is enforced here too, so no path can start a pre-launch run.
+  const start = useCallback(() => {
+    if (ctx.preLaunch) return;
+    dispatch({ type: "START" });
+  }, [ctx.preLaunch]);
   const select = useCallback((idx: number) => dispatch({ type: "SELECT", idx }), []);
   const peek = useCallback(() => dispatch({ type: "PEEK" }), []);
 
@@ -268,6 +280,7 @@ export function useDailyGame(): UseDailyGameResult {
     resultSaved,
     alreadyPlayed,
     debugBypass,
+    preLaunch: ctx.preLaunch,
     debugOverride: ctx.override,
     dateKey,
     canPeek: canPeekNow(state),
