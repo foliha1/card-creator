@@ -26,7 +26,12 @@ interface GameCardProps {
   dealIndex?: number;
   /** Receives the selection wash element so callers can await its animationend. */
   washRef?: (el: HTMLDivElement | null) => void;
+  /** Corner radius in px. Defaults to the board's value; How to Play passes a
+   *  width-proportional radius (see `cardRadius`) because its cards are drawn
+   *  at several fixed sizes rather than one fluid board size. */
+  radius?: number;
 }
+
 
 
 
