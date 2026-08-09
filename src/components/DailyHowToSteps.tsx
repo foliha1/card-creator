@@ -1260,7 +1260,6 @@ const DailyHowToSteps: React.FC<{
             onClick={dismiss}
             aria-label={mode === "gate" ? "Skip how to play and start" : "Close how to play"}
             style={{
-              width: 24,
               height: 24,
               padding: 0,
               background: "transparent",
@@ -1270,9 +1269,16 @@ const DailyHowToSteps: React.FC<{
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
+              gap: 4,
+              fontFamily: FONT_FAMILY_UI,
+              fontWeight: FONT_WEIGHT_UI,
+              fontSize: 14,
+              letterSpacing: "0.04em",
+              lineHeight: 1,
             }}
           >
-            <X size={24} strokeWidth={2} aria-hidden="true" />
+            SKIP
+            <X size={18} strokeWidth={2} aria-hidden="true" />
           </button>
         </div>
 
