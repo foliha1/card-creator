@@ -186,7 +186,7 @@ describe("gated ready screen", () => {
 
   it("offers a live signup CTA, no inline form, and keeps How to Play live", () => {
     renderPage();
-    const cta = screen.getByRole("button", { name: "Get the First Puzzle" });
+    const cta = screen.getByRole("button", { name: "Get the First Daily" });
     expect(cta).toBeEnabled();
     expect(screen.queryByText(/Play Today's Daily/i)).toBeNull();
     expect(screen.getByRole("button", { name: /How to Play/i })).toBeEnabled();
@@ -209,7 +209,7 @@ describe("gated ready screen", () => {
 
   it("writes nothing to daily_results while gated", () => {
     renderPage();
-    act(() => screen.getByRole("button", { name: "Get the First Puzzle" }).click());
+    act(() => screen.getByRole("button", { name: "Get the First Daily" }).click());
     vi.advanceTimersByTime(20_000);
     expect(saveDailyResultRemote).not.toHaveBeenCalled();
     expect(
