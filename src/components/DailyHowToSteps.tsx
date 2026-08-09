@@ -36,20 +36,58 @@ const CARD_BACK = "/cards/card-back.svg";
  * screen but laid out responsively: widths, padding and gaps are fluid,
  * type stays at its authored size, and only the middle visual shrinks.
  * ------------------------------------------------------------------ */
-const CARD_MAX_W = 354;
-const INNER_MAX_W = 290;
-/** Fixed heading row so the heading lands at the same y on slides 2-7. */
-const HEADING_ROW_H = 84;
+/** Authored phone geometry; the card holds this ratio as its maximum. */
+const CARD_BASE_W = 354;
+const CARD_BASE_H = 569;
+const CARD_RATIO = CARD_BASE_H / CARD_BASE_W;
 
+/** Responsive size steps: phone (authored), tablet, desktop. */
+type Step = {
+  cardMaxW: number;
+  innerMaxW: number;
+  headingBig: number;
+  heading: number;
+  bodyBig: number;
+  body: number;
+  headingRowH: number;
+};
+
+const STEPS: { min: number; step: Step }[] = [
+  {
+    min: 1280,
+    step: { cardMaxW: 520, innerMaxW: 426, headingBig: 64, heading: 48, bodyBig: 18, body: 16, headingRowH: 112 },
+  },
+  {
+    min: 768,
+    step: { cardMaxW: 440, innerMaxW: 360, headingBig: 56, heading: 42, bodyBig: 17, body: 15, headingRowH: 98 },
+  },
+  {
+    min: 0,
+    step: { cardMaxW: CARD_BASE_W, innerMaxW: 290, headingBig: 48, heading: 36, bodyBig: 16, body: 14, headingRowH: 84 },
+  },
+];
+
+const stepFor = (w: number): Step => STEPS.find((s) => w >= s.min)!.step;
+
+/** Track the viewport width step (phone / tablet / desktop). */
+const useStep = (): Step => {
+  const [w, setW] = useState(() => (typeof window === "undefined" ? 390 : window.innerWidth));
+  useEffect(() => {
+    const onResize = () => setW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return stepFor(w);
+};
 
 /** The card art is a literal brand artifact: ink and khaki stay literal. */
 const INK = RAW.warmBlack;
 
-const heading = (big: boolean): React.CSSProperties => ({
+const heading = (big: boolean, sz: Step): React.CSSProperties => ({
   fontFamily: FONT_FAMILY,
   fontWeight: 400,
   fontStyle: "normal",
-  fontSize: big ? 48 : 36,
+  fontSize: big ? sz.headingBig : sz.heading,
   lineHeight: 1.05,
   letterSpacing: "-0.01em",
   color: INK,
@@ -57,10 +95,10 @@ const heading = (big: boolean): React.CSSProperties => ({
   margin: 0,
 });
 
-const body = (big: boolean): React.CSSProperties => ({
+const body = (big: boolean, sz: Step): React.CSSProperties => ({
   fontFamily: FONT_FAMILY_UI,
   fontWeight: FONT_WEIGHT_UI,
-  fontSize: big ? 16 : 14,
+  fontSize: big ? sz.bodyBig : sz.body,
   lineHeight: 1.2,
   color: INK,
   textAlign: "center",
@@ -158,57 +196,90 @@ const CYCLE_MS = 2000;
 
 const DieVisual: React.FC = () => {
   const [i, setI] = useState(0);
+  /** Bumped on manual interaction so the auto-cycle timer restarts. */
+  const [cycleKey, setCycleKey] = useState(0);
   const advance = useCallback(() => setI((n) => (n + 1) % DIE_EXAMPLES.length), []);
 
   useEffect(() => {
     const t = window.setInterval(advance, CYCLE_MS);
     return () => window.clearInterval(t);
-  }, [advance]);
+  }, [advance, cycleKey]);
 
   const ex = DIE_EXAMPLES[i];
   const CW = 74.83;
   const CH = 104.72;
 
   return (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        advance();
-      }}
-      style={{ display: "flex", alignItems: "center", gap: 34, cursor: "pointer" }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
       <div
-        style={{
-          width: 121,
-          height: 121,
-          flex: "0 0 auto",
-          background: RAW.cream,
-          border: `2px solid ${INK}`,
-          borderRadius: 9.68,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 8,
-          boxSizing: "border-box",
+        onClick={(e) => {
+          e.stopPropagation();
+          advance();
+          setCycleKey((k) => k + 1);
         }}
+        style={{ display: "flex", alignItems: "center", gap: 34, cursor: "pointer" }}
       >
-        <span
+        <div
           style={{
-            fontFamily: FONT_FAMILY,
-            fontWeight: 400,
-            fontSize: 28,
-            lineHeight: 0.9,
-            color: INK,
-            textAlign: "center",
+            width: 121,
+            height: 121,
+            flex: "0 0 auto",
+            background: RAW.cream,
+            border: `2px solid ${INK}`,
+            borderRadius: 9.68,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 8,
+            boxSizing: "border-box",
           }}
         >
-          {ex.label}
-        </span>
+          <span
+            style={{
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 28,
+              lineHeight: 0.9,
+              color: INK,
+              textAlign: "center",
+            }}
+          >
+            {ex.label}
+          </span>
+        </div>
+
+        <div style={{ position: "relative", width: CW + 46.17, height: CH + 37.76 }}>
+          {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
+          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: 46.17, top: 37.76 })}
+        </div>
       </div>
 
-      <div style={{ position: "relative", width: CW + 46.17, height: CH + 37.76 }}>
-        {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-        {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: 46.17, top: 37.76 })}
+      {/* example indicators — small circles, deliberately unlike the square
+          slide dots at the top of the card */}
+      <div style={{ display: "flex", gap: 8 }}>
+        {DIE_EXAMPLES.map((e, n) => (
+          <button
+            key={e.label}
+            type="button"
+            aria-label={e.label}
+            aria-current={n === i}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setI(n);
+              setCycleKey((k) => k + 1);
+            }}
+            style={{
+              width: 9,
+              height: 9,
+              padding: 0,
+              borderRadius: "50%",
+              background: n === i ? INK : "transparent",
+              border: n === i ? "none" : `1.5px solid ${INK}`,
+              boxSizing: "border-box",
+              cursor: "pointer",
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -409,6 +480,7 @@ const DailyHowToSteps: React.FC<{
   const drag = useRef<{ x: number; y: number } | null>(null);
 
   const hostRef = useRef<HTMLDivElement>(null);
+  const sz = useStep();
 
 
   useEffect(() => {
@@ -495,7 +567,7 @@ const DailyHowToSteps: React.FC<{
         <div
           style={{
             width: "100%",
-            maxWidth: INNER_MAX_W,
+            maxWidth: sz.innerMaxW,
             flex: "0 0 auto",
 
             display: "flex",
@@ -543,15 +615,15 @@ const DailyHowToSteps: React.FC<{
           <div
             style={{
               width: "100%",
-              maxWidth: INNER_MAX_W,
-              height: HEADING_ROW_H,
+              maxWidth: sz.innerMaxW,
+              height: sz.headingRowH,
               flex: "0 0 auto",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <h2 style={heading(false)}>{s.heading}</h2>
+            <h2 style={heading(false, sz)}>{s.heading}</h2>
           </div>
         )}
 
@@ -559,7 +631,7 @@ const DailyHowToSteps: React.FC<{
         <div
           style={{
             width: "100%",
-            maxWidth: INNER_MAX_W,
+            maxWidth: sz.innerMaxW,
             flex: "1 1 auto",
             minHeight: 0,
             display: "flex",
@@ -569,16 +641,16 @@ const DailyHowToSteps: React.FC<{
             gap: 20,
           }}
         >
-          {s.big ? <h2 style={heading(true)}>{s.heading}</h2> : null}
+          {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
           {s.visual ? <VisualFit>{s.visual}</VisualFit> : null}
-          <p style={{ ...body(!!s.big), flex: "0 0 auto" }}>{s.body}</p>
+          <p style={{ ...body(!!s.big, sz), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
         {/* buttons */}
         <div
           style={{
             width: "100%",
-            maxWidth: INNER_MAX_W,
+            maxWidth: sz.innerMaxW,
             flex: "0 0 auto",
             display: "flex",
             gap: "clamp(16px, 16.5%, 48px)",
@@ -677,8 +749,9 @@ const DailyHowToSteps: React.FC<{
         <div
           style={{
             width: "100%",
-            maxWidth: CARD_MAX_W,
+            maxWidth: sz.cardMaxW,
             height: "100%",
+            maxHeight: Math.round(sz.cardMaxW * CARD_RATIO),
             flex: "0 0 auto",
             position: "relative",
           }}
