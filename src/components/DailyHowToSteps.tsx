@@ -467,7 +467,8 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
 
 /* ------------------------------------------------------------------ *
  * Slide 4 — the die-decides tile + overlapping pair, cycling through
- * three examples. Cycling is state-driven so it can be animated later.
+ * three examples. Each change cross dissolves: the tile label first,
+ * the card pair a beat behind it, mirroring die-lands-then-you-look.
  * ------------------------------------------------------------------ */
 type DieExample = { label: string; a: [string, string]; b: [string, string] };
 
@@ -489,19 +490,28 @@ const DIE_EXAMPLES: DieExample[] = [
   },
 ];
 
-const CYCLE_MS = 2000;
+const CYCLE_MS = T.die.dwell;
 
-const DieVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+const DieVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
+  const reduce = useReducedMotion();
+  const pageVisible = usePageVisible();
   const [i, setI] = useState(0);
   /** Bumped on manual interaction so the auto-cycle timer restarts. */
   const [cycleKey, setCycleKey] = useState(0);
   const advance = useCallback(() => setI((n) => (n + 1) % DIE_EXAMPLES.length), []);
+  const running = active && pageVisible && !reduce;
+
+  // Reset to the first example whenever the slide leaves the screen.
+  useEffect(() => {
+    if (!active) setI(0);
+  }, [active]);
 
   useEffect(() => {
+    if (!running) return;
     const t = window.setInterval(advance, CYCLE_MS);
     return () => window.clearInterval(t);
-  }, [advance, cycleKey]);
+  }, [advance, cycleKey, running]);
 
   const ex = DIE_EXAMPLES[i];
   const CW = 74.83 * v;
@@ -535,25 +545,36 @@ const DieVisual: React.FC<{ sz: Step }> = ({ sz }) => {
             boxSizing: "border-box",
           }}
         >
-          <span
-            style={{
-              fontFamily: FONT_FAMILY,
-              fontWeight: 400,
-              fontSize: 28 * v,
-              lineHeight: 0.9,
-              color: INK,
-              textAlign: "center",
-            }}
-          >
-            {ex.label}
-          </span>
+          <CrossFade k={ex.label} ms={T.die.dissolve} instant={reduce}>
+            <span
+              style={{
+                display: "block",
+                fontFamily: FONT_FAMILY,
+                fontWeight: 400,
+                fontSize: 28 * v,
+                lineHeight: 0.9,
+                color: INK,
+                textAlign: "center",
+              }}
+            >
+              {ex.label}
+            </span>
+          </CrossFade>
         </div>
 
-        <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
-          {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
-        </div>
+        <CrossFade
+          k={ex.label}
+          ms={T.die.dissolve}
+          delay={T.die.pairDelay}
+          instant={reduce}
+        >
+          <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
+            {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
+            {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
+          </div>
+        </CrossFade>
       </div>
+
 
       {/* example indicators — small circles, deliberately unlike the square
           slide dots at the top of the card */}
