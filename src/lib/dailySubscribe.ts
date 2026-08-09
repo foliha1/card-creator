@@ -110,7 +110,7 @@ export async function subscribeDaily(
   email: string,
   visitorId: string = getVisitorId(),
   /** Where the signup came from. Omitted keeps the server's own default. */
-  source?: "daily_result" | "landing"
+  source?: "daily_result" | "landing" | "prelaunch"
 ): Promise<boolean> {
   if (!isValidEmail(email)) return false;
   try {

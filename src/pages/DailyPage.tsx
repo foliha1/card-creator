@@ -22,7 +22,7 @@ import {
   remainingCount,
   type DailyMark,
 } from "@/lib/dailyEngine";
-import { formatDailyShare, type DailyResult } from "@/lib/daily";
+import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 
@@ -1227,12 +1227,12 @@ const DailyPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{`Daily Game #${daily.puzzleNumber} | WHOOP! WHOOP! — Daily Memory Game`}</title>
+        <title>{daily.preLaunch ? `WHOOP! WHOOP! — Daily Memory Game` : `Daily Game #${daily.puzzleNumber} | WHOOP! WHOOP! — Daily Memory Game`}</title>
         <meta
           name="description"
           content="Play the free WHOOP! WHOOP! daily memory game. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
         />
-        <meta property="og:title" content={`WHOOP! WHOOP! — Daily Memory Game | Daily Game #${daily.puzzleNumber}`} />
+        <meta property="og:title" content={daily.preLaunch ? "WHOOP! WHOOP! — Daily Memory Game" : `WHOOP! WHOOP! — Daily Memory Game | Daily Game #${daily.puzzleNumber}`} />
         <meta
           property="og:description"
           content="Play the free WHOOP! WHOOP! daily memory game. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
@@ -1291,7 +1291,10 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               played={playedToday}
               gated={daily.preLaunch}
-              onSubscribed={onSubscribed}
+              onSubscribed={(email) => {
+                markLocal(email);
+                bumpProfile();
+              }}
               onPlay={() => {
                 // First user gesture on the page: resume the AudioContext and
                 // kick off the clip decode, or nothing ever plays.
