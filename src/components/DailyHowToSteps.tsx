@@ -82,12 +82,15 @@ const T = {
   pair: {
     /** Settled board before the first tap, matching slide 6's lead. */
     lead: 400,
-    selectHold: 200,
-    deselectHold: 300,
+    selectHold: 300,
+    deselectHold: 1000,
     reselectHold: 100,
+    /** The second card sits selected before the pair flips, as in play. */
+    secondHold: 300,
     faceUpHold: 300,
     fade: 300,
   },
+
   /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
    *  windows are the board's own constants. Every beat is separated by a hold
    *  so the loop reads as a demonstration rather than a scramble. */
@@ -689,10 +692,13 @@ const PAIR_STEPS = [
   SELECT_ANIM_MS + T.pair.selectHold,
   T.pair.deselectHold,
   SELECT_ANIM_MS + T.pair.reselectHold,
-  SELECT_ANIM_MS,
+  SELECT_ANIM_MS + T.pair.secondHold,
   CARD_FLIP_MS,
   T.pair.faceUpHold,
   T.pair.fade,
+  /** Held invisible while the pair flips back down, so the loop fades in
+   *  already face down rather than flipping in view. */
+  CARD_FLIP_MS,
   T.pair.fade,
 ] as const;
 
@@ -706,6 +712,7 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
   const selLeft = reduce || phase === 1 || phase === 3 || phase === 4;
   const selRight = phase === 4;
   const faceUp = !reduce && phase >= 5 && phase <= 7;
+
   const w = 107.19 * v;
   const h = 150.06 * v;
 
@@ -715,7 +722,7 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
       style={{
         display: "flex",
         gap: 19.8 * v,
-        opacity: phase === 7 ? 0 : 1,
+        opacity: phase === 7 || phase === 8 ? 0 : 1,
         transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
       }}
     >
