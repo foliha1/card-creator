@@ -1195,6 +1195,9 @@ const buttonBase: React.CSSProperties = {
  * button both start the run. `reference` mode is the ready-screen chip: close
  * just closes, the final button starts a run.
  */
+let lastHowToOpen: { mode: string; at: number } = { mode: "", at: 0 };
+
+
 const DailyHowToSteps: React.FC<{
   mode: "gate" | "reference";
   mobile?: boolean;
