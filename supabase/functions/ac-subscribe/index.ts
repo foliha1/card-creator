@@ -20,30 +20,39 @@ const json = (body: unknown, status = 200) =>
   });
 
 // --- Rate limit -------------------------------------------------------------
-// Best-effort, per-instance in-memory window. It blunts casual abuse; it is not
-// a distributed limiter, so a scaled-out deployment allows more than the cap.
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 10;
-const hits = new Map<string, number[]>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5_000) {
-    for (const [key, stamps] of hits) {
-      if (stamps.every((t) => now - t >= WINDOW_MS)) hits.delete(key);
-    }
-  }
-  return recent.length > MAX_PER_WINDOW;
-}
+// Database-backed so it holds across instances: a shared per-day counter keyed
+// on the caller's IP. A real person signs up once; the cap only stops stuffing.
+const MAX_PER_IP_PER_DAY = 20;
 
 function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();
   return req.headers.get("cf-connecting-ip") ?? "unknown";
 }
+
+/** True when the caller has exceeded today's cap. Failures never block signup. */
+async function rateLimited(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  ip: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc("rl_hit", {
+      p_bucket: "ac_subscribe_ip",
+      p_key: ip,
+      p_max: MAX_PER_IP_PER_DAY,
+    });
+    if (error) {
+      console.error("ac-subscribe: rl_hit failed", error.message);
+      return false;
+    }
+    return data === false;
+  } catch (err) {
+    console.error("ac-subscribe: rl_hit threw", err);
+    return false;
+  }
+}
+
 
 // --- ActiveCampaign ---------------------------------------------------------
 
