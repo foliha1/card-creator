@@ -1264,10 +1264,12 @@ const DailyHowToSteps: React.FC<{
             style={{
               ...buttonStyle("secondary", "sm"),
               gap: 4,
+              position: "relative",
+              zIndex: 1,
             }}
           >
             SKIP
-            <X size={16} strokeWidth={2} aria-hidden="true" />
+            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
           </button>
         </div>
 
