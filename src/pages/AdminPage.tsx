@@ -621,7 +621,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           alignItems: "start",
         }}
       >
-        <Card title="Funnel">
+        <Card title="Funnel" action={<ExportButton onClick={() => exportSection(funnelSection)} />}>
           <Table
             head={["Step", "Count", "% of above"]}
             rows={
