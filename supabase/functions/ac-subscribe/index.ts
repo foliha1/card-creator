@@ -131,9 +131,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  if (rateLimited(clientIp(req))) {
-    return json({ error: "Too many requests" }, 429);
-  }
+
+
 
   let payload: unknown;
   try {
