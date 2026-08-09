@@ -10,6 +10,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
+import DailyLegalFooter from "@/components/DailyLegalFooter";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
 import DailyPreLaunchSignup from "@/components/DailyPreLaunchSignup";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
