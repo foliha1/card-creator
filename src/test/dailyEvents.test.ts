@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const rpc = vi.fn(async () => ({ data: 1, error: null }));
+const rpc = vi.fn(async (_fn: string, _args: Record<string, unknown>) => ({
+  data: 1,
+  error: null,
+}));
 
 vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { rpc: (...args: unknown[]) => rpc(...(args as [])) },
+  supabase: {
+    rpc: (fn: string, args: Record<string, unknown>) => rpc(fn, args),
+  },
 }));
 
 vi.mock("@/lib/visitor", () => ({
@@ -46,7 +51,7 @@ describe("daily instrumentation", () => {
     const sent = await flushDailyEvents();
     expect(sent).toBe(2);
     expect(rpc).toHaveBeenCalledTimes(1);
-    const [fn, args] = rpc.mock.calls[0] as [string, Record<string, unknown>];
+    const [fn, args] = rpc.mock.calls[0];
     expect(fn).toBe("log_daily_events");
     expect(args.p_visitor_id).toBe("visitor-test");
     const rows = args.p_events as Array<Record<string, unknown>>;
@@ -74,7 +79,7 @@ describe("daily instrumentation", () => {
   });
 
   it("swallows RPC failures", async () => {
-    rpc.mockImplementationOnce(async () => {
+    rpc.mockImplementationOnce(async (_fn, _args) => {
       throw new Error("network down");
     });
     trackDaily("ready_viewed");
