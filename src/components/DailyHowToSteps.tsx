@@ -1225,7 +1225,7 @@ const DailyHowToSteps: React.FC<{
             alignItems: "center",
             justifyContent: "space-between",
             gap: "clamp(12px, 4%, 24px)",
-            "--ww-step-dx": `${d * 24}px`,
+            "--ww-step-dx": `${d * 32}px`,
           } as React.CSSProperties
         }
       >
