@@ -82,14 +82,18 @@ const T = {
   pair: {
     /** Settled board before the first tap, matching slide 6's lead. */
     lead: 400,
+    /** The push-in keyframe (.ww-card-press); longer than the select wash, so
+     *  every tap beat allows this to finish before the next moment starts. */
+    press: 180,
     selectHold: 300,
     deselectHold: 1000,
-    reselectHold: 100,
+    reselectHold: 300,
     /** The second card sits selected before the pair flips, as in play. */
     secondHold: 300,
     faceUpHold: 300,
     fade: 300,
   },
+
 
   /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
    *  windows are the board's own constants. Every beat is separated by a hold
@@ -687,12 +691,16 @@ const PAIR_IDS = ["star-3-blue", "star-1-blue"] as const;
 const PAIR_CARDS = PAIR_IDS.map(cardById);
 const PAIR_SRCS = [CARD_BACK, ...PAIR_CARDS.map((c) => c.svgPath)];
 
+/** Every tap beat runs for the longer of the select wash and the push-in, then
+ *  holds, so no animation is cut off by the next moment. */
+const PAIR_TAP = Math.max(SELECT_ANIM_MS, T.pair.press);
+
 const PAIR_STEPS = [
   T.pair.lead,
-  SELECT_ANIM_MS + T.pair.selectHold,
-  T.pair.deselectHold,
-  SELECT_ANIM_MS + T.pair.reselectHold,
-  SELECT_ANIM_MS + T.pair.secondHold,
+  PAIR_TAP + T.pair.selectHold,
+  PAIR_TAP + T.pair.deselectHold,
+  PAIR_TAP + T.pair.reselectHold,
+  PAIR_TAP + T.pair.secondHold,
   CARD_FLIP_MS,
   T.pair.faceUpHold,
   T.pair.fade,
@@ -701,6 +709,7 @@ const PAIR_STEPS = [
   CARD_FLIP_MS,
   T.pair.fade,
 ] as const;
+
 
 const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
