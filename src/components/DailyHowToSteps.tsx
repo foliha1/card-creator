@@ -50,22 +50,25 @@ type Step = {
   bodyBig: number;
   body: number;
   headingRowH: number;
+  /** Multiplier applied to authored visual dimensions (not to type). */
+  vis: number;
 };
 
 const STEPS: { min: number; step: Step }[] = [
   {
     min: 1280,
-    step: { cardMaxW: 520, innerMaxW: 426, headingBig: 64, heading: 48, bodyBig: 18, body: 16, headingRowH: 112 },
+    step: { cardMaxW: 520, innerMaxW: 426, headingBig: 64, heading: 48, bodyBig: 18, body: 16, headingRowH: 112, vis: 520 / CARD_BASE_W },
   },
   {
     min: 768,
-    step: { cardMaxW: 440, innerMaxW: 360, headingBig: 56, heading: 42, bodyBig: 17, body: 15, headingRowH: 98 },
+    step: { cardMaxW: 440, innerMaxW: 360, headingBig: 56, heading: 42, bodyBig: 17, body: 15, headingRowH: 98, vis: 440 / CARD_BASE_W },
   },
   {
     min: 0,
-    step: { cardMaxW: CARD_BASE_W, innerMaxW: 290, headingBig: 48, heading: 36, bodyBig: 16, body: 14, headingRowH: 84 },
+    step: { cardMaxW: CARD_BASE_W, innerMaxW: 290, headingBig: 48, heading: 36, bodyBig: 16, body: 14, headingRowH: 84, vis: 1 },
   },
 ];
+
 
 const stepFor = (w: number): Step => STEPS.find((s) => w >= s.min)!.step;
 
