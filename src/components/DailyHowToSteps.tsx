@@ -480,6 +480,7 @@ const DailyHowToSteps: React.FC<{
   const drag = useRef<{ x: number; y: number } | null>(null);
 
   const hostRef = useRef<HTMLDivElement>(null);
+  const sz = useStep();
 
 
   useEffect(() => {
@@ -566,7 +567,7 @@ const DailyHowToSteps: React.FC<{
         <div
           style={{
             width: "100%",
-            maxWidth: INNER_MAX_W,
+            maxWidth: sz.innerMaxW,
             flex: "0 0 auto",
 
             display: "flex",
@@ -614,15 +615,15 @@ const DailyHowToSteps: React.FC<{
           <div
             style={{
               width: "100%",
-              maxWidth: INNER_MAX_W,
-              height: HEADING_ROW_H,
+              maxWidth: sz.innerMaxW,
+              height: sz.headingRowH,
               flex: "0 0 auto",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <h2 style={heading(false)}>{s.heading}</h2>
+            <h2 style={heading(false, sz)}>{s.heading}</h2>
           </div>
         )}
 
@@ -630,7 +631,7 @@ const DailyHowToSteps: React.FC<{
         <div
           style={{
             width: "100%",
-            maxWidth: INNER_MAX_W,
+            maxWidth: sz.innerMaxW,
             flex: "1 1 auto",
             minHeight: 0,
             display: "flex",
@@ -640,16 +641,16 @@ const DailyHowToSteps: React.FC<{
             gap: 20,
           }}
         >
-          {s.big ? <h2 style={heading(true)}>{s.heading}</h2> : null}
+          {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
           {s.visual ? <VisualFit>{s.visual}</VisualFit> : null}
-          <p style={{ ...body(!!s.big), flex: "0 0 auto" }}>{s.body}</p>
+          <p style={{ ...body(!!s.big, sz), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
         {/* buttons */}
         <div
           style={{
             width: "100%",
-            maxWidth: INNER_MAX_W,
+            maxWidth: sz.innerMaxW,
             flex: "0 0 auto",
             display: "flex",
             gap: "clamp(16px, 16.5%, 48px)",
@@ -748,8 +749,9 @@ const DailyHowToSteps: React.FC<{
         <div
           style={{
             width: "100%",
-            maxWidth: CARD_MAX_W,
+            maxWidth: sz.cardMaxW,
             height: "100%",
+            maxHeight: Math.round(sz.cardMaxW * CARD_RATIO),
             flex: "0 0 auto",
             position: "relative",
           }}
