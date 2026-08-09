@@ -26,7 +26,6 @@ In the backend's private storage bucket called **`daily-backups`**.
   manifest.json
 ```
 
-- `reports/` holds a copy of each weekly heartbeat summary.
 - Folders older than **30 days** are deleted automatically on each run.
 
 ### Why `.jsonl` and not CSV
@@ -172,5 +171,5 @@ The system was tested end to end on 9 August 2026:
   (22.2 KB total).
 - `daily_results.jsonl` was restored into `daily_results_scratch`:
   3 lines in the file, 3 rows in the table. Match.
-- Weekly summary generated correctly and saved to `reports/`. Delivery is
-  pending the sender domain.
+- The dashboard backup banner reads the same run log and showed the healthy
+  state for that night.
