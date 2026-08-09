@@ -11,6 +11,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
+import DailyPreLaunchSignup from "@/components/DailyPreLaunchSignup";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
 
 import { useDailyGame } from "@/hooks/useDailyGame";
@@ -701,9 +702,14 @@ const DailyReadyScreen: React.FC<{
   streak: number | null;
   /** True when today's run is already complete. */
   played?: boolean;
-  /** Pre-launch gate: no playable puzzle, disabled CTA, email capture instead. */
+  /** Pre-launch gate: no playable puzzle, the CTA opens the signup overlay. */
   gated?: boolean;
-  onSubscribed?: (email: string, restored: boolean) => void;
+  /** Already on the list — the CTA goes quiet and the date line drops. */
+  subscribed?: boolean;
+  /** Opens the pre-launch signup overlay. */
+  onNotify?: () => void;
+  /** So focus can return to the CTA when the overlay closes. */
+  notifyRef?: React.Ref<HTMLButtonElement>;
   mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
@@ -712,7 +718,9 @@ const DailyReadyScreen: React.FC<{
   streak,
   played = false,
   gated = false,
-  onSubscribed,
+  subscribed = false,
+  onNotify,
+  notifyRef,
   mobile = false,
   onPlay,
   onHowToPlay,
@@ -730,21 +738,15 @@ const DailyReadyScreen: React.FC<{
         }}
       >
         {today}
-        {gated && (
-          <div style={{ marginTop: 8 }}>
-            <span
-              style={{
-                ...textStyle("pill", mobile),
-                display: "inline-block",
-                padding: "8px 16px",
-                borderRadius: 999,
-                background: COLORS.panel,
-                border: BORDER.heavy,
-                color: COLORS.ink,
-              }}
-            >
-              {`Launching ${DAILY_LAUNCH_LABEL}`}
-            </span>
+        {gated && !subscribed && (
+          <div
+            style={{
+              ...textStyle("pill", mobile),
+              marginTop: 8,
+              color: COLORS.inkMuted,
+            }}
+          >
+            {`Coming ${DAILY_LAUNCH_LABEL}`}
           </div>
         )}
         {played && (
@@ -806,10 +808,12 @@ const DailyReadyScreen: React.FC<{
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
           type="button"
-          className={gated ? "daily-btn-play" : "ww-press daily-btn-play"}
-          onClick={gated ? undefined : onPlay}
-          disabled={gated}
-          aria-disabled={gated || undefined}
+          ref={notifyRef}
+          data-testid="daily-cta"
+          className={gated && subscribed ? "daily-btn-play" : "ww-press daily-btn-play"}
+          onClick={gated ? (subscribed ? undefined : onNotify) : onPlay}
+          disabled={gated && subscribed}
+          aria-disabled={(gated && subscribed) || undefined}
           style={{
             ...textStyle("action", mobile),
             width: "100%",
@@ -818,23 +822,20 @@ const DailyReadyScreen: React.FC<{
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
             // Existing disabled treatment, same as every other gated control.
-            ...(gated ? { opacity: 0.5, cursor: "default" } : null),
+            ...(gated && subscribed ? { opacity: 0.5, cursor: "default" } : null),
           }}
 
         >
           {gated
-            ? `Launching ${DAILY_LAUNCH_LABEL}`
+            ? subscribed
+              ? `Coming ${DAILY_LAUNCH_LABEL}`
+              : "Get the First Puzzle"
             : played
               ? "See Today's Result"
               : "Play Today's Daily"}
         </button>
       </div>
-      {/* Pre-launch only: an early arrival is exactly the person worth capturing. */}
-      {gated && (
-        <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
-          <DailyEmailCapture source="prelaunch" onSubscribed={onSubscribed} />
-        </div>
-      )}
+
   </DailyFrame>
 
 );
@@ -941,6 +942,9 @@ const DailyPage: React.FC = () => {
   // Which How to Play mode is open: the first-run gate, or the reference chip.
   const [howTo, setHowTo] = useState<"gate" | "reference" | null>(null);
   const [showResult, setShowResult] = useState(false);
+  // Pre-launch only: the signup overlay, opened from the ready-screen CTA.
+  const [preLaunchSignup, setPreLaunchSignup] = useState(false);
+  const notifyRef = React.useRef<HTMLButtonElement>(null);
   // Single entry point for beginning a run: the play CTA and the stepper's
   // Start / Skip / Play controls all route through here.
   const startRun = React.useCallback(() => {
@@ -1291,9 +1295,13 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               played={playedToday}
               gated={daily.preLaunch}
-              onSubscribed={(email) => {
-                markLocal(email);
-                bumpProfile();
+              subscribed={subscribed}
+              notifyRef={notifyRef}
+              onNotify={() => {
+                unlockAudio();
+                setAudioReady(true);
+                hapticTap();
+                setPreLaunchSignup(true);
               }}
               onPlay={() => {
                 // First user gesture on the page: resume the AudioContext and
@@ -1328,6 +1336,18 @@ const DailyPage: React.FC = () => {
                   startRun();
                 }}
                 onClose={() => setHowTo(null)}
+              />
+            )}
+            {preLaunchSignup && (
+              <DailyPreLaunchSignup
+                onClose={() => {
+                  setPreLaunchSignup(false);
+                  notifyRef.current?.focus();
+                }}
+                onSubscribed={(email) => {
+                  markLocal(email);
+                  bumpProfile();
+                }}
               />
             )}
           </>
