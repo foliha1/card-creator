@@ -94,6 +94,8 @@ vi.mock("@/lib/sounds", () => {
     setMusicEnabled: noop,
     setMuted: noop,
     isMuted: noop,
+    getSoundEnabled: () => false,
+    setSoundEnabled: noop,
     hasAudioUnlocked: noop,
     unlockAudio: noop,
     startTheme: noop,
