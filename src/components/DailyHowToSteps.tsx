@@ -127,74 +127,36 @@ const usePhase = (steps: readonly number[], running: boolean): number => {
 };
 
 /**
- * True cross dissolve: the outgoing tree is captured once per key change and
- * fades out while the live children fade in. `instant` skips it entirely.
+ * Decodes a set of images once and reports when they are all ready. Slide 2
+ * flips at 500ms after the card mounts; on the first-run gate the face SVGs are
+ * still in flight then, so the flip showed a blank mid-rotation.
  */
-const CrossFade: React.FC<{
-  k: string | number;
-  ms: number;
-  delay?: number;
-  instant?: boolean;
-  children: React.ReactNode;
-}> = ({ k, ms, delay = 0, instant = false, children }) => {
-  const [outgoing, setOutgoing] = useState<{ k: string | number; node: React.ReactNode } | null>(
-    null,
-  );
-  const [entering, setEntering] = useState(false);
-  const prevKey = useRef(k);
-  const prevNode = useRef<React.ReactNode>(children);
-
-  if (k !== prevKey.current) {
-    if (!instant) {
-      setOutgoing({ k: prevKey.current, node: prevNode.current });
-      setEntering(true);
-    }
-    prevKey.current = k;
-  }
-
+const useImagesReady = (srcs: readonly string[]): boolean => {
+  const [ready, setReady] = useState(false);
+  const key = srcs.join(",");
   useEffect(() => {
-    prevNode.current = children;
-  });
-
-  useEffect(() => {
-    if (instant) return;
-    const raf = requestAnimationFrame(() => setEntering(false));
-    const t = window.setTimeout(() => setOutgoing(null), ms + delay + 40);
+    let cancelled = false;
+    Promise.all(
+      key.split(",").map(
+        (src) =>
+          new Promise<void>((resolve) => {
+            const im = new Image();
+            im.decoding = "async";
+            im.onload = () => resolve();
+            im.onerror = () => resolve();
+            im.src = src;
+          }),
+      ),
+    ).then(() => {
+      if (!cancelled) setReady(true);
+    });
     return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(t);
+      cancelled = true;
     };
-  }, [k, ms, delay, instant]);
-
-  if (instant) return <>{children}</>;
-
-  const layer: React.CSSProperties = {
-    transition: `opacity ${ms}ms ease`,
-    transitionDelay: `${delay}ms`,
-  };
-
-  return (
-    <div style={{ position: "relative", display: "inline-block" }}>
-      {outgoing && (
-        <div
-          key="out"
-          style={{
-            ...layer,
-            position: "absolute",
-            inset: 0,
-            opacity: entering ? 1 : 0,
-            pointerEvents: "none",
-          }}
-        >
-          {outgoing.node}
-        </div>
-      )}
-      <div key="in" style={outgoing ? { ...layer, opacity: entering ? 0 : 1 } : undefined}>
-        {children}
-      </div>
-    </div>
-  );
+  }, [key]);
+  return ready;
 };
+
 
 
 /* ------------------------------------------------------------------ *
