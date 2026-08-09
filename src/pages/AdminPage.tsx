@@ -13,6 +13,24 @@ import type { CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  attributionSection,
+  combinedCsv,
+  difficultySection,
+  downloadFile,
+  exportFilename,
+  funnelSection,
+  headlineSection,
+  howtoSection,
+  listSection,
+  pitchSnapshot,
+  sectionCsv,
+  subscriberCsv,
+  trendSection,
+  type ExportInput,
+  type ExportSection,
+  type SubscriberExportRow,
+} from "@/lib/adminExport";
+import {
   BORDER,
   COLORS,
   FONT_FAMILY,
@@ -276,16 +294,55 @@ const SignInGate: React.FC = () => {
 // dashboard
 // ---------------------------------------------------------------------------
 
-const Card: React.FC<{ title: string; children: React.ReactNode; span?: boolean }> = ({
+/** Small secondary control: never competes with the numbers next to it. */
+const exportButtonStyle: CSSProperties = {
+  ...mono,
+  fontSize: FONT_SIZE["2xs"],
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+  cursor: "pointer",
+  background: "transparent",
+  color: COLORS.inkMuted,
+  border: `1px solid ${COLORS.panelMuted}`,
+  borderRadius: RADIUS.sm,
+  padding: `${SPACE[2]}px ${SPACE[5]}px`,
+  lineHeight: 1.2,
+  whiteSpace: "nowrap",
+};
+
+const ExportButton: React.FC<{ onClick: () => void; label?: string; title?: string }> = ({
+  onClick,
+  label = "CSV",
   title,
-  children,
-  span,
 }) => (
+  <button type="button" onClick={onClick} style={exportButtonStyle} title={title}>
+    ↓ {label}
+  </button>
+);
+
+
+const Card: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  span?: boolean;
+  action?: React.ReactNode;
+}> = ({ title, children, span, action }) => (
   <section style={{ ...cardStyle, gridColumn: span ? "1 / -1" : undefined }}>
-    <h2 style={sectionTitle}>{title}</h2>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: SPACE[5],
+      }}
+    >
+      <h2 style={sectionTitle}>{title}</h2>
+      {action}
+    </div>
     {children}
   </section>
 );
+
 
 /**
  * Headline tile. Deliberately heavier and larger than anything below it: this
@@ -390,6 +447,9 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "denied" | "error">("loading");
   const [trendAll, setTrendAll] = useState(false);
+  const [confirmList, setConfirmList] = useState(false);
+  const [listBusy, setListBusy] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
@@ -432,9 +492,66 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
     void load();
   }, [load]);
 
+  // ---- exports ------------------------------------------------------------
+  // Every CSV is built in the browser from data these RPCs already returned,
+  // so no new surface is exposed and nothing extra is collected.
+  const exportInput = useMemo<ExportInput>(
+    () => ({
+      headline: data?.headline ?? null,
+      funnel: data?.funnel ?? null,
+      difficulty: data?.difficulty ?? [],
+      howto: data?.howto ?? [],
+      attribution: data?.attribution ?? [],
+      trend: data?.trend ?? [],
+      subscribers: data?.subscribers ?? [],
+    }),
+    [data],
+  );
+
+  const exportSection = useCallback(
+    (build: (d: ExportInput) => ExportSection) => {
+      const section = build(exportInput);
+      downloadFile(exportFilename(section.id, from, to), sectionCsv(section));
+    },
+    [exportInput, from, to],
+  );
+
+  const exportHeadline = useCallback(() => exportSection(headlineSection), [exportSection]);
+
+  const exportAll = useCallback(() => {
+    downloadFile(exportFilename("all", from, to), combinedCsv(exportInput, from, to));
+  }, [exportInput, from, to]);
+
+  const exportPitch = useCallback(() => {
+    downloadFile(
+      exportFilename("snapshot", from, to, "md"),
+      pitchSnapshot(exportInput, from, to),
+      "text/markdown;charset=utf-8",
+    );
+  }, [exportInput, from, to]);
+
+  const exportSubscribers = useCallback(async () => {
+    setListBusy(true);
+    setListError(null);
+    const { data: rows, error } = await supabase.rpc("admin_export_subscribers");
+    setListBusy(false);
+    if (error) {
+      setListError("Could not fetch the list. Try again.");
+      return;
+    }
+    const list = (rows as SubscriberExportRow[] | null) ?? [];
+    if (list.length === 0) {
+      setListError("No subscribers returned.");
+      return;
+    }
+    downloadFile(exportFilename("subscribers", from, to), subscriberCsv(list));
+    setConfirmList(false);
+  }, [from, to]);
+
   const signOut = useCallback(() => {
     void supabase.auth.signOut();
   }, []);
+
 
   const header = (
     <header
@@ -508,6 +625,64 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           </p>
         </div>
       ) : null}
+
+      {/* Export controls. The pitch snapshot leads because it is the thing a
+          publisher conversation actually needs; the subscriber list is kept
+          apart because it is personal data and asks before it downloads. */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: SPACE[5] }}>
+        <span style={labelStyle}>Export</span>
+        <ExportButton
+          onClick={exportPitch}
+          label="Pitch snapshot (.md)"
+          title="One-page headline summary to paste into a deck or an email"
+        />
+        <ExportButton onClick={exportAll} label="Everything (.csv)" />
+        <ExportButton onClick={exportHeadline} label="Headline (.csv)" />
+        <span style={{ flex: "1 1 0", minWidth: 0 }} />
+        <button
+          type="button"
+          onClick={() => setConfirmList(true)}
+          style={{ ...exportButtonStyle, color: COLORS.red, borderColor: COLORS.red }}
+        >
+          ↓ Subscriber list (emails)
+        </button>
+      </div>
+
+      {confirmList ? (
+        <div style={{ ...cardStyle, gap: SPACE[6] }}>
+          <h2 style={sectionTitle}>Export subscriber emails?</h2>
+          <p style={{ ...mono, fontSize: FONT_SIZE.xs, color: COLORS.ink, margin: 0 }}>
+            This downloads every subscriber's email address, source, ActiveCampaign sync state and
+            signup time. It is personal data — handle it accordingly. The export is recorded against{" "}
+            {session.user.email}.
+          </p>
+          {listError ? (
+            <span style={{ ...mono, fontSize: FONT_SIZE["2xs"], color: COLORS.red }}>{listError}</span>
+          ) : null}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: SPACE[5] }}>
+            <button
+              type="button"
+              onClick={() => void exportSubscribers()}
+              disabled={listBusy}
+              style={buttonStyle("primary", "sm", { disabled: listBusy })}
+            >
+              {listBusy ? "Preparing…" : "Download the list"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmList(false);
+                setListError(null);
+              }}
+              style={buttonStyle("secondary", "sm")}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+
 
       {(() => {
         const h = data?.headline;
@@ -583,7 +758,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           alignItems: "start",
         }}
       >
-        <Card title="Funnel">
+        <Card title="Funnel" action={<ExportButton onClick={() => exportSection(funnelSection)} />}>
           <Table
             head={["Step", "Count", "% of above"]}
             rows={
@@ -601,7 +776,10 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="Difficulty">
+        <Card
+          title="Difficulty"
+          action={<ExportButton onClick={() => exportSection(difficultySection)} />}
+        >
           <Table
             head={["Round", "Solved", "Failed", "Solve rate", "Avg misses"]}
             rows={(data?.difficulty ?? []).map((r) => [
@@ -614,7 +792,10 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="How to Play">
+        <Card
+          title="How to Play"
+          action={<ExportButton onClick={() => exportSection(howtoSection)} />}
+        >
           <Table
             head={["Step", "Count"]}
             rows={
@@ -635,7 +816,10 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="Attribution">
+        <Card
+          title="Attribution"
+          action={<ExportButton onClick={() => exportSection(attributionSection)} />}
+        >
           <Table
             head={["Referrer", "Visitors"]}
             rows={(data?.attribution ?? [])
@@ -650,7 +834,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="List">
+        <Card title="List" action={<ExportButton onClick={() => exportSection(listSection)} />}>
           <Table
             head={["Source", "Subscribers", "Synced"]}
             rows={(data?.subscribers ?? []).map((r) => [r.source, r.total, r.synced])}
@@ -663,7 +847,11 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
 
         {/* Collapsed to the most recent seven days by default: on a phone an
             inner scroll area inside a page that already scrolls is a trap. */}
-        <Card title="Daily trend" span>
+        <Card
+          title="Daily trend"
+          span
+          action={<ExportButton onClick={() => exportSection(trendSection)} />}
+        >
           {(() => {
             const all = [...(data?.trend ?? [])].reverse(); // newest first
             const rows = (trendAll ? all : all.slice(0, 7)).map((r) => [
