@@ -601,27 +601,17 @@ const DailyHowToSteps: React.FC<{
       >
         <div
           style={{
-            width: CARD_W * scale,
-            height: CARD_H * scale,
+            width: "100%",
+            maxWidth: CARD_MAX_W,
+            height: "100%",
             flex: "0 0 auto",
             position: "relative",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: CARD_W,
-              height: CARD_H,
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-          >
-            {prev && renderSlide(prev.index, false, prev.dir)}
-            <React.Fragment key={step}>{renderSlide(step, true, dir)}</React.Fragment>
-          </div>
+          {prev && renderSlide(prev.index, false, prev.dir)}
+          <React.Fragment key={step}>{renderSlide(step, true, dir)}</React.Fragment>
         </div>
+
       </div>
 
       <DailyShapeRule />
