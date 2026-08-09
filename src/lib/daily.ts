@@ -37,12 +37,26 @@ export function getDailySeed(date: Date = new Date()): string {
  * Days elapsed since launch, starting at 1, counted in whole calendar days.
  * Calendar parts are projected onto UTC midnight before differencing, so DST
  * transitions can never skip or repeat a day.
+ *
+ * Deliberately unclamped: a pre-launch date returns 0 or a negative number so
+ * that no two calendar dates can ever share a puzzle number (a clamp to 1 would
+ * collide with launch day on the `(visitor_id, puzzle_number)` constraint).
+ * Callers use `isPreLaunch` and never play or persist a non-positive number.
  */
 export function getDailyNumber(date: Date = new Date()): number {
   const [y, m, d] = getLocalDateString(date).split("-").map(Number);
   const days = Math.round((Date.UTC(y, m - 1, d) - DAILY_LAUNCH_UTC) / MS_PER_DAY);
-  return Math.max(1, days + 1);
+  return days + 1;
 }
+
+/** Human-readable launch day, used by the pre-launch gate copy. */
+export const DAILY_LAUNCH_LABEL = "11 August";
+
+/** True when the given local date falls before launch day. */
+export function isPreLaunch(date: Date = new Date()): boolean {
+  return getDailyNumber(date) < 1;
+}
+
 
 
 // ---------------------------------------------------------------------------
@@ -70,7 +84,13 @@ export interface DailyContext {
   puzzleNumber: number;
   /** `YYYY-MM-DD` of the effective (possibly shifted) date. */
   dateKey: string;
+  /**
+   * True when the effective date is before launch day, so the daily must not be
+   * played or persisted. Always false under ?debug=1: debug bypasses the gate.
+   */
+  preLaunch: boolean;
 }
+
 
 /** Shift a local calendar date by whole days, DST-safe. */
 function shiftLocalDays(date: Date, days: number): Date {
@@ -99,7 +119,10 @@ export function resolveDailyContext(
     seed: getDailySeed(now),
     puzzleNumber: getDailyNumber(now),
     dateKey: getLocalDateString(now),
+    // Debug bypasses the gate entirely so launch day can be tested early.
+    preLaunch: !debug && isPreLaunch(now),
   };
+
   if (!debug) return base;
 
   // `seed` wins when both are present.

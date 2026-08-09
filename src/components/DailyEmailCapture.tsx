@@ -20,7 +20,7 @@ const bodyStyle: React.CSSProperties = {
  * blocks or gates the result, and a duplicate signup reads as a success.
  */
 const DailyEmailCapture: React.FC<{
-  source?: "daily_result" | "landing";
+  source?: "daily_result" | "landing" | "prelaunch";
   /** Fired after a successful signup so the caller can re-read streak/stats. */
   onSubscribed?: (email: string, restored: boolean) => void;
 }> = ({ source, onSubscribed }) => {

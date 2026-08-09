@@ -139,7 +139,10 @@ Deno.serve(async (req) => {
     typeof body.visitorId === "string" && body.visitorId.trim().length > 0
       ? body.visitorId.trim().slice(0, 128)
       : null;
-  const source = body.source === "landing" ? "landing" : "daily_result";
+  const source =
+    body.source === "landing" || body.source === "prelaunch"
+      ? body.source
+      : "daily_result";
 
   if (email.length === 0 || email.length > 255 || !EMAIL_RE.test(email)) {
     return json({ error: "Invalid email address" }, 400);

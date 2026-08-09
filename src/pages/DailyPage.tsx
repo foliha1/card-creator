@@ -22,7 +22,7 @@ import {
   remainingCount,
   type DailyMark,
 } from "@/lib/dailyEngine";
-import { formatDailyShare, type DailyResult } from "@/lib/daily";
+import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 
@@ -701,10 +701,22 @@ const DailyReadyScreen: React.FC<{
   streak: number | null;
   /** True when today's run is already complete. */
   played?: boolean;
+  /** Pre-launch gate: no playable puzzle, disabled CTA, email capture instead. */
+  gated?: boolean;
+  onSubscribed?: (email: string, restored: boolean) => void;
   mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
-}> = ({ today, streak, played = false, mobile = false, onPlay, onHowToPlay }) => (
+}> = ({
+  today,
+  streak,
+  played = false,
+  gated = false,
+  onSubscribed,
+  mobile = false,
+  onPlay,
+  onHowToPlay,
+}) => (
   <DailyFrame gap={40}>
       <DailyLogoLockup />
 
@@ -718,6 +730,23 @@ const DailyReadyScreen: React.FC<{
         }}
       >
         {today}
+        {gated && (
+          <div style={{ marginTop: 8 }}>
+            <span
+              style={{
+                ...textStyle("pill", mobile),
+                display: "inline-block",
+                padding: "8px 16px",
+                borderRadius: 999,
+                background: COLORS.panel,
+                border: BORDER.heavy,
+                color: COLORS.ink,
+              }}
+            >
+              {`Launching ${DAILY_LAUNCH_LABEL}`}
+            </span>
+          </div>
+        )}
         {played && (
           <div style={{ marginTop: 8 }}>
             <span
@@ -777,8 +806,10 @@ const DailyReadyScreen: React.FC<{
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
           type="button"
-          className="ww-press daily-btn-play"
-          onClick={onPlay}
+          className={gated ? "daily-btn-play" : "ww-press daily-btn-play"}
+          onClick={gated ? undefined : onPlay}
+          disabled={gated}
+          aria-disabled={gated || undefined}
           style={{
             ...textStyle("action", mobile),
             width: "100%",
@@ -786,12 +817,24 @@ const DailyReadyScreen: React.FC<{
             boxSizing: "border-box",
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
+            // Existing disabled treatment, same as every other gated control.
+            ...(gated ? { opacity: 0.5, cursor: "default" } : null),
           }}
 
         >
-          {played ? "See Today's Result" : "Play Today's Daily"}
+          {gated
+            ? `Coming ${DAILY_LAUNCH_LABEL}`
+            : played
+              ? "See Today's Result"
+              : "Play Today's Daily"}
         </button>
       </div>
+      {/* Pre-launch only: an early arrival is exactly the person worth capturing. */}
+      {gated && (
+        <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
+          <DailyEmailCapture source="prelaunch" onSubscribed={onSubscribed} />
+        </div>
+      )}
   </DailyFrame>
 
 );
@@ -1184,12 +1227,12 @@ const DailyPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>{`Daily Game #${daily.puzzleNumber} | WHOOP! WHOOP! — Daily Memory Game`}</title>
+        <title>{daily.preLaunch ? `WHOOP! WHOOP! — Daily Memory Game` : `Daily Game #${daily.puzzleNumber} | WHOOP! WHOOP! — Daily Memory Game`}</title>
         <meta
           name="description"
           content="Play the free WHOOP! WHOOP! daily memory game. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
         />
-        <meta property="og:title" content={`WHOOP! WHOOP! — Daily Memory Game | Daily Game #${daily.puzzleNumber}`} />
+        <meta property="og:title" content={daily.preLaunch ? "WHOOP! WHOOP! — Daily Memory Game" : `WHOOP! WHOOP! — Daily Memory Game | Daily Game #${daily.puzzleNumber}`} />
         <meta
           property="og:description"
           content="Play the free WHOOP! WHOOP! daily memory game. Nine cards, ten seconds, three rounds, two misses a round. A new memory challenge every day—no signup needed."
@@ -1247,6 +1290,11 @@ const DailyPage: React.FC = () => {
               today={today}
               streak={streak?.current ?? null}
               played={playedToday}
+              gated={daily.preLaunch}
+              onSubscribed={(email) => {
+                markLocal(email);
+                bumpProfile();
+              }}
               onPlay={() => {
                 // First user gesture on the page: resume the AudioContext and
                 // kick off the clip decode, or nothing ever plays.
