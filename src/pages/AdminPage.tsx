@@ -507,6 +507,72 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
         </div>
       ) : null}
 
+      {(() => {
+        const h = data?.headline;
+        const n = (v: number | null | undefined) =>
+          typeof v === "number" ? v.toLocaleString() : "—";
+        const MIN = 20; // below this a rate is noise, not a signal
+        return (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: SPACE[6],
+            }}
+          >
+            <Stat
+              label="Total players"
+              value={n(h?.total_players)}
+              note="Distinct visitors, all time"
+            />
+            <Stat
+              label="Daily active"
+              value={n(h?.dau_today)}
+              note={`Today · range avg ${h ? h.dau_avg : "—"}`}
+            />
+            {h && h.returning_pct !== null && h.returning_eligible >= MIN ? (
+              <Stat
+                label="Returning players"
+                value={`${h.returning_pct}%`}
+                note={`Of ${h.returning_eligible.toLocaleString()} players`}
+              />
+            ) : (
+              <Stat
+                label="Returning players"
+                value="Not enough data"
+                note={`Needs ${MIN}+ players · ${h ? h.returning_eligible : 0} so far`}
+                muted
+              />
+            )}
+            {h && h.d7_pct !== null && h.d7_eligible >= MIN ? (
+              <Stat
+                label="Day 7 retention"
+                value={`${h.d7_pct}%`}
+                note={`Of ${h.d7_eligible.toLocaleString()} eligible players`}
+              />
+            ) : (
+              <Stat
+                label="Day 7 retention"
+                value="Not enough data"
+                note={`Needs ${MIN}+ players 7+ days old · ${h ? h.d7_eligible : 0} so far`}
+                muted
+              />
+            )}
+            <Stat label="Email list" value={n(h?.subscribers)} note="Total subscribers" />
+            {h && h.share_rate !== null ? (
+              <Stat
+                label="Share rate"
+                value={`${h.share_rate}%`}
+                note={`${h.shares.toLocaleString()} of ${h.runs_finished.toLocaleString()} runs`}
+              />
+            ) : (
+              <Stat label="Share rate" value="Not enough data" note="No finished runs in range" muted />
+            )}
+          </div>
+        );
+      })()}
+
+
       <div
         style={{
           display: "grid",
