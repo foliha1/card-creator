@@ -1040,6 +1040,67 @@ const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
+/* ------------------------------------------------------------------ *
+ * Optically centres the visual in the space between the bottom of the
+ * fixed heading row and the top of the body copy. The card's column
+ * `gap` only lands above the visual block (there is no matching gap
+ * below it), so the visual is measured and nudged with a transform
+ * until the gap above and below its rendered content match.
+ * ------------------------------------------------------------------ */
+const CenterVisual: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const dyRef = useRef(0);
+  const [dy, setDy] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const mid = el.parentElement;
+    if (!mid) return;
+
+    const measure = () => {
+      const head = mid.previousElementSibling;
+      const p = mid.querySelector(":scope > p");
+      const box = el.firstElementChild;
+      const content = box?.firstElementChild;
+      if (!head || !p || !content) return;
+      const top = head.getBoundingClientRect().bottom;
+      const bottom = p.getBoundingClientRect().top;
+      const c = content.getBoundingClientRect();
+      if (!c.height) return;
+      const delta = (top + bottom) / 2 - (c.top + c.bottom) / 2;
+      if (Math.abs(delta) < 0.5) return;
+      const next = dyRef.current + delta;
+      dyRef.current = next;
+      setDy(next);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    ro.observe(mid);
+    return () => ro.disconnect();
+  });
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        flex: "1 1 auto",
+        minHeight: 0,
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transform: dy ? `translateY(${dy}px)` : undefined,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+
 
 /* ------------------------------------------------------------------ *
  * The eight slides.
@@ -1261,16 +1322,32 @@ const DailyHowToSteps: React.FC<{
             onClick={dismiss}
             aria-label={mode === "gate" ? "Skip how to play and start" : "Close how to play"}
             className="ww-press"
+            data-testid="htp-skip"
             style={{
               ...buttonStyle("secondary", "sm"),
               gap: 4,
               position: "relative",
-              zIndex: 1,
+              zIndex: 3,
             }}
           >
             SKIP
             <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
+            {/* invisible 44px minimum touch target; the visible pill keeps its size */}
+            <span
+              aria-hidden="true"
+              data-testid="htp-skip-hit"
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: "50%",
+                transform: "translateY(-50%)",
+                height: 44,
+                minWidth: 44,
+              }}
+            />
           </button>
+
         </div>
 
         {/* heading row (fixed on slides 2-7 so the heading never moves) */}
@@ -1306,19 +1383,11 @@ const DailyHowToSteps: React.FC<{
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
           {s.visual ? (
-            <div
-              style={{
-                flex: "1 1 auto",
-                minHeight: 0,
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+            <CenterVisual key={`vis-${index}`}>
               <VisualFit>{s.visual(sz, entering)}</VisualFit>
-            </div>
+            </CenterVisual>
           ) : null}
+
           <p
             style={{
               ...body(!!s.big, sz),
