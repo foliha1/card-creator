@@ -1291,9 +1291,13 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               played={playedToday}
               gated={daily.preLaunch}
-              onSubscribed={(email) => {
-                markLocal(email);
-                bumpProfile();
+              subscribed={subscribed}
+              notifyRef={notifyRef}
+              onNotify={() => {
+                unlockAudio();
+                setAudioReady(true);
+                hapticTap();
+                setPreLaunchSignup(true);
               }}
               onPlay={() => {
                 // First user gesture on the page: resume the AudioContext and
