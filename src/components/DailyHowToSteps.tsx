@@ -82,12 +82,15 @@ const T = {
   pair: {
     /** Settled board before the first tap, matching slide 6's lead. */
     lead: 400,
-    selectHold: 200,
-    deselectHold: 300,
+    selectHold: 300,
+    deselectHold: 1000,
     reselectHold: 100,
+    /** The second card sits selected before the pair flips, as in play. */
+    secondHold: 300,
     faceUpHold: 300,
     fade: 300,
   },
+
   /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
    *  windows are the board's own constants. Every beat is separated by a hold
    *  so the loop reads as a demonstration rather than a scramble. */
