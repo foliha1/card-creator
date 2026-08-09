@@ -49,12 +49,15 @@ const T = {
   study: {
     /** One frame at the start of the loop so the in-transition has a from-state. */
     prime: 30,
+    /** Anchor dot at the card end: leads the stroke in, trails it out. */
+    dot: 120,
     in: 500,
     stagger: 100,
-    hold: 500,
+    hold: 2000,
     out: 500,
     rest: 500,
   },
+
   /** Slide 4 — hard cut between the three die examples, plus a landing punch. */
   die: {
     dwell: 2000,
