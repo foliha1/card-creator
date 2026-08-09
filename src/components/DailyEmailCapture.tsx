@@ -137,12 +137,14 @@ const DailyEmailCapture: React.FC<{
           color: RAW.warmBlack,
         }}
       >
-        Get tomorrow's grid.
+        {heading}
       </h2>
-      <p style={bodyStyle}>A new game every morning. Nothing else.</p>
-      <p style={{ ...bodyStyle, fontStyle: "italic" }}>
-        New here, or coming back? Drop in your email.
-      </p>
+      <p style={bodyStyle}>{body}</p>
+      {note && (
+        <p style={{ ...bodyStyle, fontStyle: "italic" }}>
+          {note}
+        </p>
+      )}
 
       <input
         ref={inputRef}
