@@ -14,6 +14,7 @@ import {
   WRONG_ANIM_MS,
 } from "@/lib/animationTiming";
 import {
+  buttonStyle,
   COLORS,
   FONT_FAMILY,
   FONT_FAMILY_UI,
