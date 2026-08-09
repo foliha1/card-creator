@@ -1214,9 +1214,15 @@ const DailyHowToSteps: React.FC<{
 
   useEffect(() => {
     markHowToSeen();
-    trackDaily("howto_opened", { props: { mode } });
+    // The screen cross-fade keeps a copy of the outgoing tree alive for a beat,
+    // which remounts this component; the guard keeps that from double-counting.
+    if (!(lastHowToOpen.mode === mode && Date.now() - lastHowToOpen.at < 2000)) {
+      lastHowToOpen = { mode, at: Date.now() };
+      trackDaily("howto_opened", { props: { mode } });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const go = useCallback(
     (next: number) => {
