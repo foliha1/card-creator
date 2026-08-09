@@ -639,7 +639,10 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="Difficulty">
+        <Card
+          title="Difficulty"
+          action={<ExportButton onClick={() => exportSection(difficultySection)} />}
+        >
           <Table
             head={["Round", "Solved", "Failed", "Solve rate", "Avg misses"]}
             rows={(data?.difficulty ?? []).map((r) => [
