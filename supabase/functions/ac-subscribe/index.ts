@@ -162,6 +162,12 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
+  if (await rateLimited(supabase, clientIp(req))) {
+    return json({ error: "Too many requests" }, 429);
+  }
+
+
+
   // 1. Our database is the source of truth and decides the outcome.
   const { data: saved, error: saveError } = await supabase.rpc("subscribe_daily", {
     p_email: email,
