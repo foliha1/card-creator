@@ -77,7 +77,32 @@ const T = {
     /** Scale punch on the tile only: reads as the die landing. */
     punch: 180,
   },
+  /** Slide 5 — pick, change your mind, pick again, flip. Holds only; the
+   *  selection, flip and fade durations come from animationTiming. */
+  pair: {
+    selectHold: 200,
+    deselectHold: 300,
+    reselectHold: 100,
+    faceUpHold: 300,
+    fade: 300,
+  },
+  /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
+   *  windows are the board's own constants. */
+  match: {
+    firstHold: 220,
+    secondHold: 180,
+    /** All face down again after the refill, before the miss. */
+    restHold: 200,
+    wrongHold: 300,
+  },
+  /** Slide 7 — PEEK press, reveal, hide. */
+  peek: {
+    lead: 100,
+    faceUpHold: 1000,
+    rest: 600,
+  },
 } as const;
+
 
 
 /** Slide 2 stagger spans eight gaps after the first card. */
