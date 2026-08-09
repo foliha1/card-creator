@@ -673,7 +673,10 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="Attribution">
+        <Card
+          title="Attribution"
+          action={<ExportButton onClick={() => exportSection(attributionSection)} />}
+        >
           <Table
             head={["Referrer", "Visitors"]}
             rows={(data?.attribution ?? [])
