@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/lib/theme-context";
 import MultiplayerPage from "./pages/MultiplayerPage.tsx";
 import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
+import AdminPage from "./pages/AdminPage.tsx";
 import TypographyPage from "./pages/TypographyPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -44,6 +45,8 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/play/:roomCode" element={<MultiplayerPage />} />
         <Route path="/today" element={<DailyPage />} />
         <Route path="/about" element={<SupportPage />} />
+        <Route path="/admin" element={<AdminPage />} />
+
         <Route path="/typography" element={<TypographyPage />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
