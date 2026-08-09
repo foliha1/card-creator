@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -210,6 +228,62 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_attribution: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          kind: string
+          source: string
+          visitors: number
+        }[]
+      }
+      admin_difficulty: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          avg_misses: number
+          failed: number
+          round: number
+          solve_rate: number
+          solved: number
+        }[]
+      }
+      admin_funnel: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          ready_viewed: number
+          run_abandoned: number
+          run_finished: number
+          run_started: number
+          shared: number
+          subscribed: number
+        }[]
+      }
+      admin_howto: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          finished: number
+          opened: number
+          skip_count: number
+          skip_slide: number
+          skipped: number
+        }[]
+      }
+      admin_subscribers: {
+        Args: never
+        Returns: {
+          source: string
+          synced: number
+          total: number
+        }[]
+      }
+      admin_trend: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          day: string
+          results_saved: number
+          runs_finished: number
+          runs_started: number
+        }[]
+      }
       create_room: {
         Args: { p_code: string; p_visitor_id: string }
         Returns: {
@@ -289,6 +363,7 @@ export type Database = {
         }[]
       }
       get_subscriber_email: { Args: { p_visitor_id: string }; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       log_daily_events: {
         Args: { p_events: Json; p_visitor_id: string }
         Returns: number
