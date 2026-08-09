@@ -428,6 +428,9 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "denied" | "error">("loading");
   const [trendAll, setTrendAll] = useState(false);
+  const [confirmList, setConfirmList] = useState(false);
+  const [listBusy, setListBusy] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setState("loading");
