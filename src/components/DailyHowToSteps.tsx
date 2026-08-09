@@ -1248,6 +1248,7 @@ const DailyHowToSteps: React.FC<{
                 style={{
                   width: 12.17,
                   height: 12.17,
+                  borderRadius: "50%",
                   background: i === index ? INK : "transparent",
                   border: i === index ? "none" : `2px solid ${INK}`,
                   boxSizing: "border-box",
@@ -1263,10 +1264,12 @@ const DailyHowToSteps: React.FC<{
             style={{
               ...buttonStyle("secondary", "sm"),
               gap: 4,
+              position: "relative",
+              zIndex: 1,
             }}
           >
             SKIP
-            <X size={16} strokeWidth={2} aria-hidden="true" />
+            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
           </button>
         </div>
 
