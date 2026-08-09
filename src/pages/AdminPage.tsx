@@ -145,6 +145,12 @@ const cellStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+/** First column can hold a long referrer host: wrap it rather than overflow. */
+const rowLabelWrapStyle: CSSProperties = {
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
+};
+
 const rowLabelStyle: CSSProperties = {
   ...cellStyle,
   textAlign: "left",
@@ -274,7 +280,12 @@ const Table: React.FC<{ head: string[]; rows: (string | number)[][] }> = ({ head
         {head.map((h, i) => (
           <th
             key={h}
-            style={{ ...labelStyle, textAlign: i === 0 ? "left" : "right", padding: `0 0 ${SPACE[3]}px` }}
+            style={{
+              ...labelStyle,
+              textAlign: i === 0 ? "left" : "right",
+              padding: `0 ${i === 0 ? 0 : SPACE[2]}px ${SPACE[3]}px`,
+              whiteSpace: "normal",
+            }}
           >
             {h}
           </th>
@@ -292,7 +303,14 @@ const Table: React.FC<{ head: string[]; rows: (string | number)[][] }> = ({ head
         rows.map((r, ri) => (
           <tr key={ri}>
             {r.map((c, ci) => (
-              <td key={ci} style={ci === 0 ? rowLabelStyle : cellStyle}>
+              <td
+                key={ci}
+                style={
+                  ci === 0
+                    ? { ...rowLabelStyle, ...rowLabelWrapStyle }
+                    : { ...cellStyle, paddingLeft: SPACE[2] }
+                }
+              >
                 {c}
               </td>
             ))}
