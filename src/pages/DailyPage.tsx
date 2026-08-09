@@ -804,10 +804,12 @@ const DailyReadyScreen: React.FC<{
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
           type="button"
-          className={gated ? "daily-btn-play" : "ww-press daily-btn-play"}
-          onClick={gated ? undefined : onPlay}
-          disabled={gated}
-          aria-disabled={gated || undefined}
+          ref={notifyRef}
+          data-testid="daily-cta"
+          className={gated && subscribed ? "daily-btn-play" : "ww-press daily-btn-play"}
+          onClick={gated ? (subscribed ? undefined : onNotify) : onPlay}
+          disabled={gated && subscribed}
+          aria-disabled={(gated && subscribed) || undefined}
           style={{
             ...textStyle("action", mobile),
             width: "100%",
@@ -816,23 +818,20 @@ const DailyReadyScreen: React.FC<{
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
             // Existing disabled treatment, same as every other gated control.
-            ...(gated ? { opacity: 0.5, cursor: "default" } : null),
+            ...(gated && subscribed ? { opacity: 0.5, cursor: "default" } : null),
           }}
 
         >
           {gated
-            ? `Launching ${DAILY_LAUNCH_LABEL}`
+            ? subscribed
+              ? `Coming ${DAILY_LAUNCH_LABEL}`
+              : "Get the First Puzzle"
             : played
               ? "See Today's Result"
               : "Play Today's Daily"}
         </button>
       </div>
-      {/* Pre-launch only: an early arrival is exactly the person worth capturing. */}
-      {gated && (
-        <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
-          <DailyEmailCapture source="prelaunch" onSubscribed={onSubscribed} />
-        </div>
-      )}
+
   </DailyFrame>
 
 );
