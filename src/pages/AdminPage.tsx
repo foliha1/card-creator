@@ -316,7 +316,9 @@ const Stat: React.FC<{ label: string; value: string; note?: string; muted?: bool
     <span
       style={{
         ...mono,
-        fontSize: 34,
+        // A short number gets the full headline size; the "not enough data"
+        // sentence steps down so a tile never dwarfs its neighbours.
+        fontSize: value.length > 10 ? 20 : 34,
         lineHeight: 1,
         fontWeight: 600,
         color: muted ? COLORS.inkMuted : COLORS.ink,
