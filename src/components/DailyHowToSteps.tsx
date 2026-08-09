@@ -32,6 +32,172 @@ export function markHowToSeen(): void {
 const CARD_BACK = "/cards/card-back.svg";
 
 /* ------------------------------------------------------------------ *
+ * Animation timings. Every loop duration lives here so the sequences
+ * are tunable in one place. Transform and opacity only, everywhere.
+ * ------------------------------------------------------------------ */
+const T = {
+  /** Slide 2 — nine cards flipping face up and back down. */
+  deck: {
+    faceDown: 500,
+    flip: 300,
+    /** Per-card stagger: reads as a deal rather than a strobe. */
+    stagger: 40,
+    faceUp: 1000,
+    hold: 500,
+  },
+  /** Slide 3 — leader lines drawing out with their labels. */
+  study: {
+    /** One frame at the start of the loop so the in-transition has a from-state. */
+    prime: 30,
+    in: 500,
+    stagger: 100,
+    hold: 500,
+    out: 500,
+    rest: 500,
+  },
+  /** Slide 4 — cross dissolve between the three die examples. */
+  die: {
+    dwell: 2000,
+    dissolve: 250,
+    /** The card pair dissolves this far behind the tile label. */
+    pairDelay: 120,
+  },
+} as const;
+
+/** Slide 2 stagger spans eight gaps after the first card. */
+const DECK_FLIP_WINDOW = T.deck.flip + T.deck.stagger * 8;
+/** Slide 3 in/out window: last label starts two staggers late. */
+const STUDY_IN_WINDOW = T.study.in + T.study.stagger * 2;
+const STUDY_OUT_WINDOW = T.study.out + T.study.stagger * 2;
+
+/** `prefers-reduced-motion: reduce` — every loop stops, one static frame. */
+const useReducedMotion = (): boolean => {
+  const [reduce, setReduce] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const on = () => setReduce(mq.matches);
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
+  return reduce;
+};
+
+/** False while the tab is hidden, so nothing loops in the background. */
+const usePageVisible = (): boolean => {
+  const [visible, setVisible] = useState(() =>
+    typeof document === "undefined" ? true : !document.hidden,
+  );
+  useEffect(() => {
+    const on = () => setVisible(!document.hidden);
+    document.addEventListener("visibilitychange", on);
+    return () => document.removeEventListener("visibilitychange", on);
+  }, []);
+  return visible;
+};
+
+/**
+ * Steps through `steps` (durations in ms) forever while `running` is true, and
+ * resets to phase 0 the moment it goes false. One timer per visual, and only
+ * the visual on the visible slide is ever running.
+ */
+const usePhase = (steps: readonly number[], running: boolean): number => {
+  const [phase, setPhase] = useState(0);
+  const key = steps.join(",");
+  useEffect(() => {
+    setPhase(0);
+    if (!running) return;
+    const durations = key.split(",").map(Number);
+    let i = 0;
+    let t = 0;
+    const tick = () => {
+      t = window.setTimeout(() => {
+        i = (i + 1) % durations.length;
+        setPhase(i);
+        tick();
+      }, durations[i]);
+    };
+    tick();
+    return () => window.clearTimeout(t);
+  }, [running, key]);
+  return phase;
+};
+
+/**
+ * True cross dissolve: the outgoing tree is captured once per key change and
+ * fades out while the live children fade in. `instant` skips it entirely.
+ */
+const CrossFade: React.FC<{
+  k: string | number;
+  ms: number;
+  delay?: number;
+  instant?: boolean;
+  children: React.ReactNode;
+}> = ({ k, ms, delay = 0, instant = false, children }) => {
+  const [outgoing, setOutgoing] = useState<{ k: string | number; node: React.ReactNode } | null>(
+    null,
+  );
+  const [entering, setEntering] = useState(false);
+  const prevKey = useRef(k);
+  const prevNode = useRef<React.ReactNode>(children);
+
+  if (k !== prevKey.current) {
+    if (!instant) {
+      setOutgoing({ k: prevKey.current, node: prevNode.current });
+      setEntering(true);
+    }
+    prevKey.current = k;
+  }
+
+  useEffect(() => {
+    prevNode.current = children;
+  });
+
+  useEffect(() => {
+    if (instant) return;
+    const raf = requestAnimationFrame(() => setEntering(false));
+    const t = window.setTimeout(() => setOutgoing(null), ms + delay + 40);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
+  }, [k, ms, delay, instant]);
+
+  if (instant) return <>{children}</>;
+
+  const layer: React.CSSProperties = {
+    transition: `opacity ${ms}ms ease`,
+    transitionDelay: `${delay}ms`,
+  };
+
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      {outgoing && (
+        <div
+          key="out"
+          style={{
+            ...layer,
+            position: "absolute",
+            inset: 0,
+            opacity: entering ? 1 : 0,
+            pointerEvents: "none",
+          }}
+        >
+          {outgoing.node}
+        </div>
+      )}
+      <div key="in" style={outgoing ? { ...layer, opacity: entering ? 0 : 1 } : undefined}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
+/* ------------------------------------------------------------------ *
  * Authored Figma geometry. The card is authored against a 390-wide
  * screen but laid out responsively: widths, padding and gaps are fluid,
  * type stays at its authored size, and only the middle visual shrinks.
