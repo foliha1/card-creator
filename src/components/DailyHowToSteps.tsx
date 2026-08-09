@@ -704,7 +704,7 @@ type Slide = {
   heading: string;
   body: string;
   big?: boolean;
-  visual?: (sz: Step) => React.ReactNode;
+  visual?: (sz: Step, active: boolean) => React.ReactNode;
 };
 
 const SLIDES: Slide[] = [
@@ -718,19 +718,19 @@ const SLIDES: Slide[] = [
     heading: "9 Cards on Deck",
     body:
       "The board starts with nine cards, face down. Then they all flip to reveal the face of each card.",
-    visual: (sz) => backGrid(3, 3, 47.25, 66.15, 8, sz.vis),
+    visual: (sz, active) => <DeckVisual sz={sz} active={active} />,
   },
   {
     heading: "Study, Study, Study",
     body:
       "While the cards are face up, you get 10 seconds to learn the shape, the number, and the color of every card. The die has not rolled yet, so you don't know what really matters.",
-    visual: (sz) => <StudyVisual sz={sz} />,
+    visual: (sz, active) => <StudyVisual sz={sz} active={active} />,
   },
   {
     heading: "The Die Decides",
     body:
       "Shape, number, or color. Whichever face lands is what a match means this round. The die rolls again every round. Same cards, new rule.",
-    visual: (sz) => <DieVisual sz={sz} />,
+    visual: (sz, active) => <DieVisual sz={sz} active={active} />,
   },
   {
     heading: "Find Your Match",
@@ -969,7 +969,7 @@ const DailyHowToSteps: React.FC<{
           }}
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
-          {s.visual ? <VisualFit>{s.visual(sz)}</VisualFit> : null}
+          {s.visual ? <VisualFit>{s.visual(sz, entering)}</VisualFit> : null}
           <p style={{ ...body(!!s.big, sz), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
