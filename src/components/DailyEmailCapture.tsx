@@ -195,7 +195,7 @@ const DailyEmailCapture: React.FC<{
           opacity: status === "sending" ? 0.7 : 1,
         }}
       >
-        Sign me up
+        {submitLabel}
       </button>
       {status === "error" && errorMessage && (
         <p role="alert" style={{ ...bodyStyle, color: RAW.warmBlack, fontStyle: "italic" }}>
