@@ -860,6 +860,10 @@ const DailyReadyScreen: React.FC<{
         </button>
       </div>
 
+      <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
+        <DailyLegalFooter />
+      </div>
+
   </DailyFrame>
 
 );
