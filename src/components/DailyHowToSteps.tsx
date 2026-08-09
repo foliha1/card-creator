@@ -32,12 +32,15 @@ export function markHowToSeen(): void {
 const CARD_BACK = "/cards/card-back.svg";
 
 /* ------------------------------------------------------------------ *
- * Fixed Figma geometry. The card is authored at exactly these numbers
- * and scaled as a whole to fit the viewport, so nothing ever scrolls.
+ * Authored Figma geometry. The card is authored against a 390-wide
+ * screen but laid out responsively: widths, padding and gaps are fluid,
+ * type stays at its authored size, and only the middle visual shrinks.
  * ------------------------------------------------------------------ */
-const CARD_W = 354;
-const CARD_H = 569;
-const INNER_W = 290;
+const CARD_MAX_W = 354;
+const INNER_MAX_W = 290;
+/** Fixed heading row so the heading lands at the same y on slides 2-7. */
+const HEADING_ROW_H = 84;
+
 
 /** The card art is a literal brand artifact: ink and khaki stay literal. */
 const INK = RAW.warmBlack;
@@ -242,6 +245,62 @@ const PeekVisual: React.FC = () => (
 );
 
 /* ------------------------------------------------------------------ *
+ * The visual is the only flexible element: it keeps its authored size
+ * when there is room and shrinks (never grows) when there is not.
+ * ------------------------------------------------------------------ */
+const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [s, setS] = useState(1);
+
+  useEffect(() => {
+    const b = box.current;
+    const i = inner.current;
+    if (!b || !i) return;
+    const measure = () => {
+      const bw = b.clientWidth;
+      const bh = b.clientHeight;
+      const iw = i.offsetWidth;
+      const ih = i.offsetHeight;
+      if (!bw || !bh || !iw || !ih) return;
+      setS(Math.min(1, bw / iw, bh / ih));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(b);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={box}
+      style={{
+        flex: "1 1 auto",
+        minHeight: 0,
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        ref={inner}
+        style={{
+          flex: "0 0 auto",
+          transform: s < 1 ? `scale(${s})` : undefined,
+          transformOrigin: "center center",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+
+/* ------------------------------------------------------------------ *
  * The eight slides.
  * ------------------------------------------------------------------ */
 type Slide = {
@@ -349,22 +408,8 @@ const DailyHowToSteps: React.FC<{
   const [dir, setDir] = useState<1 | -1>(1);
   const drag = useRef<{ x: number; y: number } | null>(null);
 
-  /* Scale the fixed 354x569 card to whatever room the viewport gives us. */
   const hostRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  useEffect(() => {
-    const el = hostRef.current;
-    if (!el) return;
-    const measure = () => {
-      const { width, height } = el.getBoundingClientRect();
-      if (!width || !height) return;
-      setScale(Math.min(1, width / CARD_W, height / CARD_H));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+
 
   useEffect(() => {
     markHowToSeen();
@@ -429,19 +474,19 @@ const DailyHowToSteps: React.FC<{
         className={entering ? "ww-step-in" : "ww-step-out"}
         style={
           {
-            position: entering ? "relative" : "absolute",
-            inset: entering ? undefined : 0,
-            width: CARD_W,
-            height: CARD_H,
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
             background: RAW.khaki,
             borderRadius: RADIUS.sm,
-            padding: "24px 32px 32px",
+            padding: "24px clamp(16px, 9%, 32px) 32px",
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: 24,
+            gap: "clamp(12px, 4%, 24px)",
             "--ww-step-dx": `${d * 24}px`,
           } as React.CSSProperties
         }
@@ -449,7 +494,10 @@ const DailyHowToSteps: React.FC<{
         {/* top row: progress dots + close */}
         <div
           style={{
-            width: INNER_W,
+            width: "100%",
+            maxWidth: INNER_MAX_W,
+            flex: "0 0 auto",
+
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -490,10 +538,28 @@ const DailyHowToSteps: React.FC<{
           </button>
         </div>
 
-        {/* heading + visual + body */}
+        {/* heading row (fixed on slides 2-7 so the heading never moves) */}
+        {s.big ? null : (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: INNER_MAX_W,
+              height: HEADING_ROW_H,
+              flex: "0 0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <h2 style={heading(false)}>{s.heading}</h2>
+          </div>
+        )}
+
+        {/* visual + body share the flexible space */}
         <div
           style={{
-            width: INNER_W,
+            width: "100%",
+            maxWidth: INNER_MAX_W,
             flex: "1 1 auto",
             minHeight: 0,
             display: "flex",
@@ -503,17 +569,22 @@ const DailyHowToSteps: React.FC<{
             gap: 20,
           }}
         >
-          <h2 style={heading(!!s.big)}>{s.heading}</h2>
-          {s.visual ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {s.visual}
-            </div>
-          ) : null}
-          <p style={body(!!s.big)}>{s.body}</p>
+          {s.big ? <h2 style={heading(true)}>{s.heading}</h2> : null}
+          {s.visual ? <VisualFit>{s.visual}</VisualFit> : null}
+          <p style={{ ...body(!!s.big), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
         {/* buttons */}
-        <div style={{ width: INNER_W, display: "flex", gap: 48 }}>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: INNER_MAX_W,
+            flex: "0 0 auto",
+            display: "flex",
+            gap: "clamp(16px, 16.5%, 48px)",
+          }}
+        >
+
           {last ? (
             <button
               type="button"
@@ -598,27 +669,17 @@ const DailyHowToSteps: React.FC<{
       >
         <div
           style={{
-            width: CARD_W * scale,
-            height: CARD_H * scale,
+            width: "100%",
+            maxWidth: CARD_MAX_W,
+            height: "100%",
             flex: "0 0 auto",
             position: "relative",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: CARD_W,
-              height: CARD_H,
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-          >
-            {prev && renderSlide(prev.index, false, prev.dir)}
-            <React.Fragment key={step}>{renderSlide(step, true, dir)}</React.Fragment>
-          </div>
+          {prev && renderSlide(prev.index, false, prev.dir)}
+          <React.Fragment key={step}>{renderSlide(step, true, dir)}</React.Fragment>
         </div>
+
       </div>
 
       <DailyShapeRule />
