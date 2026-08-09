@@ -336,11 +336,15 @@ const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
               width: "100%",
               height: "100%",
               transformStyle: "preserve-3d",
+              // promote to its own layer up front so the first rotation does
+              // not trigger a compositing flash
+              willChange: "transform",
               transform: up ? "rotateY(180deg)" : "rotateY(0deg)",
               transition: reduce ? undefined : `transform ${T.deck.flip}ms ease`,
               transitionDelay: reduce ? undefined : `${i * T.deck.stagger}ms`,
             }}
           >
+
             <img
               src={CARD_BACK}
               alt=""
