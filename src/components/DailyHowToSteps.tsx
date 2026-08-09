@@ -316,34 +316,154 @@ const backGrid = (
 };
 
 /* ------------------------------------------------------------------ *
- * Slide 3 — one card face with leader-lined attribute labels.
+ * Slide 2 — nine cards flipping face up, staggered like a deal, then
+ * flipping back down. Loop: down → flip up → up → flip down → hold.
  * ------------------------------------------------------------------ */
-const StudyVisual: React.FC<{ sz: Step }> = ({ sz }) => {
+const DECK_FACES = [
+  ["/cards/2-circle-red.svg", "Two red circles"],
+  ["/cards/4-star-yellow.svg", "Four orange stars"],
+  ["/cards/1-square-blue.svg", "One blue square"],
+  ["/cards/3-tri-yellow.svg", "Three orange triangles"],
+  ["/cards/2-star-blue.svg", "Two blue stars"],
+  ["/cards/4-square-red.svg", "Four red squares"],
+  ["/cards/1-circle-yellow.svg", "One orange circle"],
+  ["/cards/3-square-blue.svg", "Three blue squares"],
+  ["/cards/2-tri-red.svg", "Two red triangles"],
+] as const;
+
+const DECK_STEPS = [
+  T.deck.faceDown,
+  DECK_FLIP_WINDOW,
+  T.deck.faceUp,
+  DECK_FLIP_WINDOW,
+  T.deck.hold,
+] as const;
+
+const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
+  const reduce = useReducedMotion();
+  const visible = usePageVisible();
+  const phase = usePhase(DECK_STEPS, active && visible && !reduce);
+  // Face up across the flip-up window and the face-up hold.
+  const up = reduce || phase === 1 || phase === 2;
+
+  const w = 47.25 * v;
+  const h = 66.15 * v;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(3, ${w}px)`,
+        gridAutoRows: `${h}px`,
+        gap: 8 * v,
+      }}
+      aria-hidden="true"
+    >
+      {DECK_FACES.map(([src], i) => (
+        <div key={src} style={{ width: w, height: h, perspective: 600 }}>
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              height: "100%",
+              transformStyle: "preserve-3d",
+              transform: up ? "rotateY(180deg)" : "rotateY(0deg)",
+              transition: reduce ? undefined : `transform ${T.deck.flip}ms ease`,
+              transitionDelay: reduce ? undefined : `${i * T.deck.stagger}ms`,
+            }}
+          >
+            <img
+              src={CARD_BACK}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                backfaceVisibility: "hidden",
+              }}
+            />
+            <img
+              src={src}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------------ *
+ * Slide 3 — one card face; the leader lines draw out from the card and
+ * their labels fade in on the same clock, then reverse.
+ * ------------------------------------------------------------------ */
+const STUDY_STEPS = [
+  T.study.prime,
+  STUDY_IN_WINDOW,
+  T.study.hold,
+  STUDY_OUT_WINDOW,
+  T.study.rest,
+] as const;
+
+const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
+  const v = sz.vis;
+  const reduce = useReducedMotion();
+  const pageVisible = usePageVisible();
+  const phase = usePhase(STUDY_STEPS, active && pageVisible && !reduce);
+  const shown = reduce || phase === 1 || phase === 2;
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
       {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132 * v, 184.8 * v)}
       <div style={{ display: "flex", flexDirection: "column", gap: 18 * v }}>
-        {["Number", "Shape", "Color"].map((label) => (
-          <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
-            <span style={{ width: 26 * v, height: 1, background: COLORS.orange, display: "block" }} />
-            <span
-              style={{
-                fontFamily: FONT_FAMILY_UI,
-                fontWeight: FONT_WEIGHT_UI,
-                fontSize: sz.body,
-                lineHeight: 1.2,
-                color: INK,
-              }}
-            >
-              {label}
-            </span>
-          </div>
-        ))}
+        {["Number", "Shape", "Color"].map((label, i) => {
+          const delay = reduce ? 0 : i * T.study.stagger;
+          const dur = shown ? T.study.in : T.study.out;
+          const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
+          return (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
+              <span
+                style={{
+                  width: 26 * v,
+                  height: 1,
+                  background: COLORS.orange,
+                  display: "block",
+                  transformOrigin: "left center",
+                  transform: shown ? "scaleX(1)" : "scaleX(0)",
+                  transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: FONT_FAMILY_UI,
+                  fontWeight: FONT_WEIGHT_UI,
+                  fontSize: sz.body,
+                  lineHeight: 1.2,
+                  color: INK,
+                  opacity: shown ? 1 : 0,
+                  transition: reduce ? undefined : `opacity ${dur}ms ${ease} ${delay}ms`,
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
+
 
 /* ------------------------------------------------------------------ *
  * Slide 4 — the die-decides tile + overlapping pair, cycling through
