@@ -257,6 +257,22 @@ export type Database = {
           subscribed: number
         }[]
       }
+      admin_headline: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          d7_eligible: number
+          d7_pct: number
+          dau_avg: number
+          dau_today: number
+          returning_eligible: number
+          returning_pct: number
+          runs_finished: number
+          share_rate: number
+          shares: number
+          subscribers: number
+          total_players: number
+        }[]
+      }
       admin_howto: {
         Args: { p_from: string; p_to: string }
         Returns: {

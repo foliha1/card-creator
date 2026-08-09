@@ -67,6 +67,19 @@ interface SubscriberRow {
   total: number;
   synced: number;
 }
+interface HeadlineRow {
+  total_players: number;
+  dau_today: number;
+  dau_avg: number;
+  returning_pct: number | null;
+  returning_eligible: number;
+  d7_pct: number | null;
+  d7_eligible: number;
+  subscribers: number;
+  share_rate: number | null;
+  shares: number;
+  runs_finished: number;
+}
 
 interface DashboardData {
   funnel: FunnelRow | null;
@@ -75,6 +88,7 @@ interface DashboardData {
   attribution: AttributionRow[];
   trend: TrendRow[];
   subscribers: SubscriberRow[];
+  headline: HeadlineRow | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +287,54 @@ const Card: React.FC<{ title: string; children: React.ReactNode; span?: boolean 
   </section>
 );
 
+/**
+ * Headline tile. Deliberately heavier and larger than anything below it: this
+ * band is the licensing pitch, the sections underneath are diagnostics.
+ * `note` carries the "not enough data" story so a tile never shows a
+ * misleading zero.
+ */
+const Stat: React.FC<{ label: string; value: string; note?: string; muted?: boolean }> = ({
+  label,
+  value,
+  note,
+  muted,
+}) => (
+  <div
+    style={{
+      boxSizing: "border-box",
+      background: COLORS.surface,
+      border: BORDER.standard,
+      borderRadius: RADIUS.md,
+      padding: SPACE[8],
+      display: "flex",
+      flexDirection: "column",
+      gap: SPACE[3],
+      minWidth: 0,
+    }}
+  >
+    <span style={labelStyle}>{label}</span>
+    <span
+      style={{
+        ...mono,
+        // A short number gets the full headline size; the "not enough data"
+        // sentence steps down so a tile never dwarfs its neighbours.
+        fontSize: value.length > 10 ? 20 : 34,
+        lineHeight: 1,
+        fontWeight: 600,
+        color: muted ? COLORS.inkMuted : COLORS.ink,
+        overflowWrap: "anywhere",
+      }}
+    >
+      {value}
+    </span>
+    {note ? (
+      <span style={{ ...mono, fontSize: FONT_SIZE["2xs"], color: COLORS.inkMuted }}>{note}</span>
+    ) : null}
+  </div>
+);
+
+
+
 const Table: React.FC<{ head: string[]; rows: (string | number)[][] }> = ({ head, rows }) => (
   <table style={{ width: "100%", borderCollapse: "collapse" }}>
     <thead>
@@ -327,18 +389,21 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const [to, setTo] = useState(initial.to);
   const [data, setData] = useState<DashboardData | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "denied" | "error">("loading");
+  const [trendAll, setTrendAll] = useState(false);
 
   const load = useCallback(async () => {
     setState("loading");
     const args = { p_from: from, p_to: to };
-    const [funnel, difficulty, howto, attribution, trend, subscribers] = await Promise.all([
-      supabase.rpc("admin_funnel", args),
-      supabase.rpc("admin_difficulty", args),
-      supabase.rpc("admin_howto", args),
-      supabase.rpc("admin_attribution", args),
-      supabase.rpc("admin_trend", args),
-      supabase.rpc("admin_subscribers"),
-    ]);
+    const [funnel, difficulty, howto, attribution, trend, subscribers, headline] =
+      await Promise.all([
+        supabase.rpc("admin_funnel", args),
+        supabase.rpc("admin_difficulty", args),
+        supabase.rpc("admin_howto", args),
+        supabase.rpc("admin_attribution", args),
+        supabase.rpc("admin_trend", args),
+        supabase.rpc("admin_subscribers"),
+        supabase.rpc("admin_headline", args),
+      ]);
 
     if (funnel.error || difficulty.error) {
       setState("error");
@@ -358,6 +423,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       attribution: (attribution.data as AttributionRow[] | null) ?? [],
       trend: (trend.data as TrendRow[] | null) ?? [],
       subscribers: (subscribers.data as SubscriberRow[] | null) ?? [],
+      headline: (headline.data as HeadlineRow[] | null)?.[0] ?? null,
     });
     setState("ready");
   }, [from, to]);
@@ -442,6 +508,72 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           </p>
         </div>
       ) : null}
+
+      {(() => {
+        const h = data?.headline;
+        const n = (v: number | null | undefined) =>
+          typeof v === "number" ? v.toLocaleString() : "—";
+        const MIN = 20; // below this a rate is noise, not a signal
+        return (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: SPACE[6],
+            }}
+          >
+            <Stat
+              label="Total players"
+              value={n(h?.total_players)}
+              note="Distinct visitors, all time"
+            />
+            <Stat
+              label="Daily active"
+              value={n(h?.dau_today)}
+              note={`Today · range avg ${h ? h.dau_avg : "—"}`}
+            />
+            {h && h.returning_pct !== null && h.returning_eligible >= MIN ? (
+              <Stat
+                label="Returning players"
+                value={`${h.returning_pct}%`}
+                note={`Of ${h.returning_eligible.toLocaleString()} players`}
+              />
+            ) : (
+              <Stat
+                label="Returning players"
+                value="Not enough data"
+                note={`Needs ${MIN}+ players · ${h ? h.returning_eligible : 0} so far`}
+                muted
+              />
+            )}
+            {h && h.d7_pct !== null && h.d7_eligible >= MIN ? (
+              <Stat
+                label="Day 7 retention"
+                value={`${h.d7_pct}%`}
+                note={`Of ${h.d7_eligible.toLocaleString()} eligible players`}
+              />
+            ) : (
+              <Stat
+                label="Day 7 retention"
+                value="Not enough data"
+                note={`Needs ${MIN}+ players 7+ days old · ${h ? h.d7_eligible : 0} so far`}
+                muted
+              />
+            )}
+            <Stat label="Email list" value={n(h?.subscribers)} note="Total subscribers" />
+            {h && h.share_rate !== null ? (
+              <Stat
+                label="Share rate"
+                value={`${h.share_rate}%`}
+                note={`${h.shares.toLocaleString()} of ${h.runs_finished.toLocaleString()} runs`}
+              />
+            ) : (
+              <Stat label="Share rate" value="Not enough data" note="No finished runs in range" muted />
+            )}
+          </div>
+        );
+      })()}
+
 
       <div
         style={{
@@ -529,17 +661,34 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           </span>
         </Card>
 
+        {/* Collapsed to the most recent seven days by default: on a phone an
+            inner scroll area inside a page that already scrolls is a trap. */}
         <Card title="Daily trend" span>
-          <Table
-            head={["Day", "Started", "Finished", "Results saved"]}
-            rows={(data?.trend ?? []).map((r) => [
+          {(() => {
+            const all = [...(data?.trend ?? [])].reverse(); // newest first
+            const rows = (trendAll ? all : all.slice(0, 7)).map((r) => [
               r.day,
               r.runs_started,
               r.runs_finished,
               r.results_saved,
-            ])}
-          />
+            ]);
+            return (
+              <>
+                <Table head={["Day", "Started", "Finished", "Results saved"]} rows={rows} />
+                {all.length > 7 ? (
+                  <button
+                    type="button"
+                    onClick={() => setTrendAll((v) => !v)}
+                    style={buttonStyle("secondary", "sm")}
+                  >
+                    {trendAll ? "Show last 7 days" : `Show all ${all.length} days`}
+                  </button>
+                ) : null}
+              </>
+            );
+          })()}
         </Card>
+
       </div>
     </main>
   );
