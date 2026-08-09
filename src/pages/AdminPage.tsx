@@ -688,7 +688,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           />
         </Card>
 
-        <Card title="List">
+        <Card title="List" action={<ExportButton onClick={() => exportSection(listSection)} />}>
           <Table
             head={["Source", "Subscribers", "Synced"]}
             rows={(data?.subscribers ?? []).map((r) => [r.source, r.total, r.synced])}
@@ -701,7 +701,11 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
 
         {/* Collapsed to the most recent seven days by default: on a phone an
             inner scroll area inside a page that already scrolls is a trap. */}
-        <Card title="Daily trend" span>
+        <Card
+          title="Daily trend"
+          span
+          action={<ExportButton onClick={() => exportSection(trendSection)} />}
+        >
           {(() => {
             const all = [...(data?.trend ?? [])].reverse(); // newest first
             const rows = (trendAll ? all : all.slice(0, 7)).map((r) => [
