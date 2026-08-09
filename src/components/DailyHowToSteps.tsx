@@ -87,14 +87,20 @@ const T = {
     fade: 300,
   },
   /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
-   *  windows are the board's own constants. */
+   *  windows are the board's own constants. Every beat is separated by a hold
+   *  so the loop reads as a demonstration rather than a scramble. */
   match: {
-    firstHold: 220,
-    secondHold: 180,
+    /** Settled board before anything is touched. */
+    lead: 400,
+    firstHold: 350,
+    secondHold: 250,
     /** All face down again after the refill, before the miss. */
-    restHold: 200,
-    wrongHold: 300,
+    restHold: 600,
+    missFirstHold: 350,
+    missSecondHold: 250,
+    wrongHold: 700,
   },
+
   /** Slide 7 — PEEK press, reveal, hide. */
   peek: {
     lead: 100,
