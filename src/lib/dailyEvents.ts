@@ -215,8 +215,13 @@ export function trackDaily(event: DailyEventName, opts: TrackOpts = {}): void {
     getAttribution();
     queue.push({
       event,
+      // Pre-launch days resolve to a non-positive puzzle number; store null
+      // rather than a sentinel so counts never key off a fake puzzle.
       puzzle_number:
-        typeof opts.puzzleNumber === "number" ? opts.puzzleNumber : null,
+        typeof opts.puzzleNumber === "number" && opts.puzzleNumber > 0
+          ? opts.puzzleNumber
+          : null,
+
       props: opts.props && Object.keys(opts.props).length > 0 ? opts.props : null,
     });
     bindLifecycle();
