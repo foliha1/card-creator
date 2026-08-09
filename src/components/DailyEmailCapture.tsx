@@ -53,10 +53,18 @@ const DailyEmailCapture: React.FC<{
   const [restored, setRestored] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const eventSource = source ?? "daily_result";
 
   React.useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
+
+  // Instrumentation only — queued, never awaited, never surfaced.
+  React.useEffect(() => {
+    trackDaily("subscribe_shown", { props: { source: eventSource } });
+  }, [eventSource]);
+
+
 
   const fail = (message: string) => {
     setStatus("error");
