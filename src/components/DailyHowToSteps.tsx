@@ -692,10 +692,13 @@ const PAIR_STEPS = [
   SELECT_ANIM_MS + T.pair.selectHold,
   T.pair.deselectHold,
   SELECT_ANIM_MS + T.pair.reselectHold,
-  SELECT_ANIM_MS,
+  SELECT_ANIM_MS + T.pair.secondHold,
   CARD_FLIP_MS,
   T.pair.faceUpHold,
   T.pair.fade,
+  /** Held invisible while the pair flips back down, so the loop fades in
+   *  already face down rather than flipping in view. */
+  CARD_FLIP_MS,
   T.pair.fade,
 ] as const;
 
@@ -709,6 +712,7 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
   const selLeft = reduce || phase === 1 || phase === 3 || phase === 4;
   const selRight = phase === 4;
   const faceUp = !reduce && phase >= 5 && phase <= 7;
+
   const w = 107.19 * v;
   const h = 150.06 * v;
 
