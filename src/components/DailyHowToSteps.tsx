@@ -400,6 +400,9 @@ const STUDY_ROWS = [
   { label: "Color", lineX: 110, lineY: 95.68, lineW: 45, labelY: 90.68 },
 ] as const;
 const STUDY_LABEL_X = 162;
+/** Anchor dot diameter at scale 1; scaled by `sz.vis` like the rest. */
+const STUDY_DOT = 4;
+
 
 const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
