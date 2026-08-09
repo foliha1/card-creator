@@ -36,14 +36,14 @@ const CARD_BACK = "/cards/card-back.svg";
  * are tunable in one place. Transform and opacity only, everywhere.
  * ------------------------------------------------------------------ */
 const T = {
-  /** Slide 2 — nine cards flipping face up and back down. */
+  /** Slide 2 — nine cards flipping face up and back down (30% slower). */
   deck: {
-    faceDown: 500,
-    flip: 300,
+    faceDown: 650,
+    flip: 390,
     /** Per-card stagger: reads as a deal rather than a strobe. */
-    stagger: 40,
-    faceUp: 1000,
-    hold: 500,
+    stagger: 52,
+    faceUp: 1300,
+    hold: 650,
   },
   /** Slide 3 — leader lines drawing out with their labels. */
   study: {
@@ -55,14 +55,14 @@ const T = {
     out: 500,
     rest: 500,
   },
-  /** Slide 4 — cross dissolve between the three die examples. */
+  /** Slide 4 — hard cut between the three die examples, plus a landing punch. */
   die: {
     dwell: 2000,
-    dissolve: 250,
-    /** The card pair dissolves this far behind the tile label. */
-    pairDelay: 120,
+    /** Scale punch on the tile only: reads as the die landing. */
+    punch: 180,
   },
 } as const;
+
 
 /** Slide 2 stagger spans eight gaps after the first card. */
 const DECK_FLIP_WINDOW = T.deck.flip + T.deck.stagger * 8;
@@ -127,74 +127,36 @@ const usePhase = (steps: readonly number[], running: boolean): number => {
 };
 
 /**
- * True cross dissolve: the outgoing tree is captured once per key change and
- * fades out while the live children fade in. `instant` skips it entirely.
+ * Decodes a set of images once and reports when they are all ready. Slide 2
+ * flips at 500ms after the card mounts; on the first-run gate the face SVGs are
+ * still in flight then, so the flip showed a blank mid-rotation.
  */
-const CrossFade: React.FC<{
-  k: string | number;
-  ms: number;
-  delay?: number;
-  instant?: boolean;
-  children: React.ReactNode;
-}> = ({ k, ms, delay = 0, instant = false, children }) => {
-  const [outgoing, setOutgoing] = useState<{ k: string | number; node: React.ReactNode } | null>(
-    null,
-  );
-  const [entering, setEntering] = useState(false);
-  const prevKey = useRef(k);
-  const prevNode = useRef<React.ReactNode>(children);
-
-  if (k !== prevKey.current) {
-    if (!instant) {
-      setOutgoing({ k: prevKey.current, node: prevNode.current });
-      setEntering(true);
-    }
-    prevKey.current = k;
-  }
-
+const useImagesReady = (srcs: readonly string[]): boolean => {
+  const [ready, setReady] = useState(false);
+  const key = srcs.join(",");
   useEffect(() => {
-    prevNode.current = children;
-  });
-
-  useEffect(() => {
-    if (instant) return;
-    const raf = requestAnimationFrame(() => setEntering(false));
-    const t = window.setTimeout(() => setOutgoing(null), ms + delay + 40);
+    let cancelled = false;
+    Promise.all(
+      key.split(",").map(
+        (src) =>
+          new Promise<void>((resolve) => {
+            const im = new Image();
+            im.decoding = "async";
+            im.onload = () => resolve();
+            im.onerror = () => resolve();
+            im.src = src;
+          }),
+      ),
+    ).then(() => {
+      if (!cancelled) setReady(true);
+    });
     return () => {
-      cancelAnimationFrame(raf);
-      window.clearTimeout(t);
+      cancelled = true;
     };
-  }, [k, ms, delay, instant]);
-
-  if (instant) return <>{children}</>;
-
-  const layer: React.CSSProperties = {
-    transition: `opacity ${ms}ms ease`,
-    transitionDelay: `${delay}ms`,
-  };
-
-  return (
-    <div style={{ position: "relative", display: "inline-block" }}>
-      {outgoing && (
-        <div
-          key="out"
-          style={{
-            ...layer,
-            position: "absolute",
-            inset: 0,
-            opacity: entering ? 1 : 0,
-            pointerEvents: "none",
-          }}
-        >
-          {outgoing.node}
-        </div>
-      )}
-      <div key="in" style={outgoing ? { ...layer, opacity: entering ? 0 : 1 } : undefined}>
-        {children}
-      </div>
-    </div>
-  );
+  }, [key]);
+  return ready;
 };
+
 
 
 /* ------------------------------------------------------------------ *
@@ -339,16 +301,22 @@ const DECK_STEPS = [
   T.deck.hold,
 ] as const;
 
+const DECK_FACE_SRCS = [CARD_BACK, ...DECK_FACES.map(([src]) => src)];
+
 const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
   const reduce = useReducedMotion();
   const visible = usePageVisible();
-  const phase = usePhase(DECK_STEPS, active && visible && !reduce);
+  // Hold the loop until every face has decoded: on the first-run gate the SVGs
+  // are still in flight when the first flip would fire, which showed a blank.
+  const imagesReady = useImagesReady(DECK_FACE_SRCS);
+  const phase = usePhase(DECK_STEPS, active && visible && !reduce && imagesReady);
   // Face up across the flip-up window and the face-up hold.
   const up = reduce || phase === 1 || phase === 2;
 
   const w = 47.25 * v;
   const h = 66.15 * v;
+
 
   return (
     <div
@@ -368,11 +336,15 @@ const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
               width: "100%",
               height: "100%",
               transformStyle: "preserve-3d",
+              // promote to its own layer up front so the first rotation does
+              // not trigger a compositing flash
+              willChange: "transform",
               transform: up ? "rotateY(180deg)" : "rotateY(0deg)",
               transition: reduce ? undefined : `transform ${T.deck.flip}ms ease`,
               transitionDelay: reduce ? undefined : `${i * T.deck.stagger}ms`,
             }}
           >
+
             <img
               src={CARD_BACK}
               alt=""
@@ -415,6 +387,16 @@ const STUDY_STEPS = [
   T.study.rest,
 ] as const;
 
+/** Authored slide-3 geometry (scale 1): container, card, lines, labels. */
+const STUDY_BOX = { w: 215, h: 186 };
+const STUDY_CARD = { x: 0, y: 0.68, w: 132, h: 184.8 };
+const STUDY_ROWS = [
+  { label: "Number", lineX: 34, lineY: 28.18, lineW: 121, labelY: 22.68 },
+  { label: "Shape", lineX: 85, lineY: 61.68, lineW: 70, labelY: 56.68 },
+  { label: "Color", lineX: 110, lineY: 95.68, lineW: 45, labelY: 90.68 },
+] as const;
+const STUDY_LABEL_X = 162;
+
 const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
   const reduce = useReducedMotion();
@@ -423,46 +405,59 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
   const shown = reduce || phase === 1 || phase === 2;
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-      {img("/cards/3-star-blue.svg", "A card showing three blue stars", 132 * v, 184.8 * v)}
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 * v }}>
-        {["Number", "Shape", "Color"].map((label, i) => {
-          const delay = reduce ? 0 : i * T.study.stagger;
-          const dur = shown ? T.study.in : T.study.out;
-          const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
-          return (
-            <div key={label} style={{ display: "flex", alignItems: "center", gap: 6 * v }}>
-              <span
-                style={{
-                  width: 26 * v,
-                  height: 1,
-                  background: COLORS.orange,
-                  display: "block",
-                  transformOrigin: "left center",
-                  transform: shown ? "scaleX(1)" : "scaleX(0)",
-                  transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: FONT_FAMILY_UI,
-                  fontWeight: FONT_WEIGHT_UI,
-                  fontSize: sz.body,
-                  lineHeight: 1.2,
-                  color: INK,
-                  opacity: shown ? 1 : 0,
-                  transition: reduce ? undefined : `opacity ${dur}ms ${ease} ${delay}ms`,
-                }}
-              >
-                {label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ position: "relative", width: STUDY_BOX.w * v, height: STUDY_BOX.h * v }}>
+      {img("/cards/3-star-blue.svg", "A card showing three blue stars", STUDY_CARD.w * v, STUDY_CARD.h * v, {
+        position: "absolute",
+        left: STUDY_CARD.x * v,
+        top: STUDY_CARD.y * v,
+      })}
+      {STUDY_ROWS.map((row, i) => {
+        const delay = reduce ? 0 : i * T.study.stagger;
+        const dur = shown ? T.study.in : T.study.out;
+        const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
+        return (
+          <React.Fragment key={row.label}>
+            <span
+              style={{
+                position: "absolute",
+                left: row.lineX * v,
+                top: row.lineY * v,
+                width: row.lineW * v,
+                height: 1,
+                background: COLORS.orange,
+                display: "block",
+                // above the card artwork
+                zIndex: 1,
+                transformOrigin: "left center",
+                transform: shown ? "scaleX(1)" : "scaleX(0)",
+                transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
+              }}
+            />
+            <span
+              style={{
+                position: "absolute",
+                left: STUDY_LABEL_X * v,
+                top: row.labelY * v,
+                zIndex: 1,
+                fontFamily: FONT_FAMILY_UI,
+                fontWeight: FONT_WEIGHT_UI,
+                fontSize: sz.body,
+                lineHeight: 1.2,
+                color: INK,
+                whiteSpace: "nowrap",
+                opacity: shown ? 1 : 0,
+                transition: reduce ? undefined : `opacity ${dur}ms ${ease} ${delay}ms`,
+              }}
+            >
+              {row.label}
+            </span>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };
+
 
 
 /* ------------------------------------------------------------------ *
@@ -545,34 +540,32 @@ const DieVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
             boxSizing: "border-box",
           }}
         >
-          <CrossFade k={ex.label} ms={T.die.dissolve} instant={reduce}>
-            <span
-              style={{
-                display: "block",
-                fontFamily: FONT_FAMILY,
-                fontWeight: 400,
-                fontSize: 28 * v,
-                lineHeight: 0.9,
-                color: INK,
-                textAlign: "center",
-              }}
-            >
-              {ex.label}
-            </span>
-          </CrossFade>
+          <span
+            key={ex.label}
+            style={{
+              display: "block",
+              fontFamily: FONT_FAMILY,
+              fontWeight: 400,
+              fontSize: 28 * v,
+              lineHeight: 0.9,
+              color: INK,
+              textAlign: "center",
+              // Hard cut, with a small landing punch on the tile only.
+              animation: reduce
+                ? undefined
+                : `ww-die-punch ${T.die.punch}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+            }}
+          >
+            {ex.label}
+          </span>
         </div>
 
-        <CrossFade
-          k={ex.label}
-          ms={T.die.dissolve}
-          delay={T.die.pairDelay}
-          instant={reduce}
-        >
-          <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
-            {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
-            {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
-          </div>
-        </CrossFade>
+        {/* card pair: pure cut, no fade and no delay */}
+        <div style={{ position: "relative", width: CW + OX, height: CH + OY }}>
+          {img(ex.a[0], ex.a[1], CW, CH, { position: "absolute", left: 0, top: 0 })}
+          {img(ex.b[0], ex.b[1], CW, CH, { position: "absolute", left: OX, top: OY })}
+        </div>
+
       </div>
 
 
