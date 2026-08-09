@@ -278,46 +278,28 @@ const body = (big: boolean, sz: Step): React.CSSProperties => ({
   margin: 0,
 });
 
+/** The card art is drawn square: every SVG paints a full-bleed cream
+ *  rectangle, and the only `rx` in the file belongs to the inner colour panel.
+ *  So the rounded edge is always a DOM clip, and the design keeps it
+ *  proportional to card width rather than a fixed px value. */
+const CARD_RADIUS_RATIO = 0.0607;
+/** Corner radius for a card rendered at `w` px wide, at any visual scale. */
+const cardRadius = (w: number) => w * CARD_RADIUS_RATIO;
+
 const img = (src: string, alt: string, w: number, h: number, style?: React.CSSProperties) => (
   <img
     src={src}
     alt={alt}
-    style={{ width: w, height: h, display: "block", objectFit: "contain", ...style }}
+    style={{
+      width: w,
+      height: h,
+      display: "block",
+      objectFit: "contain",
+      borderRadius: cardRadius(w),
+      ...style,
+    }}
   />
 );
-
-/** A grid of card backs at authored dimensions times the visual scale. */
-const backGrid = (
-  cols: number,
-  rows: number,
-  cw: number,
-  ch: number,
-  gap: number,
-  v: number,
-) => {
-  const w = cw * v;
-  const h = ch * v;
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, ${w}px)`,
-        gridAutoRows: `${h}px`,
-        gap: gap * v,
-      }}
-      aria-hidden="true"
-    >
-      {Array.from({ length: cols * rows }).map((_, i) => (
-        <img
-          key={i}
-          src={CARD_BACK}
-          alt=""
-          style={{ width: w, height: h, display: "block" }}
-        />
-      ))}
-    </div>
-  );
-};
 
 /* ------------------------------------------------------------------ *
  * Slide 2 — nine cards flipping face up, staggered like a deal, then
@@ -396,6 +378,7 @@ const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
                 width: "100%",
                 height: "100%",
                 backfaceVisibility: "hidden",
+                borderRadius: cardRadius(w),
               }}
             />
             <img
@@ -407,6 +390,7 @@ const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
                 width: "100%",
                 height: "100%",
                 backfaceVisibility: "hidden",
+                borderRadius: cardRadius(w),
                 transform: "rotateY(180deg)",
               }}
             />
@@ -683,7 +667,7 @@ const slotCard = (
   key?: React.Key,
 ) => (
   <div key={key} style={{ width: w, height: h, position: "relative" }}>
-    <GameCard {...props} fill interactive={false} />
+    <GameCard {...props} fill interactive={false} radius={cardRadius(w)} />
   </div>
 );
 
@@ -791,6 +775,7 @@ const MatchGhostPair: React.FC<{
           stage={stage}
           faceUp={faceUp}
           k={w / 104.333}
+          radius={cardRadius(w)}
           style={{
             position: "absolute",
             left: (slot % 3) * (w + gap),
