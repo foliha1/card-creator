@@ -942,6 +942,9 @@ const DailyPage: React.FC = () => {
   // Which How to Play mode is open: the first-run gate, or the reference chip.
   const [howTo, setHowTo] = useState<"gate" | "reference" | null>(null);
   const [showResult, setShowResult] = useState(false);
+  // Pre-launch only: the signup overlay, opened from the ready-screen CTA.
+  const [preLaunchSignup, setPreLaunchSignup] = useState(false);
+  const notifyRef = React.useRef<HTMLButtonElement>(null);
   // Single entry point for beginning a run: the play CTA and the stepper's
   // Start / Skip / Play controls all route through here.
   const startRun = React.useCallback(() => {
