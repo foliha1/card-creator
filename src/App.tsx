@@ -11,6 +11,9 @@ import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import TypographyPage from "./pages/TypographyPage.tsx";
+import PrivacyPage from "./pages/PrivacyPage.tsx";
+import TermsPage from "./pages/TermsPage.tsx";
+import DebugOnlyRoute from "./components/DebugOnlyRoute.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const FADE_MS = 200;
