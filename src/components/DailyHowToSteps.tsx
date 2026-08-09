@@ -733,11 +733,12 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
         const press = i === 0 ? phase >= 1 && phase <= 3 : phase === 4;
         return (
           <div
-            key={card.id}
+            /* Remount on each new tap so the keyframe replays; the cards are
+             * purely presentational here, so a remount costs nothing. */
+            key={`${card.id}-${press ? phase : "idle"}`}
             className={press ? "ww-card-press" : undefined}
-            /* Restart the press on every new tap, not on unrelated phases. */
-            {...(press ? { "data-press": phase } : {})}
             style={{ width: w, height: h }}
+
           >
             {slotCard(w, h, {
               card,
