@@ -726,14 +726,29 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
         transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
       }}
     >
-      {PAIR_CARDS.map((card, i) =>
-        slotCard(
-          w,
-          h,
-          { card, faceUp, highlighted: i === 0 ? selLeft : selRight },
-          card.id,
-        ),
-      )}
+      {PAIR_CARDS.map((card, i) => {
+        // The push-in reads the tap itself: the left card is touched three
+        // times (select, deselect, reselect), the right one once. Keying on the
+        // phase restarts the keyframe for each press.
+        const press = i === 0 ? phase >= 1 && phase <= 3 : phase === 4;
+        return (
+          <div
+            /* Remount on each new tap so the keyframe replays; the cards are
+             * purely presentational here, so a remount costs nothing. */
+            key={`${card.id}-${press ? phase : "idle"}`}
+            className={press ? "ww-card-press" : undefined}
+            style={{ width: w, height: h }}
+
+          >
+            {slotCard(w, h, {
+              card,
+              faceUp,
+              highlighted: i === 0 ? selLeft : selRight,
+            })}
+          </div>
+        );
+      })}
+
     </div>
   );
 };
