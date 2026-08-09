@@ -246,6 +246,15 @@ export type Database = {
           solved: number
         }[]
       }
+      admin_export_subscribers: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          source: string
+          synced_to_ac: boolean
+        }[]
+      }
       admin_funnel: {
         Args: { p_from: string; p_to: string }
         Returns: {
