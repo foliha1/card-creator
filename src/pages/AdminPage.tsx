@@ -12,7 +12,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import AdminBackupBanner from "@/components/AdminBackupBanner";
 import {
+
   attributionSection,
   combinedCsv,
   difficultySection,
@@ -594,7 +596,11 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
 
   return (
     <main style={pageStyle}>
+      {/* Backup heartbeat first: a failure has to be the thing you see. */}
+      <AdminBackupBanner />
+
       {header}
+
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: SPACE[5] }}>
         <span style={labelStyle}>Range</span>

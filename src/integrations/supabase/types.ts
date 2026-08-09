@@ -347,6 +347,7 @@ export type Database = {
           visitors: number
         }[]
       }
+      admin_backup_status: { Args: never; Returns: Json }
       admin_difficulty: {
         Args: { p_from: string; p_to: string }
         Returns: {

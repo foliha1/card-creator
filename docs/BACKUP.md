@@ -26,7 +26,6 @@ In the backend's private storage bucket called **`daily-backups`**.
   manifest.json
 ```
 
-- `reports/` holds a copy of each weekly heartbeat summary.
 - Folders older than **30 days** are deleted automatically on each run.
 
 ### Why `.jsonl` and not CSV
@@ -47,30 +46,33 @@ is the fastest way to see it.
 | Job | When | What it does |
 | --- | --- | --- |
 | `nightly-backup` | 03:17 UTC every night | Dumps all four tables, writes the manifest, deletes folders older than 30 days, records each table in the `backup_runs` table. |
-| `weekly-backup-report` | 07:30 UTC every Monday | Emails a summary to `hello@whoop-whoop.com`. |
 
-Both are protected by a shared secret (`BACKUP_CRON_SECRET`), so nobody can
-trigger them from outside.
+It is protected by a shared secret (`BACKUP_CRON_SECRET`), so nobody can
+trigger it from outside.
 
 The tables are read in pages of 1,000 rows, so they can keep growing without the
 job running out of memory.
 
-### The weekly email
+### The heartbeat lives on the dashboard, not in your inbox
 
-It is a heartbeat, not a delivery. It contains **no player data and no email
-addresses** — only counts. It says:
+There is no weekly email. `hello@whoop-whoop.com` is a forward, so it can
+receive but not send, and setting up a sending service would mean touching the
+domain's DNS again. Instead, the status sits at the very top of `/admin`:
 
-1. First line: whether any of the last seven nights failed. If something is
-   broken, that is the first thing you read.
-2. Row counts per table now, and the change since last week.
-3. The status of each of the last seven nightly runs.
-4. The size of the most recent dump.
+1. **Healthy** — one quiet grey line, e.g. `Backups healthy. Last run 3 hours ago.`
+2. **Failed or stopped** — a loud red block naming the table and the night that
+   failed. It is the first thing on the page.
+3. **Stale counts as failed** — if the most recent successful run is more than
+   30 hours old, the banner goes red even if nothing reported an error. A job
+   that silently stopped running is the case this check exists to catch.
 
-**One thing is still needed from you:** the email itself needs a sender domain
-you own to be set up before it can send. Until that is done, the summary is
-still generated every week — it is saved into the bucket under `reports/` and
-written to the job logs — it just is not delivered to your inbox. Once the
-sender domain is verified, delivery starts automatically with no code change.
+Press **Detail** to see the last seven nights, the row count per table in the
+latest dump with the change since a week ago, and the dump's size and timestamp.
+
+It contains **no player data and no email addresses** — only counts. It reads
+through the same admin-only database function as the rest of the dashboard, so
+signing out or losing access shows nothing.
+
 
 ## How to restore one table from a dump
 
@@ -145,7 +147,7 @@ Once you are happy, the safety copy can be dropped:
 drop table daily_results_before_restore;
 ```
 
-## How to check the backups are healthy without waiting for the email
+## How to check the backups in SQL
 
 Run this in the backend SQL editor:
 
@@ -169,5 +171,5 @@ The system was tested end to end on 9 August 2026:
   (22.2 KB total).
 - `daily_results.jsonl` was restored into `daily_results_scratch`:
   3 lines in the file, 3 rows in the table. Match.
-- Weekly summary generated correctly and saved to `reports/`. Delivery is
-  pending the sender domain.
+- The dashboard backup banner reads the same run log and showed the healthy
+  state for that night.
