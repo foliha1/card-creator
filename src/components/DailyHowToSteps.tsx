@@ -646,9 +646,16 @@ const DailyHowToSteps: React.FC<{
         alignItems: "center",
         justifyContent: "space-between",
         overflow: "hidden",
+        /* Same 24px frame as DailyFrame: the shape rules must measure the
+           identical width and height here, or the pattern band snaps to a
+           different cell count and appears to shift when this opens. */
+        gap: 24,
+        padding: 24,
+        paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
         "--daily-content-max-width": "402px",
         "--daily-content-padding-x": "24px",
       } as React.CSSProperties}
+
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
     >
