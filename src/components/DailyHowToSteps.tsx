@@ -662,7 +662,7 @@ const DailyHowToSteps: React.FC<{
           }}
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
-          {s.visual ? <VisualFit>{s.visual}</VisualFit> : null}
+          {s.visual ? <VisualFit>{s.visual(sz)}</VisualFit> : null}
           <p style={{ ...body(!!s.big, sz), flex: "0 0 auto" }}>{s.body}</p>
         </div>
 
