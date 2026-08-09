@@ -287,6 +287,52 @@ const Card: React.FC<{ title: string; children: React.ReactNode; span?: boolean 
   </section>
 );
 
+/**
+ * Headline tile. Deliberately heavier and larger than anything below it: this
+ * band is the licensing pitch, the sections underneath are diagnostics.
+ * `note` carries the "not enough data" story so a tile never shows a
+ * misleading zero.
+ */
+const Stat: React.FC<{ label: string; value: string; note?: string; muted?: boolean }> = ({
+  label,
+  value,
+  note,
+  muted,
+}) => (
+  <div
+    style={{
+      boxSizing: "border-box",
+      background: COLORS.surface,
+      border: BORDER.standard,
+      borderRadius: RADIUS.md,
+      padding: SPACE[8],
+      display: "flex",
+      flexDirection: "column",
+      gap: SPACE[3],
+      minWidth: 0,
+    }}
+  >
+    <span style={labelStyle}>{label}</span>
+    <span
+      style={{
+        ...mono,
+        fontSize: 34,
+        lineHeight: 1,
+        fontWeight: 600,
+        color: muted ? COLORS.inkMuted : COLORS.ink,
+        overflowWrap: "anywhere",
+      }}
+    >
+      {value}
+    </span>
+    {note ? (
+      <span style={{ ...mono, fontSize: FONT_SIZE["2xs"], color: COLORS.inkMuted }}>{note}</span>
+    ) : null}
+  </div>
+);
+
+
+
 const Table: React.FC<{ head: string[]; rows: (string | number)[][] }> = ({ head, rows }) => (
   <table style={{ width: "100%", borderCollapse: "collapse" }}>
     <thead>
