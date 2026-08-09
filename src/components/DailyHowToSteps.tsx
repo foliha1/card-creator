@@ -36,20 +36,58 @@ const CARD_BACK = "/cards/card-back.svg";
  * screen but laid out responsively: widths, padding and gaps are fluid,
  * type stays at its authored size, and only the middle visual shrinks.
  * ------------------------------------------------------------------ */
-const CARD_MAX_W = 354;
-const INNER_MAX_W = 290;
-/** Fixed heading row so the heading lands at the same y on slides 2-7. */
-const HEADING_ROW_H = 84;
+/** Authored phone geometry; the card holds this ratio as its maximum. */
+const CARD_BASE_W = 354;
+const CARD_BASE_H = 569;
+const CARD_RATIO = CARD_BASE_H / CARD_BASE_W;
 
+/** Responsive size steps: phone (authored), tablet, desktop. */
+type Step = {
+  cardMaxW: number;
+  innerMaxW: number;
+  headingBig: number;
+  heading: number;
+  bodyBig: number;
+  body: number;
+  headingRowH: number;
+};
+
+const STEPS: { min: number; step: Step }[] = [
+  {
+    min: 1280,
+    step: { cardMaxW: 520, innerMaxW: 426, headingBig: 64, heading: 48, bodyBig: 18, body: 16, headingRowH: 112 },
+  },
+  {
+    min: 768,
+    step: { cardMaxW: 440, innerMaxW: 360, headingBig: 56, heading: 42, bodyBig: 17, body: 15, headingRowH: 98 },
+  },
+  {
+    min: 0,
+    step: { cardMaxW: CARD_BASE_W, innerMaxW: 290, headingBig: 48, heading: 36, bodyBig: 16, body: 14, headingRowH: 84 },
+  },
+];
+
+const stepFor = (w: number): Step => STEPS.find((s) => w >= s.min)!.step;
+
+/** Track the viewport width step (phone / tablet / desktop). */
+const useStep = (): Step => {
+  const [w, setW] = useState(() => (typeof window === "undefined" ? 390 : window.innerWidth));
+  useEffect(() => {
+    const onResize = () => setW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return stepFor(w);
+};
 
 /** The card art is a literal brand artifact: ink and khaki stay literal. */
 const INK = RAW.warmBlack;
 
-const heading = (big: boolean): React.CSSProperties => ({
+const heading = (big: boolean, sz: Step): React.CSSProperties => ({
   fontFamily: FONT_FAMILY,
   fontWeight: 400,
   fontStyle: "normal",
-  fontSize: big ? 48 : 36,
+  fontSize: big ? sz.headingBig : sz.heading,
   lineHeight: 1.05,
   letterSpacing: "-0.01em",
   color: INK,
@@ -57,10 +95,10 @@ const heading = (big: boolean): React.CSSProperties => ({
   margin: 0,
 });
 
-const body = (big: boolean): React.CSSProperties => ({
+const body = (big: boolean, sz: Step): React.CSSProperties => ({
   fontFamily: FONT_FAMILY_UI,
   fontWeight: FONT_WEIGHT_UI,
-  fontSize: big ? 16 : 14,
+  fontSize: big ? sz.bodyBig : sz.body,
   lineHeight: 1.2,
   color: INK,
   textAlign: "center",
