@@ -49,12 +49,15 @@ const T = {
   study: {
     /** One frame at the start of the loop so the in-transition has a from-state. */
     prime: 30,
+    /** Anchor dot at the card end: leads the stroke in, trails it out. */
+    dot: 120,
     in: 500,
     stagger: 100,
-    hold: 500,
+    hold: 2000,
     out: 500,
     rest: 500,
   },
+
   /** Slide 4 — hard cut between the three die examples, plus a landing punch. */
   die: {
     dwell: 2000,
@@ -66,9 +69,10 @@ const T = {
 
 /** Slide 2 stagger spans eight gaps after the first card. */
 const DECK_FLIP_WINDOW = T.deck.flip + T.deck.stagger * 8;
-/** Slide 3 in/out window: last label starts two staggers late. */
-const STUDY_IN_WINDOW = T.study.in + T.study.stagger * 2;
-const STUDY_OUT_WINDOW = T.study.out + T.study.stagger * 2;
+/** Slide 3 in/out window: dot lead/trail plus the stroke, last row two staggers late. */
+const STUDY_IN_WINDOW = T.study.dot + T.study.in + T.study.stagger * 2;
+const STUDY_OUT_WINDOW = T.study.out + T.study.dot + T.study.stagger * 2;
+
 
 /** `prefers-reduced-motion: reduce` — every loop stops, one static frame. */
 const useReducedMotion = (): boolean => {
@@ -396,6 +400,9 @@ const STUDY_ROWS = [
   { label: "Color", lineX: 110, lineY: 95.68, lineW: 45, labelY: 90.68 },
 ] as const;
 const STUDY_LABEL_X = 162;
+/** Anchor dot diameter at scale 1; scaled by `sz.vis` like the rest. */
+const STUDY_DOT = 4;
+
 
 const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
@@ -415,8 +422,30 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
         const delay = reduce ? 0 : i * T.study.stagger;
         const dur = shown ? T.study.in : T.study.out;
         const ease = shown ? "cubic-bezier(0.16, 1, 0.3, 1)" : "ease-in";
+        // In: dot first, stroke behind it. Out: stroke retracts, then the dot.
+        const dotDelay = reduce ? 0 : shown ? delay : delay + T.study.out;
+        const lineDelay = reduce ? 0 : shown ? delay + T.study.dot : delay;
         return (
           <React.Fragment key={row.label}>
+            <span
+              style={{
+                position: "absolute",
+                left: (row.lineX - STUDY_DOT / 2) * v,
+                top: (row.lineY - STUDY_DOT / 2) * v,
+                width: STUDY_DOT * v,
+                height: STUDY_DOT * v,
+                borderRadius: "50%",
+                background: COLORS.orange,
+                display: "block",
+                // above the card artwork, same as the stroke
+                zIndex: 1,
+                opacity: shown ? 1 : 0,
+                transform: shown ? "scale(1)" : "scale(0.4)",
+                transition: reduce
+                  ? undefined
+                  : `opacity ${T.study.dot}ms ${ease} ${dotDelay}ms, transform ${T.study.dot}ms ${ease} ${dotDelay}ms`,
+              }}
+            />
             <span
               style={{
                 position: "absolute",
@@ -430,10 +459,11 @@ const StudyVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) =>
                 zIndex: 1,
                 transformOrigin: "left center",
                 transform: shown ? "scaleX(1)" : "scaleX(0)",
-                transition: reduce ? undefined : `transform ${dur}ms ${ease} ${delay}ms`,
+                transition: reduce ? undefined : `transform ${dur}ms ${ease} ${lineDelay}ms`,
               }}
             />
             <span
+
               style={{
                 position: "absolute",
                 left: STUDY_LABEL_X * v,
