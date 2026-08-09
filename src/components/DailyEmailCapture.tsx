@@ -109,7 +109,9 @@ const DailyEmailCapture: React.FC<{
           textAlign: "center",
         }}
       >
-        {restored ? "Welcome back." : "You're in. See you tomorrow."}
+        {restored
+          ? "Welcome back."
+          : (successMessage ?? "You're in. See you tomorrow.")}
       </p>
     );
   }
