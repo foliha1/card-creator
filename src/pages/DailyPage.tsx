@@ -701,9 +701,12 @@ const DailyReadyScreen: React.FC<{
   streak: number | null;
   /** True when today's run is already complete. */
   played?: boolean;
-  /** Pre-launch gate: no playable puzzle, disabled CTA, email capture instead. */
+  /** Pre-launch gate: no playable puzzle, the CTA opens the signup overlay. */
   gated?: boolean;
-  onSubscribed?: (email: string, restored: boolean) => void;
+  /** Already on the list — the CTA goes quiet and the date line drops. */
+  subscribed?: boolean;
+  /** Opens the pre-launch signup overlay. */
+  onNotify?: () => void;
   mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
@@ -712,7 +715,8 @@ const DailyReadyScreen: React.FC<{
   streak,
   played = false,
   gated = false,
-  onSubscribed,
+  subscribed = false,
+  onNotify,
   mobile = false,
   onPlay,
   onHowToPlay,
