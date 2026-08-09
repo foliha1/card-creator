@@ -969,14 +969,18 @@ const DailyPage: React.FC = () => {
   // Pre-launch only: the signup overlay, opened from the ready-screen CTA.
   const [preLaunchSignup, setPreLaunchSignup] = useState(false);
   const notifyRef = React.useRef<HTMLButtonElement>(null);
+  // Nothing is recorded under ?debug=1, same rule as daily_results.
+  setDailyTrackingEnabled(!daily.debugBypass);
   // Single entry point for beginning a run: the play CTA and the stepper's
   // Start / Skip / Play controls all route through here.
   const startRun = React.useCallback(() => {
     // 600ms cue; the deal lands at 700ms, so it clears cleanly.
     playStart();
+    trackDaily("run_started", { puzzleNumber: daily.puzzleNumber });
     daily.start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [daily.start]);
+  }, [daily.start, daily.puzzleNumber]);
+
   // True while the round intro overlay is up: taps stay locked.
   const [introUp, setIntroUp] = useState(false);
   // Measured card-grid width: the single alignment line for the gameplay screen.
