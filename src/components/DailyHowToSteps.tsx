@@ -691,12 +691,16 @@ const PAIR_IDS = ["star-3-blue", "star-1-blue"] as const;
 const PAIR_CARDS = PAIR_IDS.map(cardById);
 const PAIR_SRCS = [CARD_BACK, ...PAIR_CARDS.map((c) => c.svgPath)];
 
+/** Every tap beat runs for the longer of the select wash and the push-in, then
+ *  holds, so no animation is cut off by the next moment. */
+const PAIR_TAP = Math.max(SELECT_ANIM_MS, T.pair.press);
+
 const PAIR_STEPS = [
   T.pair.lead,
-  SELECT_ANIM_MS + T.pair.selectHold,
-  T.pair.deselectHold,
-  SELECT_ANIM_MS + T.pair.reselectHold,
-  SELECT_ANIM_MS + T.pair.secondHold,
+  PAIR_TAP + T.pair.selectHold,
+  PAIR_TAP + T.pair.deselectHold,
+  PAIR_TAP + T.pair.reselectHold,
+  PAIR_TAP + T.pair.secondHold,
   CARD_FLIP_MS,
   T.pair.faceUpHold,
   T.pair.fade,
@@ -705,6 +709,7 @@ const PAIR_STEPS = [
   CARD_FLIP_MS,
   T.pair.fade,
 ] as const;
+
 
 const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
