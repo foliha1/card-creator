@@ -14,6 +14,7 @@ import TypographyPage from "./pages/TypographyPage.tsx";
 import PrivacyPage from "./pages/PrivacyPage.tsx";
 import TermsPage from "./pages/TermsPage.tsx";
 import DebugOnlyRoute from "./components/DebugOnlyRoute.tsx";
+import BannerPreview from "./pages/BannerPreview.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const FADE_MS = 200;
@@ -48,6 +49,7 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/__banner" element={<BannerPreview />} />
 
         {/* Unfinished routes: 404 in production, live under ?debug=1. */}
         <Route path="/play" element={<DebugOnlyRoute><MultiplayerPage /></DebugOnlyRoute>} />
