@@ -667,7 +667,7 @@ const DailyHowToSteps: React.FC<{
           flex: "1 1 auto",
           minHeight: 0,
           width: "100%",
-          padding: "12px 12px calc(12px + env(safe-area-inset-bottom))",
+          padding: 0,
           boxSizing: "border-box",
           display: "flex",
           alignItems: "center",
