@@ -18,18 +18,43 @@ const bodyStyle: React.CSSProperties = {
 /**
  * Email capture on the daily result screen. Additive by design — it never
  * blocks or gates the result, and a duplicate signup reads as a success.
+ *
+ * The copy is overridable so the pre-launch overlay can speak to its own
+ * situation without duplicating the form, the validation or the AC path.
  */
 const DailyEmailCapture: React.FC<{
   source?: "daily_result" | "landing" | "prelaunch";
   /** Fired after a successful signup so the caller can re-read streak/stats. */
   onSubscribed?: (email: string, restored: boolean) => void;
-}> = ({ source, onSubscribed }) => {
+  heading?: string;
+  body?: string;
+  /** Italic second line. Pass null to drop it. */
+  note?: string | null;
+  submitLabel?: string;
+  /** Shown after a successful signup, in place of the form. */
+  successMessage?: string;
+  /** Focus the field on mount — used when the form opens in an overlay. */
+  autoFocus?: boolean;
+}> = ({
+  source,
+  onSubscribed,
+  heading = "Get tomorrow's grid.",
+  body = "A new game every morning. Nothing else.",
+  note = "New here, or coming back? Drop in your email.",
+  submitLabel = "Sign me up",
+  successMessage,
+  autoFocus = false,
+}) => {
 
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [restored, setRestored] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
 
   const fail = (message: string) => {
     setStatus("error");
