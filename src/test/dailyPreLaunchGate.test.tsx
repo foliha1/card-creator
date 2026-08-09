@@ -184,13 +184,21 @@ describe("gated ready screen", () => {
     vi.unstubAllGlobals();
   });
 
-  it("disables play, keeps How to Play live, and offers the email capture", () => {
+  it("offers a live signup CTA, no inline form, and keeps How to Play live", () => {
     renderPage();
-    const cta = screen.getByRole("button", { name: `Launching ${DAILY_LAUNCH_LABEL}` });
-    expect(cta).toBeDisabled();
+    const cta = screen.getByRole("button", { name: "Get the First Puzzle" });
+    expect(cta).toBeEnabled();
     expect(screen.queryByText(/Play Today's Daily/i)).toBeNull();
     expect(screen.getByRole("button", { name: /How to Play/i })).toBeEnabled();
+    // The email form lives in the overlay only.
+    expect(screen.queryByLabelText("Email address")).toBeNull();
+    cta.click();
+    expect(screen.getByTestId("prelaunch-signup")).toBeTruthy();
     expect(screen.getByLabelText("Email address")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Notify Me" })).toBeTruthy();
+    // Close control dismisses it.
+    screen.getByTestId("prelaunch-close").click();
+    expect(screen.queryByTestId("prelaunch-signup")).toBeNull();
   });
 
   it("never shows the puzzle number before launch", () => {
@@ -201,8 +209,7 @@ describe("gated ready screen", () => {
 
   it("writes nothing to daily_results while gated", () => {
     renderPage();
-    const cta = screen.getByRole("button", { name: `Launching ${DAILY_LAUNCH_LABEL}` });
-    cta.click();
+    screen.getByRole("button", { name: "Get the First Puzzle" }).click();
     vi.advanceTimersByTime(20_000);
     expect(saveDailyResultRemote).not.toHaveBeenCalled();
     expect(
