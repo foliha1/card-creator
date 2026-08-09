@@ -9,7 +9,7 @@
 
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { MemoryRouter } from "react-router-dom";
 
@@ -192,12 +192,12 @@ describe("gated ready screen", () => {
     expect(screen.getByRole("button", { name: /How to Play/i })).toBeEnabled();
     // The email form lives in the overlay only.
     expect(screen.queryByLabelText("Email address")).toBeNull();
-    cta.click();
+    act(() => cta.click());
     expect(screen.getByTestId("prelaunch-signup")).toBeTruthy();
     expect(screen.getByLabelText("Email address")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Notify Me" })).toBeTruthy();
     // Close control dismisses it.
-    screen.getByTestId("prelaunch-close").click();
+    act(() => screen.getByTestId("prelaunch-close").click());
     expect(screen.queryByTestId("prelaunch-signup")).toBeNull();
   });
 
@@ -209,7 +209,7 @@ describe("gated ready screen", () => {
 
   it("writes nothing to daily_results while gated", () => {
     renderPage();
-    screen.getByRole("button", { name: "Get the First Puzzle" }).click();
+    act(() => screen.getByRole("button", { name: "Get the First Puzzle" }).click());
     vi.advanceTimersByTime(20_000);
     expect(saveDailyResultRemote).not.toHaveBeenCalled();
     expect(
