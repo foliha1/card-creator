@@ -411,28 +411,28 @@ const SLIDES: Slide[] = [
     heading: "9 Cards on Deck",
     body:
       "The board starts with nine cards, face down. Then they all flip to reveal the face of each card.",
-    visual: backGrid(3, 3, 47.25, 66.15, 8),
+    visual: (sz) => backGrid(3, 3, 47.25, 66.15, 8, sz.vis),
   },
   {
     heading: "Study, Study, Study",
     body:
       "While the cards are face up, you get 10 seconds to learn the shape, the number, and the color of every card. The die has not rolled yet, so you don't know what really matters.",
-    visual: <StudyVisual />,
+    visual: (sz) => <StudyVisual sz={sz} />,
   },
   {
     heading: "The Die Decides",
     body:
       "Shape, number, or color. Whichever face lands is what a match means this round. The die rolls again every round. Same cards, new rule.",
-    visual: <DieVisual />,
+    visual: (sz) => <DieVisual sz={sz} />,
   },
   {
     heading: "Find Your Match",
     body:
       "Tap a card to pick it. Tap it again to change your mind. Your second tap locks the match.",
-    visual: (
-      <div style={{ display: "flex", gap: 19.8 }} aria-hidden="true">
-        {img(CARD_BACK, "", 107.19, 150.06)}
-        {img(CARD_BACK, "", 107.19, 150.06)}
+    visual: (sz) => (
+      <div style={{ display: "flex", gap: 19.8 * sz.vis }} aria-hidden="true">
+        {img(CARD_BACK, "", 107.19 * sz.vis, 150.06 * sz.vis)}
+        {img(CARD_BACK, "", 107.19 * sz.vis, 150.06 * sz.vis)}
       </div>
     ),
   },
@@ -440,13 +440,14 @@ const SLIDES: Slide[] = [
     heading: "Match or Miss",
     body:
       "Find a match and that pair leaves. Two misses ends the round and all cards stay on the board.",
-    visual: backGrid(3, 3, 47.25, 66.15, 8),
+    visual: (sz) => backGrid(3, 3, 47.25, 66.15, 8, sz.vis),
   },
   {
     heading: "One More Thing",
     body:
       "You have one PEEK per game that shows all remaining cards for five seconds. But know that it shows up in your final results.",
-    visual: <PeekVisual />,
+    visual: (sz) => <PeekVisual sz={sz} />,
+
   },
   {
     heading: "Thats It!",
