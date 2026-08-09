@@ -301,16 +301,22 @@ const DECK_STEPS = [
   T.deck.hold,
 ] as const;
 
+const DECK_FACE_SRCS = [CARD_BACK, ...DECK_FACES.map(([src]) => src)];
+
 const DeckVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => {
   const v = sz.vis;
   const reduce = useReducedMotion();
   const visible = usePageVisible();
-  const phase = usePhase(DECK_STEPS, active && visible && !reduce);
+  // Hold the loop until every face has decoded: on the first-run gate the SVGs
+  // are still in flight when the first flip would fire, which showed a blank.
+  const imagesReady = useImagesReady(DECK_FACE_SRCS);
+  const phase = usePhase(DECK_STEPS, active && visible && !reduce && imagesReady);
   // Face up across the flip-up window and the face-up hold.
   const up = reduce || phase === 1 || phase === 2;
 
   const w = 47.25 * v;
   const h = 66.15 * v;
+
 
   return (
     <div
