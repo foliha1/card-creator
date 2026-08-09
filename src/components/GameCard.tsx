@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CARD_BACK_PATH } from "@/cardData";
 import { COLORS, RADIUS } from "@/lib/tokens";
+import { CARD_FLIP_MS } from "@/lib/animationTiming";
+
 
 interface GameCardProps {
   card: Card;
@@ -156,10 +158,11 @@ const GameCard = ({
           height: "100%",
           position: "relative",
           transformStyle: "preserve-3d",
-          transition: "transform 0.5s cubic-bezier(0.4,0,0.2,1)",
+          transition: `transform ${CARD_FLIP_MS}ms cubic-bezier(0.4,0,0.2,1)`,
           transform: faceUp ? "rotateY(0deg)" : "rotateY(180deg)",
         }}
       >
+
         {/* Front */}
         <div
           style={{

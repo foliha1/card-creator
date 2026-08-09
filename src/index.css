@@ -833,11 +833,22 @@ All colors MUST be HSL.
   }
 }
 
+/* Programmatic form of the press treatment above: same values, no pointer
+   involved. Used by the How to Play PEEK visual so it presses like the real
+   button does. */
+.ww-press-on {
+  transition: transform 200ms ease, filter 200ms ease;
+  transform: scale(0.95);
+  filter: brightness(0.86);
+}
+
 @media (prefers-reduced-motion: reduce) {
   button:active,
   [role="button"]:active,
   .ww-press:active { transform: none; }
+  .ww-press-on { transform: none; }
 }
+
 
 /* ---------------------------------------------------------------------------
    Landing page desktop composition (>= 1024px). Below that, the mobile
