@@ -59,6 +59,48 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_runs: {
+        Row: {
+          bytes: number
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          object_path: string | null
+          row_count: number
+          run_date: string
+          status: string
+          table_name: string
+          updated_at: string
+        }
+        Insert: {
+          bytes?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          object_path?: string | null
+          row_count?: number
+          run_date?: string
+          status?: string
+          table_name: string
+          updated_at?: string
+        }
+        Update: {
+          bytes?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          object_path?: string | null
+          row_count?: number
+          run_date?: string
+          status?: string
+          table_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claim_locks: {
         Row: {
           claim_window: number
@@ -128,6 +170,48 @@ export type Database = {
         Relationships: []
       }
       daily_results: {
+        Row: {
+          created_at: string
+          elapsed_ms: number
+          email: string | null
+          id: string
+          peek_used: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events: Json
+          rounds_solved: number
+          total_misses: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          elapsed_ms?: number
+          email?: string | null
+          id?: string
+          peek_used?: boolean
+          puzzle_date: string
+          puzzle_number: number
+          round_events?: Json
+          rounds_solved?: number
+          total_misses?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          elapsed_ms?: number
+          email?: string | null
+          id?: string
+          peek_used?: boolean
+          puzzle_date?: string
+          puzzle_number?: number
+          round_events?: Json
+          rounds_solved?: number
+          total_misses?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      daily_results_scratch: {
         Row: {
           created_at: string
           elapsed_ms: number
