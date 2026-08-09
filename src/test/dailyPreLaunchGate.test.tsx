@@ -145,12 +145,26 @@ describe("gated ready screen", () => {
       unobserve() {}
       disconnect() {}
     };
+    const frames = new Map<number, ReturnType<typeof setTimeout>>();
+    let nextFrame = 1;
     vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
-      return setTimeout(() => cb(Date.now()), 16) as unknown as number;
+      const id = nextFrame++;
+      frames.set(
+        id,
+        setTimeout(() => {
+          frames.delete(id);
+          cb(Date.now());
+        }, 16)
+      );
+      return id;
     });
-    vi.stubGlobal("cancelAnimationFrame", (id: number) =>
-      clearTimeout(id as unknown as ReturnType<typeof setTimeout>)
-    );
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+      const t = frames.get(id);
+      if (t !== undefined) {
+        clearTimeout(t);
+        frames.delete(id);
+      }
+    });
   });
 
   afterEach(() => {
