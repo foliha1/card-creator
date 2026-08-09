@@ -74,10 +74,11 @@ describe("getDailyNumber", () => {
     expect(getDailyNumber(localDate(2026, 9, 10, 18))).toBe(31);
   });
 
-  it("clamps to 1 for any date before launch", () => {
-    expect(getDailyNumber(localDate(2026, 8, 10))).toBe(1);
-    expect(getDailyNumber(localDate(2026, 8, 9))).toBe(1);
-    expect(getDailyNumber(localDate(2020, 1, 1))).toBe(1);
+  it("never reuses launch day's number for a pre-launch date", () => {
+    // Unclamped by design: a clamp to 1 would collide with launch day.
+    expect(getDailyNumber(localDate(2026, 8, 10))).toBe(0);
+    expect(getDailyNumber(localDate(2026, 8, 9))).toBe(-1);
+    expect(getDailyNumber(localDate(2020, 1, 1))).toBeLessThan(0);
   });
 
 
