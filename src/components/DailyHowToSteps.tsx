@@ -691,17 +691,24 @@ const PAIR_IDS = ["star-3-blue", "star-1-blue"] as const;
 const PAIR_CARDS = PAIR_IDS.map(cardById);
 const PAIR_SRCS = [CARD_BACK, ...PAIR_CARDS.map((c) => c.svgPath)];
 
-/** Every tap beat runs for the longer of the select wash and the push-in, then
- *  holds, so no animation is cut off by the next moment. */
-const PAIR_TAP = Math.max(SELECT_ANIM_MS, T.pair.press);
+/** Each tap is two steps — push in, then release — so the press runs on a
+ *  stable element with a transform transition. Keyframes were remounting the
+ *  card, which replayed the select wash and skipped the flip. */
+const PAIR_PUSH = Math.round(T.pair.press / 2);
+/** The release step also carries the select wash, so it never gets cut. */
+const PAIR_RELEASE = Math.max(PAIR_PUSH, SELECT_ANIM_MS);
 
 const PAIR_STEPS = [
   T.pair.lead,
-  PAIR_TAP + T.pair.selectHold,
-  PAIR_TAP + T.pair.deselectHold,
-  PAIR_TAP + T.pair.reselectHold,
-  PAIR_TAP + T.pair.secondHold,
-  CARD_FLIP_MS,
+  PAIR_PUSH, // 1  push in, first card
+  PAIR_RELEASE + T.pair.selectHold, // 2  released and selected
+  PAIR_PUSH, // 3  push in again
+  PAIR_RELEASE + T.pair.deselectHold, // 4  released, deselected
+  PAIR_PUSH, // 5  push in a third time
+  PAIR_RELEASE + T.pair.reselectHold, // 6  released, selected again
+  PAIR_PUSH, // 7  push in, second card
+  PAIR_RELEASE + T.pair.secondHold, // 8  both selected, held as in play
+  CARD_FLIP_MS, // 9  the pair flips
   T.pair.faceUpHold,
   T.pair.fade,
   /** Held invisible while the pair flips back down, so the loop fades in
@@ -718,9 +725,15 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
   const ready = useImagesReady(PAIR_SRCS);
   const phase = usePhase(PAIR_STEPS, active && visible && !reduce && ready);
 
-  const selLeft = reduce || phase === 1 || phase === 3 || phase === 4;
-  const selRight = phase === 4;
-  const faceUp = !reduce && phase >= 5 && phase <= 7;
+  // The left card is selected from its release step, dropped on the second tap,
+  // and taken again on the third; the right card is selected on its release.
+  const selLeft =
+    reduce || phase === 1 || phase === 2 || (phase >= 5 && phase <= 11);
+  const selRight = phase >= 7 && phase <= 11;
+  const faceUp = !reduce && phase >= 9 && phase <= 11;
+  /** Push-in steps: left card taps at 1, 3, 5; right card at 7. */
+  const pushLeft = phase === 1 || phase === 3 || phase === 5;
+  const pushRight = phase === 7;
 
   const w = 107.19 * v;
   const h = 150.06 * v;
@@ -731,36 +744,34 @@ const PairVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
       style={{
         display: "flex",
         gap: 19.8 * v,
-        opacity: phase === 7 || phase === 8 ? 0 : 1,
+        opacity: phase === 11 || phase === 12 ? 0 : 1,
         transition: reduce ? undefined : `opacity ${T.pair.fade}ms linear`,
       }}
     >
-      {PAIR_CARDS.map((card, i) => {
-        // The push-in reads the tap itself: the left card is touched three
-        // times (select, deselect, reselect), the right one once. Keying on the
-        // phase restarts the keyframe for each press.
-        const press = i === 0 ? phase >= 1 && phase <= 3 : phase === 4;
-        return (
-          <div
-            /* Remount on each new tap so the keyframe replays; the cards are
-             * purely presentational here, so a remount costs nothing. */
-            key={`${card.id}-${press ? phase : "idle"}`}
-            className={press ? "ww-card-press" : undefined}
-            style={{ width: w, height: h }}
-
-          >
-            {slotCard(w, h, {
-              card,
-              faceUp,
-              highlighted: i === 0 ? selLeft : selRight,
-            })}
-          </div>
-        );
-      })}
+      {PAIR_CARDS.map((card, i) => (
+        <div
+          key={card.id}
+          style={{
+            width: w,
+            height: h,
+            transform: `scale(${(i === 0 ? pushLeft : pushRight) ? 0.94 : 1})`,
+            transition: reduce
+              ? undefined
+              : `transform ${PAIR_PUSH}ms cubic-bezier(0.2, 0, 0.2, 1)`,
+          }}
+        >
+          {slotCard(w, h, {
+            card,
+            faceUp,
+            highlighted: i === 0 ? selLeft : selRight,
+          })}
+        </div>
+      ))}
 
     </div>
   );
 };
+
 
 /* ---- Slide 6 — match, ghost, refill, then a miss ------------------------- */
 const MATCH_GRID_IDS = [
