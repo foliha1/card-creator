@@ -96,7 +96,9 @@ const DailyEmailCapture: React.FC<{
       setStatus("done");
       hapticSuccess();
       playSubscribed();
+      trackDaily("subscribe_submitted", { props: { source: eventSource } });
       onSubscribed?.(email.trim().toLowerCase(), returning);
+
     } else {
 
       setStatus("error");
