@@ -470,9 +470,66 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
     void load();
   }, [load]);
 
+  // ---- exports ------------------------------------------------------------
+  // Every CSV is built in the browser from data these RPCs already returned,
+  // so no new surface is exposed and nothing extra is collected.
+  const exportInput = useMemo<ExportInput>(
+    () => ({
+      headline: data?.headline ?? null,
+      funnel: data?.funnel ?? null,
+      difficulty: data?.difficulty ?? [],
+      howto: data?.howto ?? [],
+      attribution: data?.attribution ?? [],
+      trend: data?.trend ?? [],
+      subscribers: data?.subscribers ?? [],
+    }),
+    [data],
+  );
+
+  const exportSection = useCallback(
+    (build: (d: ExportInput) => ExportSection) => {
+      const section = build(exportInput);
+      downloadFile(exportFilename(section.id, from, to), sectionCsv(section));
+    },
+    [exportInput, from, to],
+  );
+
+  const exportHeadline = useCallback(() => exportSection(headlineSection), [exportSection]);
+
+  const exportAll = useCallback(() => {
+    downloadFile(exportFilename("all", from, to), combinedCsv(exportInput, from, to));
+  }, [exportInput, from, to]);
+
+  const exportPitch = useCallback(() => {
+    downloadFile(
+      exportFilename("snapshot", from, to, "md"),
+      pitchSnapshot(exportInput, from, to),
+      "text/markdown;charset=utf-8",
+    );
+  }, [exportInput, from, to]);
+
+  const exportSubscribers = useCallback(async () => {
+    setListBusy(true);
+    setListError(null);
+    const { data: rows, error } = await supabase.rpc("admin_export_subscribers");
+    setListBusy(false);
+    if (error) {
+      setListError("Could not fetch the list. Try again.");
+      return;
+    }
+    const list = (rows as SubscriberExportRow[] | null) ?? [];
+    if (list.length === 0) {
+      setListError("No subscribers returned.");
+      return;
+    }
+    downloadFile(exportFilename("subscribers", from, to), subscriberCsv(list));
+    setConfirmList(false);
+  }, [from, to]);
+
   const signOut = useCallback(() => {
     void supabase.auth.signOut();
   }, []);
+
 
   const header = (
     <header
