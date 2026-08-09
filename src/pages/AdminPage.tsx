@@ -13,6 +13,24 @@ import type { CSSProperties } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  attributionSection,
+  combinedCsv,
+  difficultySection,
+  downloadFile,
+  exportFilename,
+  funnelSection,
+  headlineSection,
+  howtoSection,
+  listSection,
+  pitchSnapshot,
+  sectionCsv,
+  subscriberCsv,
+  trendSection,
+  type ExportInput,
+  type ExportSection,
+  type SubscriberExportRow,
+} from "@/lib/adminExport";
+import {
   BORDER,
   COLORS,
   FONT_FAMILY,
