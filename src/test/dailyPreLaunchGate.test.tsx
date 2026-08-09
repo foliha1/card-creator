@@ -138,6 +138,19 @@ describe("gated ready screen", () => {
     window.localStorage.clear();
     vi.useFakeTimers();
     vi.setSystemTime(localDate(2026, 8, 9, 10));
+    window.history.replaceState({}, "", "/");
+    // jsdom has neither of these.
+    (window as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+      return setTimeout(() => cb(Date.now()), 16) as unknown as number;
+    });
+    vi.stubGlobal("cancelAnimationFrame", (id: number) =>
+      clearTimeout(id as unknown as ReturnType<typeof setTimeout>)
+    );
   });
 
   afterEach(() => {
