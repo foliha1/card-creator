@@ -547,6 +547,64 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
         </div>
       ) : null}
 
+      {/* Export controls. The pitch snapshot leads because it is the thing a
+          publisher conversation actually needs; the subscriber list is kept
+          apart because it is personal data and asks before it downloads. */}
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: SPACE[5] }}>
+        <span style={labelStyle}>Export</span>
+        <ExportButton
+          onClick={exportPitch}
+          label="Pitch snapshot (.md)"
+          title="One-page headline summary to paste into a deck or an email"
+        />
+        <ExportButton onClick={exportAll} label="Everything (.csv)" />
+        <ExportButton onClick={exportHeadline} label="Headline (.csv)" />
+        <span style={{ flex: "1 1 0", minWidth: 0 }} />
+        <button
+          type="button"
+          onClick={() => setConfirmList(true)}
+          style={{ ...exportButtonStyle, color: COLORS.red, borderColor: COLORS.red }}
+        >
+          ↓ Subscriber list (emails)
+        </button>
+      </div>
+
+      {confirmList ? (
+        <div style={{ ...cardStyle, gap: SPACE[6] }}>
+          <h2 style={sectionTitle}>Export subscriber emails?</h2>
+          <p style={{ ...mono, fontSize: FONT_SIZE.xs, color: COLORS.ink, margin: 0 }}>
+            This downloads every subscriber's email address, source, ActiveCampaign sync state and
+            signup time. It is personal data — handle it accordingly. The export is recorded against{" "}
+            {session.user.email}.
+          </p>
+          {listError ? (
+            <span style={{ ...mono, fontSize: FONT_SIZE["2xs"], color: COLORS.red }}>{listError}</span>
+          ) : null}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: SPACE[5] }}>
+            <button
+              type="button"
+              onClick={() => void exportSubscribers()}
+              disabled={listBusy}
+              style={buttonStyle("primary", "sm", { disabled: listBusy })}
+            >
+              {listBusy ? "Preparing…" : "Download the list"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmList(false);
+                setListError(null);
+              }}
+              style={buttonStyle("secondary", "sm")}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+
+
       {(() => {
         const h = data?.headline;
         const n = (v: number | null | undefined) =>
