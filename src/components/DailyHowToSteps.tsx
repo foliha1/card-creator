@@ -13,6 +13,8 @@ import {
   SELECT_ANIM_MS,
   WRONG_ANIM_MS,
 } from "@/lib/animationTiming";
+import { trackDaily } from "@/lib/dailyEvents";
+
 import {
   buttonStyle,
   COLORS,
