@@ -82,14 +82,18 @@ const T = {
   pair: {
     /** Settled board before the first tap, matching slide 6's lead. */
     lead: 400,
+    /** The push-in keyframe (.ww-card-press); longer than the select wash, so
+     *  every tap beat allows this to finish before the next moment starts. */
+    press: 180,
     selectHold: 300,
     deselectHold: 1000,
-    reselectHold: 100,
+    reselectHold: 300,
     /** The second card sits selected before the pair flips, as in play. */
     secondHold: 300,
     faceUpHold: 300,
     fade: 300,
   },
+
 
   /** Slide 6 — a match then a miss. Holds only; the ghost, deal and wrong
    *  windows are the board's own constants. Every beat is separated by a hold
