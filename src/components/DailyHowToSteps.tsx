@@ -82,8 +82,9 @@ const T = {
   pair: {
     /** Settled board before the first tap, matching slide 6's lead. */
     lead: 400,
-    /** The push-in keyframe (.ww-card-press); longer than the select wash, so
-     *  every tap beat allows this to finish before the next moment starts. */
+    /** Full push-in and release; split into two steps so the transform runs on
+     *  a stable element and the select wash is never cut short. */
+
     press: 180,
     selectHold: 300,
     deselectHold: 1000,
