@@ -764,22 +764,13 @@ const DailyReadyScreen: React.FC<{
           type="button"
           className="ww-press daily-btn-howto"
           onClick={onHowToPlay}
-          style={{
-            ...textStyle("chip", mobile),
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            minHeight: 32,
-            padding: "8px 16px",
-            border: "none",
-            borderRadius: RADIUS.sm,
-          }}
+          style={chipButtonBase(mobile)}
         >
           <HelpCircle size={16} aria-hidden="true" />
           How to Play
         </button>
         <DailyThemeToggle mobile={mobile} />
+        <DailySoundToggle mobile={mobile} />
       </div>
 
 
