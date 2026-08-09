@@ -294,6 +294,10 @@ const ShareBlock: React.FC<{
           navigator.canShare?.({ files: [file] })
         ) {
           await navigator.share({ files: [file], text });
+          trackDaily("share_clicked", {
+            puzzleNumber: result.puzzleNumber,
+            props: { method: "image" },
+          });
           return;
         }
       } catch {
@@ -315,10 +319,15 @@ const ShareBlock: React.FC<{
         a.download = `whoop-whoop-${result.puzzleNumber}.png`;
         a.click();
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        trackDaily("share_clicked", {
+          puzzleNumber: result.puzzleNumber,
+          props: { method: "download" },
+        });
       } catch {
         /* download blocked — the text copy below is still useful */
       }
     }
+
     await settleClipboard(copyPromise);
   };
 
