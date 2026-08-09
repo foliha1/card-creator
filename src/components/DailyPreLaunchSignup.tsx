@@ -10,7 +10,7 @@ import React from "react";
 import { X } from "lucide-react";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
 import { DAILY_LAUNCH_LABEL } from "@/lib/daily";
-import { BORDER, COLORS, RAW, RADIUS, SPACE, buttonStyle } from "@/lib/tokens";
+import { BORDER, RAW, RADIUS, SPACE, buttonStyle } from "@/lib/tokens";
 
 const FOCUSABLE =
   'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])';

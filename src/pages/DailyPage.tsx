@@ -730,21 +730,15 @@ const DailyReadyScreen: React.FC<{
         }}
       >
         {today}
-        {gated && (
-          <div style={{ marginTop: 8 }}>
-            <span
-              style={{
-                ...textStyle("pill", mobile),
-                display: "inline-block",
-                padding: "8px 16px",
-                borderRadius: 999,
-                background: COLORS.panel,
-                border: BORDER.heavy,
-                color: COLORS.ink,
-              }}
-            >
-              {`Launching ${DAILY_LAUNCH_LABEL}`}
-            </span>
+        {gated && !subscribed && (
+          <div
+            style={{
+              ...textStyle("pill", mobile),
+              marginTop: 8,
+              color: COLORS.inkMuted,
+            }}
+          >
+            {`Coming ${DAILY_LAUNCH_LABEL}`}
           </div>
         )}
         {played && (
