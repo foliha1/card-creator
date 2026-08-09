@@ -117,7 +117,7 @@ const AdminBackupBanner: React.FC<{ status?: BackupStatus | null }> = ({ status 
   const detailStyle: CSSProperties = {
     ...mono,
     fontSize: FONT_SIZE["2xs"],
-    color: bad ? COLORS.cream : COLORS.inkMuted,
+    color: bad ? COLORS.offWhite : COLORS.inkMuted,
     margin: 0,
   };
 
@@ -156,7 +156,7 @@ const AdminBackupBanner: React.FC<{ status?: BackupStatus | null }> = ({ status 
           fontSize: bad ? FONT_SIZE.sm : FONT_SIZE["2xs"],
           letterSpacing: bad ? "0" : "0.04em",
           textTransform: bad ? "none" : "uppercase",
-          color: bad ? COLORS.cream : COLORS.inkMuted,
+          color: bad ? COLORS.offWhite : COLORS.inkMuted,
           flex: "1 1 auto",
           minWidth: 0,
         }}
@@ -171,8 +171,8 @@ const AdminBackupBanner: React.FC<{ status?: BackupStatus | null }> = ({ status 
           ...mono,
           fontSize: FONT_SIZE["2xs"],
           background: "transparent",
-          color: bad ? COLORS.cream : COLORS.inkMuted,
-          border: `1px solid ${bad ? COLORS.cream : COLORS.panelMuted}`,
+          color: bad ? COLORS.offWhite : COLORS.inkMuted,
+          border: `1px solid ${bad ? COLORS.offWhite : COLORS.panelMuted}`,
           borderRadius: RADIUS.sm,
           padding: `2px ${SPACE[4]}px`,
           cursor: "pointer",
