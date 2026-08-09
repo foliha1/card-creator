@@ -1334,6 +1334,18 @@ const DailyPage: React.FC = () => {
                 onClose={() => setHowTo(null)}
               />
             )}
+            {preLaunchSignup && (
+              <DailyPreLaunchSignup
+                onClose={() => {
+                  setPreLaunchSignup(false);
+                  notifyRef.current?.focus();
+                }}
+                onSubscribed={(email) => {
+                  markLocal(email);
+                  bumpProfile();
+                }}
+              />
+            )}
           </>
         )}
         {!ready && (
