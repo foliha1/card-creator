@@ -345,14 +345,16 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const load = useCallback(async () => {
     setState("loading");
     const args = { p_from: from, p_to: to };
-    const [funnel, difficulty, howto, attribution, trend, subscribers] = await Promise.all([
-      supabase.rpc("admin_funnel", args),
-      supabase.rpc("admin_difficulty", args),
-      supabase.rpc("admin_howto", args),
-      supabase.rpc("admin_attribution", args),
-      supabase.rpc("admin_trend", args),
-      supabase.rpc("admin_subscribers"),
-    ]);
+    const [funnel, difficulty, howto, attribution, trend, subscribers, headline] =
+      await Promise.all([
+        supabase.rpc("admin_funnel", args),
+        supabase.rpc("admin_difficulty", args),
+        supabase.rpc("admin_howto", args),
+        supabase.rpc("admin_attribution", args),
+        supabase.rpc("admin_trend", args),
+        supabase.rpc("admin_subscribers"),
+        supabase.rpc("admin_headline", args),
+      ]);
 
     if (funnel.error || difficulty.error) {
       setState("error");
@@ -372,6 +374,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       attribution: (attribution.data as AttributionRow[] | null) ?? [],
       trend: (trend.data as TrendRow[] | null) ?? [],
       subscribers: (subscribers.data as SubscriberRow[] | null) ?? [],
+      headline: (headline.data as HeadlineRow[] | null)?.[0] ?? null,
     });
     setState("ready");
   }, [from, to]);
