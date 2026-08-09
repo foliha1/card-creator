@@ -36,14 +36,14 @@ const CARD_BACK = "/cards/card-back.svg";
  * are tunable in one place. Transform and opacity only, everywhere.
  * ------------------------------------------------------------------ */
 const T = {
-  /** Slide 2 — nine cards flipping face up and back down. */
+  /** Slide 2 — nine cards flipping face up and back down (30% slower). */
   deck: {
-    faceDown: 500,
-    flip: 300,
+    faceDown: 650,
+    flip: 390,
     /** Per-card stagger: reads as a deal rather than a strobe. */
-    stagger: 40,
-    faceUp: 1000,
-    hold: 500,
+    stagger: 52,
+    faceUp: 1300,
+    hold: 650,
   },
   /** Slide 3 — leader lines drawing out with their labels. */
   study: {
@@ -55,14 +55,14 @@ const T = {
     out: 500,
     rest: 500,
   },
-  /** Slide 4 — cross dissolve between the three die examples. */
+  /** Slide 4 — hard cut between the three die examples, plus a landing punch. */
   die: {
     dwell: 2000,
-    dissolve: 250,
-    /** The card pair dissolves this far behind the tile label. */
-    pairDelay: 120,
+    /** Scale punch on the tile only: reads as the die landing. */
+    punch: 180,
   },
 } as const;
+
 
 /** Slide 2 stagger spans eight gaps after the first card. */
 const DECK_FLIP_WINDOW = T.deck.flip + T.deck.stagger * 8;
