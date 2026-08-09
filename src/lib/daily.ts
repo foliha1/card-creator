@@ -6,8 +6,9 @@
 
 import { DAILY_ROUNDS, type DailyMark } from "@/lib/dailyEngine";
 
-/** Fixed launch day. Puzzle #1 is the local calendar date 2026-08-01. */
-export const DAILY_LAUNCH_UTC = Date.UTC(2026, 7, 1); // 2026-08-01
+/** Fixed launch day. Puzzle #1 is the local calendar date 2026-08-11. */
+export const DAILY_LAUNCH_UTC = Date.UTC(2026, 7, 11); // 2026-08-11
+
 
 const MS_PER_DAY = 86_400_000;
 
