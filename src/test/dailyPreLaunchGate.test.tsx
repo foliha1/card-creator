@@ -119,6 +119,13 @@ vi.mock("@/lib/sounds", () => {
   };
 });
 
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: {
+    rpc: () => Promise.resolve({ data: null, error: null }),
+    functions: { invoke: () => Promise.resolve({ data: { ok: true }, error: null }) },
+  },
+}));
+
 vi.mock("lottie-react", () => ({ default: () => null }));
 
 import DailyPage from "@/pages/DailyPage";
