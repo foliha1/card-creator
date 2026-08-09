@@ -829,7 +829,7 @@ const DailyReadyScreen: React.FC<{
           {gated
             ? subscribed
               ? `Coming ${DAILY_LAUNCH_LABEL}`
-              : "Get the First Puzzle"
+              : "Get the First Daily"
             : played
               ? "See Today's Result"
               : "Play Today's Daily"}
