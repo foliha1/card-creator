@@ -147,7 +147,7 @@ Once you are happy, the safety copy can be dropped:
 drop table daily_results_before_restore;
 ```
 
-## How to check the backups are healthy without waiting for the email
+## How to check the backups in SQL
 
 Run this in the backend SQL editor:
 
