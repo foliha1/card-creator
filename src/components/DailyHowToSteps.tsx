@@ -1166,7 +1166,7 @@ const DailyHowToSteps: React.FC<{
 
   useEffect(() => {
     if (!prev) return;
-    const t = window.setTimeout(() => setPrev(null), 260);
+    const t = window.setTimeout(() => setPrev(null), 340);
     return () => window.clearTimeout(t);
   }, [prev]);
 
@@ -1225,7 +1225,7 @@ const DailyHowToSteps: React.FC<{
             alignItems: "center",
             justifyContent: "space-between",
             gap: "clamp(12px, 4%, 24px)",
-            "--ww-step-dx": `${d * 24}px`,
+            "--ww-step-dx": `${d * 32}px`,
           } as React.CSSProperties
         }
       >
@@ -1290,7 +1290,7 @@ const DailyHowToSteps: React.FC<{
           </div>
         )}
 
-        {/* visual + body share the flexible space */}
+        {/* visual is centered in the space between the headline and body copy */}
         <div
           style={{
             width: "100%",
@@ -1300,12 +1300,25 @@ const DailyHowToSteps: React.FC<{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            gap: 20,
+            justifyContent: s.visual ? "space-between" : "center",
+            gap: s.visual ? 0 : 20,
           }}
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
-          {s.visual ? <VisualFit>{s.visual(sz, entering)}</VisualFit> : null}
+          {s.visual ? (
+            <div
+              style={{
+                flex: "1 1 auto",
+                minHeight: 0,
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <VisualFit>{s.visual(sz, entering)}</VisualFit>
+            </div>
+          ) : null}
           <p
             style={{
               ...body(!!s.big, sz),

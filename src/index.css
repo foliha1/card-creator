@@ -395,29 +395,35 @@ All colors MUST be HSL.
 }
 
 /* ── How to Play stepper ──
-   Cards cross-fade and slide, transform + opacity only, never `all`.
+   Slides push across with a soft fade and a hint of depth. The incoming
+   layer stacks above the outgoing so the motion reads as one card replacing
+   another, not two ghosting through each other. Transform + opacity only.
    `--ww-step-dx` carries the direction of travel. */
 .ww-step-in {
-  animation: ww-step-in 250ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation: ww-step-in 320ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  z-index: 2;
 }
 .ww-step-out {
-  animation: ww-step-out 250ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation: ww-step-out 320ms cubic-bezier(0.5, 0, 0.75, 1) both;
   pointer-events: none;
+  z-index: 1;
 }
 
 @keyframes ww-step-in {
-  from { opacity: 0; transform: translate3d(var(--ww-step-dx, 24px), 0, 0); }
-  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  from { opacity: 0; transform: translate3d(var(--ww-step-dx, 32px), 0, 0) scale(0.97); }
+  55%  { opacity: 1; }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 @keyframes ww-step-out {
-  from { opacity: 1; transform: translate3d(0, 0, 0); }
-  to   { opacity: 0; transform: translate3d(calc(var(--ww-step-dx, 24px) * -1), 0, 0); }
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  45%  { opacity: 0; }
+  to   { opacity: 0; transform: translate3d(calc(var(--ww-step-dx, 32px) * -1), 0, 0) scale(0.97); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ww-step-in  { animation: ww-step-fade-in 250ms linear both; }
-  .ww-step-out { animation: ww-step-fade-out 250ms linear both; }
+  .ww-step-in  { animation: ww-step-fade-in 250ms linear both; z-index: 2; }
+  .ww-step-out { animation: ww-step-fade-out 250ms linear both; z-index: 1; }
 }
 
 @keyframes ww-step-fade-in  { from { opacity: 0; } to { opacity: 1; } }
