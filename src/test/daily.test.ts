@@ -484,6 +484,20 @@ describe("formatDailyShare", () => {
     );
   });
 
+  it("uses the singular for exactly one miss", () => {
+    expect(
+      formatDailyShare({
+        ...base,
+        roundsSolved: 2,
+        totalMisses: 1,
+        roundEvents: [["SOLVE"], ["MISS"], ["SOLVE"]],
+        failed: false,
+      })
+    ).toBe(
+      "WHOOP! WHOOP! #14\nR1 🔵 · R2 🔴 · R3 🔵\n2 of 3 · 1 miss\n\nhttps://whoop-whoop.com"
+    );
+  });
+
   it("leads the peek round with eyes", () => {
     expect(
       formatDailyShare({
