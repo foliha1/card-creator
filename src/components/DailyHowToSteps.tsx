@@ -1341,13 +1341,18 @@ const DailyHowToSteps: React.FC<{
             height: "100%",
             background: RAW.khaki,
             borderRadius: RADIUS.sm,
-            padding: "24px clamp(16px, 9%, 32px) 32px",
+            /* Vertical padding and gaps give height back on very short
+               viewports (in-app browser chrome) so the copy and buttons
+               always fit; they clamp to their authored values on a
+               normal phone screen and up. */
+            padding: "min(24px, 3.5vh) clamp(16px, 9%, 32px) min(32px, 5vh)",
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "clamp(12px, 4%, 24px)",
+            gap: "min(clamp(12px, 4%, 24px), 2.2vh)",
+
             "--ww-step-dx": `${d * 32}px`,
           } as React.CSSProperties
         }
