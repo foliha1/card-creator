@@ -1135,7 +1135,7 @@ const SLIDES: Slide[] = [
   {
     heading: "The Die Decides",
     body:
-      "Shape, number, or color. Whichever face lands is what a match means this round. The die rolls again every round. Same cards, new rule.",
+      "Shape, number, or color. Whichever face lands is what a match means this round. The die rolls again every round.\nSame cards, new rule.",
     visual: (sz, active) => <DieVisual sz={sz} active={active} />,
   },
   {
