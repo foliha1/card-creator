@@ -988,52 +988,83 @@ const PeekVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
 
 
 /* ------------------------------------------------------------------ *
- * The visual is the only flexible element: it keeps its authored size
- * when there is room and shrinks (never grows) when there is not.
+ * The visual is the only flexible element: the body copy and buttons
+ * take their space first, and whatever height is left over is all the
+ * visual may ever have. The scaled content is taken out of flow
+ * (absolutely positioned) so it can never inflate its own box, the box
+ * clips, and the scale is computed on the frame after layout settles.
+ * Below VISUAL_MIN_SCALE the picture is illegible, so it is hidden
+ * rather than allowed to collide with the copy.
  * ------------------------------------------------------------------ */
+const VISUAL_MIN_SCALE = 0.45;
+
 const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
-  const [s, setS] = useState(1);
+  /** 0 means "not measured yet"; the visual stays hidden for that frame. */
+  const [s, setS] = useState(0);
 
   useEffect(() => {
     const b = box.current;
     const i = inner.current;
     if (!b || !i) return;
+    let raf = 0;
+
     const measure = () => {
+      raf = 0;
       const bw = b.clientWidth;
       const bh = b.clientHeight;
       const iw = i.offsetWidth;
       const ih = i.offsetHeight;
-      if (!bw || !bh || !iw || !ih) return;
-      setS(Math.min(1, bw / iw, bh / ih));
+      if (!iw || !ih) return;
+      const next = bw > 0 && bh > 0 ? Math.min(1, bw / iw, bh / ih) : 0;
+      setS((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
     };
-    measure();
-    const ro = new ResizeObserver(measure);
+
+    /* Measure after the browser has laid out, never during render. */
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(measure);
+    };
+
+    schedule();
+    const ro = new ResizeObserver(schedule);
     ro.observe(b);
     ro.observe(i);
-    return () => ro.disconnect();
+    window.addEventListener("resize", schedule);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
+
+  const visible = s >= VISUAL_MIN_SCALE;
 
   return (
     <div
       ref={box}
+      data-testid="htp-visual-box"
       style={{
         flex: "1 1 auto",
-        minHeight: 0,
+        alignSelf: "stretch",
         width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        height: "100%",
+        minHeight: 0,
+        minWidth: 0,
+        position: "relative",
         overflow: "hidden",
       }}
     >
       <div
         ref={inner}
+        data-testid="htp-visual"
         style={{
-          flex: "0 0 auto",
-          transform: s < 1 ? `scale(${s})` : undefined,
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: `translate(-50%, -50%) scale(${s || 1})`,
           transformOrigin: "center center",
+          visibility: visible ? "visible" : "hidden",
         }}
       >
         {children}
@@ -1041,6 +1072,7 @@ const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     </div>
   );
 };
+
 
 /* ------------------------------------------------------------------ *
  * Optically centres the visual in the space between the bottom of the
@@ -1070,19 +1102,33 @@ const CenterVisual: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const bottom = p.getBoundingClientRect().top;
       const c = content.getBoundingClientRect();
       if (!c.height) return;
-      const delta = (top + bottom) / 2 - (c.top + c.bottom) / 2;
+      let delta = (top + bottom) / 2 - (c.top + c.bottom) / 2;
+      /* The nudge is optical only: it may never move the visual past the
+         heading above or the copy below, so it is clamped to the free
+         space and dropped entirely when there is none. */
+      const lo = top - c.top;
+      const hi = bottom - c.bottom;
+      delta = lo > hi ? -dyRef.current : Math.min(Math.max(delta, lo), hi);
       if (Math.abs(delta) < 0.5) return;
       const next = dyRef.current + delta;
       dyRef.current = next;
       setDy(next);
     };
 
-    measure();
-    const ro = new ResizeObserver(measure);
+    let raf = requestAnimationFrame(measure);
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(el);
     ro.observe(mid);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
   });
+
 
   return (
     <div
@@ -1295,13 +1341,18 @@ const DailyHowToSteps: React.FC<{
             height: "100%",
             background: RAW.khaki,
             borderRadius: RADIUS.sm,
-            padding: "24px clamp(16px, 9%, 32px) 32px",
+            /* Vertical padding and gaps give height back on very short
+               viewports (in-app browser chrome) so the copy and buttons
+               always fit; they clamp to their authored values on a
+               normal phone screen and up. */
+            padding: "min(24px, 3.5vh) clamp(16px, 9%, 32px) min(32px, 5vh)",
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "clamp(12px, 4%, 24px)",
+            gap: "min(clamp(12px, 4%, 24px), 2.2vh)",
+
             "--ww-step-dx": `${d * 32}px`,
           } as React.CSSProperties
         }
@@ -1390,6 +1441,9 @@ const DailyHowToSteps: React.FC<{
             maxWidth: sz.innerMaxW,
             flex: "1 1 auto",
             minHeight: 0,
+            /* The copy is the priority; clipping is the last resort so the
+               paragraph can never be painted over the buttons. */
+            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -1409,12 +1463,20 @@ const DailyHowToSteps: React.FC<{
               ...body(!!s.big, sz),
               flex: "0 0 auto",
               whiteSpace: "pre-wrap",
-              marginBottom: first || last ? 0 : "clamp(16px, 5%, 32px)",
             }}
           >
             {s.body}
           </p>
+          {/* Breathing room under the copy that collapses first when the
+              viewport is too short for everything. */}
+          {first || last ? null : (
+            <span
+              aria-hidden="true"
+              style={{ flex: "0 1 auto", height: "clamp(16px, 5%, 32px)", minHeight: 0 }}
+            />
+          )}
         </div>
+
 
         {/* buttons */}
         <div
@@ -1480,7 +1542,13 @@ const DailyHowToSteps: React.FC<{
       style={{
         position: "fixed",
         inset: 0,
+        /* In-app browsers (Instagram, Facebook) report a layout viewport
+           taller than the visible area, so `inset: 0` alone overflows
+           behind their chrome. `--ww-vh` resolves to dvh where available
+           and falls back to vh. */
+        height: "var(--ww-vh)",
         zIndex: 1000,
+
         background: COLORS.surface,
         boxSizing: "border-box",
         display: "flex",
