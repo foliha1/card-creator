@@ -1094,7 +1094,7 @@ const SLIDES: Slide[] = [
   {
     heading: "Welcome!",
     big: true,
-    body: "Whoop! Whoop! Daily is a quick, fun, and surprisingly challenging memory game. Let's run through the rules so you know exactly how to play.\n\nAlready confident? Feel free to skip anytime and dive right in.\n\n\nHit NEXT to continue.",
+    body: "Whoop! Whoop! Daily is a quick, fun, and surprisingly challenging memory game. Let's run through the rules so you know exactly how to play.\n\nAlready confident? Feel free to skip anytime and dive right in.\n\nHit NEXT to continue.",
   },
   {
     heading: "9 Cards on Deck",
