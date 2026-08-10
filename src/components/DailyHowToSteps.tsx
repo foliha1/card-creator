@@ -1074,79 +1074,6 @@ const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 
-/* ------------------------------------------------------------------ *
- * Optically centres the visual in the space between the bottom of the
- * fixed heading row and the top of the body copy. The card's column
- * `gap` only lands above the visual block (there is no matching gap
- * below it), so the visual is measured and nudged with a transform
- * until the gap above and below its rendered content match.
- * ------------------------------------------------------------------ */
-const CenterVisual: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const dyRef = useRef(0);
-  const [dy, setDy] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const mid = el.parentElement;
-    if (!mid) return;
-
-    const measure = () => {
-      const head = mid.previousElementSibling;
-      const p = mid.querySelector(":scope > p");
-      const box = el.firstElementChild;
-      const content = box?.firstElementChild;
-      if (!head || !p || !content) return;
-      const top = head.getBoundingClientRect().bottom;
-      const bottom = p.getBoundingClientRect().top;
-      const c = content.getBoundingClientRect();
-      if (!c.height) return;
-      let delta = (top + bottom) / 2 - (c.top + c.bottom) / 2;
-      /* The nudge is optical only: it may never move the visual past the
-         heading above or the copy below, so it is clamped to the free
-         space and dropped entirely when there is none. */
-      const lo = top - c.top;
-      const hi = bottom - c.bottom;
-      delta = lo > hi ? -dyRef.current : Math.min(Math.max(delta, lo), hi);
-      if (Math.abs(delta) < 0.5) return;
-      const next = dyRef.current + delta;
-      dyRef.current = next;
-      setDy(next);
-    };
-
-    let raf = requestAnimationFrame(measure);
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
-    const ro = new ResizeObserver(schedule);
-    ro.observe(el);
-    ro.observe(mid);
-    return () => {
-      ro.disconnect();
-      cancelAnimationFrame(raf);
-    };
-  });
-
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        flex: "1 1 auto",
-        minHeight: 0,
-        width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        transform: dy ? `translateY(${dy}px)` : undefined,
-      }}
-    >
-      {children}
-    </div>
-  );
-};
 
 
 
@@ -1417,13 +1344,15 @@ const DailyHowToSteps: React.FC<{
 
         </div>
 
-        {/* heading row (fixed on slides 2-7 so the heading never moves) */}
+        {/* heading row: holds its authored height on a normal screen and
+            collapses to a 48px floor on very short in-app-browser viewports,
+            so the heading still lands in the same place across slides 2-7. */}
         {s.big ? null : (
           <div
             style={{
               width: "100%",
               maxWidth: sz.innerMaxW,
-              height: sz.headingRowH,
+              height: `min(${sz.headingRowH}px, max(48px, ${(sz.headingRowH / 8.44).toFixed(2)}vh))`,
               flex: "0 0 auto",
               display: "flex",
               alignItems: "center",
@@ -1434,7 +1363,7 @@ const DailyHowToSteps: React.FC<{
           </div>
         )}
 
-        {/* visual is centered in the space between the headline and body copy */}
+        {/* visual takes the space left between the heading row and the copy */}
         <div
           style={{
             width: "100%",
@@ -1452,11 +1381,7 @@ const DailyHowToSteps: React.FC<{
           }}
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
-          {s.visual ? (
-            <CenterVisual key={`vis-${index}`}>
-              <VisualFit>{s.visual(sz, entering)}</VisualFit>
-            </CenterVisual>
-          ) : null}
+          {s.visual ? <VisualFit key={`vis-${index}`}>{s.visual(sz, entering)}</VisualFit> : null}
 
           <p
             style={{
@@ -1467,15 +1392,8 @@ const DailyHowToSteps: React.FC<{
           >
             {s.body}
           </p>
-          {/* Breathing room under the copy that collapses first when the
-              viewport is too short for everything. */}
-          {first || last ? null : (
-            <span
-              aria-hidden="true"
-              style={{ flex: "0 1 auto", height: "clamp(16px, 5%, 32px)", minHeight: 0 }}
-            />
-          )}
         </div>
+
 
 
         {/* buttons */}
