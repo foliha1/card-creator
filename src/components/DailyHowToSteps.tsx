@@ -1441,6 +1441,9 @@ const DailyHowToSteps: React.FC<{
             maxWidth: sz.innerMaxW,
             flex: "1 1 auto",
             minHeight: 0,
+            /* The copy is the priority; clipping is the last resort so the
+               paragraph can never be painted over the buttons. */
+            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -1460,12 +1463,20 @@ const DailyHowToSteps: React.FC<{
               ...body(!!s.big, sz),
               flex: "0 0 auto",
               whiteSpace: "pre-wrap",
-              marginBottom: first || last ? 0 : "clamp(16px, 5%, 32px)",
             }}
           >
             {s.body}
           </p>
+          {/* Breathing room under the copy that collapses first when the
+              viewport is too short for everything. */}
+          {first || last ? null : (
+            <span
+              aria-hidden="true"
+              style={{ flex: "0 1 auto", height: "clamp(16px, 5%, 32px)", minHeight: 0 }}
+            />
+          )}
         </div>
+
 
         {/* buttons */}
         <div
