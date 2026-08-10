@@ -1344,13 +1344,15 @@ const DailyHowToSteps: React.FC<{
 
         </div>
 
-        {/* heading row (fixed on slides 2-7 so the heading never moves) */}
+        {/* heading row: holds its authored height on a normal screen and
+            collapses to a 48px floor on very short in-app-browser viewports,
+            so the heading still lands in the same place across slides 2-7. */}
         {s.big ? null : (
           <div
             style={{
               width: "100%",
               maxWidth: sz.innerMaxW,
-              height: sz.headingRowH,
+              height: `min(${sz.headingRowH}px, max(48px, ${(sz.headingRowH / 8.44).toFixed(2)}vh))`,
               flex: "0 0 auto",
               display: "flex",
               alignItems: "center",
@@ -1361,7 +1363,7 @@ const DailyHowToSteps: React.FC<{
           </div>
         )}
 
-        {/* visual is centered in the space between the headline and body copy */}
+        {/* visual takes the space left between the heading row and the copy */}
         <div
           style={{
             width: "100%",
@@ -1379,11 +1381,7 @@ const DailyHowToSteps: React.FC<{
           }}
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
-          {s.visual ? (
-            <CenterVisual key={`vis-${index}`}>
-              <VisualFit>{s.visual(sz, entering)}</VisualFit>
-            </CenterVisual>
-          ) : null}
+          {s.visual ? <VisualFit key={`vis-${index}`}>{s.visual(sz, entering)}</VisualFit> : null}
 
           <p
             style={{
@@ -1394,15 +1392,8 @@ const DailyHowToSteps: React.FC<{
           >
             {s.body}
           </p>
-          {/* Breathing room under the copy that collapses first when the
-              viewport is too short for everything. */}
-          {first || last ? null : (
-            <span
-              aria-hidden="true"
-              style={{ flex: "0 1 auto", height: "clamp(16px, 5%, 32px)", minHeight: 0 }}
-            />
-          )}
         </div>
+
 
 
         {/* buttons */}
