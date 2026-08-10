@@ -277,10 +277,12 @@ export function formatDailyShare(
     typeof percentile === "number" && Number.isFinite(percentile)
       ? ` · Better than ${percentile}% today`
       : "";
+  const missTag =
+    misses === 0 ? "Clean" : `${misses} ${misses === 1 ? "miss" : "misses"}`;
   const line3 =
     (solved === 0
       ? "Whooped! Better luck tomorrow."
-      : `${solved} of ${DAILY_ROUNDS} · ${misses === 0 ? "Clean" : `${misses} misses`}`) +
+      : `${solved} of ${DAILY_ROUNDS} · ${missTag}`) +
     streakTag +
     percentileTag;
 
