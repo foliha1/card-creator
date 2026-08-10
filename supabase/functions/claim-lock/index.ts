@@ -13,6 +13,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { verifySeatOwner } from "../_shared/seatOwnership.ts";
 
 interface Body {
   room_id: string;
@@ -63,6 +64,16 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } },
   );
+
+  // Authorize: the caller must actually occupy `player_seat` in this game.
+  // Seats are frozen by the host at game start and persisted to room_seats.
+  const seatCheck = await verifySeatOwner(supabase, {
+    room_id, game_id, seat: player_seat, visitor_id,
+  });
+  if (!seatCheck.ok) {
+    console.warn("[claim-lock] seat authorization refused", seatCheck.reason, { room_id, game_id, player_seat });
+    return bad(403, seatCheck.reason);
+  }
 
   // Attempt to claim the window. UNIQUE (room_id, game_id, claim_window) is
   // the fairness mechanism — first insert wins.
