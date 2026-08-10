@@ -988,52 +988,83 @@ const PeekVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
 
 
 /* ------------------------------------------------------------------ *
- * The visual is the only flexible element: it keeps its authored size
- * when there is room and shrinks (never grows) when there is not.
+ * The visual is the only flexible element: the body copy and buttons
+ * take their space first, and whatever height is left over is all the
+ * visual may ever have. The scaled content is taken out of flow
+ * (absolutely positioned) so it can never inflate its own box, the box
+ * clips, and the scale is computed on the frame after layout settles.
+ * Below VISUAL_MIN_SCALE the picture is illegible, so it is hidden
+ * rather than allowed to collide with the copy.
  * ------------------------------------------------------------------ */
+const VISUAL_MIN_SCALE = 0.45;
+
 const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
-  const [s, setS] = useState(1);
+  /** 0 means "not measured yet"; the visual stays hidden for that frame. */
+  const [s, setS] = useState(0);
 
   useEffect(() => {
     const b = box.current;
     const i = inner.current;
     if (!b || !i) return;
+    let raf = 0;
+
     const measure = () => {
+      raf = 0;
       const bw = b.clientWidth;
       const bh = b.clientHeight;
       const iw = i.offsetWidth;
       const ih = i.offsetHeight;
-      if (!bw || !bh || !iw || !ih) return;
-      setS(Math.min(1, bw / iw, bh / ih));
+      if (!iw || !ih) return;
+      const next = bw > 0 && bh > 0 ? Math.min(1, bw / iw, bh / ih) : 0;
+      setS((prev) => (Math.abs(prev - next) < 0.004 ? prev : next));
     };
-    measure();
-    const ro = new ResizeObserver(measure);
+
+    /* Measure after the browser has laid out, never during render. */
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(measure);
+    };
+
+    schedule();
+    const ro = new ResizeObserver(schedule);
     ro.observe(b);
     ro.observe(i);
-    return () => ro.disconnect();
+    window.addEventListener("resize", schedule);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
+
+  const visible = s >= VISUAL_MIN_SCALE;
 
   return (
     <div
       ref={box}
+      data-testid="htp-visual-box"
       style={{
         flex: "1 1 auto",
-        minHeight: 0,
+        alignSelf: "stretch",
         width: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        height: "100%",
+        minHeight: 0,
+        minWidth: 0,
+        position: "relative",
         overflow: "hidden",
       }}
     >
       <div
         ref={inner}
+        data-testid="htp-visual"
         style={{
-          flex: "0 0 auto",
-          transform: s < 1 ? `scale(${s})` : undefined,
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          transform: `translate(-50%, -50%) scale(${s || 1})`,
           transformOrigin: "center center",
+          visibility: visible ? "visible" : "hidden",
         }}
       >
         {children}
@@ -1041,6 +1072,7 @@ const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     </div>
   );
 };
+
 
 /* ------------------------------------------------------------------ *
  * Optically centres the visual in the space between the bottom of the
