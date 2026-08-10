@@ -1526,7 +1526,13 @@ const DailyHowToSteps: React.FC<{
       style={{
         position: "fixed",
         inset: 0,
+        /* In-app browsers (Instagram, Facebook) report a layout viewport
+           taller than the visible area, so `inset: 0` alone overflows
+           behind their chrome. `--ww-vh` resolves to dvh where available
+           and falls back to vh. */
+        height: "var(--ww-vh)",
         zIndex: 1000,
+
         background: COLORS.surface,
         boxSizing: "border-box",
         display: "flex",
