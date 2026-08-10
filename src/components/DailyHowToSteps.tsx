@@ -1354,7 +1354,11 @@ const DailyHowToSteps: React.FC<{
 
         {/* heading row: holds its authored height on a normal screen and
             collapses to a 48px floor on very short in-app-browser viewports,
-            so the heading still lands in the same place across slides 2-7. */}
+            so the heading still lands in the same place across slides 2-7.
+            The heading sits at the BOTTOM of the row: the row's slack then
+            lives above the heading instead of between the heading and the
+            visual, so the visual's box really does start at the heading's
+            bottom edge and centring inside it reads as centred. */}
         {s.big ? null : (
           <div
             style={{
@@ -1363,7 +1367,7 @@ const DailyHowToSteps: React.FC<{
               height: `min(${sz.headingRowH}px, max(48px, ${(sz.headingRowH / 8.44).toFixed(2)}vh))`,
               flex: "0 0 auto",
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-end",
               justifyContent: "center",
             }}
           >
