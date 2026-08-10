@@ -13,6 +13,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { verifySeatOwner } from "../_shared/seatOwnership.ts";
 
 interface Body {
   room_id: string;
@@ -50,6 +51,36 @@ Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
+
+  // Only the host of this room may release a lock — releasing is a cleanup
+  // action for grants the host reducer refused, never a player action.
+  const { data: room, error: roomErr } = await supabase
+    .from("rooms")
+    .select("host_visitor_id")
+    .eq("id", room_id)
+    .maybeSingle();
+  if (roomErr) {
+    console.error("[release-lock] room lookup failed", roomErr);
+    return bad(500, "room_lookup_failed");
+  }
+  if (!room) return bad(403, "unknown_room");
+
+  if (room.host_visitor_id !== visitor_id) {
+    // Non-host callers may only release a lock they themselves hold.
+    const seatCheck = await verifySeatOwner(supabase, { room_id, game_id, seat, visitor_id });
+    if (!seatCheck.ok) {
+      console.warn("[release-lock] refused", seatCheck.reason, { room_id, game_id, seat });
+      return bad(403, seatCheck.reason);
+    }
+    const { data: lock } = await supabase
+      .from("claim_locks")
+      .select("player_seat")
+      .eq("room_id", room_id)
+      .eq("game_id", game_id)
+      .eq("claim_window", claim_window)
+      .maybeSingle();
+    if (lock && lock.player_seat !== seat) return bad(403, "lock_not_owned");
+  }
 
   const { error: delErr } = await supabase
     .from("claim_locks")
