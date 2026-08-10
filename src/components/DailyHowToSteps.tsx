@@ -998,6 +998,10 @@ const PeekVisual: React.FC<{ sz: Step; active: boolean }> = ({ sz, active }) => 
  * ------------------------------------------------------------------ */
 const VISUAL_MIN_SCALE = 0.45;
 
+/** Spacing applied below the dots row and above the buttons row (formerly the
+ *  root flex gap; kept identical, just relocated). */
+const STEP_GAP = "min(clamp(12px, 4%, 24px), 2.2vh)";
+
 const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -1045,10 +1049,9 @@ const VisualFit: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       ref={box}
       data-testid="htp-visual-box"
       style={{
-        flex: "1 1 auto",
+        flex: "1 1 0",
         alignSelf: "stretch",
         width: "100%",
-        height: "100%",
         minHeight: 0,
         minWidth: 0,
         position: "relative",
@@ -1278,7 +1281,12 @@ const DailyHowToSteps: React.FC<{
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "min(clamp(12px, 4%, 24px), 2.2vh)",
+            /* Root gap is 0 on purpose: spacing is applied only between the
+               siblings that need it (below the dots row, above the buttons
+               row). Nothing sits between the heading row and the middle
+               container, so centring the visual inside that container is
+               centring it between the heading and the copy. */
+            gap: 0,
 
             "--ww-step-dx": `${d * 32}px`,
           } as React.CSSProperties
@@ -1290,7 +1298,7 @@ const DailyHowToSteps: React.FC<{
             width: "100%",
             maxWidth: sz.innerMaxW,
             flex: "0 0 auto",
-
+            marginBottom: STEP_GAP,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1402,6 +1410,7 @@ const DailyHowToSteps: React.FC<{
             width: "100%",
             maxWidth: sz.innerMaxW,
             flex: "0 0 auto",
+            marginTop: STEP_GAP,
             display: "flex",
             gap: "clamp(16px, 16.5%, 48px)",
           }}
