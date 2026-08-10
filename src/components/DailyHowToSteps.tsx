@@ -1102,19 +1102,33 @@ const CenterVisual: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const bottom = p.getBoundingClientRect().top;
       const c = content.getBoundingClientRect();
       if (!c.height) return;
-      const delta = (top + bottom) / 2 - (c.top + c.bottom) / 2;
+      let delta = (top + bottom) / 2 - (c.top + c.bottom) / 2;
+      /* The nudge is optical only: it may never move the visual past the
+         heading above or the copy below, so it is clamped to the free
+         space and dropped entirely when there is none. */
+      const lo = top - c.top;
+      const hi = bottom - c.bottom;
+      delta = lo > hi ? -dyRef.current : Math.min(Math.max(delta, lo), hi);
       if (Math.abs(delta) < 0.5) return;
       const next = dyRef.current + delta;
       dyRef.current = next;
       setDy(next);
     };
 
-    measure();
-    const ro = new ResizeObserver(measure);
+    let raf = requestAnimationFrame(measure);
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(el);
     ro.observe(mid);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
   });
+
 
   return (
     <div
