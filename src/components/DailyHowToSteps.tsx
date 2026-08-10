@@ -1205,10 +1205,10 @@ const SLIDES: Slide[] = [
 
   },
   {
-    heading: "Thats It!",
+    heading: "That's It!",
     big: true,
     body:
-      "You, my friend, are ready to play Whoop! Whoop! Daily. Have fun and don't worry, your memory will get better.",
+      "You, my friend, are ready to play\nWhoop! Whoop! Daily. \n\n\nHave fun and don't worry, your memory\nwill get better.",
   },
 ];
 
