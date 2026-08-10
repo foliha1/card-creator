@@ -59,6 +59,7 @@ import {
 } from "@/lib/rooms";
 
 import { unlockAudio } from "@/lib/sounds";
+import { supabase } from "@/integrations/supabase/client";
 
 
 interface MultiplayerWindowProps {
@@ -460,7 +461,7 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
       roomCode: activeRoom?.room_code,
       metadata: { player_count: seatMap.length },
     });
-  }, [isHostView, participants, activeRoom, starting, channel]);
+  }, [isHostView, participants, activeRoom, starting, channel, visitorId]);
 
   // Joiner: listen for host's game_starting notice + lobby grid selection.
   useEffect(() => {
