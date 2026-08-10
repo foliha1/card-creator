@@ -440,7 +440,20 @@ const MultiplayerWindow: React.FC<MultiplayerWindowProps> = ({
     } catch {
       /* non-fatal */
     }
-    setGameId(crypto.randomUUID());
+    const newGameId = crypto.randomUUID();
+    // Persist the frozen seat map so the claim arbiter can verify that a
+    // WHOOP really comes from the seat it claims to come from.
+    if (activeRoom?.id) {
+      void supabase.rpc("register_room_seats", {
+        p_room_id: activeRoom.id,
+        p_game_id: newGameId,
+        p_host_visitor_id: visitorId,
+        p_seats: seatMap.map((e) => ({ seat: e.seat, visitor_id: e.visitor_id })),
+      }).then(({ error }) => {
+        if (error) console.error("[register_room_seats] failed", error);
+      });
+    }
+    setGameId(newGameId);
     setFrozenSeats(seatMap);
     completedFiredRef.current = false;
     trackEvent("game_started", {
