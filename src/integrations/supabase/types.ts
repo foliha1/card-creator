@@ -280,6 +280,41 @@ export type Database = {
         }
         Relationships: []
       }
+      room_seats: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          room_id: string
+          seat: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          room_id: string
+          seat: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          room_id?: string
+          seat?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_seats_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           created_at: string
@@ -516,6 +551,15 @@ export type Database = {
       log_daily_events: {
         Args: { p_events: Json; p_visitor_id: string }
         Returns: number
+      }
+      register_room_seats: {
+        Args: {
+          p_game_id: string
+          p_host_visitor_id: string
+          p_room_id: string
+          p_seats: Json
+        }
+        Returns: boolean
       }
       request_ip: { Args: never; Returns: string }
       rl_hit: {
