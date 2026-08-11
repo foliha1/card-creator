@@ -23,7 +23,12 @@ import {
   remainingCount,
   type DailyMark,
 } from "@/lib/dailyEngine";
-import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
+import {
+  DAILY_LAUNCH_LABEL,
+  formatDailyShare,
+  formatDailyShareCaption,
+  type DailyResult,
+} from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { useDailyShareImage, type DailyShareImage } from "@/hooks/useDailyShareImage";
 import DailySharePreview from "@/components/DailySharePreview";
@@ -303,7 +308,12 @@ const ShareBlock: React.FC<{
           typeof navigator.share === "function" &&
           navigator.canShare?.({ files: [file] })
         ) {
-          await navigator.share({ files: [file], text });
+          await navigator.share({
+            files: [file],
+            // The image carries the score, so the caption is a short
+            // invitation. Text-only paths keep the scoreboard string.
+            text: formatDailyShareCaption(result.puzzleNumber),
+          });
           trackDaily("share_clicked", {
             puzzleNumber: result.puzzleNumber,
             props: { method: "image" },

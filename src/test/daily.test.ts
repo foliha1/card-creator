@@ -6,6 +6,7 @@ import {
   getDailySeed,
   dailyStorageKey,
   formatDailyShare,
+  formatDailyShareCaption,
   DAILY_LAUNCH_UTC,
 } from "@/lib/daily";
 import {
@@ -442,6 +443,26 @@ describe("peek", () => {
     const picked = dailyReducer(toPlay(0), { type: "SELECT", idx: 0 });
     expect(canPeek(picked)).toBe(false);
     expect(dailyReducer(picked, { type: "PEEK" })).toBe(picked);
+  });
+});
+
+describe("formatDailyShareCaption", () => {
+  it("is a short invitation with the real puzzle number", () => {
+    expect(formatDailyShareCaption(1)).toBe(
+      "Hey! Look at my Whoop! Whoop! Daily #1.\nHave you done it yet?\nwhoop-whoop.com"
+    );
+    expect(formatDailyShareCaption(14)).toBe(
+      "Hey! Look at my Whoop! Whoop! Daily #14.\nHave you done it yet?\nwhoop-whoop.com"
+    );
+    expect(formatDailyShareCaption(365)).toBe(
+      "Hey! Look at my Whoop! Whoop! Daily #365.\nHave you done it yet?\nwhoop-whoop.com"
+    );
+  });
+
+  it("carries no score, marks or streak", () => {
+    const caption = formatDailyShareCaption(7);
+    expect(caption).not.toMatch(/[🔵🔴👀]/u);
+    expect(caption).not.toMatch(/of 3|miss|streak|Better than/);
   });
 });
 
