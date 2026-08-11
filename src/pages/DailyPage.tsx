@@ -588,9 +588,9 @@ const DailyResultCard: React.FC<{
           <div
             style={{
               // Content width at 4:5, but never so tall that the screen has to
-              // scroll: the height is capped against the viewport and the width
-              // follows the ratio.
-              height: `min(calc(var(--ww-vh, 100vh) * 0.42), ${DAILY_CONTENT_MAX_W * 1.25}px)`,
+              // scroll: the height is capped against the viewport (tighter when
+              // the email block is also on screen) and the width follows the ratio.
+              height: `min(calc(var(--ww-vh, 100vh) * ${subscribed ? 0.44 : 0.29}), ${DAILY_CONTENT_MAX_W * 1.25}px)`,
               maxWidth: "100%",
               aspectRatio: "4 / 5",
               border: BORDER.heavy,
