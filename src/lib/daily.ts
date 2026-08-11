@@ -245,6 +245,21 @@ export function saveDailyResult(result: DailyResult): void {
 export const DAILY_SHARE_URL = "https://whoop-whoop.com";
 
 /**
+ * The caption that travels WITH the share image, where the picture already
+ * carries the score. Deliberately an invitation, not a scoreboard:
+ *   Hey! Look at my Whoop! Whoop! Daily #1.
+ *   Have you done it yet?
+ *   whoop-whoop.com
+ */
+export function formatDailyShareCaption(puzzleNumber: number): string {
+  return [
+    `Hey! Look at my Whoop! Whoop! Daily #${puzzleNumber}.`,
+    "Have you done it yet?",
+    "whoop-whoop.com",
+  ].join("\n");
+}
+
+/**
  * The share text:
  *   WHOOP! WHOOP! #14
  *   R1 🔵 · R2 👀🔴🔵 · R3 🔴🔵
