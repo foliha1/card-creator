@@ -442,6 +442,10 @@ const DailyResultCard: React.FC<{
   revisit,
   onLeave,
 }) => {
+  // Rendered once, here: shown as the preview and handed to the share sheet.
+  const shareImage = useDailyShareImage(result, streak);
+
+
 
   const stat = (label: string, value: string) => (
     <div
