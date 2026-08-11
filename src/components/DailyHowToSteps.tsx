@@ -1387,7 +1387,11 @@ const DailyHowToSteps: React.FC<{
             alignItems: "center",
             justifyContent: s.visual ? "space-between" : "center",
             gap: s.visual ? 0 : 20,
+            /* breathing room between the copy and the buttons row; also
+               tightens the flexible visual area so the graphics hug closer */
+            paddingBottom: s.visual ? STEP_GAP : 0,
           }}
+
         >
           {s.big ? <h2 style={heading(true, sz)}>{s.heading}</h2> : null}
           {s.visual ? <VisualFit key={`vis-${index}`}>{s.visual(sz, entering)}</VisualFit> : null}
