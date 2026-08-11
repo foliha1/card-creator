@@ -8,7 +8,6 @@ import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro"
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
 import DailyScreenFade from "@/components/DailyScreenFade";
 
-
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyLegalFooter from "@/components/DailyLegalFooter";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
@@ -26,14 +25,14 @@ import {
 } from "@/lib/dailyEngine";
 import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
-import { useDailyShareImage } from "@/hooks/useDailyShareImage";
+import { useDailyShareImage, type DailyShareImage } from "@/hooks/useDailyShareImage";
+import DailySharePreview from "@/components/DailySharePreview";
 import { preloadGameArt } from "@/lib/preloadArt";
 import {
   flushDailyEvents,
   setDailyTrackingEnabled,
   trackDaily,
 } from "@/lib/dailyEvents";
-
 
 import {
   formatAvgMisses,
@@ -189,10 +188,11 @@ const RoundMarks: React.FC<{
   );
 };
 
-
 /**
- * Share block — renders the day's result as a PNG and shares it alongside the
- * unchanged share text. Every failure path degrades to text, silently.
+ * Share block — SHARE opens the preview modal (see it before you post it), and
+ * the modal's Send runs the OS share sheet with the already-rendered PNG
+ * attached. Every failure path degrades to text, silently, and a render that
+ * failed outright skips the modal entirely.
  */
 const ShareBlock: React.FC<{
   text: string;
@@ -202,10 +202,13 @@ const ShareBlock: React.FC<{
   /** When set, the multiplayer shine sweep runs once after this delay. */
   sweepDelayMs?: number;
   /** Already-rendered share image, reused instead of rendering a second time. */
-  image?: Blob | null;
+  image?: DailyShareImage;
 }> = ({ text, result, streak, mobile, sweepDelayMs, image }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
+  /** The preview modal, opened by SHARE and dismissed by Escape/CLOSE. */
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const shareBtnRef = React.useRef<HTMLButtonElement | null>(null);
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
   const [manual, setManual] = useState(false);
   const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -268,7 +271,6 @@ const ShareBlock: React.FC<{
     await settleClipboard(copyPromise);
   };
 
-
   const share = async () => {
     hapticTap();
     // Started first, inside the live gesture. If a native share succeeds we
@@ -276,9 +278,9 @@ const ShareBlock: React.FC<{
     const copyPromise = beginClipboardWrite();
     setManual(false);
     setWorking(true);
-    // The preview already rendered this exact artifact — reuse it and only
-    // render on demand when the preview never arrived.
-    let blob: Blob | null = image ?? null;
+    // The modal preview already rendered this exact artifact — reuse it and
+    // only render on demand when it never arrived.
+    let blob: Blob | null = image?.blob ?? null;
     if (!blob) {
       try {
         blob = await renderDailyShareImage(result, streak);
@@ -339,6 +341,31 @@ const ShareBlock: React.FC<{
     await settleClipboard(copyPromise);
   };
 
+  /** Close the modal and hand focus back to the button that opened it. */
+  const closePreview = () => {
+    setPreviewOpen(false);
+    window.setTimeout(() => shareBtnRef.current?.focus(), 0);
+  };
+
+  /** Send from inside the modal: the full share chain, then dismiss. */
+  const sendFromPreview = async () => {
+    await share();
+    closePreview();
+  };
+
+  /**
+   * SHARE shows the card first. When the render failed outright there is
+   * nothing to show, so it goes straight down the existing text path.
+   */
+  const openPreview = () => {
+    if (image?.status === "failed") {
+      void share();
+      return;
+    }
+    hapticTap();
+    setPreviewOpen(true);
+  };
+
   // One-shot sweep: travels the full width and exits off the far edge.
   const sweep: React.CSSProperties | null =
     sweepDelayMs === undefined
@@ -349,8 +376,9 @@ const ShareBlock: React.FC<{
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
       <button
         type="button"
+        ref={shareBtnRef}
         className="ww-press"
-        onClick={share}
+        onClick={openPreview}
         disabled={working}
         style={{
           ...buttonStyle("primary", "lg", { mobile }),
@@ -362,6 +390,17 @@ const ShareBlock: React.FC<{
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
         {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
       </button>
+
+      {previewOpen && (
+        <DailySharePreview
+          imageUrl={image?.url ?? null}
+          puzzleNumber={result.puzzleNumber}
+          working={working}
+          mobile={mobile}
+          onSend={() => void sendFromPreview()}
+          onClose={closePreview}
+        />
+      )}
 
       {manual && (
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
@@ -394,9 +433,6 @@ const ShareBlock: React.FC<{
     </div>
   );
 };
-
-
-
 
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
@@ -443,13 +479,8 @@ const DailyResultCard: React.FC<{
   revisit,
   onLeave,
 }) => {
-  // Rendered once, here: shown as the preview and handed to the share sheet.
+  // Rendered once, here: shown in the share modal and handed to the share sheet.
   const shareImage = useDailyShareImage(result, streak);
-  /** Hidden only when the render failed — then the old layout stands in. */
-  const showPreview = shareImage.status !== "failed";
-
-
-
 
   const stat = (label: string, value: string) => (
     <div
@@ -507,29 +538,23 @@ const DailyResultCard: React.FC<{
             ? "You already tested your memory today. Come back tomorrow!"
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
-      {/* Today: only the comparison line once the share card is on screen —
-          the card already carries solved/misses/streak. When the card fails to
-          render the tiles come back, so nothing is ever lost. */}
+      {/* Today: this run's numbers plus the comparison line. */}
       <div
         className="ww-res-in"
         style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("stats") }}
       >
-        {!showPreview && (
-          <>
-            <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-              Today
-            </h2>
-            <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-              {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
-              {stat("Misses", `${totalMisses}`)}
-              {/* Current streak, folded in beside today's numbers. The record lives
-                  in the All time block as "Longest streak", so nothing reads doubled.
-                  Omitted (never zero) when the streak read failed. */}
-              {streak !== null && streak >= 1 &&
-                stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
-            </div>
-          </>
-        )}
+        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+          Today
+        </h2>
+        <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+          {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
+          {stat("Misses", `${totalMisses}`)}
+          {/* Current streak, folded in beside today's numbers. The record lives
+              in the All time block as "Longest streak", so nothing reads doubled.
+              Omitted (never zero) when the streak read failed. */}
+          {streak !== null && streak >= 1 &&
+            stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
+        </div>
         {percentile !== null && (
           <p
             style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
@@ -538,7 +563,6 @@ const DailyResultCard: React.FC<{
           </p>
         )}
       </div>
-
 
       {/* All time. Subscribers only, and hidden entirely when the read failed —
           never shown as zeroes, never as an empty placeholder. */}
@@ -567,67 +591,63 @@ const DailyResultCard: React.FC<{
         </div>
       )}
 
-
-
-
-
-      {/* The share card itself. Same information the round review used to
-          spell out, so the review is gone — this is the artifact, not a
-          re-creation of it. Space is reserved at 4:5 up front so nothing
-          shifts when the PNG arrives. */}
-      {showPreview && (
+      <div
+        className="ww-res-in"
+        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("rounds") }}
+      >
+        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+          Round review
+        </h2>
         <div
-          className="ww-res-in"
           style={{
-            alignSelf: "stretch",
-            display: "flex",
-            justifyContent: "center",
-            ...blockIn("rounds"),
+            display: "grid",
+            gridTemplateColumns: "auto 1fr auto",
+            alignItems: "center",
+            columnGap: SPACE[3],
           }}
         >
-          <div
-            style={{
-              // Content width at 4:5, but never so tall that the screen has to
-              // scroll: the height is capped against the viewport (tighter when
-              // the email block is also on screen) and the width follows the ratio.
-              height: `min(calc(var(--ww-vh, 100vh) * ${subscribed ? 0.41 : 0.29}), ${DAILY_CONTENT_MAX_W * 1.25}px)`,
-              maxWidth: "100%",
-              aspectRatio: "4 / 5",
-              border: BORDER.heavy,
-              borderRadius: RADIUS.sm,
-              background: COLORS.panel,
-              overflow: "hidden",
-              flex: "0 0 auto",
-            }}
-          >
+          {roundEvents.map((events, i) => {
+            const cell: React.CSSProperties = {
+              fontFamily: FONT_FAMILY_UI,
+              fontWeight: FONT_WEIGHT_UI,
+              fontSize: mobile ? 13 : 14,
+              lineHeight: 1.35,
+              paddingTop: i === 0 ? 0 : SPACE[3],
+              paddingBottom: i === roundEvents.length - 1 ? 0 : SPACE[3],
+              ...(i === 0 ? {} : { borderTop: "1px solid rgba(35, 31, 32, 0.18)" }),
+            };
+            return (
+              <React.Fragment key={`round-${i}`}>
+                <div style={{ ...cell, color: COLORS.inkMuted }}>R{i + 1}</div>
+                <div style={{ ...cell, color: COLORS.ink }}>
+                  {attributes[i] ? ATTR_LABEL[attributes[i]] : ""}
+                </div>
+                <div
+                  style={{
+                    ...cell,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: SPACE[2],
+                  }}
+                >
 
-            {shareImage.url ? (
-              <img
-                src={shareImage.url}
-                alt={`Your WHOOP! WHOOP! Daily #${puzzleNumber} share card`}
-                style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <div
-                aria-hidden="true"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  ...textStyle("caption", mobile),
-                  color: COLORS.inkMuted,
-                }}
-              >
-                Making your card…
-              </div>
-            )}
-          </div>
+                  {peekUsed && peekRound === i + 1 && (
+                    <span aria-label="Peek used this round" title="Peek used">
+                      👀
+                    </span>
+                  )}
+                  <RoundMarks
+                    events={events}
+                    animateFrom={markOffsets[i]}
+                    baseDelayMs={MARKS_BASE_DELAY_MS}
+                  />
+                </div>
+              </React.Fragment>
+            );
+          })}
         </div>
-      )}
-
-
+      </div>
 
       <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
         <ShareBlock
@@ -636,10 +656,9 @@ const DailyResultCard: React.FC<{
           streak={streak}
           mobile={mobile}
           sweepDelayMs={sweepDelayMs}
-          image={shareImage.blob}
+          image={shareImage}
         />
       </div>
-
 
       {!subscribed && (
         <div
@@ -670,8 +689,6 @@ const DailyResultCard: React.FC<{
     </div>
   );
 };
-
-
 
 /**
  * Shared visual base for the small icon/text chips on the ready screen.
@@ -740,7 +757,6 @@ const DailySoundToggle: React.FC<{ mobile?: boolean }> = ({ mobile = false }) =>
   );
 };
 
-
 /** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
 const DailyReadyScreen: React.FC<{
   today: string;
@@ -773,7 +789,6 @@ const DailyReadyScreen: React.FC<{
 }) => (
   <DailyFrame gap={40}>
       <DailyLogoLockup />
-
 
       <div
         className="daily-intro"
@@ -827,7 +842,6 @@ const DailyReadyScreen: React.FC<{
         )}
       </div>
 
-
       <div
         className="daily-intro"
         style={{
@@ -849,7 +863,6 @@ const DailyReadyScreen: React.FC<{
         <DailyThemeToggle mobile={mobile} />
         <DailySoundToggle mobile={mobile} />
       </div>
-
 
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
@@ -889,7 +902,6 @@ const DailyReadyScreen: React.FC<{
   </DailyFrame>
 
 );
-
 
 /**
  * Card area that scales its cards to the space it is given instead of pushing
@@ -975,7 +987,6 @@ const DailyBoard: React.FC<{
     </div>
   );
 };
-
 
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
@@ -1110,9 +1121,6 @@ const DailyPage: React.FC = () => {
     };
   }, [puzzleNumber, state.roundIndex, state.roundsSolved, state.totalMisses]);
 
-
-
-
   // --- correct-match ghost layer ---------------------------------------
   // The engine empties the solved slots the instant the claim resolves, so the
   // reward is played by copies pinned over the slots the pair just left. The
@@ -1159,7 +1167,6 @@ const DailyPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
 
-
   useEffect(() => {
     boardRef.current = state.grid;
   }, [state.grid]);
@@ -1177,7 +1184,6 @@ const DailyPage: React.FC = () => {
       window.removeEventListener("keydown", on);
     };
   }, []);
-
 
   useEffect(() => {
     let diceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1210,7 +1216,6 @@ const DailyPage: React.FC = () => {
     if (left > 0 && left <= 3) playTick();
   }, [phase, daily.studyRemaining]);
 
-
   useEffect(() => {
     if (state.wrongToken === 0) return;
     hapticError();
@@ -1219,7 +1224,6 @@ const DailyPage: React.FC = () => {
     // 450ms of claim resolution earlier, so the two never overlap.
     playWrong();
   }, [state.wrongToken]);
-
 
   useEffect(() => {
     if (state.matchedPair.length === 0) return;
@@ -1265,9 +1269,6 @@ const DailyPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-
-
-
   const playedToday =
     daily.result !== null && (daily.alreadyPlayed || (phase === "DONE" && runSettled));
   const finished = playedToday && showResult;
@@ -1284,8 +1285,6 @@ const DailyPage: React.FC = () => {
   }, [audioReady, ready, finished]);
 
   useEffect(() => () => stopTheme(), []);
-
-
 
   const readout = (() => {
     switch (phase) {
@@ -1316,7 +1315,6 @@ const DailyPage: React.FC = () => {
     state.selected.length < 2 &&
     state.wrongPair.length === 0 &&
     ghost.length === 0;
-
 
   // Arrow keys walk focus across the 3-column board; Enter/Space on a card
   // selects and then claims (handled by GameCard's own key handler).
@@ -1358,7 +1356,6 @@ const DailyPage: React.FC = () => {
     }
   };
 
-
   const [ty, tm, td] = daily.dateKey.split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
@@ -1392,7 +1389,6 @@ const DailyPage: React.FC = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://whoop-whoop.lovable.app/og-daily.png" />
       </Helmet>
-
 
       <DailyScreenFade
         screenKey={finished ? "result" : ready ? "ready" : "play"}
@@ -1494,7 +1490,6 @@ const DailyPage: React.FC = () => {
         {!ready && (
         <DailyFrame gap={SPACE[4]} fill={!finished} tone={finished ? "surface" : "panel"}>
 
-
           {finished ? (
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
@@ -1594,7 +1589,6 @@ const DailyPage: React.FC = () => {
                 </button>
               </div>
 
-
               <DailyBoard
                 rows={Math.max(1, Math.ceil(state.grid.length / 3))}
                 onGridWidth={setGridWidth}
@@ -1648,7 +1642,6 @@ const DailyPage: React.FC = () => {
                 ))}
               </DailyBoard>
 
-
               {ghost.length > 0 && (
                 <DailyMatchGhost
                   pair={ghost}
@@ -1662,7 +1655,6 @@ const DailyPage: React.FC = () => {
                 />
               )}
 
-
               {/* Fixed overlay: never affects the board's measured size. */}
               <DailyRoundIntro
                 active={phase === "ROLL"}
@@ -1674,7 +1666,6 @@ const DailyPage: React.FC = () => {
               />
             </div>
           )}
-
 
         </DailyFrame>
         )}
