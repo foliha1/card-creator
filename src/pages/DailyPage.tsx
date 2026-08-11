@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { HelpCircle, Moon, Sun, Volume2, VolumeOff } from "lucide-react";
 import GameCard from "@/components/GameCard";
-import DailyFrame from "@/components/DailyFrame";
+import DailyFrame, { DAILY_CONTENT_MAX_W } from "@/components/DailyFrame";
 import DailyHowToSteps, { hasSeenHowTo } from "@/components/DailyHowToSteps";
 import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
