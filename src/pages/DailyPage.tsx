@@ -200,7 +200,9 @@ const ShareBlock: React.FC<{
   mobile: boolean;
   /** When set, the multiplayer shine sweep runs once after this delay. */
   sweepDelayMs?: number;
-}> = ({ text, result, streak, mobile, sweepDelayMs }) => {
+  /** Already-rendered share image, reused instead of rendering a second time. */
+  image?: Blob | null;
+}> = ({ text, result, streak, mobile, sweepDelayMs, image }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
