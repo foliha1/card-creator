@@ -47,7 +47,7 @@ const DailySharePreview: React.FC<{
   imageUrl,
   puzzleNumber,
   imageTheme,
-  onToggleTheme,
+  onSetTheme,
   working = false,
   mobile,
   onSend,
