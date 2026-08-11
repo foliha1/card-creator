@@ -12,6 +12,7 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import {
@@ -86,7 +87,7 @@ const DailySharePreview: React.FC<{
     return () => window.removeEventListener("keydown", trap, true);
   }, [trap]);
 
-  return (
+  return createPortal(
     <div
       ref={hostRef}
       role="dialog"
@@ -199,10 +200,14 @@ const DailySharePreview: React.FC<{
           >
             <div
               style={{
-                height: "100%",
+                // Hugs the PNG so the 4:5 ratio comes from the artwork itself
+                // and can never be stretched by the available box.
+                display: "flex",
                 maxWidth: "100%",
-                aspectRatio: "4 / 5",
+                maxHeight: "100%",
+                ...(imageUrl ? {} : { height: "100%", aspectRatio: "4 / 5" }),
                 flex: "0 0 auto",
+                boxSizing: "border-box",
                 border: BORDER.heavy,
                 borderRadius: RADIUS.sm,
                 background: COLORS.panel,
@@ -215,9 +220,11 @@ const DailySharePreview: React.FC<{
                   alt={`Your WHOOP! WHOOP! Daily #${puzzleNumber} share card`}
                   style={{
                     display: "block",
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    width: "auto",
+                    height: "auto",
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "contain",
                   }}
                 />
               ) : (
@@ -259,7 +266,8 @@ const DailySharePreview: React.FC<{
       </div>
 
       <DailyShapeRule />
-    </div>
+    </div>,
+    document.body
   );
 };
 
