@@ -352,7 +352,11 @@ function startThemeNow(ctx: AudioContext): void {
     return;
   }
   if (!themeBuffer) {
-    void loadTheme().then(() => { if (themeDesired) startTheme(); });
+    // Bounded retry: a failed fetch/decode is retried a couple of times, then
+    // music quietly gives up rather than looping forever.
+    if (themeLoadAttempts >= 3) return;
+    themeLoadAttempts += 1;
+    void loadTheme().then(() => { if (themeDesired && themeBuffer) startTheme(); });
     return;
   }
   const g = ctx.createGain();
@@ -362,10 +366,16 @@ function startThemeNow(ctx: AudioContext): void {
   src.buffer = themeBuffer;
   src.loop = true;
   src.connect(g);
+  // If the loop ever ends (context torn down, source killed), drop the handles
+  // so the next startTheme() builds a fresh source instead of ramping a corpse.
+  src.onended = () => {
+    if (themeSource === src) { themeSource = null; themeGainNode = null; }
+  };
   src.start();
   themeSource = src;
   themeGainNode = g;
   ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
+
 }
 
 function fadeOutTheme(hard: boolean): void {
