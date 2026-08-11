@@ -288,7 +288,7 @@ const ShareBlock: React.FC<{
     let blob: Blob | null = image?.blob ?? null;
     if (!blob) {
       try {
-        blob = await renderDailyShareImage(result, streak);
+        blob = await renderDailyShareImage(result, streak, image?.theme ?? "light");
       } catch {
         blob = null;
       }
@@ -405,6 +405,10 @@ const ShareBlock: React.FC<{
         <DailySharePreview
           imageUrl={image?.url ?? null}
           puzzleNumber={result.puzzleNumber}
+          imageTheme={image?.theme ?? "light"}
+          onToggleTheme={() =>
+            image?.setTheme(image.theme === "night" ? "light" : "night")
+          }
           working={working}
           mobile={mobile}
           onSend={() => void sendFromPreview()}
@@ -490,7 +494,10 @@ const DailyResultCard: React.FC<{
   onLeave,
 }) => {
   // Rendered once, here: shown in the share modal and handed to the share sheet.
-  const shareImage = useDailyShareImage(result, streak);
+  // The card defaults to whatever theme the app is in; the modal's toggle is
+  // per-share and never touches the app's own theme.
+  const appTheme = useThemeMode().theme;
+  const shareImage = useDailyShareImage(result, streak, true, appTheme);
 
   const stat = (label: string, value: string) => (
     <div
