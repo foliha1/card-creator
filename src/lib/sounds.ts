@@ -404,24 +404,31 @@ export function stopTheme(): void {
   fadeOutTheme(false);
 }
 
-// iOS suspends the AudioContext when the page is backgrounded and never resumes
-// it on return, so the theme stays silent until some unrelated cue happens to
-// wake the graph. Resume explicitly on the way back, and restart the loop when
-// the current screen still wants music.
+// iOS suspends (or "interrupts") the AudioContext when the page is backgrounded,
+// a call comes in or the screen locks, and never resumes it on return, so the
+// theme stays silent until some unrelated cue happens to wake the graph. Resume
+// explicitly on the way back — from every signal a browser might give us — and
+// restart the loop when the current screen still wants music.
 if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") return;
+  const wake = () => {
     try {
       const ctx = audioCtx;
       if (!ctx) return;
-      const resumeThen = () => {
+      whenRunning(ctx, () => {
+        if (ctx.state === "running" && sfxBus && sfxEnabled) sfxBus.gain.value = 1;
         if (themeDesired && musicEnabled) startTheme();
-      };
-      if (ctx.state === "suspended") void ctx.resume().then(resumeThen, resumeThen);
-      else resumeThen();
+      });
     } catch { /* never throw from audio */ }
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") wake();
   });
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    window.addEventListener("focus", wake);
+    window.addEventListener("pageshow", wake);
+  }
 }
+
 
 
 // ---------------------------------------------------------------------------
