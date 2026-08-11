@@ -303,7 +303,12 @@ const ShareBlock: React.FC<{
           typeof navigator.share === "function" &&
           navigator.canShare?.({ files: [file] })
         ) {
-          await navigator.share({ files: [file], text });
+          await navigator.share({
+            files: [file],
+            // The image carries the score, so the caption is a short
+            // invitation. Text-only paths keep the scoreboard string.
+            text: formatDailyShareCaption(result.puzzleNumber),
+          });
           trackDaily("share_clicked", {
             puzzleNumber: result.puzzleNumber,
             props: { method: "image" },
