@@ -571,61 +571,64 @@ const DailyResultCard: React.FC<{
 
 
 
-      {/* The share card itself. Same information the round review used to
-          spell out, so the review is gone — this is the artifact, not a
-          re-creation of it. Space is reserved at 4:5 up front so nothing
-          shifts when the PNG arrives. */}
-      {showPreview && (
+      <div
+        className="ww-res-in"
+        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("rounds") }}
+      >
+        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+          Round review
+        </h2>
         <div
-          className="ww-res-in"
           style={{
-            alignSelf: "stretch",
-            display: "flex",
-            justifyContent: "center",
-            ...blockIn("rounds"),
+            display: "grid",
+            gridTemplateColumns: "auto 1fr auto",
+            alignItems: "center",
+            columnGap: SPACE[3],
           }}
         >
-          <div
-            style={{
-              // Content width at 4:5, but never so tall that the screen has to
-              // scroll: the height is capped against the viewport (tighter when
-              // the email block is also on screen) and the width follows the ratio.
-              height: `min(calc(var(--ww-vh, 100vh) * ${subscribed ? 0.41 : 0.29}), ${DAILY_CONTENT_MAX_W * 1.25}px)`,
-              maxWidth: "100%",
-              aspectRatio: "4 / 5",
-              border: BORDER.heavy,
-              borderRadius: RADIUS.sm,
-              background: COLORS.panel,
-              overflow: "hidden",
-              flex: "0 0 auto",
-            }}
-          >
+          {roundEvents.map((events, i) => {
+            const cell: React.CSSProperties = {
+              fontFamily: FONT_FAMILY_UI,
+              fontWeight: FONT_WEIGHT_UI,
+              fontSize: mobile ? 13 : 14,
+              lineHeight: 1.35,
+              paddingTop: i === 0 ? 0 : SPACE[3],
+              paddingBottom: i === roundEvents.length - 1 ? 0 : SPACE[3],
+              ...(i === 0 ? {} : { borderTop: "1px solid rgba(35, 31, 32, 0.18)" }),
+            };
+            return (
+              <React.Fragment key={`round-${i}`}>
+                <div style={{ ...cell, color: COLORS.inkMuted }}>R{i + 1}</div>
+                <div style={{ ...cell, color: COLORS.ink }}>
+                  {attributes[i] ? ATTR_LABEL[attributes[i]] : ""}
+                </div>
+                <div
+                  style={{
+                    ...cell,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: SPACE[2],
+                  }}
+                >
 
-            {shareImage.url ? (
-              <img
-                src={shareImage.url}
-                alt={`Your WHOOP! WHOOP! Daily #${puzzleNumber} share card`}
-                style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <div
-                aria-hidden="true"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  ...textStyle("caption", mobile),
-                  color: COLORS.inkMuted,
-                }}
-              >
-                Making your card…
-              </div>
-            )}
-          </div>
+                  {peekUsed && peekRound === i + 1 && (
+                    <span aria-label="Peek used this round" title="Peek used">
+                      👀
+                    </span>
+                  )}
+                  <RoundMarks
+                    events={events}
+                    animateFrom={markOffsets[i]}
+                    baseDelayMs={MARKS_BASE_DELAY_MS}
+                  />
+                </div>
+              </React.Fragment>
+            );
+          })}
         </div>
-      )}
+      </div>
+
 
 
 
