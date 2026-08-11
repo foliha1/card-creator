@@ -286,17 +286,35 @@ let themeGainNode: GainNode | null = null;
 let themeDesired = false;
 let themeStopTimer: ReturnType<typeof setTimeout> | null = null;
 
+/**
+ * `decodeAudioData` is promise-based everywhere modern, but older Safari only
+ * supports the callback form and returns `undefined`. Support both.
+ */
+function decode(ctx: AudioContext, data: ArrayBuffer): Promise<AudioBuffer> {
+  return new Promise((resolve, reject) => {
+    const maybe = ctx.decodeAudioData(data, resolve, reject) as unknown;
+    if (maybe && typeof (maybe as Promise<AudioBuffer>).then === "function") {
+      (maybe as Promise<AudioBuffer>).then(resolve, reject);
+    }
+  });
+}
+
 function loadTheme(): Promise<void> {
   if (themeLoading) return themeLoading;
   themeLoading = (async () => {
     try {
-      const res = await fetch(THEME_FILE);
-      if (!res.ok) return;
-      themeBuffer = await getCtx().decodeAudioData(await res.arrayBuffer());
-    } catch { /* missing file: music is simply a no-op */ }
+      const res = await fetch(THEME_FILE, { cache: "force-cache" });
+      if (!res.ok) throw new Error(`theme ${res.status}`);
+      themeBuffer = await decode(getCtx(), await res.arrayBuffer());
+    } catch {
+      // A transient network failure must not disable music for the session:
+      // clear the cached attempt so the next startTheme() can try again.
+      themeLoading = null;
+    }
   })();
   return themeLoading;
 }
+
 
 function ramp(node: GainNode, to: number, ms: number) {
   const ctx = getCtx();
