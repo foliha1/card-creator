@@ -504,23 +504,29 @@ const DailyResultCard: React.FC<{
             ? "You already tested your memory today. Come back tomorrow!"
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
-      {/* Today: this run's numbers plus the comparison line. */}
+      {/* Today: only the comparison line once the share card is on screen —
+          the card already carries solved/misses/streak. When the card fails to
+          render the tiles come back, so nothing is ever lost. */}
       <div
         className="ww-res-in"
         style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("stats") }}
       >
-        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-          Today
-        </h2>
-        <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-          {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
-          {stat("Misses", `${totalMisses}`)}
-          {/* Current streak, folded in beside today's numbers. The record lives
-              in the All time block as "Longest streak", so nothing reads doubled.
-              Omitted (never zero) when the streak read failed. */}
-          {streak !== null && streak >= 1 &&
-            stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
-        </div>
+        {!showPreview && (
+          <>
+            <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+              Today
+            </h2>
+            <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+              {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
+              {stat("Misses", `${totalMisses}`)}
+              {/* Current streak, folded in beside today's numbers. The record lives
+                  in the All time block as "Longest streak", so nothing reads doubled.
+                  Omitted (never zero) when the streak read failed. */}
+              {streak !== null && streak >= 1 &&
+                stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
+            </div>
+          </>
+        )}
         {percentile !== null && (
           <p
             style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
@@ -529,6 +535,7 @@ const DailyResultCard: React.FC<{
           </p>
         )}
       </div>
+
 
       {/* All time. Subscribers only, and hidden entirely when the read failed —
           never shown as zeroes, never as an empty placeholder. */}
