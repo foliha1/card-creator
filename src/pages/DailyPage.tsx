@@ -8,7 +8,6 @@ import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro"
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
 import DailyScreenFade from "@/components/DailyScreenFade";
 
-
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyLegalFooter from "@/components/DailyLegalFooter";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
@@ -34,7 +33,6 @@ import {
   setDailyTrackingEnabled,
   trackDaily,
 } from "@/lib/dailyEvents";
-
 
 import {
   formatAvgMisses,
@@ -190,7 +188,6 @@ const RoundMarks: React.FC<{
   );
 };
 
-
 /**
  * Share block — SHARE opens the preview modal (see it before you post it), and
  * the modal's Send runs the OS share sheet with the already-rendered PNG
@@ -215,7 +212,6 @@ const ShareBlock: React.FC<{
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
   const [manual, setManual] = useState(false);
   const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
-
 
   const flashCopied = () => {
     setCopied(true);
@@ -274,7 +270,6 @@ const ShareBlock: React.FC<{
     }
     await settleClipboard(copyPromise);
   };
-
 
   const share = async () => {
     hapticTap();
@@ -407,7 +402,6 @@ const ShareBlock: React.FC<{
         />
       )}
 
-
       {manual && (
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
           <label
@@ -439,9 +433,6 @@ const ShareBlock: React.FC<{
     </div>
   );
 };
-
-
-
 
 const DailyResultCard: React.FC<{
   puzzleNumber: number;
@@ -490,10 +481,6 @@ const DailyResultCard: React.FC<{
 }) => {
   // Rendered once, here: shown in the share modal and handed to the share sheet.
   const shareImage = useDailyShareImage(result, streak);
-
-
-
-
 
   const stat = (label: string, value: string) => (
     <div
@@ -577,8 +564,6 @@ const DailyResultCard: React.FC<{
         )}
       </div>
 
-
-
       {/* All time. Subscribers only, and hidden entirely when the read failed —
           never shown as zeroes, never as an empty placeholder. */}
       {stats !== null && (
@@ -605,10 +590,6 @@ const DailyResultCard: React.FC<{
           </div>
         </div>
       )}
-
-
-
-
 
       <div
         className="ww-res-in"
@@ -668,9 +649,6 @@ const DailyResultCard: React.FC<{
         </div>
       </div>
 
-
-
-
       <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
         <ShareBlock
           text={shareText}
@@ -681,7 +659,6 @@ const DailyResultCard: React.FC<{
           image={shareImage}
         />
       </div>
-
 
       {!subscribed && (
         <div
@@ -712,8 +689,6 @@ const DailyResultCard: React.FC<{
     </div>
   );
 };
-
-
 
 /**
  * Shared visual base for the small icon/text chips on the ready screen.
@@ -782,7 +757,6 @@ const DailySoundToggle: React.FC<{ mobile?: boolean }> = ({ mobile = false }) =>
   );
 };
 
-
 /** Ready screen — logo + daily badge, date, how-to-play chip, play CTA. */
 const DailyReadyScreen: React.FC<{
   today: string;
@@ -815,7 +789,6 @@ const DailyReadyScreen: React.FC<{
 }) => (
   <DailyFrame gap={40}>
       <DailyLogoLockup />
-
 
       <div
         className="daily-intro"
@@ -869,7 +842,6 @@ const DailyReadyScreen: React.FC<{
         )}
       </div>
 
-
       <div
         className="daily-intro"
         style={{
@@ -891,7 +863,6 @@ const DailyReadyScreen: React.FC<{
         <DailyThemeToggle mobile={mobile} />
         <DailySoundToggle mobile={mobile} />
       </div>
-
 
       <div className="daily-intro" style={{ width: "100%", animationDelay: "240ms" }}>
         <button
@@ -931,7 +902,6 @@ const DailyReadyScreen: React.FC<{
   </DailyFrame>
 
 );
-
 
 /**
  * Card area that scales its cards to the space it is given instead of pushing
@@ -1017,7 +987,6 @@ const DailyBoard: React.FC<{
     </div>
   );
 };
-
 
 const DailyPage: React.FC = () => {
   useBodyScrollLock();
@@ -1152,9 +1121,6 @@ const DailyPage: React.FC = () => {
     };
   }, [puzzleNumber, state.roundIndex, state.roundsSolved, state.totalMisses]);
 
-
-
-
   // --- correct-match ghost layer ---------------------------------------
   // The engine empties the solved slots the instant the claim resolves, so the
   // reward is played by copies pinned over the slots the pair just left. The
@@ -1201,7 +1167,6 @@ const DailyPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.matchedPair.length, state.roundIndex]);
 
-
   useEffect(() => {
     boardRef.current = state.grid;
   }, [state.grid]);
@@ -1219,7 +1184,6 @@ const DailyPage: React.FC = () => {
       window.removeEventListener("keydown", on);
     };
   }, []);
-
 
   useEffect(() => {
     let diceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1252,7 +1216,6 @@ const DailyPage: React.FC = () => {
     if (left > 0 && left <= 3) playTick();
   }, [phase, daily.studyRemaining]);
 
-
   useEffect(() => {
     if (state.wrongToken === 0) return;
     hapticError();
@@ -1261,7 +1224,6 @@ const DailyPage: React.FC = () => {
     // 450ms of claim resolution earlier, so the two never overlap.
     playWrong();
   }, [state.wrongToken]);
-
 
   useEffect(() => {
     if (state.matchedPair.length === 0) return;
@@ -1307,9 +1269,6 @@ const DailyPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-
-
-
   const playedToday =
     daily.result !== null && (daily.alreadyPlayed || (phase === "DONE" && runSettled));
   const finished = playedToday && showResult;
@@ -1326,8 +1285,6 @@ const DailyPage: React.FC = () => {
   }, [audioReady, ready, finished]);
 
   useEffect(() => () => stopTheme(), []);
-
-
 
   const readout = (() => {
     switch (phase) {
@@ -1358,7 +1315,6 @@ const DailyPage: React.FC = () => {
     state.selected.length < 2 &&
     state.wrongPair.length === 0 &&
     ghost.length === 0;
-
 
   // Arrow keys walk focus across the 3-column board; Enter/Space on a card
   // selects and then claims (handled by GameCard's own key handler).
@@ -1400,7 +1356,6 @@ const DailyPage: React.FC = () => {
     }
   };
 
-
   const [ty, tm, td] = daily.dateKey.split("-").map(Number);
   const today = new Date(ty, tm - 1, td).toLocaleDateString("en-US", {
     weekday: "long",
@@ -1434,7 +1389,6 @@ const DailyPage: React.FC = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://whoop-whoop.lovable.app/og-daily.png" />
       </Helmet>
-
 
       <DailyScreenFade
         screenKey={finished ? "result" : ready ? "ready" : "play"}
@@ -1536,7 +1490,6 @@ const DailyPage: React.FC = () => {
         {!ready && (
         <DailyFrame gap={SPACE[4]} fill={!finished} tone={finished ? "surface" : "panel"}>
 
-
           {finished ? (
             <DailyResultCard
               puzzleNumber={daily.result!.puzzleNumber}
@@ -1636,7 +1589,6 @@ const DailyPage: React.FC = () => {
                 </button>
               </div>
 
-
               <DailyBoard
                 rows={Math.max(1, Math.ceil(state.grid.length / 3))}
                 onGridWidth={setGridWidth}
@@ -1690,7 +1642,6 @@ const DailyPage: React.FC = () => {
                 ))}
               </DailyBoard>
 
-
               {ghost.length > 0 && (
                 <DailyMatchGhost
                   pair={ghost}
@@ -1704,7 +1655,6 @@ const DailyPage: React.FC = () => {
                 />
               )}
 
-
               {/* Fixed overlay: never affects the board's measured size. */}
               <DailyRoundIntro
                 active={phase === "ROLL"}
@@ -1716,7 +1666,6 @@ const DailyPage: React.FC = () => {
               />
             </div>
           )}
-
 
         </DailyFrame>
         )}
