@@ -26,6 +26,7 @@ import {
 } from "@/lib/dailyEngine";
 import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
+import { useDailyShareImage } from "@/hooks/useDailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 import {
   flushDailyEvents,
