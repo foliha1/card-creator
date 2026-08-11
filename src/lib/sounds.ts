@@ -285,6 +285,9 @@ let themeGainNode: GainNode | null = null;
 /** The screen wants music, regardless of whether it is audible right now. */
 let themeDesired = false;
 let themeStopTimer: ReturnType<typeof setTimeout> | null = null;
+/** Bounded retry counter for a failed theme fetch/decode. */
+let themeLoadAttempts = 0;
+
 
 /**
  * `decodeAudioData` is promise-based everywhere modern, but older Safari only
