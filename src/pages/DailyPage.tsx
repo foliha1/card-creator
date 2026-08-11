@@ -213,6 +213,7 @@ const ShareBlock: React.FC<{
   const shareBtnRef = React.useRef<HTMLButtonElement | null>(null);
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
   const [manual, setManual] = useState(false);
+  const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
 
 
   const flashCopied = () => {
