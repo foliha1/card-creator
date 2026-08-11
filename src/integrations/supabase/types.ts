@@ -439,6 +439,14 @@ export type Database = {
           skipped: number
         }[]
       }
+      admin_rejections: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          reason: string
+          rejections: number
+          visitors: number
+        }[]
+      }
       admin_subscribers: {
         Args: never
         Returns: {
