@@ -23,7 +23,12 @@ import {
   remainingCount,
   type DailyMark,
 } from "@/lib/dailyEngine";
-import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
+import {
+  DAILY_LAUNCH_LABEL,
+  formatDailyShare,
+  formatDailyShareCaption,
+  type DailyResult,
+} from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { useDailyShareImage, type DailyShareImage } from "@/hooks/useDailyShareImage";
 import DailySharePreview from "@/components/DailySharePreview";
