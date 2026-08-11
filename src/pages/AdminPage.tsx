@@ -115,7 +115,9 @@ interface DashboardData {
   attribution: AttributionRow[];
   trend: TrendRow[];
   subscribers: SubscriberRow[];
+  rejections: RejectionRow[];
   headline: HeadlineRow | null;
+
 }
 
 // ---------------------------------------------------------------------------
