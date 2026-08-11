@@ -443,10 +443,9 @@ const DailyResultCard: React.FC<{
   revisit,
   onLeave,
 }) => {
-  // Rendered once, here: shown as the preview and handed to the share sheet.
+  // Rendered once, here: shown in the share modal and handed to the share sheet.
   const shareImage = useDailyShareImage(result, streak);
-  /** Hidden only when the render failed — then the old layout stands in. */
-  const showPreview = shareImage.status !== "failed";
+
 
 
 
