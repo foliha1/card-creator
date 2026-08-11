@@ -215,20 +215,59 @@ function logCue(name: ClipName, detail?: number[]): void {
 let audioUnlocked = false;
 export function hasAudioUnlocked(): boolean { return audioUnlocked; }
 
-// Safe to call repeatedly. Resumes a suspended context (browsers require a
-// user gesture before audio starts) and starts the theme if one is wanted.
+/**
+ * iOS only really hands over the audio hardware once a source has been started
+ * inside the gesture that resumed the context. Starting a one-sample silent
+ * buffer is inaudible and makes the first real cue reliable.
+ */
+function primeGraph(ctx: AudioContext): void {
+  try {
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(getBus(ctx));
+    src.start(0);
+  } catch { /* ignore */ }
+}
+
+// Safe to call repeatedly. Resumes a suspended/interrupted context (browsers
+// require a user gesture before audio starts) and starts the theme if one is
+// wanted. Only flags success once the context is actually running, so a blocked
+// attempt does not stop the next gesture from trying again.
 export function unlockAudio(): void {
   try {
     const ctx = getCtx();
-    if (ctx.state === "suspended") {
-      // Fire-and-forget; resume() returns a Promise but we don't await it.
-      void ctx.resume();
-    }
-    audioUnlocked = true;
-    // A screen that wants music may have asked for it before the gesture.
-    if (themeDesired) startTheme();
+    primeGraph(ctx);
+    const settle = () => {
+      if (ctx.state === "running") {
+        audioUnlocked = true;
+        primeGraph(ctx);
+      }
+      // A screen that wants music may have asked for it before the gesture.
+      if (themeDesired) startTheme();
+    };
+    if (needsResume(ctx)) void Promise.resolve(ctx.resume()).then(settle, settle);
+    else settle();
   } catch { /* ignore — no AudioContext available */ }
 }
+
+/**
+ * Site-wide safety net: whatever the user touches first unlocks audio, on every
+ * route, including screens that never call `unlockAudio()` themselves. The
+ * listeners stay attached until the context is genuinely running, so a gesture
+ * the browser refuses (e.g. a scroll on iOS) does not burn the one chance.
+ */
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  const kinds = ["pointerdown", "touchend", "mousedown", "keydown"] as const;
+  const onGesture = () => {
+    unlockAudio();
+    if (audioCtx && audioCtx.state === "running") {
+      kinds.forEach((k) => window.removeEventListener(k, onGesture, true));
+    }
+  };
+  kinds.forEach((k) => window.addEventListener(k, onGesture, true));
+}
+
 
 // ---------------------------------------------------------------------------
 // Background theme — music, behind musicEnabled, never an effect
