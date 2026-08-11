@@ -476,12 +476,16 @@ function run(
     if (sfxBus) sfxBus.gain.value = 1;
     const fire = () => {
       if (!sfxEnabled) return;
+      // A cue scheduled while the context is still suspended/interrupted lands
+      // in a stopped clock and is never heard. Drop it rather than queueing a
+      // stale sound that would fire late, out of sync with the animation.
+      if (ctx.state !== "running") return;
       try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
     };
-    if (ctx.state === "running") fire();
-    else void ctx.resume().then(fire, fire);
+    whenRunning(ctx, fire);
   } catch { /* ignore — no AudioContext available */ }
 }
+
 
 interface NoiseOpts {
   /** Start time, seconds from now. */
