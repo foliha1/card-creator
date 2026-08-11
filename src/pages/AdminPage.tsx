@@ -867,6 +867,21 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
           </span>
         </Card>
 
+        {/* Diagnostic: a refused save is silent to the player by design, so the
+            reason surfaces here instead. Empty is the healthy state. */}
+        <Card title="Refused results">
+          {(data?.rejections ?? []).length === 0 ? (
+            <span style={labelStyle}>None refused in this range.</span>
+          ) : (
+            <Table
+              head={["Reason", "Refused", "Players"]}
+              rows={(data?.rejections ?? []).map((r) => [r.reason, r.rejections, r.visitors])}
+            />
+          )}
+        </Card>
+
+
+
         {/* Collapsed to the most recent seven days by default: on a phone an
             inner scroll area inside a page that already scrolls is a trap. */}
         <Card
