@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { HelpCircle, Moon, Sun, Volume2, VolumeOff } from "lucide-react";
 import GameCard from "@/components/GameCard";
-import DailyFrame from "@/components/DailyFrame";
+import DailyFrame, { DAILY_CONTENT_MAX_W } from "@/components/DailyFrame";
 import DailyHowToSteps, { hasSeenHowTo } from "@/components/DailyHowToSteps";
 import DailyRoundIntro, { DAILY_FADE_IN_MS } from "@/components/DailyRoundIntro";
 import DailyMatchGhost, { type GhostCard } from "@/components/DailyMatchGhost";
@@ -26,6 +26,7 @@ import {
 } from "@/lib/dailyEngine";
 import { DAILY_LAUNCH_LABEL, formatDailyShare, type DailyResult } from "@/lib/daily";
 import { renderDailyShareImage } from "@/lib/dailyShareImage";
+import { useDailyShareImage } from "@/hooks/useDailyShareImage";
 import { preloadGameArt } from "@/lib/preloadArt";
 import {
   flushDailyEvents,
@@ -200,7 +201,9 @@ const ShareBlock: React.FC<{
   mobile: boolean;
   /** When set, the multiplayer shine sweep runs once after this delay. */
   sweepDelayMs?: number;
-}> = ({ text, result, streak, mobile, sweepDelayMs }) => {
+  /** Already-rendered share image, reused instead of rendering a second time. */
+  image?: Blob | null;
+}> = ({ text, result, streak, mobile, sweepDelayMs, image }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
@@ -273,11 +276,15 @@ const ShareBlock: React.FC<{
     const copyPromise = beginClipboardWrite();
     setManual(false);
     setWorking(true);
-    let blob: Blob | null = null;
-    try {
-      blob = await renderDailyShareImage(result, streak);
-    } catch {
-      blob = null;
+    // The preview already rendered this exact artifact — reuse it and only
+    // render on demand when the preview never arrived.
+    let blob: Blob | null = image ?? null;
+    if (!blob) {
+      try {
+        blob = await renderDailyShareImage(result, streak);
+      } catch {
+        blob = null;
+      }
     }
     setWorking(false);
 
@@ -436,6 +443,13 @@ const DailyResultCard: React.FC<{
   revisit,
   onLeave,
 }) => {
+  // Rendered once, here: shown as the preview and handed to the share sheet.
+  const shareImage = useDailyShareImage(result, streak);
+  /** Hidden only when the render failed — then the old layout stands in. */
+  const showPreview = shareImage.status !== "failed";
+
+
+
 
   const stat = (label: string, value: string) => (
     <div
@@ -493,23 +507,29 @@ const DailyResultCard: React.FC<{
             ? "You already tested your memory today. Come back tomorrow!"
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
-      {/* Today: this run's numbers plus the comparison line. */}
+      {/* Today: only the comparison line once the share card is on screen —
+          the card already carries solved/misses/streak. When the card fails to
+          render the tiles come back, so nothing is ever lost. */}
       <div
         className="ww-res-in"
         style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("stats") }}
       >
-        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-          Today
-        </h2>
-        <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-          {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
-          {stat("Misses", `${totalMisses}`)}
-          {/* Current streak, folded in beside today's numbers. The record lives
-              in the All time block as "Longest streak", so nothing reads doubled.
-              Omitted (never zero) when the streak read failed. */}
-          {streak !== null && streak >= 1 &&
-            stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
-        </div>
+        {!showPreview && (
+          <>
+            <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+              Today
+            </h2>
+            <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+              {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
+              {stat("Misses", `${totalMisses}`)}
+              {/* Current streak, folded in beside today's numbers. The record lives
+                  in the All time block as "Longest streak", so nothing reads doubled.
+                  Omitted (never zero) when the streak read failed. */}
+              {streak !== null && streak >= 1 &&
+                stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
+            </div>
+          </>
+        )}
         {percentile !== null && (
           <p
             style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
@@ -518,6 +538,7 @@ const DailyResultCard: React.FC<{
           </p>
         )}
       </div>
+
 
       {/* All time. Subscribers only, and hidden entirely when the read failed —
           never shown as zeroes, never as an empty placeholder. */}
@@ -550,63 +571,62 @@ const DailyResultCard: React.FC<{
 
 
 
-      <div
-        className="ww-res-in"
-        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("rounds") }}
-      >
-        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-          Round review
-        </h2>
+      {/* The share card itself. Same information the round review used to
+          spell out, so the review is gone — this is the artifact, not a
+          re-creation of it. Space is reserved at 4:5 up front so nothing
+          shifts when the PNG arrives. */}
+      {showPreview && (
         <div
+          className="ww-res-in"
           style={{
-            display: "grid",
-            gridTemplateColumns: "auto 1fr auto",
-            alignItems: "center",
-            columnGap: SPACE[3],
+            alignSelf: "stretch",
+            display: "flex",
+            justifyContent: "center",
+            ...blockIn("rounds"),
           }}
         >
-          {roundEvents.map((events, i) => {
-            const cell: React.CSSProperties = {
-              fontFamily: FONT_FAMILY_UI,
-              fontWeight: FONT_WEIGHT_UI,
-              fontSize: mobile ? 13 : 14,
-              lineHeight: 1.35,
-              paddingTop: i === 0 ? 0 : SPACE[3],
-              paddingBottom: i === roundEvents.length - 1 ? 0 : SPACE[3],
-              ...(i === 0 ? {} : { borderTop: "1px solid rgba(35, 31, 32, 0.18)" }),
-            };
-            return (
-              <React.Fragment key={`round-${i}`}>
-                <div style={{ ...cell, color: COLORS.inkMuted }}>R{i + 1}</div>
-                <div style={{ ...cell, color: COLORS.ink }}>
-                  {attributes[i] ? ATTR_LABEL[attributes[i]] : ""}
-                </div>
-                <div
-                  style={{
-                    ...cell,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    gap: SPACE[2],
-                  }}
-                >
+          <div
+            style={{
+              // Content width at 4:5, but never so tall that the screen has to
+              // scroll: the height is capped against the viewport (tighter when
+              // the email block is also on screen) and the width follows the ratio.
+              height: `min(calc(var(--ww-vh, 100vh) * ${subscribed ? 0.41 : 0.29}), ${DAILY_CONTENT_MAX_W * 1.25}px)`,
+              maxWidth: "100%",
+              aspectRatio: "4 / 5",
+              border: BORDER.heavy,
+              borderRadius: RADIUS.sm,
+              background: COLORS.panel,
+              overflow: "hidden",
+              flex: "0 0 auto",
+            }}
+          >
 
-                  {peekUsed && peekRound === i + 1 && (
-                    <span aria-label="Peek used this round" title="Peek used">
-                      👀
-                    </span>
-                  )}
-                  <RoundMarks
-                    events={events}
-                    animateFrom={markOffsets[i]}
-                    baseDelayMs={MARKS_BASE_DELAY_MS}
-                  />
-                </div>
-              </React.Fragment>
-            );
-          })}
+            {shareImage.url ? (
+              <img
+                src={shareImage.url}
+                alt={`Your WHOOP! WHOOP! Daily #${puzzleNumber} share card`}
+                style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...textStyle("caption", mobile),
+                  color: COLORS.inkMuted,
+                }}
+              >
+                Making your card…
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
 
 
       <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
@@ -616,6 +636,7 @@ const DailyResultCard: React.FC<{
           streak={streak}
           mobile={mobile}
           sweepDelayMs={sweepDelayMs}
+          image={shareImage.blob}
         />
       </div>
 
