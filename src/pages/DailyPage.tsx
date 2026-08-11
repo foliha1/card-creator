@@ -633,7 +633,7 @@ const DailyResultCard: React.FC<{
           streak={streak}
           mobile={mobile}
           sweepDelayMs={sweepDelayMs}
-          image={shareImage.blob}
+          image={shareImage}
         />
       </div>
 
