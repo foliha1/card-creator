@@ -13,7 +13,7 @@
 
 import React, { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Moon, Sun, X } from "lucide-react";
+import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import {
   BORDER,
