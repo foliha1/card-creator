@@ -346,6 +346,31 @@ const ShareBlock: React.FC<{
     await settleClipboard(copyPromise);
   };
 
+  /** Close the modal and hand focus back to the button that opened it. */
+  const closePreview = () => {
+    setPreviewOpen(false);
+    window.setTimeout(() => shareBtnRef.current?.focus(), 0);
+  };
+
+  /** Send from inside the modal: the full share chain, then dismiss. */
+  const sendFromPreview = async () => {
+    await share();
+    closePreview();
+  };
+
+  /**
+   * SHARE shows the card first. When the render failed outright there is
+   * nothing to show, so it goes straight down the existing text path.
+   */
+  const openPreview = () => {
+    if (image?.status === "failed") {
+      void share();
+      return;
+    }
+    hapticTap();
+    setPreviewOpen(true);
+  };
+
   // One-shot sweep: travels the full width and exits off the far edge.
   const sweep: React.CSSProperties | null =
     sweepDelayMs === undefined
@@ -356,8 +381,9 @@ const ShareBlock: React.FC<{
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
       <button
         type="button"
+        ref={shareBtnRef}
         className="ww-press"
-        onClick={share}
+        onClick={openPreview}
         disabled={working}
         style={{
           ...buttonStyle("primary", "lg", { mobile }),
@@ -369,6 +395,18 @@ const ShareBlock: React.FC<{
         {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
         {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
       </button>
+
+      {previewOpen && (
+        <DailySharePreview
+          imageUrl={image?.url ?? null}
+          puzzleNumber={result.puzzleNumber}
+          working={working}
+          mobile={mobile}
+          onSend={() => void sendFromPreview()}
+          onClose={closePreview}
+        />
+      )}
+
 
       {manual && (
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE[2] }}>
