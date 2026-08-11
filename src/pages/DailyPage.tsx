@@ -275,11 +275,15 @@ const ShareBlock: React.FC<{
     const copyPromise = beginClipboardWrite();
     setManual(false);
     setWorking(true);
-    let blob: Blob | null = null;
-    try {
-      blob = await renderDailyShareImage(result, streak);
-    } catch {
-      blob = null;
+    // The preview already rendered this exact artifact — reuse it and only
+    // render on demand when the preview never arrived.
+    let blob: Blob | null = image ?? null;
+    if (!blob) {
+      try {
+        blob = await renderDailyShareImage(result, streak);
+      } catch {
+        blob = null;
+      }
     }
     setWorking(false);
 
