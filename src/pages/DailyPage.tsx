@@ -191,8 +191,10 @@ const RoundMarks: React.FC<{
 
 
 /**
- * Share block — renders the day's result as a PNG and shares it alongside the
- * unchanged share text. Every failure path degrades to text, silently.
+ * Share block — SHARE opens the preview modal (see it before you post it), and
+ * the modal's Send runs the OS share sheet with the already-rendered PNG
+ * attached. Every failure path degrades to text, silently, and a render that
+ * failed outright skips the modal entirely.
  */
 const ShareBlock: React.FC<{
   text: string;
@@ -202,13 +204,16 @@ const ShareBlock: React.FC<{
   /** When set, the multiplayer shine sweep runs once after this delay. */
   sweepDelayMs?: number;
   /** Already-rendered share image, reused instead of rendering a second time. */
-  image?: Blob | null;
+  image?: DailyShareImage;
 }> = ({ text, result, streak, mobile, sweepDelayMs, image }) => {
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
+  /** The preview modal, opened by SHARE and dismissed by Escape/CLOSE. */
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const shareBtnRef = React.useRef<HTMLButtonElement | null>(null);
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
   const [manual, setManual] = useState(false);
-  const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
+
 
   const flashCopied = () => {
     setCopied(true);
