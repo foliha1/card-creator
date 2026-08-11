@@ -74,10 +74,43 @@ export function setSoundEnabled(value: boolean): void {
   setMusicEnabled(value);
 }
 
+/**
+ * The context is created lazily and reused. Safari (and older iOS webviews)
+ * only expose `webkitAudioContext`, and constructing one can throw when the
+ * page has no audio permission at all — in that case every cue becomes a
+ * no-op instead of an exception.
+ */
+type CtxCtor = new (options?: AudioContextOptions) => AudioContext;
+function ctxCtor(): CtxCtor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { AudioContext?: CtxCtor; webkitAudioContext?: CtxCtor };
+  return w.AudioContext ?? w.webkitAudioContext ?? null;
+}
+
 function getCtx(): AudioContext {
-  if (!audioCtx) audioCtx = new AudioContext();
+  if (!audioCtx) {
+    const Ctor = ctxCtor();
+    if (!Ctor) throw new Error("no AudioContext");
+    audioCtx = new Ctor({ latencyHint: "interactive" });
+  }
   return audioCtx;
 }
+
+/**
+ * iOS reports `"interrupted"` (not `"suspended"`) after a phone call, Siri or
+ * a screen lock, and the graph stays silent until something resumes it. Treat
+ * anything other than `"running"` as needing a resume.
+ */
+function needsResume(ctx: AudioContext): boolean {
+  return ctx.state !== "running";
+}
+
+/** Runs `fn` once the context is running; resumes first when it is not. */
+function whenRunning(ctx: AudioContext, fn: () => void): void {
+  if (!needsResume(ctx)) { fn(); return; }
+  void Promise.resolve(ctx.resume()).then(fn, fn);
+}
+
 
 // ---------------------------------------------------------------------------
 // Mix balance — one place to tune every effect's level
