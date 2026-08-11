@@ -283,9 +283,9 @@ const ShareBlock: React.FC<{
     const copyPromise = beginClipboardWrite();
     setManual(false);
     setWorking(true);
-    // The preview already rendered this exact artifact — reuse it and only
-    // render on demand when the preview never arrived.
-    let blob: Blob | null = image ?? null;
+    // The modal preview already rendered this exact artifact — reuse it and
+    // only render on demand when it never arrived.
+    let blob: Blob | null = image?.blob ?? null;
     if (!blob) {
       try {
         blob = await renderDailyShareImage(result, streak);
