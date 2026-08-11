@@ -13,7 +13,7 @@
 
 import React, { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Moon, Sun, X } from "lucide-react";
+import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import {
   BORDER,
@@ -37,7 +37,7 @@ const DailySharePreview: React.FC<{
   puzzleNumber: number;
   /** Which version of the card is on screen. Per-share, never persisted. */
   imageTheme: "light" | "night";
-  onToggleTheme: () => void;
+  onSetTheme: (theme: "light" | "night") => void;
   /** Label swaps to a working state while the share sheet is being prepared. */
   working?: boolean;
   mobile: boolean;
@@ -47,7 +47,7 @@ const DailySharePreview: React.FC<{
   imageUrl,
   puzzleNumber,
   imageTheme,
-  onToggleTheme,
+  onSetTheme,
   working = false,
   mobile,
   onSend,
@@ -193,36 +193,59 @@ const DailySharePreview: React.FC<{
               gap: 8,
             }}
           >
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="ww-press"
-              aria-label={
-                imageTheme === "night" ? "Use the light card" : "Use the night card"
-              }
-              title={imageTheme === "night" ? "Use the light card" : "Use the night card"}
-              data-testid="share-preview-theme"
+            {/* Theme swatches: warm black = night, cream = light. */}
+            <div
+              role="group"
+              aria-label="Card theme"
               style={{
-                ...textStyle("chip", mobile),
-                display: "inline-flex",
+                display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                boxSizing: "border-box",
-                minHeight: 36,
-                minWidth: 44,
-                padding: "8px 16px",
-                border: "none",
-                borderRadius: RADIUS.sm,
-                background: COLORS.panelMuted,
-                color: COLORS.ink,
+                gap: SPACE[3],
               }}
             >
-              {imageTheme === "night" ? (
-                <Sun size={16} aria-hidden="true" />
-              ) : (
-                <Moon size={16} aria-hidden="true" />
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={() => onSetTheme("light")}
+                className="ww-press"
+                aria-pressed={imageTheme === "light"}
+                aria-label="Use the light card"
+                data-testid="share-preview-theme-light"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  boxSizing: "border-box",
+                  background: RAW.cream,
+                  border:
+                    imageTheme === "light"
+                      ? `2.5px solid ${RAW.blue}`
+                      : `1.5px solid ${RAW.warmGrey}`,
+                  padding: 0,
+                  cursor: "pointer",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => onSetTheme("night")}
+                className="ww-press"
+                aria-pressed={imageTheme === "night"}
+                aria-label="Use the night card"
+                data-testid="share-preview-theme-night"
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  boxSizing: "border-box",
+                  background: RAW.warmBlack,
+                  border:
+                    imageTheme === "night"
+                      ? `2.5px solid ${RAW.blue}`
+                      : `1.5px solid ${RAW.warmGrey}`,
+                  padding: 0,
+                  cursor: "pointer",
+                }}
+              />
+            </div>
 
             <button
               type="button"

@@ -406,9 +406,7 @@ const ShareBlock: React.FC<{
           imageUrl={image?.url ?? null}
           puzzleNumber={result.puzzleNumber}
           imageTheme={image?.theme ?? "light"}
-          onToggleTheme={() =>
-            image?.setTheme(image.theme === "night" ? "light" : "night")
-          }
+          onSetTheme={(theme) => image?.setTheme(theme)}
           working={working}
           mobile={mobile}
           onSend={() => void sendFromPreview()}
