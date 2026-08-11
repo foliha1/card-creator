@@ -87,6 +87,13 @@ interface SubscriberRow {
   total: number;
   synced: number;
 }
+/** Temporary diagnostic: why a finished run was refused by the server. */
+interface RejectionRow {
+  reason: string;
+  rejections: number;
+  visitors: number;
+}
+
 interface HeadlineRow {
   total_players: number;
   dau_today: number;
