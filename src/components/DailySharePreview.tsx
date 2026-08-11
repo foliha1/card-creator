@@ -41,6 +41,23 @@ const DailySharePreview: React.FC<{
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sendRef = useRef<HTMLButtonElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = React.useState<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  /** Derive the largest 4:5 box that fits the slot, so the ratio is exact. */
+  useEffect(() => {
+    const slot = slotRef.current;
+    if (!slot) return;
+    const measure = () => {
+      const { width, height } = slot.getBoundingClientRect();
+      const w = Math.max(0, Math.min(width, height * (4 / 5)));
+      setBox({ w: Math.floor(w), h: Math.floor(w * (5 / 4)) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(slot);
+    return () => ro.disconnect();
+  }, []);
 
   // Focus moves in on open: the Send button when it is live, the close control
   // while the image is still rendering.
@@ -186,9 +203,10 @@ const DailySharePreview: React.FC<{
             </button>
           </div>
 
-          {/* The card. Space is reserved at 4:5 up front, so the placeholder and
-              the finished PNG occupy exactly the same box. */}
+          {/* The card. The slot is measured and the box derived from it, so the
+              placeholder and the finished PNG occupy the exact same 4:5 space. */}
           <div
+            ref={slotRef}
             style={{
               flex: "1 1 0",
               minHeight: 0,
@@ -200,12 +218,8 @@ const DailySharePreview: React.FC<{
           >
             <div
               style={{
-                // Hugs the PNG so the 4:5 ratio comes from the artwork itself
-                // and can never be stretched by the available box.
-                display: "flex",
-                maxWidth: "100%",
-                maxHeight: "100%",
-                ...(imageUrl ? {} : { height: "100%", aspectRatio: "4 / 5" }),
+                width: box.w,
+                height: box.h,
                 flex: "0 0 auto",
                 boxSizing: "border-box",
                 border: BORDER.heavy,
@@ -218,14 +232,7 @@ const DailySharePreview: React.FC<{
                 <img
                   src={imageUrl}
                   alt={`Your WHOOP! WHOOP! Daily #${puzzleNumber} share card`}
-                  style={{
-                    display: "block",
-                    width: "auto",
-                    height: "auto",
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    objectFit: "contain",
-                  }}
+                  style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
                 <div
@@ -237,10 +244,11 @@ const DailySharePreview: React.FC<{
                     justifyContent: "center",
                     ...textStyle("caption", mobile),
                     color: COLORS.inkMuted,
+                    textAlign: "center",
                   }}
                 >
                   Making your card…
-                </div>
+          </div>
               )}
             </div>
           </div>
