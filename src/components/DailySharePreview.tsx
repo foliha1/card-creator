@@ -37,7 +37,7 @@ const DailySharePreview: React.FC<{
   puzzleNumber: number;
   /** Which version of the card is on screen. Per-share, never persisted. */
   imageTheme: "light" | "night";
-  onToggleTheme: () => void;
+  onSetTheme: (theme: "light" | "night") => void;
   /** Label swaps to a working state while the share sheet is being prepared. */
   working?: boolean;
   mobile: boolean;
