@@ -1352,19 +1352,15 @@ const DailyHowToSteps: React.FC<{
 
         </div>
 
-        {/* heading row: holds its authored height on a normal screen and
-            collapses to a 48px floor on very short in-app-browser viewports,
-            so the heading still lands in the same place across slides 2-7.
-            The heading sits at the BOTTOM of the row: the row's slack then
-            lives above the heading instead of between the heading and the
-            visual, so the visual's box really does start at the heading's
-            bottom edge and centring inside it reads as centred. */}
+        {/* heading row: hugs the heading itself (no fixed height, so no dead
+            space between the top of the card and the headline). Any slack goes
+            to the middle container, which is responsive and absorbs whatever
+            height is available. */}
         {s.big ? null : (
           <div
             style={{
               width: "100%",
               maxWidth: sz.innerMaxW,
-              height: `min(${sz.headingRowH}px, max(48px, ${(sz.headingRowH / 8.44).toFixed(2)}vh))`,
               flex: "0 0 auto",
               display: "flex",
               alignItems: "flex-end",
@@ -1374,6 +1370,7 @@ const DailyHowToSteps: React.FC<{
             <h2 style={heading(false, sz)}>{s.heading}</h2>
           </div>
         )}
+
 
         {/* visual takes the space left between the heading row and the copy */}
         <div
