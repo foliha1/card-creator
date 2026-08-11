@@ -193,22 +193,16 @@ const DailySharePreview: React.FC<{
               gap: 8,
             }}
           >
-            {/* Theme toggle: a slideable two-position switch.
-                The whole left/right half is tappable, and the blue ring slides
-                to the active circle so the state is obvious at a glance. */}
+            {/* Theme swatches: warm black = night, cream = light.
+                Each circle is larger and sits inside a 44px minimum touch
+                target so the tap is forgiving. */}
             <div
               role="group"
               aria-label="Card theme"
               style={{
-                position: "relative",
-                width: 128,
-                height: 44,
-                borderRadius: 22,
-                boxSizing: "border-box",
-                border: `1.5px solid ${RAW.warmGrey}`,
-                background: RAW.cream,
                 display: "flex",
-                overflow: "hidden",
+                alignItems: "center",
+                gap: SPACE[8],
               }}
             >
               <button
@@ -219,27 +213,30 @@ const DailySharePreview: React.FC<{
                 aria-label="Use the light card"
                 data-testid="share-preview-theme-light"
                 style={{
-                  flex: 1,
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   background: "transparent",
                   border: "none",
                   padding: 0,
                   cursor: "pointer",
-                  position: "relative",
                 }}
               >
                 <span
                   aria-hidden="true"
                   style={{
-                    position: "absolute",
-                    left: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: 24,
-                    height: 24,
+                    display: "block",
+                    width: 34,
+                    height: 34,
                     borderRadius: "50%",
-                    background: RAW.cream,
-                    border: `1.5px solid ${RAW.warmGrey}`,
                     boxSizing: "border-box",
+                    background: RAW.cream,
+                    border:
+                      imageTheme === "light"
+                        ? `2.5px solid ${RAW.blue}`
+                        : `1.5px solid ${RAW.warmGrey}`,
                   }}
                 />
               </button>
@@ -251,46 +248,33 @@ const DailySharePreview: React.FC<{
                 aria-label="Use the night card"
                 data-testid="share-preview-theme-night"
                 style={{
-                  flex: 1,
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   background: "transparent",
                   border: "none",
                   padding: 0,
                   cursor: "pointer",
-                  position: "relative",
                 }}
               >
                 <span
                   aria-hidden="true"
                   style={{
-                    position: "absolute",
-                    right: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: 24,
-                    height: 24,
+                    display: "block",
+                    width: 34,
+                    height: 34,
                     borderRadius: "50%",
-                    background: RAW.warmBlack,
-                    border: `1.5px solid ${RAW.warmGrey}`,
                     boxSizing: "border-box",
+                    background: RAW.warmBlack,
+                    border:
+                      imageTheme === "night"
+                        ? `2.5px solid ${RAW.blue}`
+                        : `1.5px solid ${RAW.warmGrey}`,
                   }}
                 />
               </button>
-              {/* Sliding selection ring — purely decorative. */}
-              <span
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  top: 5,
-                  left: imageTheme === "light" ? 5 : 89,
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  boxSizing: "border-box",
-                  border: `2.5px solid ${RAW.blue}`,
-                  transition: "left 200ms ease",
-                  pointerEvents: "none",
-                }}
-              />
             </div>
 
             <button
