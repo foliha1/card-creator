@@ -317,14 +317,13 @@ export function startTheme(): void {
   if (!musicEnabled) return;
   try {
     const ctx = getCtx();
-    const go = () => { try { startThemeNow(ctx); } catch { /* ignore */ } };
     // resume() is async: without waiting, the first attempt schedules against a
     // clock that has not started yet. Attempted even before a gesture —
     // browsers that block it simply reject, which is fine.
-    if (ctx.state === "running") go();
-    else void ctx.resume().then(go, go);
+    whenRunning(ctx, () => { try { startThemeNow(ctx); } catch { /* ignore */ } });
   } catch { /* never throw from audio */ }
 }
+
 
 function startThemeNow(ctx: AudioContext): void {
   if (!themeDesired || !musicEnabled) return;
