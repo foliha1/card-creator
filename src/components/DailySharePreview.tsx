@@ -13,7 +13,7 @@
 
 import React, { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Moon, Sun, X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import {
   BORDER,
@@ -28,16 +28,31 @@ import {
 const FOCUSABLE =
   'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+/** The card composition's own pixel size — it never scales up beyond this. */
+const CARD_MAX_W = 1080;
+
 const DailySharePreview: React.FC<{
   /** Object URL of the rendered PNG; null while it is still rendering. */
   imageUrl: string | null;
   puzzleNumber: number;
+  /** Which version of the card is on screen. Per-share, never persisted. */
+  imageTheme: "light" | "night";
+  onToggleTheme: () => void;
   /** Label swaps to a working state while the share sheet is being prepared. */
   working?: boolean;
   mobile: boolean;
   onSend: () => void;
   onClose: () => void;
-}> = ({ imageUrl, puzzleNumber, working = false, mobile, onSend, onClose }) => {
+}> = ({
+  imageUrl,
+  puzzleNumber,
+  imageTheme,
+  onToggleTheme,
+  working = false,
+  mobile,
+  onSend,
+  onClose,
+}) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sendRef = useRef<HTMLButtonElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -50,7 +65,8 @@ const DailySharePreview: React.FC<{
     if (!slot) return;
     const measure = () => {
       const { width, height } = slot.getBoundingClientRect();
-      const w = Math.max(0, Math.min(width, height * (4 / 5)));
+      // 4:5, fits both axes, and never grows past the composition itself.
+      const w = Math.max(0, Math.min(width, height * (4 / 5), CARD_MAX_W));
       setBox({ w: Math.floor(w), h: Math.floor(w * (5 / 4)) });
     };
     measure();
@@ -173,9 +189,41 @@ const DailySharePreview: React.FC<{
               marginBottom: SPACE[4],
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-end",
+              justifyContent: "space-between",
+              gap: 8,
             }}
           >
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="ww-press"
+              aria-label={
+                imageTheme === "night" ? "Use the light card" : "Use the night card"
+              }
+              title={imageTheme === "night" ? "Use the light card" : "Use the night card"}
+              data-testid="share-preview-theme"
+              style={{
+                ...textStyle("chip", mobile),
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
+                minHeight: 36,
+                minWidth: 44,
+                padding: "8px 16px",
+                border: "none",
+                borderRadius: RADIUS.sm,
+                background: COLORS.panelMuted,
+                color: COLORS.ink,
+              }}
+            >
+              {imageTheme === "night" ? (
+                <Sun size={16} aria-hidden="true" />
+              ) : (
+                <Moon size={16} aria-hidden="true" />
+              )}
+            </button>
+
             <button
               type="button"
               ref={closeRef}
