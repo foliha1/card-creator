@@ -74,10 +74,43 @@ export function setSoundEnabled(value: boolean): void {
   setMusicEnabled(value);
 }
 
+/**
+ * The context is created lazily and reused. Safari (and older iOS webviews)
+ * only expose `webkitAudioContext`, and constructing one can throw when the
+ * page has no audio permission at all — in that case every cue becomes a
+ * no-op instead of an exception.
+ */
+type CtxCtor = new (options?: AudioContextOptions) => AudioContext;
+function ctxCtor(): CtxCtor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { AudioContext?: CtxCtor; webkitAudioContext?: CtxCtor };
+  return w.AudioContext ?? w.webkitAudioContext ?? null;
+}
+
 function getCtx(): AudioContext {
-  if (!audioCtx) audioCtx = new AudioContext();
+  if (!audioCtx) {
+    const Ctor = ctxCtor();
+    if (!Ctor) throw new Error("no AudioContext");
+    audioCtx = new Ctor({ latencyHint: "interactive" });
+  }
   return audioCtx;
 }
+
+/**
+ * iOS reports `"interrupted"` (not `"suspended"`) after a phone call, Siri or
+ * a screen lock, and the graph stays silent until something resumes it. Treat
+ * anything other than `"running"` as needing a resume.
+ */
+function needsResume(ctx: AudioContext): boolean {
+  return ctx.state !== "running";
+}
+
+/** Runs `fn` once the context is running; resumes first when it is not. */
+function whenRunning(ctx: AudioContext, fn: () => void): void {
+  if (!needsResume(ctx)) { fn(); return; }
+  void Promise.resolve(ctx.resume()).then(fn, fn);
+}
+
 
 // ---------------------------------------------------------------------------
 // Mix balance — one place to tune every effect's level
@@ -182,20 +215,59 @@ function logCue(name: ClipName, detail?: number[]): void {
 let audioUnlocked = false;
 export function hasAudioUnlocked(): boolean { return audioUnlocked; }
 
-// Safe to call repeatedly. Resumes a suspended context (browsers require a
-// user gesture before audio starts) and starts the theme if one is wanted.
+/**
+ * iOS only really hands over the audio hardware once a source has been started
+ * inside the gesture that resumed the context. Starting a one-sample silent
+ * buffer is inaudible and makes the first real cue reliable.
+ */
+function primeGraph(ctx: AudioContext): void {
+  try {
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(getBus(ctx));
+    src.start(0);
+  } catch { /* ignore */ }
+}
+
+// Safe to call repeatedly. Resumes a suspended/interrupted context (browsers
+// require a user gesture before audio starts) and starts the theme if one is
+// wanted. Only flags success once the context is actually running, so a blocked
+// attempt does not stop the next gesture from trying again.
 export function unlockAudio(): void {
   try {
     const ctx = getCtx();
-    if (ctx.state === "suspended") {
-      // Fire-and-forget; resume() returns a Promise but we don't await it.
-      void ctx.resume();
-    }
-    audioUnlocked = true;
-    // A screen that wants music may have asked for it before the gesture.
-    if (themeDesired) startTheme();
+    primeGraph(ctx);
+    const settle = () => {
+      if (ctx.state === "running") {
+        audioUnlocked = true;
+        primeGraph(ctx);
+      }
+      // A screen that wants music may have asked for it before the gesture.
+      if (themeDesired) startTheme();
+    };
+    if (needsResume(ctx)) void Promise.resolve(ctx.resume()).then(settle, settle);
+    else settle();
   } catch { /* ignore — no AudioContext available */ }
 }
+
+/**
+ * Site-wide safety net: whatever the user touches first unlocks audio, on every
+ * route, including screens that never call `unlockAudio()` themselves. The
+ * listeners stay attached until the context is genuinely running, so a gesture
+ * the browser refuses (e.g. a scroll on iOS) does not burn the one chance.
+ */
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  const kinds = ["pointerdown", "touchend", "mousedown", "keydown"] as const;
+  const onGesture = () => {
+    unlockAudio();
+    if (audioCtx && audioCtx.state === "running") {
+      kinds.forEach((k) => window.removeEventListener(k, onGesture, true));
+    }
+  };
+  kinds.forEach((k) => window.addEventListener(k, onGesture, true));
+}
+
 
 // ---------------------------------------------------------------------------
 // Background theme — music, behind musicEnabled, never an effect
@@ -213,18 +285,39 @@ let themeGainNode: GainNode | null = null;
 /** The screen wants music, regardless of whether it is audible right now. */
 let themeDesired = false;
 let themeStopTimer: ReturnType<typeof setTimeout> | null = null;
+/** Bounded retry counter for a failed theme fetch/decode. */
+let themeLoadAttempts = 0;
+
+
+/**
+ * `decodeAudioData` is promise-based everywhere modern, but older Safari only
+ * supports the callback form and returns `undefined`. Support both.
+ */
+function decode(ctx: AudioContext, data: ArrayBuffer): Promise<AudioBuffer> {
+  return new Promise((resolve, reject) => {
+    const maybe = ctx.decodeAudioData(data, resolve, reject) as unknown;
+    if (maybe && typeof (maybe as Promise<AudioBuffer>).then === "function") {
+      (maybe as Promise<AudioBuffer>).then(resolve, reject);
+    }
+  });
+}
 
 function loadTheme(): Promise<void> {
   if (themeLoading) return themeLoading;
   themeLoading = (async () => {
     try {
-      const res = await fetch(THEME_FILE);
-      if (!res.ok) return;
-      themeBuffer = await getCtx().decodeAudioData(await res.arrayBuffer());
-    } catch { /* missing file: music is simply a no-op */ }
+      const res = await fetch(THEME_FILE, { cache: "force-cache" });
+      if (!res.ok) throw new Error(`theme ${res.status}`);
+      themeBuffer = await decode(getCtx(), await res.arrayBuffer());
+    } catch {
+      // A transient network failure must not disable music for the session:
+      // clear the cached attempt so the next startTheme() can try again.
+      themeLoading = null;
+    }
   })();
   return themeLoading;
 }
+
 
 function ramp(node: GainNode, to: number, ms: number) {
   const ctx = getCtx();
@@ -245,14 +338,13 @@ export function startTheme(): void {
   if (!musicEnabled) return;
   try {
     const ctx = getCtx();
-    const go = () => { try { startThemeNow(ctx); } catch { /* ignore */ } };
     // resume() is async: without waiting, the first attempt schedules against a
     // clock that has not started yet. Attempted even before a gesture —
     // browsers that block it simply reject, which is fine.
-    if (ctx.state === "running") go();
-    else void ctx.resume().then(go, go);
+    whenRunning(ctx, () => { try { startThemeNow(ctx); } catch { /* ignore */ } });
   } catch { /* never throw from audio */ }
 }
+
 
 function startThemeNow(ctx: AudioContext): void {
   if (!themeDesired || !musicEnabled) return;
@@ -263,7 +355,11 @@ function startThemeNow(ctx: AudioContext): void {
     return;
   }
   if (!themeBuffer) {
-    void loadTheme().then(() => { if (themeDesired) startTheme(); });
+    // Bounded retry: a failed fetch/decode is retried a couple of times, then
+    // music quietly gives up rather than looping forever.
+    if (themeLoadAttempts >= 3) return;
+    themeLoadAttempts += 1;
+    void loadTheme().then(() => { if (themeDesired && themeBuffer) startTheme(); });
     return;
   }
   const g = ctx.createGain();
@@ -273,10 +369,16 @@ function startThemeNow(ctx: AudioContext): void {
   src.buffer = themeBuffer;
   src.loop = true;
   src.connect(g);
+  // If the loop ever ends (context torn down, source killed), drop the handles
+  // so the next startTheme() builds a fresh source instead of ramping a corpse.
+  src.onended = () => {
+    if (themeSource === src) { themeSource = null; themeGainNode = null; }
+  };
   src.start();
   themeSource = src;
   themeGainNode = g;
   ramp(g, THEME_GAIN, THEME_FADE_IN_MS);
+
 }
 
 function fadeOutTheme(hard: boolean): void {
@@ -302,24 +404,31 @@ export function stopTheme(): void {
   fadeOutTheme(false);
 }
 
-// iOS suspends the AudioContext when the page is backgrounded and never resumes
-// it on return, so the theme stays silent until some unrelated cue happens to
-// wake the graph. Resume explicitly on the way back, and restart the loop when
-// the current screen still wants music.
+// iOS suspends (or "interrupts") the AudioContext when the page is backgrounded,
+// a call comes in or the screen locks, and never resumes it on return, so the
+// theme stays silent until some unrelated cue happens to wake the graph. Resume
+// explicitly on the way back — from every signal a browser might give us — and
+// restart the loop when the current screen still wants music.
 if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") return;
+  const wake = () => {
     try {
       const ctx = audioCtx;
       if (!ctx) return;
-      const resumeThen = () => {
+      whenRunning(ctx, () => {
+        if (ctx.state === "running" && sfxBus && sfxEnabled) sfxBus.gain.value = 1;
         if (themeDesired && musicEnabled) startTheme();
-      };
-      if (ctx.state === "suspended") void ctx.resume().then(resumeThen, resumeThen);
-      else resumeThen();
+      });
     } catch { /* never throw from audio */ }
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") wake();
   });
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    window.addEventListener("focus", wake);
+    window.addEventListener("pageshow", wake);
+  }
 }
+
 
 
 // ---------------------------------------------------------------------------
@@ -367,12 +476,16 @@ function run(
     if (sfxBus) sfxBus.gain.value = 1;
     const fire = () => {
       if (!sfxEnabled) return;
+      // A cue scheduled while the context is still suspended/interrupted lands
+      // in a stopped clock and is never heard. Drop it rather than queueing a
+      // stale sound that would fire late, out of sync with the animation.
+      if (ctx.state !== "running") return;
       try { fn({ ctx, t0: ctx.currentTime + LEAD }); } catch { /* ignore */ }
     };
-    if (ctx.state === "running") fire();
-    else void ctx.resume().then(fire, fire);
+    whenRunning(ctx, fire);
   } catch { /* ignore — no AudioContext available */ }
 }
+
 
 interface NoiseOpts {
   /** Start time, seconds from now. */
