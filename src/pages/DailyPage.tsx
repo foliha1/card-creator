@@ -575,21 +575,32 @@ const DailyResultCard: React.FC<{
           spell out, so the review is gone — this is the artifact, not a
           re-creation of it. Space is reserved at 4:5 up front so nothing
           shifts when the PNG arrives. */}
-      {shareImage.status !== "failed" && (
+      {showPreview && (
         <div
           className="ww-res-in"
-          style={{ alignSelf: "stretch", ...blockIn("rounds") }}
+          style={{
+            alignSelf: "stretch",
+            display: "flex",
+            justifyContent: "center",
+            ...blockIn("rounds"),
+          }}
         >
           <div
             style={{
-              width: "100%",
+              // Content width at 4:5, but never so tall that the screen has to
+              // scroll: the height is capped against the viewport and the width
+              // follows the ratio.
+              height: `min(calc(var(--ww-vh, 100vh) * 0.42), ${DAILY_CONTENT_MAX_W * 1.25}px)`,
+              maxWidth: "100%",
               aspectRatio: "4 / 5",
               border: BORDER.heavy,
               borderRadius: RADIUS.sm,
               background: COLORS.panel,
               overflow: "hidden",
+              flex: "0 0 auto",
             }}
           >
+
             {shareImage.url ? (
               <img
                 src={shareImage.url}
