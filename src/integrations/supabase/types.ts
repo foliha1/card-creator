@@ -439,6 +439,19 @@ export type Database = {
           skipped: number
         }[]
       }
+      admin_next_day_return: {
+        Args: never
+        Returns: {
+          base_puzzle: number
+          email_base: number
+          email_pct: number
+          email_returned: number
+          next_puzzle: number
+          visitor_base: number
+          visitor_pct: number
+          visitor_returned: number
+        }[]
+      }
       admin_rejections: {
         Args: { p_from: string; p_to: string }
         Returns: {

@@ -94,6 +94,22 @@ interface RejectionRow {
   visitors: number;
 }
 
+/**
+ * Next-day return: of the finishers on the last fully elapsed puzzle day, how
+ * many finished the day after. Distinct from `returning_pct`, which is the
+ * all-time "played on more than one day" rate.
+ */
+interface NextDayRow {
+  base_puzzle: number;
+  next_puzzle: number;
+  visitor_base: number;
+  visitor_returned: number;
+  visitor_pct: number | null;
+  email_base: number;
+  email_returned: number;
+  email_pct: number | null;
+}
+
 interface HeadlineRow {
   total_players: number;
   dau_today: number;
@@ -117,6 +133,7 @@ interface DashboardData {
   subscribers: SubscriberRow[];
   rejections: RejectionRow[];
   headline: HeadlineRow | null;
+  nextDay: NextDayRow | null;
 
 }
 
@@ -465,7 +482,11 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const load = useCallback(async () => {
     setState("loading");
     const args = { p_from: from, p_to: to };
-    const [funnel, difficulty, howto, attribution, trend, subscribers, headline, rejections] =
+    const rpcUntyped = supabase.rpc as unknown as (
+      n: string,
+      a?: unknown,
+    ) => Promise<{ data: unknown }>;
+    const [funnel, difficulty, howto, attribution, trend, subscribers, headline, rejections, nextDay] =
       await Promise.all([
         supabase.rpc("admin_funnel", args),
         supabase.rpc("admin_difficulty", args),
@@ -474,12 +495,11 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
         supabase.rpc("admin_trend", args),
         supabase.rpc("admin_subscribers"),
         supabase.rpc("admin_headline", args),
-        // deno-lint-ignore no-explicit-any -- new RPC, generated types lag
-        (supabase.rpc as unknown as (n: string, a: unknown) => Promise<{ data: unknown }>)(
-          "admin_rejections",
-          args,
-        ),
+        // new RPCs, generated types lag behind the migration
+        rpcUntyped("admin_rejections", args),
+        rpcUntyped("admin_next_day_return"),
       ]);
+
 
     if (funnel.error || difficulty.error) {
       setState("error");
@@ -501,6 +521,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       subscribers: (subscribers.data as SubscriberRow[] | null) ?? [],
       rejections: (rejections.data as RejectionRow[] | null) ?? [],
       headline: (headline.data as HeadlineRow[] | null)?.[0] ?? null,
+      nextDay: (nextDay.data as NextDayRow[] | null)?.[0] ?? null,
     });
 
     setState("ready");
@@ -731,18 +752,42 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
             />
             {h && h.returning_pct !== null && h.returning_eligible >= MIN ? (
               <Stat
-                label="Returning players"
+                label="Returning players (all-time)"
                 value={`${h.returning_pct}%`}
-                note={`Of ${h.returning_eligible.toLocaleString()} players`}
+                note={`Played on more than one day · of ${h.returning_eligible.toLocaleString()} players`}
               />
             ) : (
               <Stat
-                label="Returning players"
+                label="Returning players (all-time)"
                 value="Not enough data"
                 note={`Needs ${MIN}+ players · ${h ? h.returning_eligible : 0} so far`}
                 muted
               />
             )}
+            {(() => {
+              const nd = data?.nextDay;
+              if (!nd) {
+                return (
+                  <Stat
+                    label="Next-day return"
+                    value="No completed pair yet"
+                    note="Needs two fully elapsed puzzle days"
+                    muted
+                  />
+                );
+              }
+              const v =
+                nd.visitor_pct === null ? "—" : `${nd.visitor_pct}%`;
+              const e = nd.email_pct === null ? "—" : `${nd.email_pct}%`;
+              return (
+                <Stat
+                  label="Next-day return"
+                  value={`${v} · ${e}`}
+                  note={`#${nd.base_puzzle} → #${nd.next_puzzle} · by device ${nd.visitor_returned}/${nd.visitor_base} · by email ${nd.email_returned}/${nd.email_base} (more reliable)`}
+                />
+              );
+            })()}
+
             {h && h.d7_pct !== null && h.d7_eligible >= MIN ? (
               <Stat
                 label="Day 7 retention"
