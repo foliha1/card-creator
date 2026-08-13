@@ -94,6 +94,22 @@ interface RejectionRow {
   visitors: number;
 }
 
+/**
+ * Next-day return: of the finishers on the last fully elapsed puzzle day, how
+ * many finished the day after. Distinct from `returning_pct`, which is the
+ * all-time "played on more than one day" rate.
+ */
+interface NextDayRow {
+  base_puzzle: number;
+  next_puzzle: number;
+  visitor_base: number;
+  visitor_returned: number;
+  visitor_pct: number | null;
+  email_base: number;
+  email_returned: number;
+  email_pct: number | null;
+}
+
 interface HeadlineRow {
   total_players: number;
   dau_today: number;
