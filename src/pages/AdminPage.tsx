@@ -521,6 +521,7 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       subscribers: (subscribers.data as SubscriberRow[] | null) ?? [],
       rejections: (rejections.data as RejectionRow[] | null) ?? [],
       headline: (headline.data as HeadlineRow[] | null)?.[0] ?? null,
+      nextDay: (nextDay.data as NextDayRow[] | null)?.[0] ?? null,
     });
 
     setState("ready");
