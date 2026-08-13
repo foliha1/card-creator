@@ -686,13 +686,26 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       </div>
 
       {state === "error" ? (
-        <div style={cardStyle}>
-          <h2 style={sectionTitle}>Could not load</h2>
+        <div style={{ ...cardStyle, borderColor: COLORS.red }}>
+          <h2 style={{ ...sectionTitle, color: COLORS.red }}>Could not load</h2>
           <p style={{ ...mono, fontSize: FONT_SIZE.xs, color: COLORS.ink, margin: 0 }}>
-            The dashboard queries failed. Try refreshing.
+            Every dashboard query failed, so nothing below is current. Try refreshing.
           </p>
         </div>
       ) : null}
+
+      {/* A partial failure is named rather than shown as an empty section, so a
+          broken report can never be mistaken for a quiet day. */}
+      {state !== "error" && failures.length > 0 ? (
+        <div style={{ ...cardStyle, borderColor: COLORS.red }}>
+          <h2 style={{ ...sectionTitle, color: COLORS.red }}>Some reports failed to load</h2>
+          <p style={{ ...mono, fontSize: FONT_SIZE.xs, color: COLORS.ink, margin: 0 }}>
+            {failures.join(", ")} — those sections are blank because the query failed, not because
+            there is no data. Everything else below is current.
+          </p>
+        </div>
+      ) : null}
+
 
       {/* Export controls. The pitch snapshot leads because it is the thing a
           publisher conversation actually needs; the subscriber list is kept
