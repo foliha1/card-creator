@@ -133,6 +133,7 @@ interface DashboardData {
   subscribers: SubscriberRow[];
   rejections: RejectionRow[];
   headline: HeadlineRow | null;
+  nextDay: NextDayRow | null;
 
 }
 
