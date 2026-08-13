@@ -479,49 +479,74 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
   const [listBusy, setListBusy] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
 
+  const [failures, setFailures] = useState<string[]>([]);
+
   const load = useCallback(async () => {
     setState("loading");
+    setFailures([]);
     const args = { p_from: from, p_to: to };
-    const rpcUntyped = supabase.rpc as unknown as (
-      n: string,
-      a?: unknown,
-    ) => Promise<{ data: unknown }>;
+
+    // One report failing must never blank the rest of the page, so every RPC is
+    // called in its own isolated wrapper that resolves instead of throwing.
+    // `supabase.rpc` needs its receiver: calling a detached reference throws.
+    const failed: string[] = [];
+    const call = async <T,>(name: string, a?: unknown): Promise<T[]> => {
+      try {
+        const { data: rows, error: err } = await (
+          supabase.rpc as unknown as (
+            n: string,
+            b?: unknown,
+          ) => Promise<{ data: unknown; error: { message: string } | null }>
+        ).call(supabase, name, a);
+        if (err) throw new Error(err.message);
+        return (rows as T[] | null) ?? [];
+      } catch (e) {
+        console.error(`admin: ${name} failed`, e);
+        failed.push(name);
+        return [];
+      }
+    };
+
     const [funnel, difficulty, howto, attribution, trend, subscribers, headline, rejections, nextDay] =
       await Promise.all([
-        supabase.rpc("admin_funnel", args),
-        supabase.rpc("admin_difficulty", args),
-        supabase.rpc("admin_howto", args),
-        supabase.rpc("admin_attribution", args),
-        supabase.rpc("admin_trend", args),
-        supabase.rpc("admin_subscribers"),
-        supabase.rpc("admin_headline", args),
-        // new RPCs, generated types lag behind the migration
-        rpcUntyped("admin_rejections", args),
-        rpcUntyped("admin_next_day_return"),
+        call<FunnelRow>("admin_funnel", args),
+        call<DifficultyRow>("admin_difficulty", args),
+        call<HowtoRow>("admin_howto", args),
+        call<AttributionRow>("admin_attribution", args),
+        call<TrendRow>("admin_trend", args),
+        call<SubscriberRow>("admin_subscribers"),
+        call<HeadlineRow>("admin_headline", args),
+        call<RejectionRow>("admin_rejections", args),
+        call<NextDayRow>("admin_next_day_return"),
       ]);
 
+    setFailures(failed);
 
-    if (funnel.error || difficulty.error) {
+    // Every report failing means the fetch itself is broken, not an empty range.
+    if (failed.length === 9) {
       setState("error");
       return;
     }
-    const funnelRow = (funnel.data as FunnelRow[] | null)?.[0] ?? null;
+
+    const funnelRow = funnel[0] ?? null;
     // The allowlist check lives in the RPC: a non-allowlisted signed-in user
-    // gets zero rows back from every one of them.
-    if (!funnelRow) {
+    // gets zero rows back from every one of them. Only treat that as "denied"
+    // when the call actually succeeded.
+    if (!funnelRow && !failed.includes("admin_funnel")) {
       setState("denied");
       return;
     }
+
     setData({
       funnel: funnelRow,
-      difficulty: (difficulty.data as DifficultyRow[] | null) ?? [],
-      howto: (howto.data as HowtoRow[] | null) ?? [],
-      attribution: (attribution.data as AttributionRow[] | null) ?? [],
-      trend: (trend.data as TrendRow[] | null) ?? [],
-      subscribers: (subscribers.data as SubscriberRow[] | null) ?? [],
-      rejections: (rejections.data as RejectionRow[] | null) ?? [],
-      headline: (headline.data as HeadlineRow[] | null)?.[0] ?? null,
-      nextDay: (nextDay.data as NextDayRow[] | null)?.[0] ?? null,
+      difficulty,
+      howto,
+      attribution,
+      trend,
+      subscribers,
+      rejections,
+      headline: headline[0] ?? null,
+      nextDay: nextDay[0] ?? null,
     });
 
     setState("ready");
@@ -661,13 +686,26 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
       </div>
 
       {state === "error" ? (
-        <div style={cardStyle}>
-          <h2 style={sectionTitle}>Could not load</h2>
+        <div style={{ ...cardStyle, borderColor: COLORS.red }}>
+          <h2 style={{ ...sectionTitle, color: COLORS.red }}>Could not load</h2>
           <p style={{ ...mono, fontSize: FONT_SIZE.xs, color: COLORS.ink, margin: 0 }}>
-            The dashboard queries failed. Try refreshing.
+            Every dashboard query failed, so nothing below is current. Try refreshing.
           </p>
         </div>
       ) : null}
+
+      {/* A partial failure is named rather than shown as an empty section, so a
+          broken report can never be mistaken for a quiet day. */}
+      {state !== "error" && failures.length > 0 ? (
+        <div style={{ ...cardStyle, borderColor: COLORS.red }}>
+          <h2 style={{ ...sectionTitle, color: COLORS.red }}>Some reports failed to load</h2>
+          <p style={{ ...mono, fontSize: FONT_SIZE.xs, color: COLORS.ink, margin: 0 }}>
+            {failures.join(", ")} — those sections are blank because the query failed, not because
+            there is no data. Everything else below is current.
+          </p>
+        </div>
+      ) : null}
+
 
       {/* Export controls. The pitch snapshot leads because it is the thing a
           publisher conversation actually needs; the subscriber list is kept
