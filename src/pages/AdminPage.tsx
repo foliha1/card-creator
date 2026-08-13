@@ -752,18 +752,42 @@ const Dashboard: React.FC<{ session: Session }> = ({ session }) => {
             />
             {h && h.returning_pct !== null && h.returning_eligible >= MIN ? (
               <Stat
-                label="Returning players"
+                label="Returning players (all-time)"
                 value={`${h.returning_pct}%`}
-                note={`Of ${h.returning_eligible.toLocaleString()} players`}
+                note={`Played on more than one day · of ${h.returning_eligible.toLocaleString()} players`}
               />
             ) : (
               <Stat
-                label="Returning players"
+                label="Returning players (all-time)"
                 value="Not enough data"
                 note={`Needs ${MIN}+ players · ${h ? h.returning_eligible : 0} so far`}
                 muted
               />
             )}
+            {(() => {
+              const nd = data?.nextDay;
+              if (!nd) {
+                return (
+                  <Stat
+                    label="Next-day return"
+                    value="No completed pair yet"
+                    note="Needs two fully elapsed puzzle days"
+                    muted
+                  />
+                );
+              }
+              const v =
+                nd.visitor_pct === null ? "—" : `${nd.visitor_pct}%`;
+              const e = nd.email_pct === null ? "—" : `${nd.email_pct}%`;
+              return (
+                <Stat
+                  label="Next-day return"
+                  value={`${v} · ${e}`}
+                  note={`#${nd.base_puzzle} → #${nd.next_puzzle} · by device ${nd.visitor_returned}/${nd.visitor_base} · by email ${nd.email_returned}/${nd.email_base} (more reliable)`}
+                />
+              );
+            })()}
+
             {h && h.d7_pct !== null && h.d7_eligible >= MIN ? (
               <Stat
                 label="Day 7 retention"
