@@ -28,7 +28,7 @@ export function useViewportHeight(): number {
  * 0 → fully compressed (very short viewport), 1 → full-size layout.
  * Compression only begins below `full`, so tall phones (≥700px) are untouched.
  */
-export function compressionFactor(height: number, min = 480, full = 700): number {
+export function compressionFactor(height: number, min = 480, full = 760): number {
   if (!Number.isFinite(height) || height <= 0) return 1;
   return Math.max(0, Math.min(1, (height - min) / (full - min)));
 }
