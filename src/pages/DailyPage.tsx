@@ -351,6 +351,42 @@ const ShareBlock: React.FC<{
     await settleClipboard(copyPromise);
   };
 
+  /**
+   * INVITE — a separate, link-only path. It shares nothing but today's URL:
+   * no score, no rounds, no misses, no streak, no peek, no cards, no rule.
+   * It never runs while the image share is in flight.
+   */
+  const invite = async () => {
+    if (working || inviteBusyRef.current) return;
+    inviteBusyRef.current = true;
+    hapticTap();
+    const code = getInviteCode();
+    const url = `https://whoop-whoop.com/?i=${code}`;
+    const text = "Play today's Whoop! Whoop! Daily.";
+    trackDaily("invite_sent", {
+      puzzleNumber: result.puzzleNumber,
+      props: { code },
+    });
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({ text, url });
+        return;
+      }
+      throw new Error("no-web-share");
+    } catch (err) {
+      // A dismissed sheet is silent.
+      if (err instanceof Error && err.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Invite link copied" });
+      } catch {
+        toast({ title: "Copy the link", description: url });
+      }
+    } finally {
+      inviteBusyRef.current = false;
+    }
+  };
+
   /** Close the modal and hand focus back to the button that opened it. */
   const closePreview = () => {
     setPreviewOpen(false);
@@ -362,6 +398,7 @@ const ShareBlock: React.FC<{
     await share();
     closePreview();
   };
+
 
   /**
    * SHARE shows the card first. When the render failed outright there is
