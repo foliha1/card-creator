@@ -40,7 +40,9 @@ export interface DailyEventRow {
 
 const ATTR_KEY = "ww_attr";
 const ATTR_SENT_KEY = "ww_attr_sent";
+const INVITE_SEEN_KEY = "ww_invite_seen";
 export const DAILY_EVENT_FLUSH_MS = 800;
+
 
 export interface DailyAttribution {
   referrer: string | null;
