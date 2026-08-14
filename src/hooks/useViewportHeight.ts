@@ -1,3 +1,4 @@
+const BASELINE_MEASURE = true;
 import { useEffect, useState } from "react";
 
 /**
@@ -30,6 +31,7 @@ export function useViewportHeight(): number {
  */
 export function compressionFactor(height: number, min = 480, full = 760): number {
   if (!Number.isFinite(height) || height <= 0) return 1;
+  if (BASELINE_MEASURE) return 1;
   return Math.max(0, Math.min(1, (height - min) / (full - min)));
 }
 
