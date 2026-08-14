@@ -14,13 +14,17 @@ export const DAILY_CONTENT_MAX_W = 402;
 const DailyFrame: React.FC<{
   /** Gap inside the content column. */
   gap?: number;
+  /** Page edge padding. Shrinks on short viewports so the CTA stays in view. */
+  pad?: number;
+  /** Gap between the shape rules and the content column. */
+  railGap?: number;
   /** When true the content column takes all the space between the rules and
    *  never grows past it, so children can size themselves to fit. */
   fill?: boolean;
   /** Page background tone. Gameplay uses `panel`; every other screen stays cream. */
   tone?: "surface" | "panel";
   children?: React.ReactNode;
-}> = ({ gap = 24, fill = false, tone = "surface", children }) => (
+}> = ({ gap = 24, pad = 24, railGap = 24, fill = false, tone = "surface", children }) => (
   <div
     style={{
       position: "relative",
@@ -32,14 +36,15 @@ const DailyFrame: React.FC<{
       flexDirection: "column",
       justifyContent: "space-between",
       alignItems: "center",
-      gap: 24,
-      padding: 24,
-      paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+      gap: railGap,
+      padding: pad,
+      paddingBottom: `calc(${pad}px + env(safe-area-inset-bottom))`,
       overflowY: fill ? "hidden" : "auto",
       "--daily-content-max-width": `${DAILY_CONTENT_MAX_W}px`,
-      "--daily-content-padding-x": "24px",
+      "--daily-content-padding-x": `${pad}px`,
     } as React.CSSProperties}
   >
+
     <DailyShapeRule />
 
     <div

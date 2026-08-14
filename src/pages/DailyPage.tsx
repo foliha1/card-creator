@@ -18,6 +18,12 @@ import { useDailyGame } from "@/hooks/useDailyGame";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
+  useViewportHeight,
+  compressionFactor,
+  lerpCompress,
+} from "@/hooks/useViewportHeight";
+
+import {
   DAILY_ROUNDS,
   MISSES_PER_ROUND,
   remainingCount,
@@ -883,9 +889,23 @@ const DailyReadyScreen: React.FC<{
   mobile = false,
   onPlay,
   onHowToPlay,
-}) => (
-  <DailyFrame gap={40}>
-      <DailyLogoLockup />
+}) => {
+  // Vertical compression for short viewports (Instagram in-app browser lands
+  // around 480–560px). t === 1 at 700px and above, so tall phones are
+  // pixel-identical to before. Everything scales before the CTA/chip do.
+  const vh = useViewportHeight();
+  const t = compressionFactor(vh);
+  const colGap = lerpCompress(t, 12, 40);
+  const pad = lerpCompress(t, 12, 24);
+  const railGap = lerpCompress(t, 10, 24);
+  const lockupMax = lerpCompress(t, 132, 251);
+  // Never below the 44px minimum tap target.
+  const ctaHeight = Math.max(56, lerpCompress(t, 56, 80));
+
+  return (
+  <DailyFrame gap={colGap} pad={pad} railGap={railGap}>
+      <DailyLogoLockup style={{ maxWidth: lockupMax }} />
+
 
       <div
         className="daily-intro"
@@ -973,7 +993,7 @@ const DailyReadyScreen: React.FC<{
           style={{
             ...textStyle("action", mobile),
             width: "100%",
-            height: 80,
+            height: ctaHeight,
             boxSizing: "border-box",
             border: BORDER.heavy,
             borderRadius: RADIUS.sm,
@@ -997,8 +1017,9 @@ const DailyReadyScreen: React.FC<{
       </div>
 
   </DailyFrame>
+  );
+};
 
-);
 
 /**
  * Card area that scales its cards to the space it is given instead of pushing
