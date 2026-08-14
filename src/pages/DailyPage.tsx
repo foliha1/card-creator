@@ -374,6 +374,12 @@ const ShareBlock: React.FC<{
       puzzleNumber: result.puzzleNumber,
       props: { code, source },
     });
+    // The share sheet backgrounds the page well before the 800ms debounce
+    // fires, so the write is started now. Not awaited: Safari revokes the
+    // user-gesture that `navigator.share` requires across an await.
+    void flushDailyEvents();
+
+
 
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
