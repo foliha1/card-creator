@@ -25,7 +25,10 @@ export type DailyEventName =
   | "run_abandoned"
   | "share_clicked"
   | "subscribe_shown"
-  | "subscribe_submitted";
+  | "subscribe_submitted"
+  | "invite_sent"
+  | "invite_landed";
+
 
 export interface DailyEventRow {
   event: DailyEventName;
