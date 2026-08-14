@@ -33,11 +33,15 @@ import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { useDailyShareImage, type DailyShareImage } from "@/hooks/useDailyShareImage";
 import DailySharePreview from "@/components/DailySharePreview";
 import { preloadGameArt } from "@/lib/preloadArt";
+import { getInviteCode } from "@/lib/inviteCode";
+import { toast } from "@/hooks/use-toast";
 import {
   flushDailyEvents,
+  noteInviteLanding,
   setDailyTrackingEnabled,
   trackDaily,
 } from "@/lib/dailyEvents";
+
 
 import {
   formatAvgMisses,
