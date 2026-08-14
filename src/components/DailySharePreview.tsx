@@ -42,6 +42,8 @@ const DailySharePreview: React.FC<{
   working?: boolean;
   mobile: boolean;
   onSend: () => void;
+  /** Link-only invitation to today's puzzle. Never carries result data. */
+  onInvite: () => void;
   onClose: () => void;
 }> = ({
   imageUrl,
@@ -51,8 +53,10 @@ const DailySharePreview: React.FC<{
   working = false,
   mobile,
   onSend,
+  onInvite,
   onClose,
 }) => {
+
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sendRef = useRef<HTMLButtonElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
