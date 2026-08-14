@@ -1111,6 +1111,12 @@ const DailyPage: React.FC = () => {
     trackDaily("ready_viewed", { puzzleNumber });
   }, [puzzleNumber]);
 
+  // Arrived from an invite link? Recorded once per browser, props only.
+  useEffect(() => {
+    noteInviteLanding();
+  }, []);
+
+
   // Per-round outcome, derived from the round's mark list.
   const roundsLoggedRef = React.useRef<Set<number>>(new Set());
   useEffect(() => {
