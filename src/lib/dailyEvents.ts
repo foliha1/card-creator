@@ -239,3 +239,28 @@ export function trackDaily(event: DailyEventName, opts: TrackOpts = {}): void {
     /* instrumentation must never surface an error to the player */
   }
 }
+
+// ---------------------------------------------------------------------------
+// invite landing — one row per browser, the first time an `?i=` link is opened
+// ---------------------------------------------------------------------------
+
+/**
+ * Records that this browser arrived on an invite link. Deliberately separate
+ * from `getAttribution`: invite codes never touch `utm_source`, `referrer` or
+ * the `ww_attr` keys, they live in `props` only.
+ *
+ * Safe to call on every mount — it is a one-shot per browser.
+ */
+export function noteInviteLanding(search?: string): void {
+  try {
+    const raw =
+      search ?? (typeof window === "undefined" ? "" : window.location.search);
+    const code = cleanToken(new URLSearchParams(raw).get("i"))?.slice(0, 16);
+    if (!code) return;
+    if (localStorage.getItem(INVITE_SEEN_KEY) === "1") return;
+    localStorage.setItem(INVITE_SEEN_KEY, "1");
+    trackDaily("invite_landed", { props: { code } });
+  } catch {
+    /* private mode or no URL — the landing simply isn't recorded */
+  }
+}
