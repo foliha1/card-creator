@@ -48,6 +48,8 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/__probe" element={<SharePreviewProbe />} />
+
 
         {/* Unfinished routes: 404 in production, live under ?debug=1. */}
         <Route path="/play" element={<DebugOnlyRoute><MultiplayerPage /></DebugOnlyRoute>} />
