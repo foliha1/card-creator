@@ -15,6 +15,8 @@ import PrivacyPage from "./pages/PrivacyPage.tsx";
 import TermsPage from "./pages/TermsPage.tsx";
 import DebugOnlyRoute from "./components/DebugOnlyRoute.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import SharePreviewProbe from "./pages/SharePreviewProbe.tsx";
+
 
 const FADE_MS = 200;
 
