@@ -1,0 +1,1 @@
+DELETE FROM public.daily_events WHERE visitor_id = '00000000-0000-4000-8000-00000000inv1';
