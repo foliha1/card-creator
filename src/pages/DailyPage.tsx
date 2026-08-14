@@ -33,11 +33,15 @@ import { renderDailyShareImage } from "@/lib/dailyShareImage";
 import { useDailyShareImage, type DailyShareImage } from "@/hooks/useDailyShareImage";
 import DailySharePreview from "@/components/DailySharePreview";
 import { preloadGameArt } from "@/lib/preloadArt";
+import { getInviteCode } from "@/lib/inviteCode";
+import { toast } from "@/hooks/use-toast";
 import {
   flushDailyEvents,
+  noteInviteLanding,
   setDailyTrackingEnabled,
   trackDaily,
 } from "@/lib/dailyEvents";
+
 
 import {
   formatAvgMisses,
@@ -217,6 +221,9 @@ const ShareBlock: React.FC<{
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
   const [manual, setManual] = useState(false);
   const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
+  /** Guards the invite path against a double tap or an in-flight share sheet. */
+  const inviteBusyRef = React.useRef(false);
+
 
   const flashCopied = () => {
     setCopied(true);
@@ -351,6 +358,42 @@ const ShareBlock: React.FC<{
     await settleClipboard(copyPromise);
   };
 
+  /**
+   * INVITE — a separate, link-only path. It shares nothing but today's URL:
+   * no score, no rounds, no misses, no streak, no peek, no cards, no rule.
+   * It never runs while the image share is in flight.
+   */
+  const invite = async () => {
+    if (working || inviteBusyRef.current) return;
+    inviteBusyRef.current = true;
+    hapticTap();
+    const code = getInviteCode();
+    const url = `https://whoop-whoop.com/?i=${code}`;
+    const text = "Play today's Whoop! Whoop! Daily.";
+    trackDaily("invite_sent", {
+      puzzleNumber: result.puzzleNumber,
+      props: { code },
+    });
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        await navigator.share({ text, url });
+        return;
+      }
+      throw new Error("no-web-share");
+    } catch (err) {
+      // A dismissed sheet is silent.
+      if (err instanceof Error && err.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Invite link copied" });
+      } catch {
+        toast({ title: "Copy the link", description: url });
+      }
+    } finally {
+      inviteBusyRef.current = false;
+    }
+  };
+
   /** Close the modal and hand focus back to the button that opened it. */
   const closePreview = () => {
     setPreviewOpen(false);
@@ -362,6 +405,7 @@ const ShareBlock: React.FC<{
     await share();
     closePreview();
   };
+
 
   /**
    * SHARE shows the card first. When the render failed outright there is
@@ -410,7 +454,9 @@ const ShareBlock: React.FC<{
           working={working}
           mobile={mobile}
           onSend={() => void sendFromPreview()}
+          onInvite={() => void invite()}
           onClose={closePreview}
+
         />
       )}
 
@@ -1064,6 +1110,12 @@ const DailyPage: React.FC = () => {
     readyLoggedRef.current = true;
     trackDaily("ready_viewed", { puzzleNumber });
   }, [puzzleNumber]);
+
+  // Arrived from an invite link? Recorded once per browser, props only.
+  useEffect(() => {
+    noteInviteLanding();
+  }, []);
+
 
   // Per-round outcome, derived from the round's mark list.
   const roundsLoggedRef = React.useRef<Set<number>>(new Set());

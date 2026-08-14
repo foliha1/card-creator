@@ -42,6 +42,8 @@ const DailySharePreview: React.FC<{
   working?: boolean;
   mobile: boolean;
   onSend: () => void;
+  /** Link-only invitation to today's puzzle. Never carries result data. */
+  onInvite: () => void;
   onClose: () => void;
 }> = ({
   imageUrl,
@@ -51,8 +53,10 @@ const DailySharePreview: React.FC<{
   working = false,
   mobile,
   onSend,
+  onInvite,
   onClose,
 }) => {
+
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sendRef = useRef<HTMLButtonElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -354,23 +358,52 @@ const DailySharePreview: React.FC<{
             </div>
           </div>
 
-          <button
-            type="button"
-            ref={sendRef}
-            className="ww-press"
-            onClick={onSend}
-            disabled={!imageUrl || working}
-            data-testid="share-preview-send"
+          {/* Send + Invite. Same slot and same height as the old single
+              button, so the card preview keeps every pixel it had. */}
+          <div
             style={{
-              ...buttonStyle("primary", "lg", { mobile }),
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "stretch",
               alignSelf: "stretch",
               flex: "0 0 auto",
+              gap: SPACE[8],
               marginTop: SPACE[4],
-              opacity: !imageUrl || working ? 0.6 : 1,
             }}
           >
-            {working ? "SENDING…" : "SEND"}
-          </button>
+            <button
+              type="button"
+              ref={sendRef}
+              className="ww-press"
+              onClick={onSend}
+              disabled={!imageUrl || working}
+              data-testid="share-preview-send"
+              style={{
+                ...buttonStyle("primary", "lg", { mobile }),
+                flex: "2 1 0",
+                minWidth: 0,
+                opacity: !imageUrl || working ? 0.6 : 1,
+              }}
+            >
+              {working ? "SENDING…" : "SEND"}
+            </button>
+            <button
+              type="button"
+              className="ww-press"
+              onClick={onInvite}
+              aria-label="Invite a friend to today's puzzle"
+              data-testid="share-preview-invite"
+              style={{
+                ...buttonStyle("secondary", "lg", { mobile }),
+                flex: "1 1 0",
+                minWidth: 0,
+                whiteSpace: "nowrap",
+              }}
+            >
+              INVITE
+            </button>
+          </div>
+
         </div>
       </div>
 

@@ -16,6 +16,8 @@ import TermsPage from "./pages/TermsPage.tsx";
 import DebugOnlyRoute from "./components/DebugOnlyRoute.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
+
+
 const FADE_MS = 200;
 
 const AnimatedRoutes: React.FC = () => {
@@ -48,6 +50,8 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/admin" element={<AdminPage />} />
+
+
 
         {/* Unfinished routes: 404 in production, live under ?debug=1. */}
         <Route path="/play" element={<DebugOnlyRoute><MultiplayerPage /></DebugOnlyRoute>} />
