@@ -454,7 +454,9 @@ const ShareBlock: React.FC<{
           working={working}
           mobile={mobile}
           onSend={() => void sendFromPreview()}
+          onInvite={() => void invite()}
           onClose={closePreview}
+
         />
       )}
 
