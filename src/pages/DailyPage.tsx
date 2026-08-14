@@ -370,28 +370,28 @@ const ShareBlock: React.FC<{
     const code = getInviteCode();
     const url = `https://whoop-whoop.com/?i=${code}`;
     const text = "Play today's Whoop! Whoop! Daily.";
-    trackDaily("invite_sent", {
-      puzzleNumber: result.puzzleNumber,
-      props: { code, source },
-    });
-    // The share sheet backgrounds the page well before the 800ms debounce
-    // fires, so the write is started now. Not awaited: Safari revokes the
-    // user-gesture that `navigator.share` requires across an await.
-    void flushDailyEvents();
-
-
 
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({ text, url });
+        // Fired only once the sheet has resolved — the page is awake again, so
+        // the normal debounce and the pagehide listener carry the write.
+        trackDaily("invite_sent", {
+          puzzleNumber: result.puzzleNumber,
+          props: { code, source, method: "share" },
+        });
         return;
       }
       throw new Error("no-web-share");
     } catch (err) {
-      // A dismissed sheet is silent.
+      // A dismissed sheet is silent, and is not a sent invite.
       if (err instanceof Error && err.name === "AbortError") return;
       try {
         await navigator.clipboard.writeText(url);
+        trackDaily("invite_sent", {
+          puzzleNumber: result.puzzleNumber,
+          props: { code, source, method: "clipboard" },
+        });
         toast({ title: "Invite link copied" });
       } catch {
         toast({ title: "Copy the link", description: url });

@@ -1,0 +1,1 @@
+delete from public.daily_events where visitor_id like 'ttest-inv-%';
