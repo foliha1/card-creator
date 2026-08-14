@@ -363,7 +363,7 @@ const ShareBlock: React.FC<{
    * no score, no rounds, no misses, no streak, no peek, no cards, no rule.
    * It never runs while the image share is in flight.
    */
-  const invite = async () => {
+  const invite = async (source: "results" | "modal") => {
     if (working || inviteBusyRef.current) return;
     inviteBusyRef.current = true;
     hapticTap();
@@ -372,8 +372,9 @@ const ShareBlock: React.FC<{
     const text = "Play today's Whoop! Whoop! Daily.";
     trackDaily("invite_sent", {
       puzzleNumber: result.puzzleNumber,
-      props: { code },
+      props: { code, source },
     });
+
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({ text, url });
@@ -428,22 +429,51 @@ const ShareBlock: React.FC<{
 
   return (
     <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[4] }}>
-      <button
-        type="button"
-        ref={shareBtnRef}
-        className="ww-press"
-        onClick={openPreview}
-        disabled={working}
+      {/* Share + Invite. Same slot and height as the old single button, so
+          nothing below it moves. */}
+      <div
         style={{
-          ...buttonStyle("primary", "lg", { mobile }),
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "stretch",
           alignSelf: "stretch",
-          position: "relative",
-          overflow: "hidden",
+          gap: SPACE[8],
         }}
       >
-        {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
-        {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
-      </button>
+        <button
+          type="button"
+          ref={shareBtnRef}
+          className="ww-press"
+          onClick={openPreview}
+          disabled={working}
+          style={{
+            ...buttonStyle("primary", "lg", { mobile }),
+            flex: "2 1 0",
+            minWidth: 0,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
+          {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
+        </button>
+        <button
+          type="button"
+          className="ww-press"
+          onClick={() => void invite("results")}
+          aria-label="Invite a friend to today's puzzle"
+          data-testid="results-invite"
+          style={{
+            ...buttonStyle("secondary", "lg", { mobile }),
+            flex: "1 1 0",
+            minWidth: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          INVITE
+        </button>
+      </div>
+
 
       {previewOpen && (
         <DailySharePreview
@@ -454,7 +484,7 @@ const ShareBlock: React.FC<{
           working={working}
           mobile={mobile}
           onSend={() => void sendFromPreview()}
-          onInvite={() => void invite()}
+          onInvite={() => void invite("modal")}
           onClose={closePreview}
 
         />
