@@ -217,6 +217,9 @@ const ShareBlock: React.FC<{
   /** Set when the clipboard write was refused: we show the text to copy by hand. */
   const [manual, setManual] = useState(false);
   const manualRef = React.useRef<HTMLTextAreaElement | null>(null);
+  /** Guards the invite path against a double tap or an in-flight share sheet. */
+  const inviteBusyRef = React.useRef(false);
+
 
   const flashCopied = () => {
     setCopied(true);
