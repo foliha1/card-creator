@@ -177,7 +177,7 @@ async function writePuzzleNumber(
   if (!base || !key) return false;
   const headers = { "Api-Token": key, "Content-Type": "application/json" };
 
-  const fieldId = await findFieldIdByPerstag(base, headers, "WWD_NUMBER_FORCED_FAIL");
+  const fieldId = await findFieldIdByPerstag(base, headers, "WWD_NUMBER");
   if (!fieldId) return false;
 
   const res = await fetch(`${base}/api/3/fieldValues`, {
