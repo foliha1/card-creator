@@ -58,15 +58,18 @@ async function rateLimited(
 
 /**
  * Creates (or finds) the contact and adds it to the configured list.
- * Returns true only when the contact is on the list.
+ * Returns ok=true only when the contact is on the list, plus the contact id so
+ * the caller can seed custom fields.
  */
-async function syncToActiveCampaign(email: string): Promise<boolean> {
+async function syncToActiveCampaign(
+  email: string,
+): Promise<{ ok: boolean; contactId: string | null }> {
   const base = (Deno.env.get("AC_API_URL") ?? "").replace(/\/+$/, "");
   const key = Deno.env.get("AC_API_KEY") ?? "";
   const listId = Deno.env.get("AC_LIST_ID") ?? "";
   if (!base || !key || !listId) {
     console.error("ac-subscribe: ActiveCampaign env vars missing");
-    return false;
+    return { ok: false, contactId: null };
   }
 
   const headers = { "Api-Token": key, "Content-Type": "application/json" };
@@ -96,7 +99,7 @@ async function syncToActiveCampaign(email: string): Promise<boolean> {
     const foundBody = await found.text();
     if (!found.ok) {
       console.error("ac-subscribe: contact lookup failed", found.status, foundBody);
-      return false;
+      return { ok: false, contactId: null };
     }
     try {
       contactId = JSON.parse(foundBody)?.contacts?.[0]?.id ?? null;
@@ -107,7 +110,7 @@ async function syncToActiveCampaign(email: string): Promise<boolean> {
 
   if (!contactId) {
     console.error("ac-subscribe: no contact id resolved for", email);
-    return false;
+    return { ok: false, contactId: null };
   }
 
   const listed = await fetch(`${base}/api/3/contactLists`, {
