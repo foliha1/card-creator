@@ -226,6 +226,16 @@ Deno.serve(async (req) => {
     body.source === "landing" || body.source === "prelaunch"
       ? body.source
       : "daily_result";
+  // Seeded once at signup by an AC automation from here on, so an invalid or
+  // absent value means we skip the field write entirely rather than guess.
+  const rawNumber = body.puzzleNumber;
+  const puzzleNumber =
+    typeof rawNumber === "number" &&
+    Number.isInteger(rawNumber) &&
+    rawNumber >= 1 &&
+    rawNumber <= 100000
+      ? rawNumber
+      : null;
 
   if (email.length === 0 || email.length > 255 || !EMAIL_RE.test(email)) {
     return json({ error: "Invalid email address" }, 400);
@@ -257,10 +267,23 @@ Deno.serve(async (req) => {
 
   // 2. Best effort from here on: the address is already safe.
   let syncedToAc = false;
+  let numberSynced = false;
+  let contactId: string | null = null;
   try {
-    syncedToAc = await syncToActiveCampaign(email);
+    const result = await syncToActiveCampaign(email);
+    syncedToAc = result.ok;
+    contactId = result.contactId;
   } catch (err) {
     console.error("ac-subscribe: ActiveCampaign threw", err);
+  }
+
+  // 3. Seed WWD_NUMBER. Best effort only — never changes the outcome above.
+  if (syncedToAc && contactId && puzzleNumber !== null) {
+    try {
+      numberSynced = await writePuzzleNumber(contactId, puzzleNumber);
+    } catch (err) {
+      console.error("ac-subscribe: WWD_NUMBER write threw", err);
+    }
   }
 
   if (syncedToAc) {
@@ -273,5 +296,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ ok: true, syncedToAc });
+  return json({ ok: true, syncedToAc, numberSynced });
 });
