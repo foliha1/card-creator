@@ -103,6 +103,21 @@ export async function emailHasHistory(email: string): Promise<boolean> {
 
 
 /**
+ * The puzzle number for the subscriber's *local* calendar date, or null when it
+ * cannot be resolved (pre-launch, or anything non-finite). Reuses the one date
+ * calculation the daily engine already owns — never UTC.
+ */
+function localPuzzleNumber(): number | null {
+  try {
+    const n = getDailyNumber();
+    if (!Number.isInteger(n) || n < 1 || n > 100000) return null;
+    return n;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Subscribes an address. Duplicates resolve `true` — a repeat signup is quiet,
  * never an error the player sees.
  */
@@ -113,14 +128,17 @@ export async function subscribeDaily(
   source?: "daily_result" | "landing" | "prelaunch"
 ): Promise<boolean> {
   if (!isValidEmail(email)) return false;
+  const puzzleNumber = localPuzzleNumber();
   try {
     const { data, error } = await supabase.functions.invoke("ac-subscribe", {
       body: {
         email: email.trim().toLowerCase(),
         visitorId,
         ...(source ? { source } : {}),
+        ...(puzzleNumber !== null ? { puzzleNumber } : {}),
       },
     });
+
     if (error || (data as { ok?: boolean } | null)?.ok !== true) return false;
     markSubscribed(email);
     return true;
