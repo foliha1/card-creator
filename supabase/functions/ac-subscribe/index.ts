@@ -120,10 +120,82 @@ async function syncToActiveCampaign(email: string): Promise<boolean> {
   const listedBody = await listed.text();
   if (!listed.ok) {
     console.error("ac-subscribe: list add failed", listed.status, listedBody);
+    return { ok: false, contactId };
+  }
+  return { ok: true, contactId };
+}
+
+/**
+ * Resolves the id of the custom field whose personalization tag is `perstag`.
+ * Pages through /api/3/fields until it finds it. Null on anything unexpected.
+ */
+async function findFieldIdByPerstag(
+  base: string,
+  headers: Record<string, string>,
+  perstag: string,
+): Promise<string | null> {
+  const limit = 100;
+  for (let offset = 0; offset < 1000; offset += limit) {
+    const res = await fetch(
+      `${base}/api/3/fields?limit=${limit}&offset=${offset}`,
+      { headers },
+    );
+    const body = await res.text();
+    if (!res.ok) {
+      console.error("ac-subscribe: fields lookup failed", res.status, body);
+      return null;
+    }
+    let fields: Array<{ id?: string; perstag?: string }> = [];
+    try {
+      fields = JSON.parse(body)?.fields ?? [];
+    } catch {
+      console.error("ac-subscribe: fields body unparseable", body.slice(0, 200));
+      return null;
+    }
+    const hit = fields.find((f) => (f.perstag ?? "").toUpperCase() === perstag);
+    if (hit?.id) return String(hit.id);
+    if (fields.length < limit) break;
+  }
+  console.error("ac-subscribe: no field found with perstag", perstag);
+  return null;
+}
+
+/**
+ * Seeds WWD_NUMBER on the contact. Best effort: every failure is logged and
+ * reported as false, and never affects the signup outcome. An existing value is
+ * overwritten.
+ */
+async function writePuzzleNumber(
+  contactId: string,
+  puzzleNumber: number,
+): Promise<boolean> {
+  const base = (Deno.env.get("AC_API_URL") ?? "").replace(/\/+$/, "");
+  const key = Deno.env.get("AC_API_KEY") ?? "";
+  if (!base || !key) return false;
+  const headers = { "Api-Token": key, "Content-Type": "application/json" };
+
+  const fieldId = await findFieldIdByPerstag(base, headers, "WWD_NUMBER");
+  if (!fieldId) return false;
+
+  const res = await fetch(`${base}/api/3/fieldValues`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      fieldValue: {
+        contact: Number(contactId),
+        field: Number(fieldId),
+        value: String(puzzleNumber),
+      },
+    }),
+  });
+  const body = await res.text();
+  if (!res.ok) {
+    console.error("ac-subscribe: field value write failed", res.status, body);
     return false;
   }
   return true;
 }
+
 
 // --- Handler ----------------------------------------------------------------
 
