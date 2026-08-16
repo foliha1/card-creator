@@ -1,0 +1,1 @@
+delete from public.daily_subscribers where email like 'wwtest.number%';

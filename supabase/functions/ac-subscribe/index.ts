@@ -58,15 +58,18 @@ async function rateLimited(
 
 /**
  * Creates (or finds) the contact and adds it to the configured list.
- * Returns true only when the contact is on the list.
+ * Returns ok=true only when the contact is on the list, plus the contact id so
+ * the caller can seed custom fields.
  */
-async function syncToActiveCampaign(email: string): Promise<boolean> {
+async function syncToActiveCampaign(
+  email: string,
+): Promise<{ ok: boolean; contactId: string | null }> {
   const base = (Deno.env.get("AC_API_URL") ?? "").replace(/\/+$/, "");
   const key = Deno.env.get("AC_API_KEY") ?? "";
   const listId = Deno.env.get("AC_LIST_ID") ?? "";
   if (!base || !key || !listId) {
     console.error("ac-subscribe: ActiveCampaign env vars missing");
-    return false;
+    return { ok: false, contactId: null };
   }
 
   const headers = { "Api-Token": key, "Content-Type": "application/json" };
@@ -96,7 +99,7 @@ async function syncToActiveCampaign(email: string): Promise<boolean> {
     const foundBody = await found.text();
     if (!found.ok) {
       console.error("ac-subscribe: contact lookup failed", found.status, foundBody);
-      return false;
+      return { ok: false, contactId: null };
     }
     try {
       contactId = JSON.parse(foundBody)?.contacts?.[0]?.id ?? null;
@@ -107,7 +110,7 @@ async function syncToActiveCampaign(email: string): Promise<boolean> {
 
   if (!contactId) {
     console.error("ac-subscribe: no contact id resolved for", email);
-    return false;
+    return { ok: false, contactId: null };
   }
 
   const listed = await fetch(`${base}/api/3/contactLists`, {
@@ -120,10 +123,82 @@ async function syncToActiveCampaign(email: string): Promise<boolean> {
   const listedBody = await listed.text();
   if (!listed.ok) {
     console.error("ac-subscribe: list add failed", listed.status, listedBody);
+    return { ok: false, contactId };
+  }
+  return { ok: true, contactId };
+}
+
+/**
+ * Resolves the id of the custom field whose personalization tag is `perstag`.
+ * Pages through /api/3/fields until it finds it. Null on anything unexpected.
+ */
+async function findFieldIdByPerstag(
+  base: string,
+  headers: Record<string, string>,
+  perstag: string,
+): Promise<string | null> {
+  const limit = 100;
+  for (let offset = 0; offset < 1000; offset += limit) {
+    const res = await fetch(
+      `${base}/api/3/fields?limit=${limit}&offset=${offset}`,
+      { headers },
+    );
+    const body = await res.text();
+    if (!res.ok) {
+      console.error("ac-subscribe: fields lookup failed", res.status, body);
+      return null;
+    }
+    let fields: Array<{ id?: string; perstag?: string }> = [];
+    try {
+      fields = JSON.parse(body)?.fields ?? [];
+    } catch {
+      console.error("ac-subscribe: fields body unparseable", body.slice(0, 200));
+      return null;
+    }
+    const hit = fields.find((f) => (f.perstag ?? "").toUpperCase() === perstag);
+    if (hit?.id) return String(hit.id);
+    if (fields.length < limit) break;
+  }
+  console.error("ac-subscribe: no field found with perstag", perstag);
+  return null;
+}
+
+/**
+ * Seeds WWD_NUMBER on the contact. Best effort: every failure is logged and
+ * reported as false, and never affects the signup outcome. An existing value is
+ * overwritten.
+ */
+async function writePuzzleNumber(
+  contactId: string,
+  puzzleNumber: number,
+): Promise<boolean> {
+  const base = (Deno.env.get("AC_API_URL") ?? "").replace(/\/+$/, "");
+  const key = Deno.env.get("AC_API_KEY") ?? "";
+  if (!base || !key) return false;
+  const headers = { "Api-Token": key, "Content-Type": "application/json" };
+
+  const fieldId = await findFieldIdByPerstag(base, headers, "WWD_NUMBER");
+  if (!fieldId) return false;
+
+  const res = await fetch(`${base}/api/3/fieldValues`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      fieldValue: {
+        contact: Number(contactId),
+        field: Number(fieldId),
+        value: String(puzzleNumber),
+      },
+    }),
+  });
+  const body = await res.text();
+  if (!res.ok) {
+    console.error("ac-subscribe: field value write failed", res.status, body);
     return false;
   }
   return true;
 }
+
 
 // --- Handler ----------------------------------------------------------------
 
@@ -151,6 +226,16 @@ Deno.serve(async (req) => {
     body.source === "landing" || body.source === "prelaunch"
       ? body.source
       : "daily_result";
+  // Seeded once at signup by an AC automation from here on, so an invalid or
+  // absent value means we skip the field write entirely rather than guess.
+  const rawNumber = body.puzzleNumber;
+  const puzzleNumber =
+    typeof rawNumber === "number" &&
+    Number.isInteger(rawNumber) &&
+    rawNumber >= 1 &&
+    rawNumber <= 100000
+      ? rawNumber
+      : null;
 
   if (email.length === 0 || email.length > 255 || !EMAIL_RE.test(email)) {
     return json({ error: "Invalid email address" }, 400);
@@ -182,10 +267,23 @@ Deno.serve(async (req) => {
 
   // 2. Best effort from here on: the address is already safe.
   let syncedToAc = false;
+  let numberSynced = false;
+  let contactId: string | null = null;
   try {
-    syncedToAc = await syncToActiveCampaign(email);
+    const result = await syncToActiveCampaign(email);
+    syncedToAc = result.ok;
+    contactId = result.contactId;
   } catch (err) {
     console.error("ac-subscribe: ActiveCampaign threw", err);
+  }
+
+  // 3. Seed WWD_NUMBER. Best effort only — never changes the outcome above.
+  if (syncedToAc && contactId && puzzleNumber !== null) {
+    try {
+      numberSynced = await writePuzzleNumber(contactId, puzzleNumber);
+    } catch (err) {
+      console.error("ac-subscribe: WWD_NUMBER write threw", err);
+    }
   }
 
   if (syncedToAc) {
@@ -198,5 +296,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ ok: true, syncedToAc });
+  return json({ ok: true, syncedToAc, numberSynced });
 });
