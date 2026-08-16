@@ -8,6 +8,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor";
+import { getDailyNumber } from "@/lib/daily";
 
 const SUBSCRIBED_KEY = "ww_daily_subscribed";
 const EMAIL_KEY = "ww_daily_email";
