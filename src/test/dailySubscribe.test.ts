@@ -9,12 +9,16 @@ vi.mock("@/integrations/supabase/client", () => ({
 vi.mock("@/lib/visitor", () => ({ getVisitorId: () => "visitor-1" }));
 
 
+import { getDailyNumber } from "@/lib/daily";
 import {
   hasSubscribed,
   isValidEmail,
   markSubscribed,
   subscribeDaily,
 } from "@/lib/dailySubscribe";
+
+// The puzzle number the client derives from the *local* calendar date.
+const expectedNumber = getDailyNumber();
 
 beforeEach(() => {
   invoke.mockReset();
@@ -40,7 +44,7 @@ describe("subscribeDaily", () => {
     invoke.mockResolvedValue({ data: { ok: true }, error: null });
     await expect(subscribeDaily(" Player@Example.COM ")).resolves.toBe(true);
     expect(invoke).toHaveBeenCalledWith("ac-subscribe", {
-      body: { email: "player@example.com", visitorId: "visitor-1" },
+      body: { email: "player@example.com", visitorId: "visitor-1", puzzleNumber: expectedNumber },
     });
   });
 
@@ -48,7 +52,12 @@ describe("subscribeDaily", () => {
     invoke.mockResolvedValue({ data: { ok: true }, error: null });
     await subscribeDaily("player@example.com", "visitor-1", "landing");
     expect(invoke).toHaveBeenCalledWith("ac-subscribe", {
-      body: { email: "player@example.com", visitorId: "visitor-1", source: "landing" },
+      body: {
+        email: "player@example.com",
+        visitorId: "visitor-1",
+        source: "landing",
+        puzzleNumber: expectedNumber,
+      },
     });
   });
 
