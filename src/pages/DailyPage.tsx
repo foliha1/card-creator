@@ -11,6 +11,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyLegalFooter from "@/components/DailyLegalFooter";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
+import DailyRecognition from "@/components/DailyRecognition";
 import DailyPreLaunchSignup from "@/components/DailyPreLaunchSignup";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
 
