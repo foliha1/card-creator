@@ -55,13 +55,20 @@ export async function saveDailyResultRemote(
   }
 }
 
-/** A visitor's stored results, ordered by puzzle number. Basis for streaks. */
+/**
+ * A player's stored results, ordered by puzzle number. Basis for streaks and
+ * the recall trend. When `email` is given the server unions in rows saved under
+ * other visitor ids for that address, deduplicated by puzzle number, so a
+ * switched device reads the whole history.
+ */
 export async function fetchDailyResults(
-  visitorId: string = getVisitorId()
+  visitorId: string = getVisitorId(),
+  email: string | null = null
 ): Promise<StoredDailyResult[]> {
   try {
     const { data, error } = await supabase.rpc("get_daily_results", {
       p_visitor_id: visitorId,
+      ...(email ? { p_email: email } : {}),
     });
     if (error || !Array.isArray(data)) return [];
     return data as unknown as StoredDailyResult[];

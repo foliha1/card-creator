@@ -526,7 +526,7 @@ export type Database = {
         Returns: number
       }
       get_daily_results: {
-        Args: { p_visitor_id: string }
+        Args: { p_email?: string; p_visitor_id: string }
         Returns: {
           created_at: string
           elapsed_ms: number
