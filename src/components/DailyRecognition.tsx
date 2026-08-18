@@ -17,23 +17,11 @@
 // ============================================================================
 
 import React from "react";
-import { X } from "lucide-react";
-import DailyEmailCapture from "@/components/DailyEmailCapture";
+import DailyEmailModal from "@/components/DailyEmailModal";
 import { maskEmail } from "@/lib/dailySubscribe";
 import { hapticTap } from "@/lib/haptics";
-import {
-  BORDER,
-  COLORS,
-  FONT_FAMILY_UI,
-  FONT_WEIGHT_UI,
-  RADIUS,
-  RAW,
-  SPACE,
-  buttonStyle,
-} from "@/lib/tokens";
+import { COLORS, FONT_FAMILY_UI, FONT_WEIGHT_UI } from "@/lib/tokens";
 
-const FOCUSABLE =
-  'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /** Text link that keeps a 44px tap target without taking 44px of layout. */
 const InlineAction: React.FC<{
