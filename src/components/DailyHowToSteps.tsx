@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import GameCard from "@/components/GameCard";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
 import { MatchGhostCard, useMatchGhostStage } from "@/components/matchGhostParts";
 import { ALL_CARDS, type Card } from "@/cardData";
 import {

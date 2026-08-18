@@ -74,9 +74,7 @@ const DailyPreLaunchSignup: React.FC<{
         // Scrim over the ready screen, same weight as the rest of the app.
         background: "rgba(35, 31, 32, 0.6)",
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onClick={onBackdropClick}
     >
       <div
         ref={cardRef}
