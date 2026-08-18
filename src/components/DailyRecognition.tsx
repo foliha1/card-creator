@@ -164,7 +164,9 @@ const DailyRecognition: React.FC<{
         </InlineAction>
       </p>
       {restoring && (
-        <DailyRestoreOverlay
+        <DailyEmailModal
+          mode="restore"
+
           onClose={() => setRestoring(false)}
           onSubscribed={(value, restored) => {
             onRestored?.(value, restored);
