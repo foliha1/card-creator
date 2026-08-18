@@ -25,7 +25,7 @@ const bodyStyle: React.CSSProperties = {
  * situation without duplicating the form, the validation or the AC path.
  */
 const DailyEmailCapture: React.FC<{
-  source?: "daily_result" | "landing" | "prelaunch";
+  source?: "daily_result" | "landing" | "prelaunch" | "restore";
   /** Fired after a successful signup so the caller can re-read streak/stats. */
   onSubscribed?: (email: string, restored: boolean) => void;
   heading?: string;
