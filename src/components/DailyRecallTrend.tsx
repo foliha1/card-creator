@@ -20,12 +20,13 @@ import useDismiss from "@/hooks/useDismiss";
 const Tip: React.FC<{ onClose: () => void; mobile: boolean }> = ({ onClose, mobile }) => {
   useDismiss(onClose, { escape: true, returnFocus: true });
   return (
-    <div
+    <span
       role="tooltip"
       id="ww-recall-tip"
       data-testid="recall-tooltip"
       style={{
         ...textStyle("caption", mobile),
+        display: "block",
         position: "absolute",
         zIndex: 3,
         left: "50%",
@@ -42,7 +43,7 @@ const Tip: React.FC<{ onClose: () => void; mobile: boolean }> = ({ onClose, mobi
       }}
     >
       {RECALL_TOOLTIP}
-    </div>
+    </span>
   );
 };
 
