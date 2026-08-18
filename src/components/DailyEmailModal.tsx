@@ -159,30 +159,13 @@ const DailyEmailModal: React.FC<{
         }}
       >
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            type="button"
+          <CloseButton
             ref={closeRef}
+            label="CLOSE"
             onClick={onClose}
-            aria-label="Close"
-            className="ww-press"
+            ariaLabel="Close"
             data-testid="daily-restore-close"
-            style={{ ...buttonStyle("secondary", "sm"), gap: 4, position: "relative" }}
-          >
-            CLOSE
-            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
-                height: 44,
-                minWidth: 44,
-              }}
-            />
-          </button>
+          />
         </div>
 
         {/* Same component, same validation, same submit path. Only the heading
