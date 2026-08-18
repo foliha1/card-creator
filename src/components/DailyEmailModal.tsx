@@ -74,6 +74,10 @@ const DailyEmailModal: React.FC<{
   const hostRef = React.useRef<HTMLDivElement>(null);
   const closeRef = React.useRef<HTMLButtonElement>(null);
   const vv = useVisualViewportBox();
+  // With the keyboard open the visible box is tiny; the decorative shape rules
+  // and the 24px gutter are the first things to go so the submit stays in view.
+  const compact = vv.height > 0 && vv.height < 560;
+  const gutter = compact ? 12 : 24;
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -127,9 +131,9 @@ const DailyEmailModal: React.FC<{
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "flex-start",
-          gap: 24,
-          padding: 24,
-          paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+          gap: gutter,
+          padding: gutter,
+          paddingBottom: `calc(${gutter}px + env(safe-area-inset-bottom))`,
           overflowY: "auto",
           overscrollBehavior: "contain",
           "--daily-content-max-width": "402px",
@@ -137,7 +141,7 @@ const DailyEmailModal: React.FC<{
         } as React.CSSProperties
       }
     >
-      <DailyShapeRule />
+      {!compact && <DailyShapeRule />}
 
       <div
         data-testid="daily-email-modal-panel"
@@ -198,7 +202,7 @@ const DailyEmailModal: React.FC<{
         />
       </div>
 
-      <DailyShapeRule />
+      {!compact && <DailyShapeRule />}
     </div>,
     document.body
   );
