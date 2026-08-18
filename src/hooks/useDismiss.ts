@@ -41,10 +41,20 @@ export function useDismiss(
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [escape]);
 
+  // Captured during the first render, deliberately: a modal's own autofocus
+  // (child effects, and native `autoFocus`) runs before the parent's effects,
+  // so reading `document.activeElement` in an effect would find the modal's
+  // own input rather than the button that opened it.
+  const openerRef = React.useRef<HTMLElement | null | undefined>(undefined);
+  if (openerRef.current === undefined) {
+    openerRef.current =
+      typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null);
+  }
+
   React.useEffect(() => {
     if (!returnFocus) return;
-    const opener = document.activeElement as HTMLElement | null;
     return () => {
+      const opener = openerRef.current;
       // After the modal has gone: hand focus back to whatever opened it, as
       // long as it is still in the document.
       if (!opener || !opener.isConnected || typeof opener.focus !== "function") return;
