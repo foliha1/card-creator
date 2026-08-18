@@ -875,6 +875,12 @@ const DailyReadyScreen: React.FC<{
   onNotify?: () => void;
   /** So focus can return to the CTA when the overlay closes. */
   notifyRef?: React.Ref<HTMLButtonElement>;
+  /** The address this browser remembers, or null. Drives the recognition line. */
+  knownEmail?: string | null;
+  /** "Not you?" — clears the local email + flag only. */
+  onForgetEmail?: () => void;
+  /** After a successful restore, so the streak can be re-read. */
+  onRestored?: (email: string, restored: boolean) => void;
   mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
@@ -886,6 +892,9 @@ const DailyReadyScreen: React.FC<{
   subscribed = false,
   onNotify,
   notifyRef,
+  knownEmail = null,
+  onForgetEmail,
+  onRestored,
   mobile = false,
   onPlay,
   onHowToPlay,
