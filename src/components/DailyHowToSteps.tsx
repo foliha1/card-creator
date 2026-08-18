@@ -1236,15 +1236,17 @@ const DailyHowToSteps: React.FC<{
   }, [mode, onStart, onClose, step]);
 
 
+  // Escape + focus return: shared. Arrow-key paging stays local.
+  useDismiss(dismiss, { escape: true, returnFocus: true });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
-      else if (e.key === "ArrowRight") go(step + 1);
+      if (e.key === "ArrowRight") go(step + 1);
       else if (e.key === "ArrowLeft") go(step - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dismiss, go, step]);
+  }, [go, step]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     drag.current = { x: e.clientX, y: e.clientY };
