@@ -122,7 +122,9 @@ describe("not-recognized state opens the existing capture", () => {
 
     fireEvent.click(screen.getByTestId("daily-restore-open"));
     // Restore wording, not subscribe wording.
-    expect(screen.getByText("Restore your streak.")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Restore your streak." })
+    ).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Email address"), {
       target: { value: "player@example.com" },
