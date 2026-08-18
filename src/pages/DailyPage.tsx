@@ -1021,9 +1021,30 @@ const DailyReadyScreen: React.FC<{
         </button>
       </div>
 
-      <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
+      {/* Recognition + legal share one wrapper so the new line costs a small
+          inner gap rather than a whole column gap on short viewports. It is
+          hidden pre-launch: there is no streak to restore yet. */}
+      <div
+        className="daily-intro"
+        style={{
+          width: "100%",
+          animationDelay: "320ms",
+          display: "flex",
+          flexDirection: "column",
+          gap: lerpCompress(t, 6, 12),
+        }}
+      >
+        {!gated && (
+          <DailyRecognition
+            email={knownEmail}
+            scale={t}
+            onForget={() => onForgetEmail?.()}
+            onRestored={(email, restored) => onRestored?.(email, restored)}
+          />
+        )}
         <DailyLegalFooter />
       </div>
+
 
   </DailyFrame>
   );
