@@ -24,10 +24,11 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
-import { COLORS, RADIUS, RAW, SPACE, buttonStyle } from "@/lib/tokens";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
+import { COLORS, RADIUS, RAW, SPACE } from "@/lib/tokens";
 
 const FOCUSABLE =
   'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -79,13 +80,12 @@ const DailyEmailModal: React.FC<{
   const compact = vv.height > 0 && vv.height < 560;
   const gutter = compact ? 12 : 24;
 
+  // Escape + focus return live in the shared hook; the Tab trap is local
+  // because only this component knows what is focusable inside it.
+  useDismiss(onClose, { escape: true, returnFocus: true });
+
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
       if (e.key !== "Tab") return;
       const host = hostRef.current;
       if (!host) return;
