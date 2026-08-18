@@ -107,9 +107,11 @@ const DailyRecognition: React.FC<{
     gap: 6,
   };
 
-  // Recognized, and asking before it forgets. Inline, never window.confirm.
-  if (email && confirming) {
-    return (
+  // The line itself. The restore modal is rendered separately, below, so a
+  // successful restore (which populates `email` in the same batch) cannot
+  // unmount the modal before its "Welcome back" line has been seen.
+  const line =
+    email && confirming ? (
       <p style={lineStyle} data-testid="daily-recognition">
         <span>Forget {masked} on this device?</span>
         <InlineAction
@@ -135,11 +137,7 @@ const DailyRecognition: React.FC<{
           Keep
         </InlineAction>
       </p>
-    );
-  }
-
-  if (email) {
-    return (
+    ) : email ? (
       <p style={lineStyle} data-testid="daily-recognition">
         <span>
           Playing as <span data-testid="daily-recognition-email">{masked}</span>
@@ -155,11 +153,7 @@ const DailyRecognition: React.FC<{
           Not you?
         </InlineAction>
       </p>
-    );
-  }
-
-  return (
-    <>
+    ) : (
       <p style={lineStyle} data-testid="daily-recognition">
         <span>Already playing?</span>
         <InlineAction
@@ -173,10 +167,14 @@ const DailyRecognition: React.FC<{
           Restore your streak.
         </InlineAction>
       </p>
+    );
+
+  return (
+    <>
+      {line}
       {restoring && (
         <DailyEmailModal
           mode="restore"
-
           onClose={() => setRestoring(false)}
           onSubscribed={(value, restored) => {
             onRestored?.(value, restored);
