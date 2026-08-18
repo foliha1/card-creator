@@ -58,6 +58,9 @@ import {
 } from "@/lib/dailyResults";
 import { useDailyStreak } from "@/hooks/useDailyStreak";
 import { useDailyProfile } from "@/hooks/useDailyProfile";
+import { useDailyRecall } from "@/hooks/useDailyRecall";
+import DailyRecallTrend from "@/components/DailyRecallTrend";
+import type { RecallTrend } from "@/lib/dailyRecall";
 
 import { runDailyEndSequence } from "@/lib/dailyEndSequence";
 import {
@@ -553,6 +556,8 @@ const DailyResultCard: React.FC<{
   stats: DailyStats | null;
   /** Null hides the percentile line (withheld below 20 players). */
   percentile: number | null;
+  /** Null hides the recall trend line (fewer than 6 games, or the read failed). */
+  recall: RecallTrend | null;
   /** Called after an email signup so the parent can re-read streak/stats. */
   onSubscribed?: (email: string, restored: boolean) => void;
   /** Hides the signup form: an address is already on file (locally or server). */
@@ -574,6 +579,7 @@ const DailyResultCard: React.FC<{
   streak,
   stats,
   percentile,
+  recall,
   onSubscribed,
   subscribed,
   mobile,
@@ -666,6 +672,9 @@ const DailyResultCard: React.FC<{
             {formatPercentileLine(percentile)}
           </p>
         )}
+        {/* Recall trend: your own memory over time, right beside today's score
+            and the crowd comparison. */}
+        {recall !== null && <DailyRecallTrend trend={recall} mobile={mobile} />}
       </div>
 
       {/* All time. Subscribers only, and hidden entirely when the read failed —
@@ -1187,6 +1196,7 @@ const DailyPage: React.FC = () => {
     dataReady,
     profileKey
   );
+  const recall = useDailyRecall(dataReady, profileKey);
 
   // -------------------------------------------------------------------------
   // Instrumentation. Read-only observers of the engine: nothing here changes
@@ -1675,6 +1685,7 @@ const DailyPage: React.FC = () => {
               streak={streak?.current ?? null}
               stats={stats}
               percentile={percentile}
+              recall={recall}
               subscribed={subscribed}
               onSubscribed={(email) => {
                 // Restore or fresh signup, either way: the address is now on
