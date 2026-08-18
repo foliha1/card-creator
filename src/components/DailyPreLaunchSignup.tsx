@@ -7,10 +7,11 @@
 // ============================================================================
 
 import React from "react";
-import { X } from "lucide-react";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
 import { DAILY_LAUNCH_LABEL } from "@/lib/daily";
-import { BORDER, RAW, RADIUS, SPACE, buttonStyle } from "@/lib/tokens";
+import { BORDER, RAW, RADIUS, SPACE } from "@/lib/tokens";
 
 const FOCUSABLE =
   'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -21,14 +22,17 @@ const DailyPreLaunchSignup: React.FC<{
 }> = ({ onClose, onSubscribed }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
 
-  // Escape dismisses; Tab is trapped inside the card while it is open.
+  // Escape + focus return: shared. Backdrop tap is this modal's own behaviour
+  // (it is the only Daily modal with a scrim) and is wired through the hook.
+  const { onBackdropClick } = useDismiss(onClose, {
+    escape: true,
+    backdrop: true,
+    returnFocus: true,
+  });
+
+  // Tab is trapped inside the card while it is open.
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
       if (e.key !== "Tab") return;
       const card = cardRef.current;
       if (!card) return;
@@ -50,6 +54,7 @@ const DailyPreLaunchSignup: React.FC<{
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
+
 
   return (
     <div
