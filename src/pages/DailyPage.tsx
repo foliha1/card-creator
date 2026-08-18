@@ -11,6 +11,7 @@ import DailyScreenFade from "@/components/DailyScreenFade";
 import DailyLogoLockup from "@/components/DailyLogoLockup";
 import DailyLegalFooter from "@/components/DailyLegalFooter";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
+import DailyRecognition from "@/components/DailyRecognition";
 import DailyPreLaunchSignup from "@/components/DailyPreLaunchSignup";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
 
@@ -875,6 +876,12 @@ const DailyReadyScreen: React.FC<{
   onNotify?: () => void;
   /** So focus can return to the CTA when the overlay closes. */
   notifyRef?: React.Ref<HTMLButtonElement>;
+  /** The address this browser remembers, or null. Drives the recognition line. */
+  knownEmail?: string | null;
+  /** "Not you?" — clears the local email + flag only. */
+  onForgetEmail?: () => void;
+  /** After a successful restore, so the streak can be re-read. */
+  onRestored?: (email: string, restored: boolean) => void;
   mobile?: boolean;
   onPlay: () => void;
   onHowToPlay: () => void;
@@ -886,6 +893,9 @@ const DailyReadyScreen: React.FC<{
   subscribed = false,
   onNotify,
   notifyRef,
+  knownEmail = null,
+  onForgetEmail,
+  onRestored,
   mobile = false,
   onPlay,
   onHowToPlay,
@@ -1012,9 +1022,30 @@ const DailyReadyScreen: React.FC<{
         </button>
       </div>
 
-      <div className="daily-intro" style={{ width: "100%", animationDelay: "320ms" }}>
+      {/* Recognition + legal share one wrapper so the new line costs a small
+          inner gap rather than a whole column gap on short viewports. It is
+          hidden pre-launch: there is no streak to restore yet. */}
+      <div
+        className="daily-intro"
+        style={{
+          width: "100%",
+          animationDelay: "320ms",
+          display: "flex",
+          flexDirection: "column",
+          gap: lerpCompress(t, 6, 12),
+        }}
+      >
+        {!gated && (
+          <DailyRecognition
+            email={knownEmail}
+            scale={t}
+            onForget={() => onForgetEmail?.()}
+            onRestored={(email, restored) => onRestored?.(email, restored)}
+          />
+        )}
         <DailyLegalFooter />
       </div>
+
 
   </DailyFrame>
   );
@@ -1146,7 +1177,8 @@ const DailyPage: React.FC = () => {
   const bumpProfile = React.useCallback(() => setProfileKey((k) => k + 1), []);
   // Local flag first, then a server check by visitor id: a cleared browser is
   // still recognised, and the local flag/email are repopulated for next time.
-  const { subscribed, markLocal } = useSubscriberStatus(bumpProfile);
+  const { subscribed, email: knownEmail, markLocal, forgetLocal } =
+    useSubscriberStatus(bumpProfile);
   // Read after the run is persisted so today counts toward the streak.
   const dataReady = daily.resultSaved || daily.result === null;
   const streak = useDailyStreak(daily.puzzleNumber, dataReady, profileKey);
@@ -1556,6 +1588,16 @@ const DailyPage: React.FC = () => {
               gated={daily.preLaunch}
               subscribed={subscribed}
               notifyRef={notifyRef}
+              knownEmail={knownEmail}
+              onForgetEmail={() => {
+                forgetLocal();
+                // The streak/stats reads must drop the email union too.
+                bumpProfile();
+              }}
+              onRestored={(email) => {
+                markLocal(email);
+                bumpProfile();
+              }}
               onNotify={() => {
                 unlockAudio();
                 setAudioReady(true);

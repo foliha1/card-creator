@@ -64,6 +64,37 @@ export function markSubscribed(email?: string): void {
 }
 
 /**
+ * Forgets this browser's stored address. Local only: nothing server side is
+ * deleted, the visitor id is untouched, and today's stored result survives — so
+ * a shared phone can hand the game to the next person without losing the run.
+ */
+export function clearSubscribed(): void {
+  inMemorySubscribed = false;
+  inMemoryEmail = null;
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(SUBSCRIBED_KEY);
+      localStorage.removeItem(EMAIL_KEY);
+    }
+  } catch {
+    // fall through
+  }
+}
+
+/**
+ * `felix@gmail.com` → `f•••@gmail.com`. First character of the local part, a
+ * fixed three bullets (never a length hint), then the domain verbatim. Junk in
+ * gives an empty string out rather than a throw.
+ */
+export function maskEmail(email: string | null | undefined): string {
+  const value = (email ?? "").trim().toLowerCase();
+  const at = value.lastIndexOf("@");
+  if (at < 1) return "";
+  return `${value[0]}•••${value.slice(at)}`;
+}
+
+
+/**
  * Server-side recognition. Given this browser's visitor id, returns the address
  * already on file for it (a previous signup on this device, or a run that was
  * linked to an address) — so clearing local storage no longer makes the app
@@ -125,8 +156,10 @@ function localPuzzleNumber(): number | null {
 export async function subscribeDaily(
   email: string,
   visitorId: string = getVisitorId(),
-  /** Where the signup came from. Omitted keeps the server's own default. */
-  source?: "daily_result" | "landing" | "prelaunch"
+  /** Where the signup came from. Omitted keeps the server's own default.
+   *  `restore` is a client-side label only — the server maps anything it does
+   *  not know to its default, so nothing about ac-subscribe changes. */
+  source?: "daily_result" | "landing" | "prelaunch" | "restore"
 ): Promise<boolean> {
   if (!isValidEmail(email)) return false;
   const puzzleNumber = localPuzzleNumber();
