@@ -455,13 +455,28 @@ const ShareBlock: React.FC<{
       >
         <button
           type="button"
+          className="ww-press"
+          onClick={() => void invite("results")}
+          aria-label="Invite a friend to today's puzzle"
+          data-testid="results-invite"
+          style={{
+            ...buttonStyle("primary", "lg", { mobile }),
+            flex: "2 1 0",
+            minWidth: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          INVITE
+        </button>
+        <button
+          type="button"
           ref={shareBtnRef}
           className="ww-press"
           onClick={openPreview}
           disabled={working}
           style={{
-            ...buttonStyle("primary", "lg", { mobile }),
-            flex: "2 1 0",
+            ...buttonStyle("secondary", "lg", { mobile }),
+            flex: "1 1 0",
             minWidth: 0,
             position: "relative",
             overflow: "hidden",
@@ -469,21 +484,6 @@ const ShareBlock: React.FC<{
         >
           {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
           {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
-        </button>
-        <button
-          type="button"
-          className="ww-press"
-          onClick={() => void invite("results")}
-          aria-label="Invite a friend to today's puzzle"
-          data-testid="results-invite"
-          style={{
-            ...buttonStyle("secondary", "lg", { mobile }),
-            flex: "1 1 0",
-            minWidth: 0,
-            whiteSpace: "nowrap",
-          }}
-        >
-          INVITE
         </button>
       </div>
 
