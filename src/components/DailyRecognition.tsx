@@ -114,6 +114,7 @@ const DailyRecognition: React.FC<{
         <span>Forget {masked} on this device?</span>
         <InlineAction
           testId="daily-forget-confirm"
+          ariaLabel="Yes, forget this email on this device"
           onClick={() => {
             hapticTap();
             setConfirming(false);
@@ -125,6 +126,7 @@ const DailyRecognition: React.FC<{
         <span aria-hidden="true">·</span>
         <InlineAction
           testId="daily-forget-cancel"
+          ariaLabel="Keep this email on this device"
           onClick={() => {
             hapticTap();
             setConfirming(false);
@@ -144,6 +146,7 @@ const DailyRecognition: React.FC<{
         </span>
         <InlineAction
           testId="daily-not-you"
+          ariaLabel="Not you? Forget this email on this device"
           onClick={() => {
             hapticTap();
             setConfirming(true);
@@ -161,6 +164,7 @@ const DailyRecognition: React.FC<{
         <span>Already playing?</span>
         <InlineAction
           testId="daily-restore-open"
+          ariaLabel="Restore your streak with your email"
           onClick={() => {
             hapticTap();
             setRestoring(true);
