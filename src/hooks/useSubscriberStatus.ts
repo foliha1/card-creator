@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  clearSubscribed,
   fetchServerSubscriberEmail,
   getSubscribedEmail,
   markSubscribed,
@@ -21,18 +22,26 @@ import {
 export function useSubscriberStatus(
   /** Fired when the server recognises a visitor local storage had forgotten. */
   onRecognized?: () => void
-): { subscribed: boolean; markLocal: (email: string) => void } {
-  const [subscribed, setSubscribed] = useState(
-    () => getSubscribedEmail() !== null
-  );
+): {
+  subscribed: boolean;
+  /** The stored address, or null. Drives the "Playing as …" line. */
+  email: string | null;
+  markLocal: (email: string) => void;
+  /** "Not you?" — forgets the address on this browser only. */
+  forgetLocal: () => void;
+} {
+  const [email, setEmail] = useState<string | null>(() => getSubscribedEmail());
+  // Once forgotten, the server lookup must not quietly re-recognise this
+  // browser — the player just said it is not them.
+  const [forgotten, setForgotten] = useState(false);
 
   useEffect(() => {
     if (getSubscribedEmail() !== null) return;
     let live = true;
-    void fetchServerSubscriberEmail().then((email) => {
-      if (!live || !email) return;
-      markSubscribed(email);
-      setSubscribed(true);
+    void fetchServerSubscriberEmail().then((found) => {
+      if (!live || !found || forgotten) return;
+      markSubscribed(found);
+      setEmail(found);
       onRecognized?.();
     });
     return () => {
@@ -41,10 +50,17 @@ export function useSubscriberStatus(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const markLocal = useCallback((email: string) => {
-    markSubscribed(email);
-    setSubscribed(true);
+  const markLocal = useCallback((next: string) => {
+    markSubscribed(next);
+    setEmail(getSubscribedEmail());
   }, []);
 
-  return { subscribed, markLocal };
+  const forgetLocal = useCallback(() => {
+    setForgotten(true);
+    clearSubscribed();
+    setEmail(null);
+  }, []);
+
+  return { subscribed: email !== null, email, markLocal, forgetLocal };
 }
+
