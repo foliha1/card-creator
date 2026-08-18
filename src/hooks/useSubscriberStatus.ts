@@ -11,7 +11,7 @@
 // stats read needs an address to union rows across devices.
 // ============================================================================
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearSubscribed,
   fetchServerSubscriberEmail,
@@ -31,15 +31,16 @@ export function useSubscriberStatus(
   forgetLocal: () => void;
 } {
   const [email, setEmail] = useState<string | null>(() => getSubscribedEmail());
-  // Once forgotten, the server lookup must not quietly re-recognise this
-  // browser — the player just said it is not them.
-  const [forgotten, setForgotten] = useState(false);
+  // Once forgotten, an in-flight server lookup must not quietly re-recognise
+  // this browser — the player just said it is not them. A ref, because the
+  // mount effect's closure would never see a state update.
+  const forgotten = useRef(false);
 
   useEffect(() => {
     if (getSubscribedEmail() !== null) return;
     let live = true;
     void fetchServerSubscriberEmail().then((found) => {
-      if (!live || !found || forgotten) return;
+      if (!live || !found || forgotten.current) return;
       markSubscribed(found);
       setEmail(found);
       onRecognized?.();
@@ -51,15 +52,17 @@ export function useSubscriberStatus(
   }, []);
 
   const markLocal = useCallback((next: string) => {
+    forgotten.current = false;
     markSubscribed(next);
     setEmail(getSubscribedEmail());
   }, []);
 
   const forgetLocal = useCallback(() => {
-    setForgotten(true);
+    forgotten.current = true;
     clearSubscribed();
     setEmail(null);
   }, []);
+
 
   return { subscribed: email !== null, email, markLocal, forgetLocal };
 }
