@@ -220,7 +220,6 @@ export const RollHeroOverlay: React.FC<Props> = ({
       // readers. Keyboard and reduced-motion users already get the short
       // path (prefers-reduced-motion and late-arrival both auto-skip), so
       // the honest fix is to stop claiming to be a button.
-      aria-hidden="true"
       onClick={handleSkip}
       style={{
         position: "absolute",
