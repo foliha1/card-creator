@@ -464,9 +464,12 @@ const ShareBlock: React.FC<{
             flex: "2 1 0",
             minWidth: 0,
             whiteSpace: "nowrap",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           INVITE
+          {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
         </button>
         <button
           type="button"
@@ -478,12 +481,9 @@ const ShareBlock: React.FC<{
             ...buttonStyle("secondary", "lg", { mobile }),
             flex: "1 1 0",
             minWidth: 0,
-            position: "relative",
-            overflow: "hidden",
           }}
         >
           {working ? "MAKING IMAGE…" : copied ? "COPIED" : "SHARE"}
-          {sweep && <span aria-hidden="true" className="ww-sweep-once" style={sweep} />}
         </button>
       </div>
 
