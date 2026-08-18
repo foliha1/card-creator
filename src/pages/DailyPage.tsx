@@ -1588,6 +1588,16 @@ const DailyPage: React.FC = () => {
               gated={daily.preLaunch}
               subscribed={subscribed}
               notifyRef={notifyRef}
+              knownEmail={knownEmail}
+              onForgetEmail={() => {
+                forgetLocal();
+                // The streak/stats reads must drop the email union too.
+                bumpProfile();
+              }}
+              onRestored={(email) => {
+                markLocal(email);
+                bumpProfile();
+              }}
               onNotify={() => {
                 unlockAudio();
                 setAudioReady(true);
