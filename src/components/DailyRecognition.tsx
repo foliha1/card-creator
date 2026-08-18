@@ -28,10 +28,13 @@ const InlineAction: React.FC<{
   onClick: () => void;
   children: React.ReactNode;
   testId?: string;
-}> = ({ onClick, children, testId }) => (
+  /** Spoken name; the visible word alone is not always the whole action. */
+  ariaLabel: string;
+}> = ({ onClick, children, testId, ariaLabel }) => (
   <button
     type="button"
     onClick={onClick}
+    aria-label={ariaLabel}
     data-testid={testId}
     style={{
       position: "relative",
@@ -48,14 +51,17 @@ const InlineAction: React.FC<{
     }}
   >
     {children}
+    {/* Absolutely positioned, so a 44x44 minimum hit area costs no layout
+        height on the ready screen's 480px budget. */}
     <span
       aria-hidden="true"
       style={{
         position: "absolute",
-        left: -4,
-        right: -4,
+        left: "50%",
         top: "50%",
-        transform: "translateY(-50%)",
+        transform: "translate(-50%, -50%)",
+        width: "calc(100% + 8px)",
+        minWidth: 44,
         height: 44,
       }}
     />
@@ -108,6 +114,7 @@ const DailyRecognition: React.FC<{
         <span>Forget {masked} on this device?</span>
         <InlineAction
           testId="daily-forget-confirm"
+          ariaLabel="Yes, forget this email on this device"
           onClick={() => {
             hapticTap();
             setConfirming(false);
@@ -119,6 +126,7 @@ const DailyRecognition: React.FC<{
         <span aria-hidden="true">·</span>
         <InlineAction
           testId="daily-forget-cancel"
+          ariaLabel="Keep this email on this device"
           onClick={() => {
             hapticTap();
             setConfirming(false);
@@ -138,6 +146,7 @@ const DailyRecognition: React.FC<{
         </span>
         <InlineAction
           testId="daily-not-you"
+          ariaLabel="Not you? Forget this email on this device"
           onClick={() => {
             hapticTap();
             setConfirming(true);
@@ -155,6 +164,7 @@ const DailyRecognition: React.FC<{
         <span>Already playing?</span>
         <InlineAction
           testId="daily-restore-open"
+          ariaLabel="Restore your streak with your email"
           onClick={() => {
             hapticTap();
             setRestoring(true);

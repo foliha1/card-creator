@@ -24,10 +24,11 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
-import { COLORS, RADIUS, RAW, SPACE, buttonStyle } from "@/lib/tokens";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
+import { COLORS, RADIUS, RAW, SPACE } from "@/lib/tokens";
 
 const FOCUSABLE =
   'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -79,13 +80,12 @@ const DailyEmailModal: React.FC<{
   const compact = vv.height > 0 && vv.height < 560;
   const gutter = compact ? 12 : 24;
 
+  // Escape + focus return live in the shared hook; the Tab trap is local
+  // because only this component knows what is focusable inside it.
+  useDismiss(onClose, { escape: true, returnFocus: true });
+
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
       if (e.key !== "Tab") return;
       const host = hostRef.current;
       if (!host) return;
@@ -159,30 +159,13 @@ const DailyEmailModal: React.FC<{
         }}
       >
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            type="button"
+          <CloseButton
             ref={closeRef}
+            label="CLOSE"
             onClick={onClose}
-            aria-label="Close"
-            className="ww-press"
+            ariaLabel="Close"
             data-testid="daily-restore-close"
-            style={{ ...buttonStyle("secondary", "sm"), gap: 4, position: "relative" }}
-          >
-            CLOSE
-            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
-                height: 44,
-                minWidth: 44,
-              }}
-            />
-          </button>
+          />
         </div>
 
         {/* Same component, same validation, same submit path. Only the heading

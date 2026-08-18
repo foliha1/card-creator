@@ -214,11 +214,13 @@ export const RollHeroOverlay: React.FC<Props> = ({
 
   return (
     <div
-      role="button"
-      aria-label="Skip roll animation"
-      tabIndex={-1}
+      // Deliberately NOT a control. This is the animating die itself, which
+      // happens to accept a tap to land early; `tabIndex={-1}` made the old
+      // role/aria-label/key handler dead code that only lied to screen
+      // readers. Keyboard and reduced-motion users already get the short
+      // path (prefers-reduced-motion and late-arrival both auto-skip), so
+      // the honest fix is to stop claiming to be a button.
       onClick={handleSkip}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleSkip(); }}
       style={{
         position: "absolute",
         left: localLeft,

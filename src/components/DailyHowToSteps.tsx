@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import GameCard from "@/components/GameCard";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
 import { MatchGhostCard, useMatchGhostStage } from "@/components/matchGhostParts";
 import { ALL_CARDS, type Card } from "@/cardData";
 import {
@@ -1234,15 +1236,17 @@ const DailyHowToSteps: React.FC<{
   }, [mode, onStart, onClose, step]);
 
 
+  // Escape + focus return: shared. Arrow-key paging stays local.
+  useDismiss(dismiss, { escape: true, returnFocus: true });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
-      else if (e.key === "ArrowRight") go(step + 1);
+      if (e.key === "ArrowRight") go(step + 1);
       else if (e.key === "ArrowLeft") go(step - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dismiss, go, step]);
+  }, [go, step]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     drag.current = { x: e.clientX, y: e.clientY };
@@ -1319,36 +1323,14 @@ const DailyHowToSteps: React.FC<{
               />
             ))}
           </div>
-          <button
-            type="button"
+          <CloseButton
+            label="SKIP"
             onClick={dismiss}
-            aria-label={mode === "gate" ? "Skip how to play and start" : "Close how to play"}
-            className="ww-press"
+            ariaLabel={mode === "gate" ? "Skip how to play and start" : "Close how to play"}
             data-testid="htp-skip"
-            style={{
-              ...buttonStyle("secondary", "sm"),
-              gap: 4,
-              position: "relative",
-              zIndex: 3,
-            }}
-          >
-            SKIP
-            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
-            {/* invisible 44px minimum touch target; the visible pill keeps its size */}
-            <span
-              aria-hidden="true"
-              data-testid="htp-skip-hit"
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
-                height: 44,
-                minWidth: 44,
-              }}
-            />
-          </button>
+            hitTestId="htp-skip-hit"
+            style={{ zIndex: 3 }}
+          />
 
         </div>
 

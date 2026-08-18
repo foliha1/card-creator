@@ -13,8 +13,9 @@
 
 import React, { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
 import {
   BORDER,
   COLORS,
@@ -91,33 +92,28 @@ const DailySharePreview: React.FC<{
     return () => window.clearTimeout(t);
   }, [imageUrl]);
 
-  const trap = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== "Tab") return;
-      const host = hostRef.current;
-      if (!host) return;
-      const items = Array.from(
-        host.querySelectorAll<HTMLElement>(FOCUSABLE)
-      ).filter((el) => el.offsetParent !== null);
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (e.shiftKey && (active === first || !host.contains(active))) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    },
-    [onClose]
-  );
+  // Escape + focus return: shared. The Tab trap stays local.
+  useDismiss(onClose, { escape: true, returnFocus: true });
+
+  const trap = useCallback((e: KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const host = hostRef.current;
+    if (!host) return;
+    const items = Array.from(
+      host.querySelectorAll<HTMLElement>(FOCUSABLE)
+    ).filter((el) => el.offsetParent !== null);
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    if (e.shiftKey && (active === first || !host.contains(active))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
 
   useEffect(() => {
     window.addEventListener("keydown", trap, true);
@@ -281,31 +277,13 @@ const DailySharePreview: React.FC<{
               </button>
             </div>
 
-            <button
-              type="button"
+            <CloseButton
               ref={closeRef}
+              label="CLOSE"
               onClick={onClose}
-              aria-label="Close share card"
-              className="ww-press"
+              ariaLabel="Close share card"
               data-testid="share-preview-close"
-              style={{ ...buttonStyle("secondary", "sm"), gap: 4, position: "relative" }}
-            >
-              CLOSE
-              <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
-              {/* invisible 44px minimum touch target */}
-              <span
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  height: 44,
-                  minWidth: 44,
-                }}
-              />
-            </button>
+            />
           </div>
 
           {/* The card. The slot is measured and the box derived from it, so the

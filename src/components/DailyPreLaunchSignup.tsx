@@ -7,10 +7,11 @@
 // ============================================================================
 
 import React from "react";
-import { X } from "lucide-react";
 import DailyEmailCapture from "@/components/DailyEmailCapture";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
 import { DAILY_LAUNCH_LABEL } from "@/lib/daily";
-import { BORDER, RAW, RADIUS, SPACE, buttonStyle } from "@/lib/tokens";
+import { BORDER, RAW, RADIUS, SPACE } from "@/lib/tokens";
 
 const FOCUSABLE =
   'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -21,14 +22,17 @@ const DailyPreLaunchSignup: React.FC<{
 }> = ({ onClose, onSubscribed }) => {
   const cardRef = React.useRef<HTMLDivElement>(null);
 
-  // Escape dismisses; Tab is trapped inside the card while it is open.
+  // Escape + focus return: shared. Backdrop tap is this modal's own behaviour
+  // (it is the only Daily modal with a scrim) and is wired through the hook.
+  const { onBackdropClick } = useDismiss(onClose, {
+    escape: true,
+    backdrop: true,
+    returnFocus: true,
+  });
+
+  // Tab is trapped inside the card while it is open.
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
       if (e.key !== "Tab") return;
       const card = cardRef.current;
       if (!card) return;
@@ -51,6 +55,7 @@ const DailyPreLaunchSignup: React.FC<{
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+
   return (
     <div
       role="dialog"
@@ -69,9 +74,7 @@ const DailyPreLaunchSignup: React.FC<{
         // Scrim over the ready screen, same weight as the rest of the app.
         background: "rgba(35, 31, 32, 0.6)",
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onClick={onBackdropClick}
     >
       <div
         ref={cardRef}
@@ -92,29 +95,12 @@ const DailyPreLaunchSignup: React.FC<{
         }}
       >
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            type="button"
+          <CloseButton
+            label="CLOSE"
             onClick={onClose}
-            aria-label="Close"
-            className="ww-press"
+            ariaLabel="Close"
             data-testid="prelaunch-close"
-            style={{ ...buttonStyle("secondary", "sm"), position: "relative" }}
-          >
-            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
-            {/* invisible 44px minimum touch target; the visible pill keeps its size */}
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
-                height: 44,
-                minWidth: 44,
-              }}
-            />
-          </button>
+          />
         </div>
 
         <DailyEmailCapture
