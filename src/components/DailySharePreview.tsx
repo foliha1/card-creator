@@ -13,8 +13,9 @@
 
 import React, { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
 import DailyShapeRule from "@/components/DailyShapeRule";
+import CloseButton from "@/components/CloseButton";
+import { useDismiss } from "@/hooks/useDismiss";
 import {
   BORDER,
   COLORS,

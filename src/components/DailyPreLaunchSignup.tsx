@@ -92,29 +92,12 @@ const DailyPreLaunchSignup: React.FC<{
         }}
       >
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            type="button"
+          <CloseButton
+            label="CLOSE"
             onClick={onClose}
-            aria-label="Close"
-            className="ww-press"
+            ariaLabel="Close"
             data-testid="prelaunch-close"
-            style={{ ...buttonStyle("secondary", "sm"), position: "relative" }}
-          >
-            <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
-            {/* invisible 44px minimum touch target; the visible pill keeps its size */}
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: "50%",
-                transform: "translateY(-50%)",
-                height: 44,
-                minWidth: 44,
-              }}
-            />
-          </button>
+          />
         </div>
 
         <DailyEmailCapture
