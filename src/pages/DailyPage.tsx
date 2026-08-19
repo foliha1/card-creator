@@ -607,7 +607,13 @@ const DailyResultCard: React.FC<{
     fontFamily: FONT_FAMILY_UI,
     fontWeight: 700,
     fontSize: capSize - (mobile ? 2 : 1),
-    lineHeight: `${capSize * TEXT.caption.lineHeight}px`,
+    // Tighter leading so the two-line all-time labels (LONGEST STREAK,
+    // AVERAGE MISSES) sit close together. Single-line labels are unaffected.
+    lineHeight: 1.15,
+    // Single-line labels keep the box height they had when the leading was
+    // pinned in px, so those tiles do not move; the two-line all-time labels
+    // exceed it and get the tighter leading.
+    minHeight: `${capSize * TEXT.caption.lineHeight}px`,
     letterSpacing: "0.05em",
     textTransform: "uppercase",
     color: COLORS.inkMuted,
@@ -617,6 +623,7 @@ const DailyResultCard: React.FC<{
   const stat = (label: string, value: string) => (
     <div
       key={label}
+      data-testid="stat-tile"
       style={{
         flex: "1 1 0",
         minWidth: 0,
