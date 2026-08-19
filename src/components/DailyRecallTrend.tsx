@@ -55,6 +55,9 @@ const Tip: React.FC<{
       }
       setBox({ left, top, width });
     };
+    // Give the popover room below the icon before placing, so it never has to
+    // flip up over the section heading it belongs to.
+    anchor?.scrollIntoView?.({ block: "center" });
     place();
     // Re-measure once the panel has its final height at the clamped width.
     const id = window.requestAnimationFrame?.(place);
