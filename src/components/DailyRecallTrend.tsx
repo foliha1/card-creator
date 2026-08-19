@@ -13,11 +13,20 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { ArrowUp, Info } from "lucide-react";
-import { COLORS, RADIUS, SPACE, BORDER, SHADOW, textStyle } from "@/lib/tokens";
+import { ArrowUp, Info, X } from "lucide-react";
+import {
+  COLORS,
+  RADIUS,
+  SPACE,
+  BORDER,
+  SHADOW,
+  TEXT,
+  FONT_FAMILY_UI,
+  FONT_WEIGHT_UI,
+  textStyle,
+} from "@/lib/tokens";
 import { formatRecallLine, RECALL_TOOLTIP, type RecallTrend } from "@/lib/dailyRecall";
 import useDismiss from "@/hooks/useDismiss";
-import CloseButton from "@/components/CloseButton";
 
 /** Viewport gutter kept clear on both sides of the popover. */
 const EDGE = 16;
@@ -94,6 +103,8 @@ const Tip: React.FC<{
           width: box?.width ?? Math.min(MAX_W, EDGE * 2),
           boxSizing: "border-box",
           padding: SPACE[4],
+          // Room for the X in the top corner, so the copy never runs under it.
+          paddingRight: SPACE[4] + 20,
           display: "flex",
           flexDirection: "column",
           gap: SPACE[3],
@@ -108,18 +119,56 @@ const Tip: React.FC<{
       >
         <span
           data-testid="recall-tooltip"
-          style={{ ...textStyle("body", mobile), display: "block", textAlign: "left" }}
+          style={{
+            // Geist here, not Friend: this is metadata about a metric, and the
+            // shared `CloseButton` pill is deliberately not used either — the
+            // four Daily modals keep theirs untouched.
+            fontFamily: FONT_FAMILY_UI,
+            fontWeight: FONT_WEIGHT_UI,
+            fontSize: mobile ? TEXT.body.mobileSize : TEXT.body.size,
+            lineHeight: 1.45,
+            display: "block",
+            textAlign: "left",
+          }}
         >
           {RECALL_TOOLTIP}
         </span>
-        <CloseButton
-          label="CLOSE"
+        {/* A plain glyph in the corner, with a 44px invisible hit area. */}
+        <button
+          type="button"
           onClick={onClose}
-          ariaLabel="Close first-time match explanation"
+          aria-label="Close first-time match explanation"
           data-testid="recall-tooltip-close"
-          hitTestId="recall-tooltip-close-hit"
-        />
+          style={{
+            position: "absolute",
+            top: SPACE[3],
+            right: SPACE[3],
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            border: "none",
+            background: "transparent",
+            color: COLORS.ink,
+            cursor: "pointer",
+          }}
+        >
+          <X size={16} strokeWidth={2} aria-hidden="true" style={{ pointerEvents: "none" }} />
+          <span
+            aria-hidden="true"
+            data-testid="recall-tooltip-close-hit"
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 44,
+              height: 44,
+            }}
+          />
+        </button>
       </div>
+
     </>,
     document.body
   );

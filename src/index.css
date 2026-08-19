@@ -19,7 +19,9 @@
 @font-face {
   font-family: "Geist";
   src: url("/fonts/geist-variable.woff2") format("woff2");
-  font-weight: 400 600;
+  /* Full variable range: the file ships wght 100-900, so a real 700 face
+     exists and small-caps labels never need a synthesised bold. */
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }

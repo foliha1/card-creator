@@ -100,6 +100,7 @@ import {
 
   RADIUS,
   SPACE,
+  TEXT,
   buttonStyle,
   textStyle,
   FONT_FAMILY_UI,
@@ -592,6 +593,27 @@ const DailyResultCard: React.FC<{
   const appTheme = useThemeMode().theme;
   const shareImage = useDailyShareImage(result, streak, true, appTheme);
 
+  // Tile labels: all caps, real Geist 700 (the variable face ships wght 100-900,
+  // so this is not a synthesised bold), 0.05em tracking.
+  //
+  // Caps plus tracking is wider than the sentence case it replaces, and the
+  // narrowest tile (four across at 360px) leaves 56px of inner width. So the
+  // label drops one step below the caption size — and the line box is pinned to
+  // the CAPTION line height in px, so every tile keeps exactly the height it
+  // had before, whatever the label's own size.
+  const capSize = mobile ? TEXT.caption.mobileSize : TEXT.caption.size;
+  const tileLabelStyle: React.CSSProperties = {
+    ...textStyle("caption", mobile),
+    fontFamily: FONT_FAMILY_UI,
+    fontWeight: 700,
+    fontSize: capSize - 1,
+    lineHeight: `${capSize * TEXT.caption.lineHeight}px`,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    color: COLORS.inkMuted,
+  };
+
+
   const stat = (label: string, value: string) => (
     <div
       key={label}
@@ -606,9 +628,10 @@ const DailyResultCard: React.FC<{
       }}
     >
       <div style={{ ...textStyle("display", mobile), color: COLORS.ink }}>{value}</div>
-      <div style={{ ...textStyle("caption", mobile), color: COLORS.inkMuted }}>{label}</div>
+      <div style={tileLabelStyle}>{label}</div>
     </div>
   );
+
 
   // Running index of each round's first mark, so the marks read as one
   // left-to-right sequence across all three rounds.
@@ -640,25 +663,28 @@ const DailyResultCard: React.FC<{
       >
         WHOOP! WHOOP! Daily #{puzzleNumber}
       </h1>
-      <p
-        className="ww-res-in"
-        style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, marginTop: SPACE[6], ...blockIn("message") }}
-      >
-        {failed
-          ? "Whooped! Better luck tomorrow."
-          : revisit
-            ? "You already tested your memory today. Come back tomorrow!"
-            : "All three rounds played. One puzzle a day — come back tomorrow."}
-      </p>
-      {/* Today's daily results: this run's numbers, the round rows, and the
+      {/* No subhead on a completed run: the title carries it. The failed and
+          revisit endings still say their one thing. */}
+      {(failed || revisit) && (
+        <p
+          className="ww-res-in"
+          style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, marginTop: SPACE[6], ...blockIn("message") }}
+        >
+          {failed
+            ? "Whooped! Better luck tomorrow."
+            : "You already tested your memory today. Come back tomorrow!"}
+        </p>
+      )}
+      {/* Your daily results: this run's numbers, the round rows, and the
           crowd comparison. */}
       <div
         className="ww-res-in"
         style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 0, marginTop: SPACE[6], ...blockIn("stats") }}
       >
         <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-          Today's daily results
+          Your daily results
         </h2>
+
         {/* Tier 1 — a label sits close to the content it names. */}
         <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", marginTop: SPACE[4] }}>
 
@@ -767,10 +793,23 @@ const DailyResultCard: React.FC<{
           {/* Recall trend: first three games against the last three — an
               all-time comparison, so it sits with the all-time tiles. */}
           {recall !== null && (
-            <div style={{ marginTop: stats !== null ? SPACE[8] : SPACE[4] }}>
+            <div
+              data-testid="recall-container"
+              style={{
+                marginTop: stats !== null ? SPACE[8] : SPACE[4],
+                alignSelf: "stretch",
+                // Transparent fill — the page shows through — inside a brand
+                // blue stroke. Corner and padding match the stat tiles.
+                background: "transparent",
+                border: `2px solid ${COLORS.blue}`,
+                borderRadius: RADIUS.sm,
+                padding: `${SPACE[4]}px ${SPACE[3]}px`,
+              }}
+            >
               <DailyRecallTrend trend={recall} mobile={mobile} />
             </div>
           )}
+
         </div>
       )}
 

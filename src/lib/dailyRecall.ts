@@ -72,11 +72,17 @@ export function computeRecallTrend(rows: RecallGame[]): RecallTrend | null {
   return { latePct, earlyPct, upPoints: rise >= 1 ? rise : null };
 }
 
-/** "Your recall is climbing! 64% first-time matches, up 9 points." / "64% first-time matches." */
+/**
+ * "Your recall is climbing! 64% correct first match." when the late window is
+ * ahead, otherwise the bare "64% correct first match."
+ *
+ * The improvement figure is deliberately not spoken: the first-3-vs-last-3
+ * comparison still decides whether the sentence says "climbing" (and whether
+ * the caller draws the arrow), it just isn't quoted in points.
+ */
 export function formatRecallLine(trend: RecallTrend): string {
-  if (trend.upPoints === null) return `${trend.latePct}% first-time matches.`;
-  const pts = trend.upPoints === 1 ? "1 point" : `${trend.upPoints} points`;
-  return `Your recall is climbing! ${trend.latePct}% first-time matches, up ${pts}.`;
+  const stat = `${trend.latePct}% correct first match.`;
+  return trend.upPoints === null ? stat : `Your recall is climbing! ${stat}`;
 }
 
 export const RECALL_TOOLTIP =

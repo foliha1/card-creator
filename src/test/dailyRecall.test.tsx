@@ -57,7 +57,7 @@ describe("computeRecallTrend", () => {
     const rows = [clean(1), clean(2), clean(3), missy(4), missy(5), missy(6)];
     const t = computeRecallTrend(rows)!;
     expect(t.upPoints).toBeNull();
-    expect(formatRecallLine(t)).toBe("0% first-time matches.");
+    expect(formatRecallLine(t)).toBe("0% correct first match.");
   });
 
   it("shows the arrow for a 1-point rise", () => {
@@ -80,7 +80,7 @@ describe("computeRecallTrend", () => {
     const t = computeRecallTrend(rows)!;
     expect(t).toEqual({ latePct: 67, earlyPct: 66, upPoints: 1 });
     expect(formatRecallLine(t)).toBe(
-      "Your recall is climbing! 67% first-time matches, up 1 point."
+      "Your recall is climbing! 67% correct first match."
     );
   });
 
@@ -116,7 +116,7 @@ describe("DailyRecallTrend tooltip", () => {
       />
     );
     expect(screen.getByTestId("recall-line").textContent).toContain(
-      "Your recall is climbing! 64% first-time matches, up 9 points."
+      "Your recall is climbing! 64% correct first match."
     );
     const icon = screen.getByTestId("recall-info");
     expect(icon).toHaveAttribute("aria-label", "What is a first-time match?");
@@ -147,9 +147,9 @@ describe("DailyRecallTrend tooltip", () => {
       <DailyRecallTrend trend={{ latePct: 64, earlyPct: 70, upPoints: null }} mobile={false} />
     );
     expect(screen.getByTestId("recall-line").textContent).toContain(
-      "64% first-time matches."
+      "64% correct first match."
     );
-    expect(screen.getByTestId("recall-line").textContent).not.toContain("up ");
+    expect(screen.getByTestId("recall-line").textContent).not.toContain("climbing");
     expect(container.querySelectorAll("svg").length).toBe(1); // info icon only
   });
 });
