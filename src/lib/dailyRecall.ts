@@ -86,6 +86,6 @@ export function formatRecallLine(trend: RecallTrend): string {
 }
 
 export const RECALL_TOOLTIP =
-  "A first-time match is when you find the pair without missing first. " +
-  "We compare your last 3 games to your first 3. " +
-  "You need 6 games before this appears.";
+  "A correct first match is when you find a matching pair without missing first " +
+  "in a round. This percentage is calculated by comparing your most recent 3 " +
+  "games to your first 3.";
