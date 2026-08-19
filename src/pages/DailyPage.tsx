@@ -628,7 +628,9 @@ const DailyResultCard: React.FC<{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: SPACE[6],
+        // Rhythm is set per block below (four tiers) rather than by one uniform
+        // gap, so proximity does the grouping.
+        gap: 0,
       }}
     >
 
@@ -640,7 +642,7 @@ const DailyResultCard: React.FC<{
       </h1>
       <p
         className="ww-res-in"
-        style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, ...blockIn("message") }}
+        style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, marginTop: SPACE[6], ...blockIn("message") }}
       >
         {failed
           ? "Whooped! Better luck tomorrow."
@@ -652,12 +654,14 @@ const DailyResultCard: React.FC<{
           crowd comparison. */}
       <div
         className="ww-res-in"
-        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("stats") }}
+        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: 0, marginTop: SPACE[6], ...blockIn("stats") }}
       >
         <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
           Today's daily results
         </h2>
-        <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+        {/* Tier 1 — a label sits close to the content it names. */}
+        <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", marginTop: SPACE[4] }}>
+
           {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
           {stat("Misses", `${totalMisses}`)}
           {/* Current streak, folded in beside today's numbers. The record lives
