@@ -728,7 +728,7 @@ const DailyResultCard: React.FC<{
         </div>
         {percentile !== null && (
           <p
-            style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
+            style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0, marginTop: SPACE[8] }}
           >
             {formatPercentileLine(percentile)}
           </p>
@@ -744,7 +744,10 @@ const DailyResultCard: React.FC<{
             alignSelf: "stretch",
             display: "flex",
             flexDirection: "column",
-            gap: SPACE[3],
+            gap: 0,
+            // Tier 3 — the largest gap between two readout sections
+            // (marginTop + paddingTop across the rule).
+            marginTop: SPACE[8],
             paddingTop: SPACE[4],
             borderTop: BORDER.heavy,
             ...blockIn("stats"),
@@ -754,7 +757,7 @@ const DailyResultCard: React.FC<{
             All time results
           </h2>
           {stats !== null && (
-            <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+            <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch", marginTop: SPACE[4] }}>
               {stat("Days played", `${stats.totalPlayed}`)}
               {stat("Clean runs", `${stats.cleanRuns}`)}
               {stat("Longest streak", `${stats.bestStreak}`)}
@@ -763,13 +766,18 @@ const DailyResultCard: React.FC<{
           )}
           {/* Recall trend: first three games against the last three — an
               all-time comparison, so it sits with the all-time tiles. */}
-          {recall !== null && <DailyRecallTrend trend={recall} mobile={mobile} />}
+          {recall !== null && (
+            <div style={{ marginTop: stats !== null ? SPACE[8] : SPACE[4] }}>
+              <DailyRecallTrend trend={recall} mobile={mobile} />
+            </div>
+          )}
         </div>
       )}
 
 
 
-      <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
+      {/* Tier 4 — the actions are a different kind of thing from the readout. */}
+      <div className="ww-res-in" style={{ alignSelf: "stretch", marginTop: SPACE[16], ...blockIn("share") }}>
         <ShareBlock
           text={shareText}
           result={result}
@@ -791,6 +799,7 @@ const DailyResultCard: React.FC<{
             padding: SPACE[6],
             display: "flex",
             flexDirection: "column",
+            marginTop: SPACE[8],
             ...blockIn("email"),
           }}
         >
@@ -798,12 +807,14 @@ const DailyResultCard: React.FC<{
         </div>
       )}
 
+      {/* Buttons read as one group, so this stays tighter than tier 4. */}
       <button
         type="button"
         className="ww-press ww-res-in"
         onClick={onLeave}
-        style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch", ...blockIn("done") }}
+        style={{ ...buttonStyle("ink", "lg", { mobile }), alignSelf: "stretch", marginTop: SPACE[8], ...blockIn("done") }}
       >
+
         DONE
       </button>
     </div>
