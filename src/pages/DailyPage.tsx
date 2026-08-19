@@ -606,7 +606,7 @@ const DailyResultCard: React.FC<{
     ...textStyle("caption", mobile),
     fontFamily: FONT_FAMILY_UI,
     fontWeight: 700,
-    fontSize: capSize - 1,
+    fontSize: capSize - (mobile ? 2 : 1),
     lineHeight: `${capSize * TEXT.caption.lineHeight}px`,
     letterSpacing: "0.05em",
     textTransform: "uppercase",
