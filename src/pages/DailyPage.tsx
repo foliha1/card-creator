@@ -678,6 +678,8 @@ const DailyResultCard: React.FC<{
             gridTemplateColumns: "auto 1fr auto",
             alignItems: "center",
             columnGap: SPACE[3],
+            // Tier 2 — a second group inside the same section.
+            marginTop: SPACE[8],
           }}
         >
           {roundEvents.map((events, i) => {
@@ -686,10 +688,13 @@ const DailyResultCard: React.FC<{
               fontWeight: FONT_WEIGHT_UI,
               fontSize: mobile ? 13 : 14,
               lineHeight: 1.35,
-              paddingTop: i === 0 ? 0 : SPACE[3],
-              paddingBottom: i === roundEvents.length - 1 ? 0 : SPACE[3],
+              // A little more breathing room per row; content, dividers and
+              // circles are untouched.
+              paddingTop: i === 0 ? 0 : SPACE[5],
+              paddingBottom: i === roundEvents.length - 1 ? 0 : SPACE[5],
               ...(i === 0 ? {} : { borderTop: "1px solid rgba(35, 31, 32, 0.18)" }),
             };
+
             return (
               <React.Fragment key={`round-${i}`}>
                 <div style={{ ...cell, color: COLORS.inkMuted }}>R{i + 1}</div>
