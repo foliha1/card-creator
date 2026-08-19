@@ -648,13 +648,14 @@ const DailyResultCard: React.FC<{
             ? "You already tested your memory today. Come back tomorrow!"
             : "All three rounds played. One puzzle a day — come back tomorrow."}
       </p>
-      {/* Today: this run's numbers plus the comparison line. */}
+      {/* Today's daily results: this run's numbers, the round rows, and the
+          crowd comparison. */}
       <div
         className="ww-res-in"
         style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("stats") }}
       >
         <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-          Today
+          Today's daily results
         </h2>
         <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
           {stat("Solved", `${roundsSolved}/${DAILY_ROUNDS}`)}
@@ -665,52 +666,8 @@ const DailyResultCard: React.FC<{
           {streak !== null && streak >= 1 &&
             stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
         </div>
-        {percentile !== null && (
-          <p
-            style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
-          >
-            {formatPercentileLine(percentile)}
-          </p>
-        )}
-        {/* Recall trend: your own memory over time, right beside today's score
-            and the crowd comparison. */}
-        {recall !== null && <DailyRecallTrend trend={recall} mobile={mobile} />}
-      </div>
-
-      {/* All time. Subscribers only, and hidden entirely when the read failed —
-          never shown as zeroes, never as an empty placeholder. */}
-      {stats !== null && (
-        <div
-          className="ww-res-in"
-          style={{
-            alignSelf: "stretch",
-            display: "flex",
-            flexDirection: "column",
-            gap: SPACE[3],
-            paddingTop: SPACE[4],
-            borderTop: BORDER.heavy,
-            ...blockIn("stats"),
-          }}
-        >
-          <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-            All time
-          </h2>
-          <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
-            {stat("Days played", `${stats.totalPlayed}`)}
-            {stat("Clean runs", `${stats.cleanRuns}`)}
-            {stat("Longest streak", `${stats.bestStreak}`)}
-            {stat("Average misses", formatAvgMisses(stats.avgMisses))}
-          </div>
-        </div>
-      )}
-
-      <div
-        className="ww-res-in"
-        style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: SPACE[3], ...blockIn("rounds") }}
-      >
-        <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
-          Round review
-        </h2>
+        {/* Round review rows — today's information, so they live here, without
+            a heading of their own. */}
         <div
           style={{
             display: "grid",
@@ -760,7 +717,48 @@ const DailyResultCard: React.FC<{
             );
           })}
         </div>
+        {percentile !== null && (
+          <p
+            style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, textAlign: "center", margin: 0 }}
+          >
+            {formatPercentileLine(percentile)}
+          </p>
+        )}
       </div>
+
+      {/* All time results. Subscribers only, and hidden entirely when the read
+          failed — never shown as zeroes, never as an empty placeholder. */}
+      {(stats !== null || recall !== null) && (
+        <div
+          className="ww-res-in"
+          style={{
+            alignSelf: "stretch",
+            display: "flex",
+            flexDirection: "column",
+            gap: SPACE[3],
+            paddingTop: SPACE[4],
+            borderTop: BORDER.heavy,
+            ...blockIn("stats"),
+          }}
+        >
+          <h2 style={{ ...textStyle("label", mobile), color: COLORS.inkMuted, margin: 0 }}>
+            All time results
+          </h2>
+          {stats !== null && (
+            <div style={{ display: "flex", gap: SPACE[4], alignSelf: "stretch" }}>
+              {stat("Days played", `${stats.totalPlayed}`)}
+              {stat("Clean runs", `${stats.cleanRuns}`)}
+              {stat("Longest streak", `${stats.bestStreak}`)}
+              {stat("Average misses", formatAvgMisses(stats.avgMisses))}
+            </div>
+          )}
+          {/* Recall trend: first three games against the last three — an
+              all-time comparison, so it sits with the all-time tiles. */}
+          {recall !== null && <DailyRecallTrend trend={recall} mobile={mobile} />}
+        </div>
+      )}
+
+
 
       <div className="ww-res-in" style={{ alignSelf: "stretch", ...blockIn("share") }}>
         <ShareBlock
