@@ -169,6 +169,65 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_group_members: {
+        Row: {
+          display_name: string
+          email: string | null
+          group_id: string
+          id: string
+          joined_at: string
+          visitor_id: string
+        }
+        Insert: {
+          display_name: string
+          email?: string | null
+          group_id: string
+          id?: string
+          joined_at?: string
+          visitor_id: string
+        }
+        Update: {
+          display_name?: string
+          email?: string | null
+          group_id?: string
+          id?: string
+          joined_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "daily_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_groups: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       daily_results: {
         Row: {
           created_at: string
@@ -477,6 +536,14 @@ export type Database = {
           runs_started: number
         }[]
       }
+      create_daily_group: {
+        Args: { p_display_name: string; p_name: string; p_visitor_id: string }
+        Returns: {
+          code: string
+          group_id: string
+          name: string
+        }[]
+      }
       create_room: {
         Args: { p_code: string; p_visitor_id: string }
         Returns: {
@@ -486,6 +553,7 @@ export type Database = {
           status: string
         }[]
       }
+      daily_puzzle_date: { Args: { p_puzzle_number: number }; Returns: string }
       daily_result_reject_reason: {
         Args: {
           p_elapsed_ms: number
@@ -507,7 +575,9 @@ export type Database = {
           total_misses: number
         }[]
       }
+      daily_season_start: { Args: { p_puzzle_number: number }; Returns: string }
       email_has_history: { Args: { p_email: string }; Returns: boolean }
+      gen_daily_group_code: { Args: never; Returns: string }
       get_daily_event_counts: {
         Args: { p_days?: number }
         Returns: {
@@ -547,6 +617,55 @@ export type Database = {
           total_played: number
         }[]
       }
+      get_group_season: {
+        Args: {
+          p_group_id: string
+          p_puzzle_number: number
+          p_visitor_id: string
+        }
+        Returns: {
+          display_name: string
+          is_me: boolean
+          points: number
+          puzzles_played: number
+          rank_position: number
+          season_start: string
+          visitor_id: string
+        }[]
+      }
+      get_group_today: {
+        Args: {
+          p_group_id: string
+          p_puzzle_number: number
+          p_visitor_id: string
+        }
+        Returns: {
+          display_name: string
+          is_me: boolean
+          not_played: boolean
+          peek_used: boolean
+          rank_position: number
+          rounds_solved: number
+          total_misses: number
+          visitor_id: string
+        }[]
+      }
+      get_my_groups: {
+        Args: {
+          p_email?: string
+          p_puzzle_number?: number
+          p_visitor_id: string
+        }
+        Returns: {
+          code: string
+          group_id: string
+          member_count: number
+          my_points: number
+          my_position: number
+          name: string
+          puzzle_number: number
+        }[]
+      }
       get_room_by_code: {
         Args: { p_code: string; p_visitor_id: string }
         Returns: {
@@ -569,6 +688,22 @@ export type Database = {
       }
       get_subscriber_email: { Args: { p_visitor_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      join_daily_group: {
+        Args: {
+          p_code: string
+          p_display_name: string
+          p_email?: string
+          p_visitor_id: string
+        }
+        Returns: {
+          group_id: string
+          name: string
+        }[]
+      }
+      leave_daily_group: {
+        Args: { p_group_id: string; p_visitor_id: string }
+        Returns: boolean
+      }
       log_daily_events: {
         Args: { p_events: Json; p_visitor_id: string }
         Returns: number
