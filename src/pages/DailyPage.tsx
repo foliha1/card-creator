@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { HelpCircle, Moon, Sun, Volume2, VolumeOff } from "lucide-react";
+import { HelpCircle, Moon, Sun, Users, Volume2, VolumeOff } from "lucide-react";
+import { Link } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import DailyFrame, { DAILY_CONTENT_MAX_W } from "@/components/DailyFrame";
 import DailyHowToSteps, { hasSeenHowTo } from "@/components/DailyHowToSteps";
