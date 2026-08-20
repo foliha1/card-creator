@@ -21,7 +21,6 @@ import {
   fetchGroupToday,
   groupJoinUrl,
   leaveGroup,
-  ordinal,
   seasonWeekLabel,
   type GroupSeasonRow,
   type GroupTodayRow,
@@ -35,7 +34,6 @@ import {
   FONT_WEIGHT_UI,
   RADIUS,
   SPACE,
-  TEXT,
   buttonStyle,
   textStyle,
 } from "@/lib/tokens";
@@ -358,5 +356,4 @@ const DailyGroupBoard: React.FC<{
   );
 };
 
-export { ordinal, TEXT };
 export default DailyGroupBoard;
