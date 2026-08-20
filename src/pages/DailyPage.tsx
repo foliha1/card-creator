@@ -593,6 +593,36 @@ const DailyResultCard: React.FC<{
   const appTheme = useThemeMode().theme;
   const shareImage = useDailyShareImage(result, streak, true, appTheme);
 
+  // ── 10-day streak milestone ───────────────────────────────────────────────
+  // Every multiple of 10, no hardcoded list. The streak read here is the same
+  // number the Streak tile displays — nothing is recomputed.
+  //
+  // COLLISION RULE: a clean-run celebration is planned but not built. On a
+  // milestone day the milestone wins and the clean-run celebration is skipped.
+  const milestonePreview = isMilestonePreview();
+  // Display-only nudge so `?milestone=1` can be seen without a real streak.
+  // Nothing is written and no stored streak is touched.
+  const shownStreak =
+    milestonePreview && !isMilestoneStreak(streak) ? PREVIEW_STREAK : streak;
+  const isMilestone = isMilestoneStreak(shownStreak);
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // The orange tile is STATE, not animation: it applies in both motion modes.
+  // Only the confetti and the shine are motion, and both are dropped entirely
+  // under reduced motion — no quieter variant.
+  const celebrate = isMilestone && !reducedMotion;
+  // Fires once per puzzle: revisits show the orange tile but no burst. Preview
+  // never sets (or reads) the guard.
+  const [burst] = React.useState(
+    () => celebrate && (milestonePreview || !hasCelebrated(puzzleNumber))
+  );
+  React.useEffect(() => {
+    if (burst && !milestonePreview) markCelebrated(puzzleNumber);
+  }, [burst, milestonePreview, puzzleNumber]);
+
+
   // Tile labels: all caps, real Geist 700 (the variable face ships wght 100-900,
   // so this is not a synthesised bold), 0.05em tracking.
   //
