@@ -29,7 +29,9 @@ const DailyGroupsLine: React.FC<{
   const best = bestStanding(groups);
   // Signed out renders nothing at all — no prompt, no nudge — exactly as the
   // no-groups case does, so the results screen's height never changes.
-  if (!ready || !signedIn || loading) return null;
+  if (!ready || !signedIn || loading || best === null) return null;
+
+
 
 
 
