@@ -4,6 +4,11 @@ import {
   GROUP_CODE_LENGTH,
   GROUP_MAX_MEMBERS,
   GROUP_MAX_PER_PERSON,
+  bestStanding,
+  formatStanding,
+  groupJoinUrl,
+  normalizeGroupCode,
+  ordinal,
   pointsForPosition,
   rankScores,
   sameSeason,
@@ -98,5 +103,35 @@ describe("caps and codes", () => {
     for (const ch of "ilo01") {
       expect(GROUP_CODE_ALPHABET).not.toContain(ch);
     }
+  });
+});
+
+// ---------------------------------------------------- presentation helpers ---
+
+describe("group presentation helpers", () => {
+  it("formats ordinals, including the teens", () => {
+    expect([1, 2, 3, 4, 11, 12, 13, 21].map(ordinal)).toEqual([
+      "1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st",
+    ]);
+  });
+
+  it("prefers today's position, falls back to weekly points", () => {
+    expect(formatStanding({ my_position: 2, my_points: 5 })).toBe("2nd today");
+    expect(formatStanding({ my_position: null, my_points: 1 })).toBe("1 pt this week");
+    expect(formatStanding({ my_position: null, my_points: 0 })).toBe("not played yet");
+  });
+
+  it("renders nothing to pick from with no groups", () => {
+    expect(bestStanding([])).toBeNull();
+  });
+
+  it("normalises a pasted code: case, spaces and look-alikes dropped", () => {
+    expect(normalizeGroupCode(" AbC-234 ")).toBe("abc234");
+    expect(normalizeGroupCode("oil01abc234")).toBe("abc234");
+    expect(normalizeGroupCode("abc234extra")).toHaveLength(GROUP_CODE_LENGTH);
+  });
+
+  it("builds a join link carrying the code", () => {
+    expect(groupJoinUrl("abc234")).toBe("https://whoop-whoop.com/groups?join=abc234");
   });
 });
