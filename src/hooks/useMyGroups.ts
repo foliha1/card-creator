@@ -23,10 +23,19 @@ export function useMyGroups(
 
   useEffect(() => {
     let live = true;
+    // A null puzzle number means "no signed-in reader": nothing to ask for.
+    if (puzzleNumber === null) {
+      setGroups([]);
+      setLoading(false);
+      return () => {
+        live = false;
+      };
+    }
     setLoading(true);
     void fetchMyGroups(getVisitorId(), email, puzzleNumber)
       .then((rows) => {
         if (!live) return;
+
         setGroups(rows);
       })
       .catch(() => {

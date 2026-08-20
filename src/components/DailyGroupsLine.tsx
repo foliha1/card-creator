@@ -10,6 +10,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { bestStanding } from "@/lib/dailyGroups";
 import { useMyGroups } from "@/hooks/useMyGroups";
+import { useGroupAuth } from "@/hooks/useGroupAuth";
 import { COLORS, FONT_FAMILY_UI, FONT_WEIGHT_UI, SPACE, textStyle } from "@/lib/tokens";
 
 const DailyGroupsLine: React.FC<{
@@ -18,9 +19,20 @@ const DailyGroupsLine: React.FC<{
   email?: string | null;
   mobile: boolean;
 }> = ({ puzzleNumber, email = null, mobile }) => {
-  const { groups, loading } = useMyGroups(puzzleNumber, email);
+  const { session, ready } = useGroupAuth();
+  const signedIn = session !== null;
+  const { groups, loading } = useMyGroups(
+    signedIn ? puzzleNumber : null,
+    signedIn ? email : null,
+    signedIn ? 1 : 0
+  );
   const best = bestStanding(groups);
-  if (loading) return null;
+  // Signed out renders nothing at all — no prompt, no nudge — exactly as the
+  // no-groups case does, so the results screen's height never changes.
+  if (!ready || !signedIn || loading || best === null) return null;
+
+
+
 
 
   return (
@@ -41,7 +53,7 @@ const DailyGroupsLine: React.FC<{
         gap: SPACE[2],
       }}
     >
-      {best ? `Your groups → ${best.standing} in ${best.group.name}` : "Play with your people →"}
+      {`Your groups → ${best.standing} in ${best.group.name}`}
     </Link>
   );
 };
