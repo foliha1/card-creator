@@ -726,6 +726,16 @@ const DailyResultCard: React.FC<{
         gap: 0,
       }}
     >
+      {/* Hooked to the `stats` block delay (RESULT_BLOCK.stats = 2), which is
+          the block the Streak tile lives in: 2 × 40ms stagger + 250ms block-in
+          = 330ms, so the burst fires as the tile lands, not on frame one. */}
+      {burst && (
+        <DailyMilestoneConfetti
+          delayMs={RESULT_BLOCK.stats * BLOCK_STAGGER_MS + BLOCK_IN_MS}
+        />
+      )}
+
+
 
       <h1
         className="ww-res-in"
