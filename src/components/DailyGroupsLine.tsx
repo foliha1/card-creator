@@ -41,7 +41,7 @@ const DailyGroupsLine: React.FC<{
         gap: SPACE[2],
       }}
     >
-      Your groups → {best.standing} in {best.group.name}
+      {best ? `Your groups → ${best.standing} in ${best.group.name}` : "Play with your people →"}
     </Link>
   );
 };
