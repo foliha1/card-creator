@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { HelpCircle, Moon, Sun, Volume2, VolumeOff } from "lucide-react";
+import { HelpCircle, Moon, Sun, Users, Volume2, VolumeOff } from "lucide-react";
+import { Link } from "react-router-dom";
 import GameCard from "@/components/GameCard";
 import DailyFrame, { DAILY_CONTENT_MAX_W } from "@/components/DailyFrame";
 import DailyHowToSteps, { hasSeenHowTo } from "@/components/DailyHowToSteps";
@@ -1150,6 +1151,16 @@ const DailyReadyScreen: React.FC<{
           <HelpCircle size={16} aria-hidden="true" />
           How to Play
         </button>
+        <Link
+          to="/groups"
+          className="ww-press daily-btn-howto"
+          data-testid="ready-groups-chip"
+          aria-label="Your groups"
+          title="Your groups"
+          style={{ ...chipButtonBase(mobile), textDecoration: "none" }}
+        >
+          <Users size={16} aria-hidden="true" />
+        </Link>
         <DailyThemeToggle mobile={mobile} />
         <DailySoundToggle mobile={mobile} />
       </div>
