@@ -11,6 +11,7 @@
 
 import { useEffect } from "react";
 import confetti from "canvas-confetti";
+import { getBrandConfettiShapes } from "@/lib/confettiShapes";
 
 /** Brand-only palette: blue, orange, red, warm black. */
 const COLORS = ["#0072B2", "#E79024", "#D72229", "#231F20"];
