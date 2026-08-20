@@ -119,9 +119,9 @@ describe("daily board and dice are reproducible from the seed", () => {
     const rng = createRng(SEED);
     const grid = createDeck(rng).slice(0, 9);
     expect(s.grid.map((c) => c!.id)).toEqual(grid.map((c) => c.id));
-    let rolls = [] as ReturnType<typeof pickRoll>[];
+    let rolls = [] as { attribute: (typeof ATTRS)[number]; faceIndex: 0 | 1 }[];
     for (let attempt = 0; attempt < 500; attempt++) {
-      const candidate = [] as ReturnType<typeof pickRoll>[];
+      const candidate = [] as { attribute: (typeof ATTRS)[number]; faceIndex: 0 | 1 }[];
       for (let r = 0; r < 3; r++) {
         let roll = pickRoll(ATTRS, rng);
         for (let i = 0; i < 2; i++) {
