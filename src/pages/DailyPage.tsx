@@ -105,8 +105,19 @@ import {
   textStyle,
   FONT_FAMILY_UI,
   FONT_WEIGHT_UI,
+
+
 } from "@/lib/tokens";
 import { useThemeMode } from "@/lib/nightMode";
+import DailyMilestoneConfetti from "@/components/DailyMilestoneConfetti";
+import {
+  hasCelebrated,
+  isMilestonePreview,
+  isMilestoneStreak,
+  markCelebrated,
+  PREVIEW_STREAK,
+} from "@/lib/dailyMilestone";
+
 
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
@@ -593,6 +604,36 @@ const DailyResultCard: React.FC<{
   const appTheme = useThemeMode().theme;
   const shareImage = useDailyShareImage(result, streak, true, appTheme);
 
+  // ── 10-day streak milestone ───────────────────────────────────────────────
+  // Every multiple of 10, no hardcoded list. The streak read here is the same
+  // number the Streak tile displays — nothing is recomputed.
+  //
+  // COLLISION RULE: a clean-run celebration is planned but not built. On a
+  // milestone day the milestone wins and the clean-run celebration is skipped.
+  const milestonePreview = isMilestonePreview();
+  // Display-only nudge so `?milestone=1` can be seen without a real streak.
+  // Nothing is written and no stored streak is touched.
+  const shownStreak =
+    milestonePreview && !isMilestoneStreak(streak) ? PREVIEW_STREAK : streak;
+  const isMilestone = isMilestoneStreak(shownStreak);
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // The orange tile is STATE, not animation: it applies in both motion modes.
+  // Only the confetti and the shine are motion, and both are dropped entirely
+  // under reduced motion — no quieter variant.
+  const celebrate = isMilestone && !reducedMotion;
+  // Fires once per puzzle: revisits show the orange tile but no burst. Preview
+  // never sets (or reads) the guard.
+  const [burst] = React.useState(
+    () => celebrate && (milestonePreview || !hasCelebrated(puzzleNumber))
+  );
+  React.useEffect(() => {
+    if (burst && !milestonePreview) markCelebrated(puzzleNumber);
+  }, [burst, milestonePreview, puzzleNumber]);
+
+
   // Tile labels: all caps, real Geist 700 (the variable face ships wght 100-900,
   // so this is not a synthesised bold), 0.05em tracking.
   //
@@ -620,24 +661,46 @@ const DailyResultCard: React.FC<{
   };
 
 
-  const stat = (label: string, value: string) => (
+  /**
+   * `milestone` paints the tile brand orange with the warm-black ink used on
+   * accent buttons (6.53:1 for both the number and the label) and adds the
+   * looping shine. Box model — border, radius, padding, flex — is identical in
+   * both states, so the tile keeps its exact dimensions.
+   */
+  const stat = (label: string, value: string, milestone = false) => (
     <div
       key={label}
       data-testid="stat-tile"
+      data-milestone={milestone ? "1" : undefined}
       style={{
         flex: "1 1 0",
         minWidth: 0,
         border: BORDER.heavy,
         borderRadius: RADIUS.sm,
-        background: COLORS.panel,
+        background: milestone ? COLORS.orange : COLORS.panel,
         padding: `${SPACE[4]}px ${SPACE[3]}px`,
         textAlign: "center",
+        ...(milestone ? { position: "relative", overflow: "hidden" } : null),
       }}
     >
-      <div style={{ ...textStyle("display", mobile), color: COLORS.ink }}>{value}</div>
-      <div style={tileLabelStyle}>{label}</div>
+      <div
+        style={{
+          ...textStyle("display", mobile),
+          color: milestone ? RAW.warmBlack : COLORS.ink,
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ ...tileLabelStyle, ...(milestone ? { color: RAW.warmBlack } : null) }}>
+        {label}
+      </div>
+      {/* Looping shine — motion only, so it is omitted under reduced motion. */}
+      {milestone && !reducedMotion && (
+        <span aria-hidden="true" data-testid="milestone-shine" className="ww-sweep-loop" />
+      )}
     </div>
   );
+
 
 
   // Running index of each round's first mark, so the marks read as one
@@ -663,6 +726,16 @@ const DailyResultCard: React.FC<{
         gap: 0,
       }}
     >
+      {/* Hooked to the `stats` block delay (RESULT_BLOCK.stats = 2), which is
+          the block the Streak tile lives in: 2 × 40ms stagger + 250ms block-in
+          = 330ms, so the burst fires as the tile lands, not on frame one. */}
+      {burst && (
+        <DailyMilestoneConfetti
+          delayMs={RESULT_BLOCK.stats * BLOCK_STAGGER_MS + BLOCK_IN_MS}
+        />
+      )}
+
+
 
       <h1
         className="ww-res-in"
@@ -700,8 +773,13 @@ const DailyResultCard: React.FC<{
           {/* Current streak, folded in beside today's numbers. The record lives
               in the All time block as "Longest streak", so nothing reads doubled.
               Omitted (never zero) when the streak read failed. */}
-          {streak !== null && streak >= 1 &&
-            stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
+          {shownStreak !== null && shownStreak >= 1 &&
+            stat(
+              "Streak",
+              `${shownStreak} ${shownStreak === 1 ? "day" : "days"}`,
+              isMilestone
+            )}
+
         </div>
         {/* Round review rows — today's information, so they live here, without
             a heading of their own. */}
