@@ -192,3 +192,70 @@ export async function fetchGroupSeason(
   if (error) throw error;
   return (data ?? []) as GroupSeasonRow[];
 }
+
+// ------------------------------------------------------------- presentation ---
+
+/** 1 → "1st". Used for every standing line, so ordinals never drift. */
+export function ordinal(n: number): string {
+  const abs = Math.abs(Math.trunc(n));
+  const rem100 = abs % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${abs}th`;
+  switch (abs % 10) {
+    case 1: return `${abs}st`;
+    case 2: return `${abs}nd`;
+    case 3: return `${abs}rd`;
+    default: return `${abs}th`;
+  }
+}
+
+/**
+ * The one-line standing shown on the groups list and the results line.
+ *
+ * `get_my_groups` returns today's position (null until you have played that
+ * puzzle) and this week's points — not a season position — so a member who has
+ * not played today falls back to their points for the week.
+ */
+export function formatStanding(g: Pick<MyGroup, "my_position" | "my_points">): string {
+  if (g.my_position !== null && g.my_position !== undefined) {
+    return `${ordinal(g.my_position)} today`;
+  }
+  if (g.my_points > 0) return `${g.my_points} ${g.my_points === 1 ? "pt" : "pts"} this week`;
+  return "not played yet";
+}
+
+/** The best of several standings: today's position wins, then most points. */
+export function bestStanding(groups: MyGroup[]): { group: MyGroup; standing: string } | null {
+  if (groups.length === 0) return null;
+  const played = groups.filter((g) => g.my_position !== null && g.my_position !== undefined);
+  const pool = played.length > 0 ? played : groups;
+  const best = [...pool].sort((a, b) => {
+    if (played.length > 0) return (a.my_position ?? 99) - (b.my_position ?? 99);
+    return b.my_points - a.my_points;
+  })[0];
+  return { group: best, standing: formatStanding(best) };
+}
+
+/** The link handed to other people. Mirrors the invite-link shape already used. */
+export function groupJoinUrl(code: string): string {
+  return `https://whoop-whoop.com/groups?join=${code}`;
+}
+
+/** "Week of Mon 18 Aug" from an ISO season start date. */
+export function seasonWeekLabel(seasonStartIso: string): string {
+  const d = new Date(`${seasonStartIso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  const day = d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" });
+  const date = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  return `Week of ${day} ${date}`;
+}
+
+/** Normalises a pasted or linked code: case-insensitive, alphabet only. */
+export function normalizeGroupCode(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .split("")
+    .filter((c) => GROUP_CODE_ALPHABET.includes(c))
+    .join("")
+    .slice(0, GROUP_CODE_LENGTH);
+}
