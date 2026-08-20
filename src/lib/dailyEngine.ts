@@ -164,6 +164,15 @@ export function rollsAreSolvable(
   return walk(board, 0);
 }
 
+/** Re-draws allowed when a round repeats the previous round's attribute. */
+const REPEAT_REDRAWS = 2;
+/** Guard bound on the loop that blocks a third identical attribute. */
+const TRIPLE_GUARD = 50;
+/** Roll-search attempts per dealt board. */
+const ROLL_ATTEMPTS = 500;
+/** Boards to try. 5 × 9 = 45 cards of the 48-card seeded deck. */
+const MAX_DEALS = 5;
+
 /**
  * Deal the day's nine cards and the day's three dice, all from the seeded
  * stream so every player worldwide gets the identical puzzle.
@@ -171,35 +180,51 @@ export function rollsAreSolvable(
 export function initDailyState(seed: string, rngIn?: Rng): DailyState {
   const rng: Rng = rngIn ?? createRng(seed);
   const deck = createDeck(rng);
-  const grid: (Card | null)[] = deck.slice(0, DAILY_SLOTS);
 
+  let grid: (Card | null)[] = [];
   let rolls: DailyRoll[] = [];
-  for (let attempt = 0; attempt < 500; attempt++) {
-    const candidate: DailyRoll[] = [];
-    for (let r = 0; r < DAILY_ROUNDS; r++) {
-      // Draw from the one continuous seeded stream, re-rolling until the
-      // attribute differs from the previous round's. Without this a day can
-      // land the same rule three times running, which reads as a broken die.
-      let roll = pickRoll(DAILY_ROLL_ATTRS, rng);
-      for (let guard = 0; guard < 50; guard++) {
-        if (r === 0 || roll.attribute !== candidate[r - 1].attribute) break;
-        roll = pickRoll(DAILY_ROLL_ATTRS, rng);
+
+  for (let deal = 0; deal < MAX_DEALS; deal++) {
+    // Redeal takes the NEXT nine cards of the same shuffled deck, so the whole
+    // search stays a single deterministic walk of the seeded stream.
+    const offset = deal * DAILY_SLOTS;
+    const board: (Card | null)[] = deck.slice(offset, offset + DAILY_SLOTS);
+    if (board.length < DAILY_SLOTS) break;
+
+    for (let attempt = 0; attempt < ROLL_ATTEMPTS; attempt++) {
+      const candidate: DailyRoll[] = [];
+      for (let r = 0; r < DAILY_ROUNDS; r++) {
+        let roll = pickRoll(DAILY_ROLL_ATTRS, rng);
+        // Bounded re-draw: a back-to-back repeat is allowed but unlikely
+        // (~7% of days). Two re-draws is the tuning knob.
+        for (let i = 0; i < REPEAT_REDRAWS; i++) {
+          if (r === 0 || roll.attribute !== candidate[r - 1].attribute) break;
+          roll = pickRoll(DAILY_ROLL_ATTRS, rng);
+        }
+        // Hard block: never three of the same rule in a row.
+        if (r === DAILY_ROUNDS - 1 && candidate[0].attribute === candidate[1].attribute) {
+          for (let guard = 0; guard < TRIPLE_GUARD; guard++) {
+            if (roll.attribute !== candidate[r - 1].attribute) break;
+            roll = pickRoll(DAILY_ROLL_ATTRS, rng);
+          }
+        }
+        candidate.push(roll);
       }
-      candidate.push(roll);
+      if (rollsAreSolvable(board, candidate)) {
+        grid = board;
+        rolls = candidate;
+        break;
+      }
     }
-    if (rollsAreSolvable(grid, candidate)) {
-      rolls = candidate;
-      break;
-    }
+    if (rolls.length > 0) break;
   }
 
   if (rolls.length === 0) {
-    // Fallback: with 9 of 48 distinct cards this is unreachable in practice.
-    rolls = Array.from({ length: DAILY_ROUNDS }, () => ({
-      attribute: "COLOR" as RollAttribute,
-      faceIndex: 0 as 0 | 1,
-    }));
+    // Unreachable in practice (measured: the first attempt of the first deal
+    // always succeeds). Fail loudly rather than commit a broken day.
+    throw new Error(`dailyEngine: no solvable roll set for seed "${seed}"`);
   }
+
 
   return {
     phase: "READY",

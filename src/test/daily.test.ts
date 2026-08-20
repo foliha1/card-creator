@@ -113,14 +113,29 @@ describe("daily board and dice are reproducible from the seed", () => {
 
   it("draws all three rolls from the seeded source, in order, after the deal", () => {
     const s = initDailyState(SEED);
-    // Reproduce the seeded stream: deck first, then rolls in triples until a
-    // solvable set is found — exactly what init does.
+    // Reproduce the seeded stream: deck first, then rolls with the bounded
+    // repeat re-draw and the triple block — exactly what init does.
+    const ATTRS = ["SHAPE", "NUMBER", "COLOR"] as const;
     const rng = createRng(SEED);
     const grid = createDeck(rng).slice(0, 9);
     expect(s.grid.map((c) => c!.id)).toEqual(grid.map((c) => c.id));
-    let rolls = [] as ReturnType<typeof pickRoll>[];
+    let rolls = [] as { attribute: (typeof ATTRS)[number]; faceIndex: 0 | 1 }[];
     for (let attempt = 0; attempt < 500; attempt++) {
-      const candidate = [0, 1, 2].map(() => pickRoll(["SHAPE", "NUMBER", "COLOR"] as const, rng));
+      const candidate = [] as { attribute: (typeof ATTRS)[number]; faceIndex: 0 | 1 }[];
+      for (let r = 0; r < 3; r++) {
+        let roll = pickRoll(ATTRS, rng);
+        for (let i = 0; i < 2; i++) {
+          if (r === 0 || roll.attribute !== candidate[r - 1].attribute) break;
+          roll = pickRoll(ATTRS, rng);
+        }
+        if (r === 2 && candidate[0].attribute === candidate[1].attribute) {
+          for (let g = 0; g < 50; g++) {
+            if (roll.attribute !== candidate[r - 1].attribute) break;
+            roll = pickRoll(ATTRS, rng);
+          }
+        }
+        candidate.push(roll);
+      }
       if (rollsAreSolvable(grid, candidate)) {
         rolls = candidate;
         break;
@@ -128,6 +143,23 @@ describe("daily board and dice are reproducible from the seed", () => {
     }
     expect(s.rolls).toEqual(rolls);
   });
+
+  it("never rolls the same rule three times in a row", () => {
+    for (let d = 0; d < 400; d++) {
+      const date = new Date(Date.UTC(2026, 7, 11 + d));
+      const { rolls } = initDailyState(`whoop-${date.toISOString().slice(0, 10)}`);
+      const same =
+        rolls[0].attribute === rolls[1].attribute &&
+        rolls[1].attribute === rolls[2].attribute;
+      expect(same).toBe(false);
+    }
+  });
+
+  it("still allows a back-to-back repeat on a known repeating seed", () => {
+    const { rolls } = initDailyState("whoop-2026-08-31");
+    expect(rolls.map((r) => r.attribute)).toEqual(["COLOR", "COLOR", "NUMBER"]);
+  });
+
 
   it("differs across days", () => {
     const a = initDailyState("whoop-2026-08-04");
