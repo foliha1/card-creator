@@ -176,6 +176,7 @@ export type Database = {
           group_id: string
           id: string
           joined_at: string
+          user_id: string | null
           visitor_id: string
         }
         Insert: {
@@ -184,6 +185,7 @@ export type Database = {
           group_id: string
           id?: string
           joined_at?: string
+          user_id?: string | null
           visitor_id: string
         }
         Update: {
@@ -192,6 +194,7 @@ export type Database = {
           group_id?: string
           id?: string
           joined_at?: string
+          user_id?: string | null
           visitor_id?: string
         }
         Relationships: [

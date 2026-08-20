@@ -16,11 +16,19 @@ import { ChevronLeft } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
 import { useMyGroups } from "@/hooks/useMyGroups";
+import {
+  clearPendingJoin,
+  readPendingJoin,
+  useGroupAuth,
+  writePendingJoin,
+} from "@/hooks/useGroupAuth";
 import DailyGroupBoard from "@/components/DailyGroupBoard";
+import DailyGroupSignIn from "@/components/DailyGroupSignIn";
 import { CreateGroupModal, JoinGroupModal } from "@/components/DailyGroupModals";
 import DailyShapeRule from "@/components/DailyShapeRule";
 import DailyLegalFooter from "@/components/DailyLegalFooter";
 import { getDailyNumber } from "@/lib/daily";
+
 import {
   GROUP_MAX_PER_PERSON,
   formatStanding,
@@ -52,17 +60,38 @@ const GroupsPage: React.FC = () => {
   const [params, setParams] = useSearchParams();
   const puzzleNumber = React.useMemo(() => getDailyNumber(), []);
   const { email } = useSubscriberStatus();
-  const { groups, loading, reload } = useMyGroups(puzzleNumber, email ?? null);
+  const { session, ready, email: authEmail, sendLink, signOut } = useGroupAuth();
+  const signedIn = session !== null;
+  const { groups, loading, reload } = useMyGroups(
+    signedIn ? puzzleNumber : null,
+    signedIn ? authEmail ?? email ?? null : null,
+    signedIn ? 1 : 0
+  );
 
-  const joinParam = normalizeGroupCode(params.get("join") ?? "");
+  // The code can arrive in the URL, or from before a magic-link round trip.
+  const urlJoin = normalizeGroupCode(params.get("join") ?? "");
+  const [storedJoin] = React.useState(() => readPendingJoin());
+  const joinParam = urlJoin || storedJoin;
+
   const [showCreate, setShowCreate] = React.useState(false);
-  const [showJoin, setShowJoin] = React.useState(joinParam.length > 0);
+  const [showJoin, setShowJoin] = React.useState(false);
   const [openId, setOpenId] = React.useState<string | null>(null);
+
+  // Signed out with a code in hand: hold it across the email round trip.
+  React.useEffect(() => {
+    if (urlJoin) writePendingJoin(urlJoin);
+  }, [urlJoin]);
+
+  // Signed in with a code waiting: land on the join confirmation.
+  React.useEffect(() => {
+    if (signedIn && joinParam.length > 0) setShowJoin(true);
+  }, [signedIn, joinParam]);
 
   const open = groups.find((g) => g.group_id === openId) ?? null;
   const atGroupCap = groups.length >= GROUP_MAX_PER_PERSON;
 
   const clearJoinParam = () => {
+    clearPendingJoin();
     if (!params.get("join")) return;
     const next = new URLSearchParams(params);
     next.delete("join");
@@ -75,6 +104,22 @@ const GroupsPage: React.FC = () => {
     reload();
     setOpenId(groupId);
   };
+
+  const backLink = (
+    <Link
+      to="/"
+      className="ww-press"
+      style={{ ...buttonStyle("ink", "md", { mobile }), alignSelf: "flex-start" }}
+    >
+      <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
+      BACK
+    </Link>
+  );
+
+  const redirectTo = `${window.location.origin}/groups${
+    joinParam ? `?join=${joinParam}` : ""
+  }`;
+
 
   return (
     <div
@@ -93,7 +138,16 @@ const GroupsPage: React.FC = () => {
       <DailyShapeRule />
 
       <div style={{ width: "100%", maxWidth: 402, display: "flex", flexDirection: "column", gap: SPACE[6] }}>
-        {open ? (
+        {!ready ? null : !signedIn ? (
+          <>
+            {backLink}
+            <DailyGroupSignIn
+              mobile={mobile}
+              pendingJoin={joinParam.length > 0}
+              onSend={(addr) => sendLink(addr, redirectTo)}
+            />
+          </>
+        ) : open ? (
           <DailyGroupBoard
             group={open}
             puzzleNumber={puzzleNumber}
@@ -106,14 +160,8 @@ const GroupsPage: React.FC = () => {
           />
         ) : (
           <>
-            <Link
-              to="/"
-              className="ww-press"
-              style={{ ...buttonStyle("ink", "md", { mobile }), alignSelf: "flex-start" }}
-            >
-              <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
-              BACK
-            </Link>
+            {backLink}
+
 
             <h1 style={{ ...textStyle("title", mobile), color: COLORS.ink, margin: 0 }}>
               Your groups
@@ -185,8 +233,21 @@ const GroupsPage: React.FC = () => {
                 {GROUP_MAX_PER_PERSON} groups is the limit. Leave one to join another.
               </p>
             )}
+
+            {/* Signing out lives here only. The lobby's `Not you?` is untouched. */}
+            <p style={{ ...metaLabel(mobile), margin: 0 }}>Signed in as {authEmail}</p>
+            <button
+              type="button"
+              className="ww-press"
+              onClick={signOut}
+              data-testid="groups-signout"
+              style={{ ...buttonStyle("quiet", "md", { mobile }), alignSelf: "flex-start" }}
+            >
+              SIGN OUT
+            </button>
           </>
         )}
+
       </div>
 
       <DailyLegalFooter />
