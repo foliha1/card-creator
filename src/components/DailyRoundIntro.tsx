@@ -78,13 +78,20 @@ const DailyRoundIntro: React.FC<DailyRoundIntroProps> = ({
   const spun = `rotateX(${dir * (spins * 360 + 140)}deg) rotateY(${-dir * (spins * 360 + 55)}deg)`;
   const [rotation, setRotation] = useState(reduced ? landed : spun);
 
-  // The tumble only begins once the fade-in has finished.
+  // The tumble only begins once the fade-in has finished. Under reduced motion
+  // we skip the tumble, NOT the update: every round still gets its own landed
+  // face, applied immediately and without a transition.
   useEffect(() => {
-    if (!active || reduced) return;
+    if (!active) return;
+    if (reduced) {
+      setRotation(landed);
+      return;
+    }
     setRotation(spun);
     const t = window.setTimeout(() => setRotation(landed), DAILY_FADE_IN_MS);
     return () => window.clearTimeout(t);
   }, [active, roundIndex, spun, landed, reduced]);
+
 
   // The die impact, fired as the tumble stops and the hold begins.
   useEffect(() => {
