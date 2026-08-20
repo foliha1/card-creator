@@ -8,13 +8,17 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { bestStanding, type MyGroup } from "@/lib/dailyGroups";
+import { bestStanding } from "@/lib/dailyGroups";
+import { useMyGroups } from "@/hooks/useMyGroups";
 import { COLORS, FONT_FAMILY_UI, FONT_WEIGHT_UI, SPACE, textStyle } from "@/lib/tokens";
 
-const DailyGroupsLine: React.FC<{ groups: MyGroup[]; mobile: boolean }> = ({
-  groups,
-  mobile,
-}) => {
+const DailyGroupsLine: React.FC<{
+  puzzleNumber: number;
+  /** Passed so a member who switched devices resolves to one membership. */
+  email?: string | null;
+  mobile: boolean;
+}> = ({ puzzleNumber, email = null, mobile }) => {
+  const { groups } = useMyGroups(puzzleNumber, email);
   const best = bestStanding(groups);
   if (!best) return null;
 
