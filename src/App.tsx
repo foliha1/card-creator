@@ -10,6 +10,7 @@ import MultiplayerPage from "./pages/MultiplayerPage.tsx";
 import DailyPage from "./pages/DailyPage.tsx";
 import SupportPage from "./pages/SupportPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
+import GroupsPage from "./pages/GroupsPage.tsx";
 import TypographyPage from "./pages/TypographyPage.tsx";
 import PrivacyPage from "./pages/PrivacyPage.tsx";
 import TermsPage from "./pages/TermsPage.tsx";
@@ -47,6 +48,7 @@ const AnimatedRoutes: React.FC = () => {
       <Routes location={displayLocation}>
         <Route path="/" element={<DailyPage />} />
         <Route path="/today" element={<DailyPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/admin" element={<AdminPage />} />
