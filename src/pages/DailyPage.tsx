@@ -1161,7 +1161,7 @@ const DailyReadyScreen: React.FC<{
         >
           <Users size={16} aria-hidden="true" />
         </Link>
-
+        <DailyThemeToggle mobile={mobile} />
         <DailySoundToggle mobile={mobile} />
       </div>
 
