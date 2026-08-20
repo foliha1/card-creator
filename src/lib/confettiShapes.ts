@@ -68,7 +68,12 @@ let cached: ReturnType<typeof confetti.shapeFromPath>[] | null = null;
 export function getBrandConfettiShapes() {
   if (cached) return cached;
   cached = SOURCES.map(({ path, box }) =>
-    confetti.shapeFromPath({ path, matrix: normaliseMatrix(box) }),
+    confetti.shapeFromPath({
+      path,
+      // canvas-confetti accepts a plain 6-number matrix at runtime; its
+      // typings only describe DOMMatrix.
+      matrix: normaliseMatrix(box) as unknown as DOMMatrix,
+    }),
   );
   return cached;
 }
