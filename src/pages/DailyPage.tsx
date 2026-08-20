@@ -107,6 +107,15 @@ import {
   FONT_WEIGHT_UI,
 } from "@/lib/tokens";
 import { useThemeMode } from "@/lib/nightMode";
+import DailyMilestoneConfetti from "@/components/DailyMilestoneConfetti";
+import {
+  hasCelebrated,
+  isMilestonePreview,
+  isMilestoneStreak,
+  markCelebrated,
+  PREVIEW_STREAK,
+} from "@/lib/dailyMilestone";
+
 
 const ATTR_LABEL: Record<string, string> = {
   SHAPE: "Match the shape",
