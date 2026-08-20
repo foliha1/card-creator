@@ -659,24 +659,46 @@ const DailyResultCard: React.FC<{
   };
 
 
-  const stat = (label: string, value: string) => (
+  /**
+   * `milestone` paints the tile brand orange with the warm-black ink used on
+   * accent buttons (6.53:1 for both the number and the label) and adds the
+   * looping shine. Box model — border, radius, padding, flex — is identical in
+   * both states, so the tile keeps its exact dimensions.
+   */
+  const stat = (label: string, value: string, milestone = false) => (
     <div
       key={label}
       data-testid="stat-tile"
+      data-milestone={milestone ? "1" : undefined}
       style={{
         flex: "1 1 0",
         minWidth: 0,
         border: BORDER.heavy,
         borderRadius: RADIUS.sm,
-        background: COLORS.panel,
+        background: milestone ? COLORS.orange : COLORS.panel,
         padding: `${SPACE[4]}px ${SPACE[3]}px`,
         textAlign: "center",
+        ...(milestone ? { position: "relative", overflow: "hidden" } : null),
       }}
     >
-      <div style={{ ...textStyle("display", mobile), color: COLORS.ink }}>{value}</div>
-      <div style={tileLabelStyle}>{label}</div>
+      <div
+        style={{
+          ...textStyle("display", mobile),
+          color: milestone ? RAW.warmBlack : COLORS.ink,
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ ...tileLabelStyle, ...(milestone ? { color: RAW.warmBlack } : null) }}>
+        {label}
+      </div>
+      {/* Looping shine — motion only, so it is omitted under reduced motion. */}
+      {milestone && !reducedMotion && (
+        <span aria-hidden="true" data-testid="milestone-shine" className="ww-sweep-loop" />
+      )}
     </div>
   );
+
 
 
   // Running index of each round's first mark, so the marks read as one
