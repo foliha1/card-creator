@@ -18,9 +18,10 @@ const DailyGroupsLine: React.FC<{
   email?: string | null;
   mobile: boolean;
 }> = ({ puzzleNumber, email = null, mobile }) => {
-  const { groups } = useMyGroups(puzzleNumber, email);
+  const { groups, loading } = useMyGroups(puzzleNumber, email);
   const best = bestStanding(groups);
-  if (!best) return null;
+  if (loading) return null;
+
 
   return (
     <Link
