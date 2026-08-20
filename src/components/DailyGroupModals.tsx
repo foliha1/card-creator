@@ -31,7 +31,6 @@ import {
   RADIUS,
   RAW,
   SPACE,
-  TEXT,
   buttonStyle,
   textStyle,
 } from "@/lib/tokens";
@@ -339,5 +338,3 @@ export const LeaveGroupModal: React.FC<{
     </button>
   </GroupModalShell>
 );
-
-export const GROUP_MODAL_TEXT_LINE_HEIGHT = TEXT.body.lineHeight;
