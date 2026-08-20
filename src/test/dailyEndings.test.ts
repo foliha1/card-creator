@@ -134,14 +134,21 @@ describe("daily rolls", () => {
     }
   });
 
-  it("never repeats the previous round's rule", () => {
+  it("allows a back-to-back repeat but never three of the same rule", () => {
+    let repeats = 0;
     for (const seed of seeds) {
       const rolls = initDailyState(seed).rolls;
-      for (let i = 1; i < rolls.length; i++) {
-        expect(rolls[i].attribute).not.toBe(rolls[i - 1].attribute);
-      }
+      expect(
+        rolls[0].attribute === rolls[1].attribute &&
+          rolls[1].attribute === rolls[2].attribute
+      ).toBe(false);
+      if (rolls[0].attribute === rolls[1].attribute || rolls[1].attribute === rolls[2].attribute)
+        repeats++;
     }
+    // Uncommon by design: ~7% of days over a long run.
+    expect(repeats / seeds.length).toBeLessThan(0.2);
   });
+
 
   it("spreads the three rules roughly evenly across 200 days", () => {
     const counts: Record<string, number> = { SHAPE: 0, NUMBER: 0, COLOR: 0 };
