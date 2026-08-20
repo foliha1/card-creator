@@ -33,8 +33,9 @@ export function useMyGroups(
     }
     setLoading(true);
     void fetchMyGroups(getVisitorId(), email, puzzleNumber)
-
+      .then((rows) => {
         if (!live) return;
+
         setGroups(rows);
       })
       .catch(() => {
