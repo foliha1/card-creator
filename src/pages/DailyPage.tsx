@@ -898,6 +898,14 @@ const DailyResultCard: React.FC<{
         </div>
       )}
 
+      {/* Group standing: one line, and nothing at all without a group — the
+          screen's height is unchanged for anyone who has not joined one. */}
+      <div className="ww-res-in" style={{ alignSelf: "stretch", marginTop: SPACE[4], ...blockIn("stats") }}>
+        <DailyGroupsLine puzzleNumber={puzzleNumber} email={knownEmail} mobile={mobile} />
+      </div>
+
+
+
 
 
       {/* Tier 4 — the actions are a different kind of thing from the readout. */}
