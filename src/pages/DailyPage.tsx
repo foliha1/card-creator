@@ -761,8 +761,13 @@ const DailyResultCard: React.FC<{
           {/* Current streak, folded in beside today's numbers. The record lives
               in the All time block as "Longest streak", so nothing reads doubled.
               Omitted (never zero) when the streak read failed. */}
-          {streak !== null && streak >= 1 &&
-            stat("Streak", `${streak} ${streak === 1 ? "day" : "days"}`)}
+          {shownStreak !== null && shownStreak >= 1 &&
+            stat(
+              "Streak",
+              `${shownStreak} ${shownStreak === 1 ? "day" : "days"}`,
+              isMilestone
+            )}
+
         </div>
         {/* Round review rows — today's information, so they live here, without
             a heading of their own. */}
