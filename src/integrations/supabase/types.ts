@@ -536,6 +536,13 @@ export type Database = {
           runs_started: number
         }[]
       }
+      backfill_result_emails: {
+        Args: { p_email: string; p_limit?: number; p_visitor_id: string }
+        Returns: {
+          collisions: number
+          updated_rows: number
+        }[]
+      }
       create_daily_group: {
         Args: { p_display_name: string; p_name: string; p_visitor_id: string }
         Returns: {
