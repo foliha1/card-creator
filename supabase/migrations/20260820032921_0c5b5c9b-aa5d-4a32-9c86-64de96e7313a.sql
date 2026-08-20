@@ -1,0 +1,1 @@
+delete from public.daily_groups where name = 'Sunday Crew' and created_by is not null;
