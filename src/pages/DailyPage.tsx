@@ -14,6 +14,7 @@ import DailyEmailCapture from "@/components/DailyEmailCapture";
 import DailyRecognition from "@/components/DailyRecognition";
 import DailyPreLaunchSignup from "@/components/DailyPreLaunchSignup";
 import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
+import DailyGroupsLine from "@/components/DailyGroupsLine";
 
 import { useDailyGame } from "@/hooks/useDailyGame";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -570,6 +571,8 @@ const DailyResultCard: React.FC<{
   percentile: number | null;
   /** Null hides the recall trend line (fewer than 6 games, or the read failed). */
   recall: RecallTrend | null;
+  /** Passed to the group line so switched devices resolve to one membership. */
+  knownEmail?: string | null;
   /** Called after an email signup so the parent can re-read streak/stats. */
   onSubscribed?: (email: string, restored: boolean) => void;
   /** Hides the signup form: an address is already on file (locally or server). */
@@ -592,6 +595,7 @@ const DailyResultCard: React.FC<{
   stats,
   percentile,
   recall,
+  knownEmail = null,
   onSubscribed,
   subscribed,
   mobile,
@@ -1836,6 +1840,7 @@ const DailyPage: React.FC = () => {
               stats={stats}
               percentile={percentile}
               recall={recall}
+              knownEmail={knownEmail}
               subscribed={subscribed}
               onSubscribed={(email) => {
                 // Restore or fresh signup, either way: the address is now on
