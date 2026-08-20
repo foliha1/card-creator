@@ -37,6 +37,8 @@ const DailyMilestoneConfetti: React.FC<{ delayMs?: number }> = ({ delayMs = 0 })
       document.body.appendChild(canvas);
 
       instance = confetti.create(canvas, { resize: true, useWorker: false });
+      // Circle / square / triangle from the brand pattern strip, built once.
+      const shapes = getBrandConfettiShapes();
       // One burst, not a shower.
       void instance({
         particleCount: 90,
@@ -46,6 +48,7 @@ const DailyMilestoneConfetti: React.FC<{ delayMs?: number }> = ({ delayMs = 0 })
         ticks: 180,
         origin: { x: 0.5, y: 0.35 },
         colors: COLORS,
+        shapes,
         disableForReducedMotion: true,
       });
 
