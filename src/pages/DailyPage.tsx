@@ -1151,7 +1151,17 @@ const DailyReadyScreen: React.FC<{
           <HelpCircle size={16} aria-hidden="true" />
           How to Play
         </button>
-        <DailyThemeToggle mobile={mobile} />
+        <Link
+          to="/groups"
+          className="ww-press daily-btn-howto"
+          data-testid="ready-groups-chip"
+          aria-label="Your groups"
+          title="Your groups"
+          style={{ ...chipButtonBase(mobile), textDecoration: "none" }}
+        >
+          <Users size={16} aria-hidden="true" />
+        </Link>
+
         <DailySoundToggle mobile={mobile} />
       </div>
 
