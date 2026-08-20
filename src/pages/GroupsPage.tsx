@@ -1,0 +1,220 @@
+// ============================================================================
+// GroupsPage — /groups. The list of your groups, and one group's boards.
+//
+// Scrolls: it is a list, so it opts out of the Daily's scroll lock the way
+// SupportPage does. Boards are keyed to the local puzzle number from
+// `getDailyNumber()`, never a date.
+//
+// `/groups?join=CODE` opens the join modal with the code prefilled. A bad code
+// stays on the page with an inline error — a link never navigates you into a
+// group that does not exist.
+// ============================================================================
+
+import React from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscriberStatus } from "@/hooks/useSubscriberStatus";
+import { useMyGroups } from "@/hooks/useMyGroups";
+import DailyGroupBoard from "@/components/DailyGroupBoard";
+import { CreateGroupModal, JoinGroupModal } from "@/components/DailyGroupModals";
+import DailyShapeRule from "@/components/DailyShapeRule";
+import DailyLegalFooter from "@/components/DailyLegalFooter";
+import { getDailyNumber } from "@/lib/daily";
+import {
+  GROUP_MAX_PER_PERSON,
+  formatStanding,
+  normalizeGroupCode,
+  type MyGroup,
+} from "@/lib/dailyGroups";
+import {
+  BORDER,
+  COLORS,
+  FONT_FAMILY_UI,
+  FONT_WEIGHT_UI,
+  RADIUS,
+  SPACE,
+  buttonStyle,
+  textStyle,
+} from "@/lib/tokens";
+
+const metaLabel = (mobile: boolean): React.CSSProperties => ({
+  ...textStyle("caption", mobile),
+  fontFamily: FONT_FAMILY_UI,
+  fontWeight: FONT_WEIGHT_UI,
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+  color: COLORS.inkMuted,
+});
+
+const GroupsPage: React.FC = () => {
+  const mobile = useIsMobile();
+  const [params, setParams] = useSearchParams();
+  const puzzleNumber = React.useMemo(() => getDailyNumber(), []);
+  const { email } = useSubscriberStatus();
+  const { groups, loading, reload } = useMyGroups(puzzleNumber, email ?? null);
+
+  const joinParam = normalizeGroupCode(params.get("join") ?? "");
+  const [showCreate, setShowCreate] = React.useState(false);
+  const [showJoin, setShowJoin] = React.useState(joinParam.length > 0);
+  const [openId, setOpenId] = React.useState<string | null>(null);
+
+  const open = groups.find((g) => g.group_id === openId) ?? null;
+  const atGroupCap = groups.length >= GROUP_MAX_PER_PERSON;
+
+  const clearJoinParam = () => {
+    if (!params.get("join")) return;
+    const next = new URLSearchParams(params);
+    next.delete("join");
+    setParams(next, { replace: true });
+  };
+
+  const afterJoin = (groupId: string) => {
+    setShowJoin(false);
+    clearJoinParam();
+    reload();
+    setOpenId(groupId);
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: "var(--ww-vh)",
+        boxSizing: "border-box",
+        background: COLORS.surface,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: SPACE[10],
+        padding: SPACE[12],
+        paddingBottom: `calc(${SPACE[12]}px + env(safe-area-inset-bottom))`,
+      }}
+    >
+      <DailyShapeRule />
+
+      <div style={{ width: "100%", maxWidth: 402, display: "flex", flexDirection: "column", gap: SPACE[6] }}>
+        {open ? (
+          <DailyGroupBoard
+            group={open}
+            puzzleNumber={puzzleNumber}
+            mobile={mobile}
+            onBack={() => setOpenId(null)}
+            onLeft={() => {
+              setOpenId(null);
+              reload();
+            }}
+          />
+        ) : (
+          <>
+            <Link
+              to="/"
+              className="ww-press"
+              style={{ ...buttonStyle("ink", "md", { mobile }), alignSelf: "flex-start" }}
+            >
+              <ChevronLeft size={16} strokeWidth={2} aria-hidden="true" />
+              BACK
+            </Link>
+
+            <h1 style={{ ...textStyle("title", mobile), color: COLORS.ink, margin: 0 }}>
+              Your groups
+            </h1>
+            <p style={{ ...textStyle("body", mobile), color: COLORS.ink, margin: 0 }}>
+              Play the same daily puzzle as your people and see how you all did.
+            </p>
+
+            {loading && <p style={{ ...metaLabel(mobile), margin: 0 }}>Loading…</p>}
+
+            {!loading && groups.length === 0 && (
+              <p data-testid="groups-empty" style={{ ...textStyle("body", mobile), color: COLORS.inkMuted, margin: 0 }}>
+                You are not in a group yet.
+              </p>
+            )}
+
+            {groups.map((g: MyGroup) => (
+              <button
+                key={g.group_id}
+                type="button"
+                className="ww-press"
+                onClick={() => setOpenId(g.group_id)}
+                data-testid="groups-list-item"
+                style={{
+                  boxSizing: "border-box",
+                  width: "100%",
+                  minHeight: 44,
+                  textAlign: "left",
+                  border: BORDER.heavy,
+                  borderRadius: RADIUS.sm,
+                  background: COLORS.panel,
+                  padding: `${SPACE[5]}px ${SPACE[6]}px`,
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: SPACE[2],
+                }}
+              >
+                <span style={{ ...textStyle("control", mobile), color: COLORS.ink }}>{g.name}</span>
+                <span style={metaLabel(mobile)}>
+                  {formatStanding(g)} · {g.member_count}{" "}
+                  {g.member_count === 1 ? "member" : "members"}
+                </span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="ww-press"
+              onClick={() => setShowCreate(true)}
+              disabled={atGroupCap}
+              data-testid="groups-create"
+              style={{ ...buttonStyle("primary", "lg", { mobile, disabled: atGroupCap }), alignSelf: "stretch" }}
+            >
+              CREATE A GROUP
+            </button>
+            <button
+              type="button"
+              className="ww-press"
+              onClick={() => setShowJoin(true)}
+              disabled={atGroupCap}
+              data-testid="groups-join"
+              style={{ ...buttonStyle("secondary", "lg", { mobile, disabled: atGroupCap }), alignSelf: "stretch" }}
+            >
+              JOIN WITH A CODE
+            </button>
+            {atGroupCap && (
+              <p style={{ ...metaLabel(mobile), margin: 0 }}>
+                {GROUP_MAX_PER_PERSON} groups is the limit. Leave one to join another.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
+      <DailyLegalFooter />
+
+      {showCreate && (
+        <CreateGroupModal
+          mobile={mobile}
+          onClose={() => setShowCreate(false)}
+          onCreated={(id) => {
+            setShowCreate(false);
+            reload();
+            setOpenId(id);
+          }}
+        />
+      )}
+      {showJoin && (
+        <JoinGroupModal
+          mobile={mobile}
+          initialCode={joinParam}
+          onClose={() => {
+            setShowJoin(false);
+            clearJoinParam();
+          }}
+          onJoined={afterJoin}
+        />
+      )}
+    </div>
+  );
+};
+
+export default GroupsPage;
